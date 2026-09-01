@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/d/Work/unreal/CL9/docs/plan/data\" && ls -la \"/d/Work/unreal/CL9/docs/plan\")",
+      "Bash(diff \"/d/Work/unreal/CCL8/docs/plan/loop.md\" \"/d/Work/unreal/CL9/docs/plan/loop.md\")",
+      "Bash(diff \"/d/Work/unreal/CCL8/docs/plan/economy.md\" \"/d/Work/unreal/CL9/docs/plan/economy.md\")",
+      "Bash(diff \"/d/Work/unreal/CCL8/docs/plan/data/item.md\" \"/d/Work/unreal/CL9/docs/plan/data/item.md\")",
+      "Bash(diff \"/d/Work/unreal/CCL8/docs/plan/data/monster.md\" \"/d/Work/unreal/CL9/docs/plan/data/monster.md\")",
+      "Read(//d/Work/unreal/CCL8/docs/plan/data/**)"
+    ]
+  }
+}
