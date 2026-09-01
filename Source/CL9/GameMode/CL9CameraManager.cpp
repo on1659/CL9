@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-
-#include "CL9CameraManager.h"
+#include "GameMode/CL9CameraManager.h"
 
 ACL9CameraManager::ACL9CameraManager()
 {
