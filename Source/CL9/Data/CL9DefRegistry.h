@@ -12,8 +12,31 @@ class UCL9ItemDef;
 class UCL9RulesDef;
 
 /**
- * The one asset that lists every table row to load. C++ never hardcodes asset
- * paths — the registry walks this list instead (docs/plan/data/README.md).
+ * One table asset per data kind, Excel-style (2026-09-02 결정): open the
+ * asset, add rows with +, edit every column in place. Rows are inline
+ * UCL9DefBase objects, so Instanced gimmicks keep working — the reason
+ * UDataTable was rejected (docs/plan/data/README.md).
+ */
+UCLASS()
+class UCL9DefTable : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	/** The rows — mixing kinds works, but one table per kind stays readable */
+	UPROPERTY(EditAnywhere, Instanced, Category="Data", meta=(TitleProperty="Alias"))
+	TArray<TObjectPtr<UCL9DefBase>> Rows;
+};
+
+/**
+ * The one asset that lists every def table (or standalone row) to load. C++
+ * never hardcodes asset paths — the registry walks this list instead
+ * (docs/plan/data/README.md).
+ *
+ * The list fills itself: saving this asset rescans its own folder (and
+ * subfolders), so new tables register by simply living under it. Runtime
+ * still reads the saved list — the explicit references are what guarantee
+ * cooking in packaged builds.
  */
 UCLASS()
 class UCL9DefList : public UDataAsset
@@ -21,8 +44,17 @@ class UCL9DefList : public UDataAsset
 	GENERATED_BODY()
 
 public:
+	/** UCL9DefTable assets or standalone UCL9DefBase assets */
 	UPROPERTY(EditAnywhere, Category="Data")
-	TArray<TSoftObjectPtr<UCL9DefBase>> Defs;
+	TArray<TSoftObjectPtr<UDataAsset>> Defs;
+
+#if WITH_EDITOR
+	/** Rescans this asset's folder for def tables and rebuilds the list */
+	UFUNCTION(CallInEditor, Category="Data")
+	void RefreshFromFolder();
+
+	virtual void PreSave(FObjectPreSaveContext SaveContext) override;
+#endif
 };
 
 /**
@@ -71,6 +103,9 @@ public:
 	}
 
 private:
+	/** Validates and indexes one row — shared by table rows and standalone assets */
+	void RegisterDef(const UCL9DefBase* Def);
+
 	/** Per-row relation checks A1/A2 (docs/plan/economy.md) — run for every character row */
 	void CheckCharacterRelations(const UCL9CharacterDef& Row) const;
 

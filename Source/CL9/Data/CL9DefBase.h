@@ -31,10 +31,12 @@ public:
 
 /**
  * Parent of every game data table row (docs/data/schema.md). The lookup key is
- * Alias + SubAlias, never the file name. UPrimaryDataAsset because Instanced
- * gimmicks need a UObject owner, which DataTable row structs cannot provide.
+ * Alias + SubAlias, never the file name. A UObject (not a DataTable row
+ * struct) because Instanced gimmicks need a UObject owner. Rows normally live
+ * inline inside a UCL9DefTable — one table asset per kind, Excel-style
+ * (2026-09-02 결정) — but a standalone asset per row still loads.
  */
-UCLASS(Abstract)
+UCLASS(Abstract, EditInlineNew, DefaultToInstanced)
 class UCL9DefBase : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
