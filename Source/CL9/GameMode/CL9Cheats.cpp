@@ -69,6 +69,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatAddMonster(
 		RouteCL9Cheat(TEXT("addmonster"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatHitMonster(
+	TEXT("cl9.hitmonster"),
+	TEXT("cl9.hitmonster [damage] — damages the nearest monster (host ruling; pan lands in ④)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("hitmonster"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),
