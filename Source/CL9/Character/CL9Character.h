@@ -6,9 +6,13 @@
 #include "GameFramework/Character.h"
 #include "CL9Character.generated.h"
 
+class ACL9Cart;
+class ACL9Item;
+class ACL9PlayerState;
 class UCameraComponent;
 class UCL9CharacterDef;
 class UCL9CharacterMovement;
+class UCL9RulesDef;
 class UInputAction;
 struct FInputActionValue;
 
@@ -17,6 +21,9 @@ struct FInputActionValue;
  * Every number and mesh comes from the character table row (UCL9CharacterDef)
  * applied via SetCharacterAlias — this class holds zero asset references, so
  * bought assets swap without touching C++ (docs/plan/build-order.md 원칙 2·3).
+ *
+ * Carry inputs ride Server RPCs on this (owned) actor and the host calls plain
+ * functions on the unowned item actors (docs/systems/input.md 상호작용 틀).
  */
 UCLASS(abstract)
 class ACL9Character : public ACharacter
@@ -38,6 +45,24 @@ public:
 	{
 		return CharacterDef;
 	}
+
+	/** The item actor hanging on this character's hand, or null */
+	ACL9Item* GetHeldItem() const
+	{
+		return HeldItem;
+	}
+
+	/** The cart this character drags, or null — the predicted movement reads it for CartMult */
+	ACL9Cart* GetPullingCart() const
+	{
+		return PullingCart;
+	}
+
+	/** Host only, called by the cart on hitch/release */
+	void SetPullingCart(ACL9Cart* Cart);
+
+	/** Host only: destroys the held item and clears the mirrors (jar returns eat it) */
+	void HostConsumeHeldItem();
 
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
@@ -70,6 +95,31 @@ protected:
 	/** Handles IA_Run release */
 	void RunInputEnd();
 
+	/** Handles IA_PickPlace (E) — the host resolves pick > interact > place */
+	void PickPlaceInput();
+
+	/** Handles IA_Throw press — the host clocks the charge (docs/systems/input.md 던지기 차징) */
+	void ThrowStartInput();
+
+	/** Handles IA_Throw release */
+	void ThrowEndInput();
+
+	/** Handles IA_Swap (R) — hand↔pocket under the SwapTime lock */
+	void SwapInput();
+
+	/** One press of E — priority: pickable item > interactable > place (docs/systems/input.md 감지) */
+	UFUNCTION(Server, Reliable)
+	void Server_PickPlace();
+
+	UFUNCTION(Server, Reliable)
+	void Server_ThrowChargeStart();
+
+	UFUNCTION(Server, Reliable)
+	void Server_ThrowRelease();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Swap();
+
 	UFUNCTION()
 	void OnRep_CharacterAlias();
 
@@ -92,7 +142,29 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> JumpAction;
 
+	/** Pick/place/interact action (E) */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> PickPlaceAction;
+
+	/** Throw charge action (mouse left) */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ThrowAction;
+
+	/** Hand↔pocket swap action (R) */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> SwapAction;
+
 private:
+	/** Host only: attaches the item to this character's hand spot and mirrors it */
+	void HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules);
+
+	/** Host only: sets the held item down in front */
+	void HostPlaceHeld(const UCL9RulesDef* Rules);
+
+	const UCL9RulesDef* GetRules() const;
+	ACL9PlayerState* GetCL9PlayerState() const;
+	float GetServerTime() const;
+
 	/** Which character row this pawn plays — set by the server at spawn, applied on every machine */
 	UPROPERTY(ReplicatedUsing=OnRep_CharacterAlias)
 	FName CharacterAlias;
@@ -100,6 +172,16 @@ private:
 	/** Cached row the alias resolved to (registry keeps it alive; cached for fast reads) */
 	UPROPERTY()
 	TObjectPtr<const UCL9CharacterDef> CharacterDef;
+
+	/** The world-truth carry link — PlayerState.HandItem mirrors it for UI (docs/systems/inventory.md) */
+	UPROPERTY(Replicated)
+	TObjectPtr<ACL9Item> HeldItem;
+
+	UPROPERTY(Replicated)
+	TObjectPtr<ACL9Cart> PullingCart;
+
+	/** Host clock when the current throw charge began; negative when idle */
+	float ThrowChargeStartTime = -1.f;
 
 	/** First person camera, attached to the capsule at eye height */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))

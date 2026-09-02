@@ -4,11 +4,28 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "GameMode/CL9CameraManager.h"
+#include "GameMode/CL9CheatManager.h"
 #include "InputMappingContext.h"
 
 ACL9PlayerController::ACL9PlayerController()
 {
 	PlayerCameraManagerClass = ACL9CameraManager::StaticClass();
+	CheatClass = UCL9CheatManager::StaticClass();
+}
+
+bool ACL9PlayerController::Server_CL9Cheat_Validate(const FString& CommandLine)
+{
+	return true;
+}
+
+void ACL9PlayerController::Server_CL9Cheat_Implementation(const FString& CommandLine)
+{
+#if !UE_BUILD_SHIPPING
+	if (UCL9CheatManager* Cheats = Cast<UCL9CheatManager>(CheatManager))
+	{
+		Cheats->HandleCommand(CommandLine);
+	}
+#endif
 }
 
 void ACL9PlayerController::SetupInputComponent()

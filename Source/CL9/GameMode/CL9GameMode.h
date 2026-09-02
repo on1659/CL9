@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "CL9GameMode.generated.h"
 
+class ACL9Item;
+
 /**
  * Base game mode. Exists on the listen host only — authoritative game-flow
  * logic goes here; state that clients need goes to the game state instead
@@ -18,7 +20,17 @@ class ACL9GameMode : public AGameModeBase
 	GENERATED_BODY()
 
 public:
+	ACL9GameMode();
+
 	virtual void SetPlayerDefaults(APawn* PlayerPawn) override;
+	virtual bool AllowCheats(APlayerController* P) override;
+
+	/**
+	 * Host only: spawns one item and runs it through the standard data path
+	 * (SetAlias → replication → LoadData). Honors the row's ActorClass column
+	 * — a dedicated BP when set, the shared item BP otherwise (docs/plan/data/README.md 규칙 2).
+	 */
+	ACL9Item* SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform);
 
 protected:
 	/**
@@ -28,4 +40,8 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category="Character")
 	FName DefaultCharacterAlias;
+
+	/** The shared item BP — used whenever a row leaves ActorClass empty */
+	UPROPERTY(EditDefaultsOnly, Category="Classes")
+	TSubclassOf<ACL9Item> ItemClass;
 };

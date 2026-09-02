@@ -1,0 +1,99 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Core/CL9ActorBase.h"
+#include "CL9Item.generated.h"
+
+class ACL9Character;
+class UCL9ItemDef;
+class USphereComponent;
+class UStaticMeshComponent;
+
+/** Whether the item lies in the world or hangs on a character */
+UENUM()
+enum class ECL9ItemHoldState : uint8
+{
+	Free,
+	Held
+};
+
+/**
+ * The one shared item actor (docs/systems/item.md). A hundred item kinds still
+ * mean one class — mesh, physics and carry rules all come from the table row,
+ * and state changes (cooked, cracked, broken) swap the SubAlias instead of
+ * spawning new actors. The host owns the physics sim and every ruling; clients
+ * interpolate replicated movement.
+ */
+UCLASS(abstract)
+class ACL9Item : public ACL9ActorBase
+{
+	GENERATED_BODY()
+
+public:
+	ACL9Item();
+
+	virtual void Tick(float DeltaSeconds) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** The row this item currently plays — null until the alias loads */
+	const UCL9ItemDef* GetItemDef() const
+	{
+		return ItemDef;
+	}
+
+	/** Free, usable and not cart-only (docs/plan/data/item/common.md 운반) */
+	bool CanBePickedUp() const;
+
+	/** True while the item lies in the world (not attached to anyone) */
+	bool IsFree() const
+	{
+		return HoldState == ECL9ItemHoldState::Free;
+	}
+
+	/** Host only: attach to the holder's capsule at the given relative spot */
+	void OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation);
+
+	/** Host only: detach and drop gently at the given world spot */
+	void OnPlaced(const FVector& WorldLocation);
+
+	/** Host only: detach and launch — impacts rule crack/break from the row thresholds */
+	void OnThrown(const FVector& Origin, const FVector& LaunchVelocity);
+
+	UStaticMeshComponent* GetMeshComponent() const
+	{
+		return MeshComponent;
+	}
+
+protected:
+	virtual void LoadData() override;
+
+	UFUNCTION()
+	void OnRep_HoldState();
+
+private:
+	/** Applies collision/sim side effects of the current hold state on this machine */
+	void ApplyHoldState();
+
+	/** Host only: crack/break transitions — swaps the SubAlias per the three thresholds */
+	void HandleImpact(float ImpactSpeed);
+
+	/** Collision sphere — the root; radius is the row's ruling value */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<USphereComponent> SphereComponent;
+
+	/** Visual mesh from the row — auto-fitted to the collision radius until real assets land */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UStaticMeshComponent> MeshComponent;
+
+	UPROPERTY()
+	TObjectPtr<const UCL9ItemDef> ItemDef;
+
+	UPROPERTY(ReplicatedUsing=OnRep_HoldState)
+	ECL9ItemHoldState HoldState = ECL9ItemHoldState::Free;
+
+	/** Host-only sim state — clients only see replicated movement */
+	FVector SimVelocity = FVector::ZeroVector;
+	bool bAtRest = false;
+};

@@ -20,6 +20,14 @@ class ACL9PlayerController : public APlayerController
 public:
 	ACL9PlayerController();
 
+	/**
+	 * Forwards a cl9.* cheat line typed on a client console to the host
+	 * (docs/systems/cheats.md). The declaration stays in every build so the
+	 * RPC table matches — only the body empties out in shipping.
+	 */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_CL9Cheat(const FString& CommandLine);
+
 protected:
 	virtual void SetupInputComponent() override;
 

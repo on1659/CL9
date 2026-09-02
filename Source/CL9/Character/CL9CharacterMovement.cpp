@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Character/CL9CharacterMovement.h"
+#include "Character/CL9Character.h"
 #include "Data/CL9CharacterDef.h"
 #include "GameFramework/Character.h"
 
@@ -16,7 +17,16 @@ float UCL9CharacterMovement::GetMaxSpeed() const
 	// Same formula on server and autonomous proxy — this is what keeps the
 	// prediction from diverging (docs/systems/character.md 달리기 패턴 4).
 	const bool bRunSpeedActive = bWantsToRun && !bExhausted;
-	return bRunSpeedActive ? CharacterDef->RunSpeed : CharacterDef->WalkSpeed;
+	float MaxSpeed = bRunSpeedActive ? CharacterDef->RunSpeed : CharacterDef->WalkSpeed;
+
+	// Cart drag rides a replicated flag so every machine derives the same
+	// speed (docs/plan/data/item/cart.md · systems/character.md 유효 무게 절).
+	const ACL9Character* CL9Owner = Cast<ACL9Character>(GetCharacterOwner());
+	if (CL9Owner != nullptr && CL9Owner->GetPullingCart() != nullptr)
+	{
+		MaxSpeed *= CharacterDef->CartMult;
+	}
+	return MaxSpeed;
 }
 
 FNetworkPredictionData_Client* UCL9CharacterMovement::GetPredictionData_Client() const

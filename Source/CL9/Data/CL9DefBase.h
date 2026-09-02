@@ -17,6 +17,16 @@ UCLASS(Abstract, EditInlineNew, DefaultToInstanced)
 class UCL9Gimmick : public UObject
 {
 	GENERATED_BODY()
+
+public:
+	/**
+	 * Presentation hook, called on every machine after the actor loads its row
+	 * (and again on state swaps — implementations must tolerate re-entry).
+	 * Never touch ruling state here: hosts rule through table values only.
+	 */
+	virtual void OnActorLoaded(AActor* Actor)
+	{
+	}
 };
 
 /**
