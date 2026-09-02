@@ -162,6 +162,13 @@ void ACL9Monster::Tick(float DeltaSeconds)
 	SmoothedLocation = FMath::VInterpTo(SmoothedLocation, GetActorLocation(), DeltaSeconds, SmoothingInterpSpeed);
 	SmoothedRotation = FMath::RInterpTo(SmoothedRotation, GetActorRotation(), DeltaSeconds, SmoothingInterpSpeed);
 	DisplaySpeed = (SmoothedLocation - PreviousSmoothed).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
+
+	// A corpse keeps the tipped pose ApplyState gave the mesh — overwriting its
+	// rotation here every frame would undo the death tilt on clients.
+	if (State == ECL9MonsterState::Dead)
+	{
+		return;
+	}
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
 	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation);
 }
