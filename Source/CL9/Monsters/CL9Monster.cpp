@@ -14,9 +14,11 @@
 #include "Character/CL9Character.h"
 #include "Character/CL9CharacterMovement.h"
 #include "Data/CL9DefRegistry.h"
+#include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
 #include "GameMode/CL9GameInstance.h"
+#include "GameMode/CL9GameMode.h"
 
 namespace
 {
@@ -38,6 +40,15 @@ namespace
 
 	/** Navmesh projection extent — bodies float Radius above the floor */
 	const FVector NavProjectExtent(500.f, 500.f, 500.f);
+
+	/** Attack pause after landing a catch, in seconds — presentation constant like the dwell above */
+	constexpr float CatchPauseSeconds = 0.8f;
+
+	/** A gaze counts as aimed at the sleeper above this view dot (docs WakeSightRadius 기상 보류) */
+	constexpr float GazeMinAimDot = 0.75f;
+
+	/** Walking counts as movement above this speed, in cm/s (goose WakeRadius trigger) */
+	constexpr float WakeMoveMinSpeed = 10.f;
 }
 
 ACL9Monster::ACL9Monster()
@@ -118,6 +129,12 @@ void ACL9Monster::LoadData()
 	if (HasAuthority() && Hp == 0)
 	{
 		Hp = FMath::RandRange(Def->HpMin, Def->HpMax);
+
+		// Sleepy species (goose) start asleep — the map spawner may override later (⑤)
+		if (Def->SleepTime > 0.f)
+		{
+			EnterState(ECL9MonsterState::Asleep);
+		}
 	}
 }
 
@@ -157,17 +174,100 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	}
 
 	ChaseCooldownRemaining = FMath::Max(ChaseCooldownRemaining - DeltaSeconds, 0.f);
-	SenseTick(DeltaSeconds);
+	CatchCooldownRemaining = FMath::Max(CatchCooldownRemaining - DeltaSeconds, 0.f);
+	AlertCooldownRemaining = FMath::Max(AlertCooldownRemaining - DeltaSeconds, 0.f);
+
+	// Rage pins the gauge for its whole run — hunt mode after a death scream
+	// bypasses ChaseCooldown and never calms down early (docs/systems/monster.md 경보).
+	if (RageRemaining > 0.f)
+	{
+		RageRemaining -= DeltaSeconds;
+		DetectGauge = 1.f;
+	}
+
+	// Sleep, the wake telegraph and stun have no working senses
+	const bool bSensesAwake = State != ECL9MonsterState::Asleep
+		&& State != ECL9MonsterState::WakeTelegraph
+		&& State != ECL9MonsterState::Stun;
+	if (bSensesAwake)
+	{
+		SenseTick(DeltaSeconds);
+	}
+
+	const bool bAlertGateOpen = ChaseCooldownRemaining <= 0.f || RageRemaining > 0.f;
 
 	switch (State)
 	{
+	case ECL9MonsterState::Asleep:
+	{
+		// Wake triggers: walking inside WakeRadius (the walking-is-silent
+		// exception), running inside HearRunRadius, or a pending alarm spot.
+		bool bTriggered = PendingInvestigateSpot.IsSet();
+		for (TActorIterator<ACL9Character> It(GetWorld()); !bTriggered && It; ++It)
+		{
+			const ACL9Character* Candidate = *It;
+			if (Candidate->IsDead())
+			{
+				continue;
+			}
+			const float Distance = FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation());
+			const float Speed = Candidate->GetVelocity().Size2D();
+			const bool bWalkWake = MonsterDef->WakeRadius > 0.f && Distance <= MonsterDef->WakeRadius && Speed > WakeMoveMinSpeed;
+			const bool bRunWake = MonsterDef->HearRunRadius > 0.f && Distance <= MonsterDef->HearRunRadius
+				&& Candidate->GetCL9CharacterMovement()->IsRunning();
+			bTriggered = bWalkWake || bRunWake;
+		}
+
+		WakeRetryRemaining = FMath::Max(WakeRetryRemaining - DeltaSeconds, 0.f);
+		if (bTriggered && WakeRetryRemaining <= 0.f)
+		{
+			TryWake();
+		}
+		break;
+	}
+
+	case ECL9MonsterState::WakeTelegraph:
+	{
+		// Every player sees the flap-and-cry before the monster is live
+		WakeTelegraphRemaining -= DeltaSeconds;
+		if (WakeTelegraphRemaining <= 0.f)
+		{
+			if (PendingInvestigateSpot.IsSet())
+			{
+				LastSensedLocation = PendingInvestigateSpot.GetValue();
+				PendingInvestigateSpot.Reset();
+				EnterState(ECL9MonsterState::Investigate);
+			}
+			else
+			{
+				EnterState(ECL9MonsterState::Wander);
+			}
+		}
+		break;
+	}
+
 	case ECL9MonsterState::Wander:
 	case ECL9MonsterState::Patrol:
 	case ECL9MonsterState::Return:
 	{
+		// Sleepy species drift back to sleep after SleepTime calm seconds
+		if (State == ECL9MonsterState::Wander && MonsterDef->SleepTime > 0.f && DetectGauge <= 0.f)
+		{
+			CalmSeconds += DeltaSeconds;
+			if (CalmSeconds >= MonsterDef->SleepTime)
+			{
+				EnterState(ECL9MonsterState::Asleep);
+				break;
+			}
+		}
+		else
+		{
+			CalmSeconds = 0.f;
+		}
+
 		// A full gauge alerts — straight to the chase when the target is in
 		// sight, to the last sensed spot otherwise (docs/systems/monster.md).
-		if (DetectGauge >= 1.f && ChaseCooldownRemaining <= 0.f)
+		if (DetectGauge >= 1.f && bAlertGateOpen)
 		{
 			EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
 			break;
@@ -203,7 +303,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 
 	case ECL9MonsterState::Investigate:
 	{
-		if (bHadSight && SensedCharacter.IsValid() && ChaseCooldownRemaining <= 0.f)
+		if (bHadSight && SensedCharacter.IsValid() && bAlertGateOpen)
 		{
 			EnterState(ECL9MonsterState::Chase);
 			break;
@@ -259,9 +359,29 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			&& !Target->IsCarryingAnything();
 
 		const bool bOutOfHome = FVector::Dist2D(GetActorLocation(), HomeLocation) > MonsterDef->HomeRange;
-		if (Target == nullptr || ChaseBudgetRemaining <= 0.f || ChaseLoseRemaining <= 0.f || bOutOfHome || bDeaggro)
+		if (Target == nullptr || Target->IsDead() || ChaseBudgetRemaining <= 0.f || ChaseLoseRemaining <= 0.f || bOutOfHome || bDeaggro)
 		{
 			EnterState(ECL9MonsterState::Break);
+			break;
+		}
+
+		// The alarmist stands and cries before the alarm lands (goose AlertWindup)
+		if (AlertWindupRemaining > 0.f)
+		{
+			AlertWindupRemaining -= DeltaSeconds;
+			if (AlertWindupRemaining <= 0.f)
+			{
+				FirePackAlarm();
+				bPackAlarmFired = true;
+				AlertCooldownRemaining = MonsterDef->AlertCooldown;
+			}
+			break;
+		}
+
+		// The catch: inside CatchRadius with the KillCooldown reloaded
+		if (MonsterDef->CatchRadius > 0.f && TargetDistance <= MonsterDef->CatchRadius && CatchCooldownRemaining <= 0.f)
+		{
+			HostCatch(*Target);
 			break;
 		}
 
@@ -272,7 +392,38 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			StartPathTo(Target->GetActorLocation());
 		}
 		MoveAlongPath(DeltaSeconds, MonsterDef->ChaseSpeed);
-		// Catching inside CatchRadius lands in 3e
+		break;
+	}
+
+	case ECL9MonsterState::Catch:
+	{
+		CatchPauseRemaining -= DeltaSeconds;
+		if (CatchPauseRemaining <= 0.f)
+		{
+			// Straight back to the chase without EnterState — the budget and
+			// lose timers keep running, a catch never refills them.
+			State = ECL9MonsterState::Chase;
+			ChaseRepathRemaining = 0.f;
+			ApplyState();
+		}
+		break;
+	}
+
+	case ECL9MonsterState::Stun:
+	{
+		StunRemaining -= DeltaSeconds;
+		if (StunRemaining <= 0.f)
+		{
+			// A hit is a provocation — the attacker gets chased, cooldown or not
+			if (SensedCharacter.IsValid() && !SensedCharacter->IsDead())
+			{
+				EnterState(ECL9MonsterState::Chase);
+			}
+			else
+			{
+				EnterState(ECL9MonsterState::Wander);
+			}
+		}
 		break;
 	}
 
@@ -287,7 +438,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	}
 
 	default:
-		// Asleep/WakeTelegraph/Stun/Dead arrive with 3e~3f
+		// Dead is guarded at the top; nothing else remains
 		break;
 	}
 }
@@ -303,6 +454,10 @@ void ACL9Monster::SenseTick(float DeltaSeconds)
 	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
 	{
 		ACL9Character* Candidate = *It;
+		if (Candidate->IsDead())
+		{
+			continue;
+		}
 		const float Distance = FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation());
 
 		const float SightRange = bHadSight ? MonsterDef->SightOut : MonsterDef->SightIn;
@@ -365,6 +520,24 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 		ChaseBudgetRemaining = MonsterDef->ChaseBudget;
 		ChaseLoseRemaining = MonsterDef->ChaseLoseTime;
 		ChaseRepathRemaining = 0.f;
+		// The first alert of an episode wakes the pack — the alarmist (goose)
+		// cries after a wind-up, everyone else alerts silently right away
+		// (docs/systems/monster.md 경보).
+		if (!bPackAlarmFired && MonsterDef->PackAlarmRadius > 0.f)
+		{
+			if (MonsterDef->bAlertsOthers)
+			{
+				if (AlertCooldownRemaining <= 0.f)
+				{
+					AlertWindupRemaining = FMath::Max(MonsterDef->AlertWindup, UE_KINDA_SMALL_NUMBER);
+				}
+			}
+			else
+			{
+				FirePackAlarm();
+				bPackAlarmFired = true;
+			}
+		}
 		break;
 	case ECL9MonsterState::Investigate:
 		SearchHopsRemaining = MonsterDef->SearchHops;
@@ -375,12 +548,25 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 		BreakRemaining = MonsterDef->ChaseBreakTime;
 		ChaseCooldownRemaining = MonsterDef->ChaseCooldown;
 		DetectGauge = 0.f;
+		bPackAlarmFired = false;
+		AlertWindupRemaining = 0.f;
 		break;
 	case ECL9MonsterState::Return:
 		StartPathTo(HomeLocation);
 		break;
 	case ECL9MonsterState::Wander:
 		WanderWaitRemaining = FMath::FRandRange(WanderDwellMin, WanderDwellMax);
+		break;
+	case ECL9MonsterState::Asleep:
+		DetectGauge = 0.f;
+		CalmSeconds = 0.f;
+		WakeRetryRemaining = 0.f;
+		break;
+	case ECL9MonsterState::WakeTelegraph:
+		WakeTelegraphRemaining = MonsterDef->WakeTelegraph;
+		break;
+	case ECL9MonsterState::Catch:
+		CatchPauseRemaining = CatchPauseSeconds;
 		break;
 	default:
 		break;
@@ -483,6 +669,220 @@ bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
 	return false;
 }
 
+void ACL9Monster::HostCatch(ACL9Character& Target)
+{
+	// One catch, then the KillCooldown reload — three quick hits must be
+	// impossible (docs/systems/monster.md 잡기 = 공격).
+	Target.OnDamage(MonsterDef->CatchDamage, this);
+	CatchCooldownRemaining = MonsterDef->KillCooldown;
+	EnterState(ECL9MonsterState::Catch);
+}
+
+void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
+{
+	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
+	{
+		return;
+	}
+
+	Hp = FMath::Max(Hp - Amount, 0);
+	if (Hp <= 0)
+	{
+		Die(Source);
+		return;
+	}
+
+	// A non-lethal hit staggers, then the attacker gets hunted
+	if (ACL9Character* Attacker = Cast<ACL9Character>(Source))
+	{
+		SensedCharacter = Attacker;
+		LastSensedLocation = Attacker->GetActorLocation();
+		bHadSight = true;
+		DetectGauge = 1.f;
+	}
+	StunRemaining = MonsterDef->HitStunMs / 1000.f;
+	EnterState(ECL9MonsterState::Stun);
+}
+
+void ACL9Monster::Die(AActor* Source)
+{
+	EnterState(ECL9MonsterState::Dead);
+	DetectGauge = 0.f;
+
+	// The hunting reward drops as items, never direct ether (docs/plan/data/monster/common.md)
+	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
+	{
+		const float FloorZ = GetActorLocation().Z - MonsterDef->Radius;
+		for (const FDropItem& Drop : MonsterDef->DropItems)
+		{
+			if (FMath::FRand() > Drop.DropChance)
+			{
+				continue;
+			}
+			const int32 Quantity = FMath::RandRange(Drop.MinQuantity, Drop.MaxQuantity);
+			for (int32 Index = 0; Index < Quantity; ++Index)
+			{
+				const FVector Sideways = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f).Vector() * FMath::FRandRange(30.f, 90.f);
+				GameMode->SpawnItem(Drop.ItemAlias, Drop.ItemSubAlias,
+					FTransform(FVector(GetActorLocation().X + Sideways.X, GetActorLocation().Y + Sideways.Y, FloorZ + 25.f)));
+			}
+		}
+	}
+
+	// The death scream: direct hearers rage for their RageTime, and the rage
+	// spreads once more through RevengeRadius/RevengeTime. Zone checks arrive
+	// with the map's zones (⑤) — the flat map is one zone.
+	TArray<ACL9Monster*> Hearers;
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		ACL9Monster* Other = *It;
+		if (Other == this || Other->State == ECL9MonsterState::Dead || Other->MonsterDef == nullptr)
+		{
+			continue;
+		}
+		if (FVector::Dist2D(GetActorLocation(), Other->GetActorLocation()) <= MonsterDef->KillAlarmRadius)
+		{
+			Hearers.Add(Other);
+		}
+	}
+	for (ACL9Monster* Hearer : Hearers)
+	{
+		Hearer->ReceiveKillAlarm(GetActorLocation(), Hearer->MonsterDef->RageTime);
+	}
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		ACL9Monster* Other = *It;
+		if (Other == this || Other->State == ECL9MonsterState::Dead || Other->MonsterDef == nullptr || Hearers.Contains(Other))
+		{
+			continue;
+		}
+		for (const ACL9Monster* Hearer : Hearers)
+		{
+			if (FVector::Dist2D(Hearer->GetActorLocation(), Other->GetActorLocation()) <= Hearer->MonsterDef->RevengeRadius)
+			{
+				Other->ReceiveKillAlarm(GetActorLocation(), Other->MonsterDef->RevengeTime);
+				break;
+			}
+		}
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("'%s' (%s) died to '%s' — kill alarm reached %d monsters."),
+		*GetNameSafe(this), *GetAlias().ToString(), *GetNameSafe(Source), Hearers.Num());
+}
+
+void ACL9Monster::FirePackAlarm()
+{
+	const FVector AlarmSpot = SensedCharacter.IsValid() ? LastSensedLocation : GetActorLocation();
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		ACL9Monster* Other = *It;
+		if (Other == this || Other->State == ECL9MonsterState::Dead || Other->MonsterDef == nullptr)
+		{
+			continue;
+		}
+		if (FVector::Dist2D(GetActorLocation(), Other->GetActorLocation()) <= MonsterDef->PackAlarmRadius)
+		{
+			Other->ReceivePackAlarm(AlarmSpot);
+		}
+	}
+}
+
+void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
+{
+	if (!HasAuthority() || MonsterDef == nullptr)
+	{
+		return;
+	}
+
+	switch (State)
+	{
+	case ECL9MonsterState::Asleep:
+		PendingInvestigateSpot = AlarmLocation;
+		break;
+	case ECL9MonsterState::Wander:
+	case ECL9MonsterState::Patrol:
+	case ECL9MonsterState::Return:
+		// 경보는 새 경계 — ChaseCooldown still gates it (docs/systems/monster.md)
+		if (ChaseCooldownRemaining <= 0.f)
+		{
+			LastSensedLocation = AlarmLocation;
+			EnterState(ECL9MonsterState::Investigate);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds)
+{
+	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
+	{
+		return;
+	}
+
+	RageRemaining = FMath::Max(RageRemaining, HuntSeconds);
+	DetectGauge = 1.f;
+	LastSensedLocation = DeathLocation;
+
+	switch (State)
+	{
+	case ECL9MonsterState::Asleep:
+		PendingInvestigateSpot = DeathLocation;
+		break;
+	case ECL9MonsterState::Wander:
+	case ECL9MonsterState::Patrol:
+	case ECL9MonsterState::Return:
+	case ECL9MonsterState::Break:
+	case ECL9MonsterState::Investigate:
+		// Rage ignores ChaseCooldown by design (경보 문서: 쿨다운은 만능 방패가 아니다)
+		EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
+		break;
+	default:
+		break;
+	}
+}
+
+void ACL9Monster::TryWake()
+{
+	// A watched sleeper stays down — no waking inside a player's gaze
+	// (WakeSightRadius, retried every WakeRetryTime).
+	if (IsHeldByGaze())
+	{
+		WakeRetryRemaining = MonsterDef->WakeRetryTime;
+		return;
+	}
+	EnterState(ECL9MonsterState::WakeTelegraph);
+}
+
+bool ACL9Monster::IsHeldByGaze() const
+{
+	if (MonsterDef->WakeSightRadius <= 0.f)
+	{
+		return false;
+	}
+
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		const ACL9Character* Candidate = *It;
+		if (Candidate->IsDead())
+		{
+			continue;
+		}
+		if (FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation()) > MonsterDef->WakeSightRadius)
+		{
+			continue;
+		}
+		const FVector ToMonster = (GetActorLocation() - Candidate->GetActorLocation()).GetSafeNormal();
+		if (FVector::DotProduct(Candidate->GetBaseAimRotation().Vector(), ToMonster) >= GazeMinAimDot
+			&& HasLineOfSight(*Candidate))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void ACL9Monster::OnRep_State()
 {
 	ApplyState();
@@ -490,6 +890,14 @@ void ACL9Monster::OnRep_State()
 
 void ACL9Monster::ApplyState()
 {
-	// Animation and sound switch here once presentation lands (3e~) — the
-	// replicated state is the subscription point (docs/systems/animation.md).
+	// The replicated state is the subscription point for presentation
+	// (docs/systems/animation.md). Until species ABPs grow death/stun states,
+	// a corpse freezes its pose and tips onto its side — readable on every
+	// machine without a single animation asset.
+	if (MeshComponent != nullptr)
+	{
+		const bool bDead = State == ECL9MonsterState::Dead;
+		MeshComponent->GlobalAnimRateScale = bDead ? 0.f : 1.f;
+		MeshComponent->SetRelativeRotation(bDead ? FRotator(0.f, 0.f, 90.f) : FRotator::ZeroRotator);
+	}
 }

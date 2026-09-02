@@ -32,6 +32,9 @@ public:
 	/** cl9.addmonster <alias|번호> [수량] — spawns monsters ahead, AI live immediately */
 	void AddMonster(const TArray<FString>& Args);
 
+	/** cl9.hitmonster [데미지] — damages the nearest monster (kill alarm/stun testing until the pan lands in ④) */
+	void HitMonster(const TArray<FString>& Args);
+
 	/** cl9.list <items|monsters|characters> — numbered rows plus broken ones with reasons */
 	void ListDefs(const TArray<FString>& Args);
 

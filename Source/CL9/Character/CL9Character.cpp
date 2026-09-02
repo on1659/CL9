@@ -75,6 +75,14 @@ void ACL9Character::SetCharacterAlias(FName NewAlias)
 
 	CharacterAlias = NewAlias;
 	ApplyCharacterDef();
+
+	// The individual's HP rolls once, on the host (docs/systems/character.md —
+	// HP lives on the PlayerState, never the character).
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (CL9PlayerState != nullptr && CL9PlayerState->Hp == 0 && CharacterDef != nullptr)
+	{
+		CL9PlayerState->Hp = FMath::RandRange(CharacterDef->HpMin, CharacterDef->HpMax);
+	}
 }
 
 UCL9CharacterMovement* ACL9Character::GetCL9CharacterMovement() const
@@ -89,6 +97,7 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, CharacterAlias);
 	DOREPLIFETIME(ACL9Character, HeldItem);
 	DOREPLIFETIME(ACL9Character, PullingCart);
+	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
 }
 
 void ACL9Character::OnRep_CharacterAlias()
@@ -552,6 +561,89 @@ bool ACL9Character::IsCarryingAnything() const
 	}
 	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
 	return CL9PlayerState != nullptr && (CL9PlayerState->IsHandFull() || CL9PlayerState->PocketItems.Num() > 0);
+}
+
+void ACL9Character::OnDamage(int32 Amount, AActor* Source)
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr || CL9PlayerState->Hp <= 0)
+	{
+		return;
+	}
+
+	CL9PlayerState->Hp = FMath::Max(CL9PlayerState->Hp - Amount, 0);
+	HostDropEverything();
+
+	// Down and unable to move; HP 0 stays down until 4a brings spectate
+	// (docs/systems/character.md 피격·넘어짐·죽음).
+	const float Duration = CL9PlayerState->Hp > 0
+		? (CharacterDef ? CharacterDef->KnockdownTime : 1.5f)
+		: TNumericLimits<float>::Max();
+	KnockdownEndServerTime = GetServerTime() + Duration;
+
+	UE_LOG(LogCL9, Log, TEXT("'%s' caught by '%s': -%d HP → %d%s"),
+		*GetNameSafe(this), *GetNameSafe(Source), Amount, CL9PlayerState->Hp,
+		CL9PlayerState->Hp <= 0 ? TEXT(" (down for good — 관전은 4a)") : TEXT(""));
+}
+
+bool ACL9Character::IsKnockedDown() const
+{
+	return GetServerTime() < KnockdownEndServerTime;
+}
+
+bool ACL9Character::IsDead() const
+{
+	// Hp starts 0 until the alias applies and rolls it — only a rolled 0 is death
+	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
+	return CL9PlayerState != nullptr && CL9PlayerState->Hp <= 0 && CharacterDef != nullptr;
+}
+
+void ACL9Character::HostDropEverything()
+{
+	const UCL9RulesDef* Rules = GetRules();
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (Rules == nullptr || CL9PlayerState == nullptr)
+	{
+		return;
+	}
+
+	if (PullingCart != nullptr)
+	{
+		PullingCart->StopPull(this);
+	}
+
+	// Spill at ankle height with a small sideways shove — real physics takes it
+	// from there, and the low origin keeps fragile items under CrackSpeed so a
+	// catch scatters the load instead of smashing all of it.
+	ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>();
+	const float FloorZ = GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+	auto Spill = [&](ACL9Item* Item)
+	{
+		const float ItemRadius = Item->GetItemDef() ? Item->GetItemDef()->Radius : 20.f;
+		const FVector Sideways = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f).Vector();
+		const FVector Origin(GetActorLocation().X, GetActorLocation().Y, FloorZ + ItemRadius + 10.f);
+		Item->OnThrown(Origin + Sideways * (GetCapsuleComponent()->GetScaledCapsuleRadius() + ItemRadius + 5.f),
+			Sideways * FMath::FRandRange(120.f, 240.f));
+	};
+
+	if (HeldItem != nullptr)
+	{
+		ACL9Item* Dropped = HeldItem;
+		HeldItem = nullptr;
+		CL9PlayerState->HandItem = FCL9CarriedItem();
+		Dropped->SetOwner(nullptr);
+		Spill(Dropped);
+	}
+
+	while (CL9PlayerState->PocketItems.Num() > 0 && GameMode != nullptr)
+	{
+		const FCL9CarriedItem Pocketed = CL9PlayerState->PocketItems.Pop();
+		if (ACL9Item* Spawned = GameMode->SpawnItem(Pocketed.ItemAlias, Pocketed.ItemSubAlias, FTransform(GetActorLocation())))
+		{
+			Spill(Spawned);
+		}
+	}
 }
 
 const UCL9RulesDef* ACL9Character::GetRules() const

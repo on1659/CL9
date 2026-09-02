@@ -2,6 +2,7 @@
 
 #include "GameMode/CL9CheatManager.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "CL9.h"
@@ -11,6 +12,7 @@
 #include "Data/CL9MonsterDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "Monsters/CL9Monster.h"
 
 void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 {
@@ -32,6 +34,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("addmonster"))
 	{
 		AddMonster(Tokens);
+	}
+	else if (Command == TEXT("hitmonster"))
+	{
+		HitMonster(Tokens);
 	}
 	else if (Command == TEXT("list"))
 	{
@@ -114,6 +120,38 @@ void UCL9CheatManager::AddMonster(const TArray<FString>& Args)
 		const FVector Location = Pawn->GetActorLocation() + Forward * 300.f + Side;
 		GameMode->SpawnMonster(Def->Alias, Def->SubAlias, FTransform(FVector(Location.X, Location.Y, FloorZ + Def->Radius + 5.f)));
 	}
+}
+
+void UCL9CheatManager::HitMonster(const TArray<FString>& Args)
+{
+	APlayerController* Controller = GetOuterAPlayerController();
+	APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
+	if (Pawn == nullptr || !Pawn->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.hitmonster: needs a pawn on the host."));
+		return;
+	}
+
+	ACL9Monster* Nearest = nullptr;
+	float NearestDistance = TNumericLimits<float>::Max();
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		const float Distance = FVector::Dist2D(Pawn->GetActorLocation(), It->GetActorLocation());
+		if (It->GetState() != ECL9MonsterState::Dead && Distance < NearestDistance)
+		{
+			Nearest = *It;
+			NearestDistance = Distance;
+		}
+	}
+	if (Nearest == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.hitmonster: no living monster."));
+		return;
+	}
+
+	const int32 Damage = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
+	Nearest->OnDamage(Damage, Pawn);
+	UE_LOG(LogCL9, Log, TEXT("cl9.hitmonster: -%d on '%s' (%.0fcm away)."), Damage, *GetNameSafe(Nearest), NearestDistance);
 }
 
 void UCL9CheatManager::ListDefs(const TArray<FString>& Args)

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Core/CL9ActorBase.h"
+#include "Core/CL9Damageable.h"
 #include "CL9Monster.generated.h"
 
 class ACL9Character;
@@ -24,6 +25,8 @@ enum class ECL9MonsterState : uint8
 	Patrol,
 	Investigate,
 	Chase,
+	/** Brief attack pause after landing a catch — presentation hook, then back to Chase */
+	Catch,
 	Break,
 	Return,
 	Stun,
@@ -45,7 +48,7 @@ enum class ECL9MonsterState : uint8
  * gauge with sight means Chase, without sight Investigate.
  */
 UCLASS(abstract)
-class ACL9Monster : public ACL9ActorBase
+class ACL9Monster : public ACL9ActorBase, public ICL9Damageable
 {
 	GENERATED_BODY()
 
@@ -81,6 +84,21 @@ public:
 		return DisplaySpeed;
 	}
 
+	/** Host only (docs/systems/monster.md): HP down, HitStun stagger, death with alarms */
+	virtual void OnDamage(int32 Amount, AActor* Source) override;
+
+	/**
+	 * Host only: an alert spot arrives from a pack mate or a goose cry — sleepers
+	 * wake, idle ones investigate. ChaseCooldown still gates it (경보는 새 경계).
+	 */
+	void ReceivePackAlarm(const FVector& AlarmLocation);
+
+	/**
+	 * Host only: a death scream within KillAlarmRadius — RageTime hunt mode,
+	 * which ChaseCooldown never blocks (docs/systems/monster.md 경보).
+	 */
+	void ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds);
+
 protected:
 	virtual void LoadData() override;
 
@@ -106,6 +124,21 @@ private:
 
 	/** Host only: picks a reachable point near home and paths to it */
 	void StartNewWander();
+
+	/** Host only: lands the catch — OnDamage on the target, KillCooldown reload, Catch pause */
+	void HostCatch(ACL9Character& Target);
+
+	/** Host only: death — DropItems scatter, kill alarm, revenge spread, Dead state */
+	void Die(AActor* Source);
+
+	/** Host only: alerts pack mates inside PackAlarmRadius toward the sensed spot */
+	void FirePackAlarm();
+
+	/** Host only: leaves Asleep through the WakeTelegraph unless a gaze holds it */
+	void TryWake();
+
+	/** True while any player inside WakeSightRadius aims at this monster with line of sight */
+	bool IsHeldByGaze() const;
 
 	/** Host only: paths to a world location (projected onto the navmesh); false when unreachable */
 	bool StartPathTo(const FVector& WorldLocation);
@@ -159,6 +192,28 @@ private:
 	float ChaseCooldownRemaining = 0.f;
 	int32 SearchHopsRemaining = 0;
 	float SearchDwellRemaining = 0.f;
+
+	// -- 3e~3g host state: catch, stun, alarms, sleep --
+
+	/** KillCooldown reload — no second catch until it drains */
+	float CatchCooldownRemaining = 0.f;
+	float CatchPauseRemaining = 0.f;
+	float StunRemaining = 0.f;
+
+	/** RageTime hunt mode after a death scream — pins the gauge, bypasses ChaseCooldown */
+	float RageRemaining = 0.f;
+
+	/** Goose cry: wind-up before the alarm lands, then AlertCooldown between cries */
+	float AlertWindupRemaining = 0.f;
+	float AlertCooldownRemaining = 0.f;
+	bool bPackAlarmFired = false;
+
+	/** Sleepy species (SleepTime > 0): calm seconds accumulated toward re-sleep */
+	float CalmSeconds = 0.f;
+	float WakeTelegraphRemaining = 0.f;
+	float WakeRetryRemaining = 0.f;
+	/** Where to investigate right after waking (alarm wakes); unset = plain wander */
+	TOptional<FVector> PendingInvestigateSpot;
 
 	// -- Presentation state (every machine) --
 

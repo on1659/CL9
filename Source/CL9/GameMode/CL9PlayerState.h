@@ -32,6 +32,10 @@ public:
 		return ServerTimeNow < SwapLockUntil;
 	}
 
+	/** Rolled once at spawn from the character row's HpMin..HpMax; host-only writes. 0 = dead */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Health")
+	int32 Hp = 0;
+
 	/** What the hand holds — mirror of the attached item actor (None when empty) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Carry")
 	FCL9CarriedItem HandItem;

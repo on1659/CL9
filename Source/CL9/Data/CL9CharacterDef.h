@@ -102,6 +102,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
 	float HurtStun = 0.35f;
 
+	/** Seconds a catch keeps the character down and unable to move (초안 — docs/plan/data/character.md) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
+	float KnockdownTime = 1.5f;
+
 	// -- Stamina (0..1 normalized; the three clauses in docs/systems/character.md all hang on these) --
 
 	/** Seconds from full to empty while running */

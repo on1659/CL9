@@ -122,7 +122,9 @@ class ICL9Damageable {
 - HP는 PlayerState의 int (기본 3 — 값의 문제, character.md). 잡히면 `CatchDamage`만큼
   OnDamage로 깎이고 `HurtStun`(0.35초) 비틀 + 넘어짐 + **짐 흘림(손+품 전부 — 초안)** —
   판정은 호스트, 표현은 OnRep/Multicast
-- 넘어짐 동안 이동 불가 (CMC 모드 전환 또는 입력 차단 — 구현 선택)
+- 넘어짐 동안 이동 불가 — CMC 최대 속도 0 방식으로 확정 (Replicated
+  `KnockdownEndServerTime`을 양쪽 CMC가 읽는다; `KnockdownTime` 캐릭터 표 컬럼 —
+  2026-09-03 decisions.md)
 - HP 0 → 사망 → `SpectateDelay` 뒤 관전 ([ui.md](ui.md)) — 회복 채널은 트럭 패드
 - 트럭 패드 회복: `TruckPadHealTime` (미정 — rules.md)
 
@@ -148,7 +150,6 @@ class ICL9Damageable {
 ## 미결
 
 - 무게→감속 식과 값 (전역 시스템 몫 — 로드 검사에 최대 무게 기준으로 들어가야 함)
-- 넘어짐의 이동 차단 방식 (CMC 커스텀 모드 vs 입력 차단)
 - 관전 카메라 상세 (동료 1인칭 승계 — 초안)
 - 낙하 데미지 유무 — 어느 문서에도 정의가 없다 (①에서 정한다. 없다면 그것도 명시)
 - 먹기 입력 — 요리를 먹는 행위의 IA가 input.md 표에 없다 (요리 버프는 있는데 입력이 미정)

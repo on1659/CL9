@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/CL9Damageable.h"
 #include "GameFramework/Character.h"
 #include "CL9Character.generated.h"
 
@@ -27,7 +28,7 @@ struct FInputActionValue;
  * functions on the unowned item actors (docs/systems/input.md 상호작용 틀).
  */
 UCLASS(abstract)
-class ACL9Character : public ACharacter
+class ACL9Character : public ACharacter, public ICL9Damageable
 {
 	GENERATED_BODY()
 
@@ -70,6 +71,20 @@ public:
 
 	/** Hand, pocket or cart — anything at all; empty hands release chases at DeaggroRadius */
 	bool IsCarryingAnything() const;
+
+	/**
+	 * Host only (docs/systems/character.md 피격·넘어짐): HP down, knockdown,
+	 * spill of hand + pocket. HP 0 stays down — spectate arrives in 4a.
+	 */
+	virtual void OnDamage(int32 Amount, AActor* Source) override;
+
+	/** True while the catch knockdown blocks movement — the CMC reads this for speed 0 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool IsKnockedDown() const;
+
+	/** HP 0 on the PlayerState — monsters skip dead targets */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool IsDead() const;
 
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
@@ -182,6 +197,9 @@ private:
 	/** What the local player currently aims at (highlight bookkeeping) */
 	TWeakObjectPtr<AActor> FocusedActor;
 
+	/** Host only: spills hand and pocket onto the floor and lets go of the cart (잡힘 짐 흘림) */
+	void HostDropEverything();
+
 	/** Host only: attaches the item to this character's hand spot and mirrors it */
 	void HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules);
 
@@ -209,6 +227,15 @@ private:
 
 	/** Host clock when the current throw charge began; negative when idle */
 	float ThrowChargeStartTime = -1.f;
+
+	/**
+	 * Server time until which the knockdown pins the character (0 = up). A
+	 * replicated read for the CMC like CartMult — both sides derive speed 0 from
+	 * the same value, so the correction stays small (docs/systems/character.md
+	 * 넘어짐 이동 차단 — CMC 최대 속도 0 방식 선택, 2026-09-03).
+	 */
+	UPROPERTY(Replicated)
+	float KnockdownEndServerTime = 0.f;
 
 	/** First person camera, attached to the capsule at eye height */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))

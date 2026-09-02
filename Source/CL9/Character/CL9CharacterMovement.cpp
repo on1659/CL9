@@ -26,6 +26,13 @@ float UCL9CharacterMovement::GetMaxSpeed() const
 	{
 		MaxSpeed *= CharacterDef->CartMult;
 	}
+
+	// Knockdown pins the character — the replicated end time makes server and
+	// autonomous proxy agree on the zero (docs/systems/character.md 넘어짐).
+	if (CL9Owner != nullptr && CL9Owner->IsKnockedDown())
+	{
+		MaxSpeed = 0.f;
+	}
 	return MaxSpeed;
 }
 
