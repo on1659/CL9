@@ -14,6 +14,7 @@ class UCL9CharacterDef;
 class UCL9CharacterMovement;
 class UCL9RulesDef;
 class UInputAction;
+class UMaterialInterface;
 struct FInputActionValue;
 
 /**
@@ -67,9 +68,6 @@ public:
 	/** Host only: detaches the held item from the mirrors and hands the actor over (cart loading) */
 	ACL9Item* HostTakeHeldItem();
 
-	/** Host only: puts an item actor into an empty hand (cart unloading) */
-	void HostReceiveItem(ACL9Item* Item);
-
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
 
@@ -84,6 +82,8 @@ public:
 	{
 		return FirstPersonCameraComponent;
 	}
+
+	virtual void Tick(float DeltaSeconds) override;
 
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -160,7 +160,25 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SwapAction;
 
+	/** Overlay drawn on whatever the aim would interact with — assigned in the BP child */
+	UPROPERTY(EditAnywhere, Category="Interaction")
+	TObjectPtr<UMaterialInterface> HighlightOverlayMaterial;
+
 private:
+	/**
+	 * The one target the interaction key would act on: candidates inside
+	 * PickRadius and roughly ahead, pickable items before interactables, ties
+	 * to the aim (docs/systems/input.md 감지). Runs locally every frame for
+	 * the highlight and again on the host for the ruling.
+	 */
+	AActor* ResolveFocus() const;
+
+	/** Presentation only: toggles the overlay material on the target's mesh */
+	void SetFocusHighlight(AActor* Target, bool bOn) const;
+
+	/** What the local player currently aims at (highlight bookkeeping) */
+	TWeakObjectPtr<AActor> FocusedActor;
+
 	/** Host only: attaches the item to this character's hand spot and mirrors it */
 	void HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules);
 

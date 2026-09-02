@@ -6,6 +6,7 @@
 #include "Character/CL9CharacterMovement.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
@@ -13,6 +14,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameStateBase.h"
 #include "InputActionValue.h"
+#include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "CL9.h"
 #include "Core/CL9Interactable.h"
@@ -26,6 +28,12 @@
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
+
+namespace
+{
+	/** Focus candidates must be at least this far into the view (dot against the aim) */
+	constexpr float FocusMinAimDot = 0.3f;
+}
 
 ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCL9CharacterMovement>(ACharacter::CharacterMovementComponentName))
@@ -207,6 +215,103 @@ void ACL9Character::SwapInput()
 	Server_Swap();
 }
 
+AActor* ACL9Character::ResolveFocus() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr)
+	{
+		return nullptr;
+	}
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+	ObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(CL9Focus), false, this);
+	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity,
+		ObjectParams, FCollisionShape::MakeSphere(Rules->PickRadius), QueryParams);
+
+	const FVector AimDirection = GetControlRotation().Vector();
+	const bool bHandsBusy = HeldItem != nullptr || PullingCart != nullptr;
+	AActor* BestItem = nullptr;
+	float BestItemDot = -2.f;
+	AActor* BestInteractable = nullptr;
+	float BestInteractableDot = -2.f;
+
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		AActor* Actor = Overlap.GetActor();
+		if (Actor == nullptr || Actor == HeldItem || Actor == PullingCart)
+		{
+			continue;
+		}
+		const float AimDot = FVector::DotProduct(AimDirection, (Actor->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+		if (AimDot < FocusMinAimDot)
+		{
+			continue;
+		}
+
+		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp())
+		{
+			if (!bHandsBusy && AimDot > BestItemDot)
+			{
+				BestItem = Actor;
+				BestItemDot = AimDot;
+			}
+			// An item never doubles as an interactable candidate unless it
+			// implements the interface (the cart does).
+			if (Cast<ICL9Interactable>(Actor) == nullptr)
+			{
+				continue;
+			}
+		}
+		if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Actor); Interactable != nullptr && Interactable->CanInteract(this))
+		{
+			if (AimDot > BestInteractableDot)
+			{
+				BestInteractable = Actor;
+				BestInteractableDot = AimDot;
+			}
+		}
+	}
+
+	return BestItem != nullptr ? BestItem : BestInteractable;
+}
+
+void ACL9Character::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// Aim highlight is purely local presentation — the same resolver runs on
+	// the host when the key lands, so the outline shows exactly what E will do.
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	AActor* NewFocus = ResolveFocus();
+	if (NewFocus != FocusedActor.Get())
+	{
+		if (AActor* OldFocus = FocusedActor.Get())
+		{
+			SetFocusHighlight(OldFocus, false);
+		}
+		if (NewFocus != nullptr)
+		{
+			SetFocusHighlight(NewFocus, true);
+		}
+		FocusedActor = NewFocus;
+	}
+}
+
+void ACL9Character::SetFocusHighlight(AActor* Target, bool bOn) const
+{
+	if (UStaticMeshComponent* TargetMesh = Target->FindComponentByClass<UStaticMeshComponent>())
+	{
+		TargetMesh->SetOverlayMaterial(bOn ? HighlightOverlayMaterial.Get() : nullptr);
+	}
+}
+
 void ACL9Character::Server_PickPlace_Implementation()
 {
 	const UCL9RulesDef* Rules = GetRules();
@@ -220,67 +325,35 @@ void ACL9Character::Server_PickPlace_Implementation()
 		return;
 	}
 
-	// Detection: everything within PickRadius, ranked toward the aim — the
-	// host redoes it and never trusts client results (docs/systems/input.md).
-	TArray<FOverlapResult> Overlaps;
-	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-	ObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
-	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(CL9PickPlace), false, this);
-	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity,
-		ObjectParams, FCollisionShape::MakeSphere(Rules->PickRadius), QueryParams);
+	// One key, one target: whatever the aim resolves to — the host re-runs
+	// the same resolver and never trusts the client (docs/systems/input.md).
+	AActor* Focus = ResolveFocus();
 
-	const FVector AimDirection = GetControlRotation().Vector();
-	ACL9Item* BestItem = nullptr;
-	float BestItemDot = -2.f;
-	ICL9Interactable* BestInteractable = nullptr;
-	float BestInteractableDot = -2.f;
-
-	for (const FOverlapResult& Overlap : Overlaps)
+	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
+		&& HeldItem == nullptr && PullingCart == nullptr)
 	{
-		AActor* Actor = Overlap.GetActor();
-		if (Actor == nullptr)
+		// Taking an item off a cart bed is the same press as off the ground.
+		if (ACL9Cart* BedCart = Cast<ACL9Cart>(Item->GetAttachParentActor()))
 		{
-			continue;
+			BedCart->RemoveLoadedItem(Item);
 		}
-		const float AimDot = FVector::DotProduct(AimDirection, (Actor->GetActorLocation() - GetActorLocation()).GetSafeNormal());
-
-		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp() && !CL9PlayerState->IsHandFull())
-		{
-			if (AimDot > BestItemDot)
-			{
-				BestItem = Item;
-				BestItemDot = AimDot;
-			}
-			continue;
-		}
-		if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Actor); Interactable != nullptr && Interactable->CanInteract(this))
-		{
-			if (AimDot > BestInteractableDot)
-			{
-				BestInteractable = Interactable;
-				BestInteractableDot = AimDot;
-			}
-		}
+		HostPickUp(Item, Rules);
+		return;
+	}
+	if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Focus); Interactable != nullptr && Interactable->CanInteract(this))
+	{
+		Interactable->Interact(this);
+		return;
 	}
 
-	if (BestItem != nullptr)
-	{
-		HostPickUp(BestItem, Rules);
-	}
-	else if (BestInteractable != nullptr)
-	{
-		BestInteractable->Interact(this);
-	}
-	else if (CL9PlayerState->IsHandFull())
+	// Nothing aimed: a full hand sets its item down, a bare hand lets go of
+	// the cart (it hangs behind the view, so it can never be aimed at).
+	if (HeldItem != nullptr)
 	{
 		HostPlaceHeld(Rules);
 	}
 	else if (PullingCart != nullptr)
 	{
-		// A pulled cart hangs behind the view with collision off, so the
-		// overlap scan can never see it — a bare-handed E in the open is the
-		// release gesture.
 		PullingCart->StopPull(this);
 	}
 }
@@ -336,23 +409,10 @@ void ACL9Character::Server_Swap_Implementation()
 		return;
 	}
 
-	// While pulling, the swap key trades with the cart bed instead of the
-	// pocket (2026-09-02 적재 규칙 — docs/plan/data/item/cart.md).
+	// Hands are exclusive: pulling a cart occupies them, so no pocket juggling
+	// mid-pull (2026-09-02 상호작용 통합).
 	if (PullingCart != nullptr)
 	{
-		if (HeldItem != nullptr)
-		{
-			PullingCart->LoadItem(this);
-		}
-		else if (PullingCart->HasLoadedItems())
-		{
-			PullingCart->UnloadLastTo(this);
-		}
-		else
-		{
-			return;
-		}
-		CL9PlayerState->SwapLockUntil = Now + Rules->SwapTime;
 		return;
 	}
 
@@ -481,19 +541,6 @@ ACL9Item* ACL9Character::HostTakeHeldItem()
 		CL9PlayerState->HandItem = FCL9CarriedItem();
 	}
 	return Taken;
-}
-
-void ACL9Character::HostReceiveItem(ACL9Item* Item)
-{
-	if (!HasAuthority() || HeldItem != nullptr || Item == nullptr)
-	{
-		return;
-	}
-
-	if (const UCL9RulesDef* Rules = GetRules())
-	{
-		HostPickUp(Item, Rules);
-	}
 }
 
 const UCL9RulesDef* ACL9Character::GetRules() const

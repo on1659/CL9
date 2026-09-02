@@ -84,7 +84,9 @@ void ACL9Item::LoadData()
 
 bool ACL9Item::CanBePickedUp() const
 {
-	return HoldState == ECL9ItemHoldState::Free
+	// Items on a cart bed stay pickable — taking one off the bed is the same
+	// aim-and-press as picking it off the ground (2026-09-02 상호작용 통합).
+	return (HoldState == ECL9ItemHoldState::Free || HoldState == ECL9ItemHoldState::OnCart)
 		&& ItemDef != nullptr
 		&& ItemDef->CarrySlot != ECL9CarrySlot::CartOnly;
 }
@@ -112,7 +114,7 @@ void ACL9Item::OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation)
 		return;
 	}
 
-	HoldState = ECL9ItemHoldState::Held;
+	HoldState = ECL9ItemHoldState::OnCart;
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = true;
 	ApplyHoldState();
@@ -219,6 +221,7 @@ void ACL9Item::OnRep_HoldState()
 void ACL9Item::ApplyHoldState()
 {
 	// Held items ride the holder's capsule — their own collision would push
-	// the holder around, so it goes dark until they return to the world.
-	SetActorEnableCollision(HoldState == ECL9ItemHoldState::Free);
+	// the holder around, so it goes dark. Cart-bed items keep query collision
+	// so the aim detection can still find them.
+	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held);
 }

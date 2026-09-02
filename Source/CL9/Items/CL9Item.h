@@ -11,12 +11,14 @@ class UCL9ItemDef;
 class USphereComponent;
 class UStaticMeshComponent;
 
-/** Whether the item lies in the world or hangs on a character */
+/** Whether the item lies in the world, hangs on a character, or rides a cart bed */
 UENUM()
 enum class ECL9ItemHoldState : uint8
 {
 	Free,
-	Held
+	Held,
+	/** On a cart bed — no physics, but still aimable and pickable */
+	OnCart
 };
 
 /**

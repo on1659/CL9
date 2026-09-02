@@ -16,10 +16,10 @@ class ACL9GameState;
  * puller's speed by the character row's CartMult inside the predicted movement
  * path.
  *
- * Loading (2026-09-02 적재 규칙): the puller's swap key moves the hand item
- * onto the cart bed and back — no cap, matching the no-weight-cap philosophy
- * (slowdown arrives with the weight formula). A jar return empties the whole
- * bed at once.
+ * One interaction key drives everything (2026-09-02): aim the cart bare-handed
+ * to pull, aim it while holding to load, aim a bed item to take it back. Hands
+ * are exclusive — pulling and holding never coexist. A jar return empties the
+ * whole bed at once. No load cap (matches the no-weight-cap philosophy).
  */
 UCLASS(abstract)
 class ACL9Cart : public ACL9Item, public ICL9Interactable
@@ -39,8 +39,8 @@ public:
 	/** Host only: moves the puller's hand item onto the bed */
 	void LoadItem(ACL9Character* Who);
 
-	/** Host only: puts the most recently loaded item back into an empty hand */
-	void UnloadLastTo(ACL9Character* Who);
+	/** Host only: forgets a bed item that someone picked off, and closes the gap */
+	void RemoveLoadedItem(ACL9Item* Item);
 
 	/** Host only: records every loaded item as returned and destroys the actors (항아리 수레째 반납) */
 	void ReturnAllLoaded(ACL9GameState* GameState);
@@ -53,6 +53,9 @@ public:
 private:
 	/** Bed spot for the Nth loaded item, relative to the cart root */
 	FVector GetLoadSlotLocation(int32 Index, float ItemRadius) const;
+
+	/** Re-seats every bed item into its slot (after a removal opened a gap) */
+	void RelayoutLoadedItems();
 
 	/** Items riding the bed, oldest first — attached actors, truth in the world */
 	UPROPERTY(Replicated)
