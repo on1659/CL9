@@ -276,6 +276,13 @@ void ACL9Character::Server_PickPlace_Implementation()
 	{
 		HostPlaceHeld(Rules);
 	}
+	else if (PullingCart != nullptr)
+	{
+		// A pulled cart hangs behind the view with collision off, so the
+		// overlap scan can never see it — a bare-handed E in the open is the
+		// release gesture.
+		PullingCart->StopPull(this);
+	}
 }
 
 void ACL9Character::Server_ThrowChargeStart_Implementation()
@@ -326,6 +333,26 @@ void ACL9Character::Server_Swap_Implementation()
 	const float Now = GetServerTime();
 	if (CL9PlayerState->IsSwapLocked(Now))
 	{
+		return;
+	}
+
+	// While pulling, the swap key trades with the cart bed instead of the
+	// pocket (2026-09-02 적재 규칙 — docs/plan/data/item/cart.md).
+	if (PullingCart != nullptr)
+	{
+		if (HeldItem != nullptr)
+		{
+			PullingCart->LoadItem(this);
+		}
+		else if (PullingCart->HasLoadedItems())
+		{
+			PullingCart->UnloadLastTo(this);
+		}
+		else
+		{
+			return;
+		}
+		CL9PlayerState->SwapLockUntil = Now + Rules->SwapTime;
 		return;
 	}
 
@@ -436,6 +463,36 @@ void ACL9Character::HostConsumeHeldItem()
 	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
 	{
 		CL9PlayerState->HandItem = FCL9CarriedItem();
+	}
+}
+
+ACL9Item* ACL9Character::HostTakeHeldItem()
+{
+	if (!HasAuthority() || HeldItem == nullptr)
+	{
+		return nullptr;
+	}
+
+	ACL9Item* Taken = HeldItem;
+	HeldItem = nullptr;
+	Taken->SetOwner(nullptr);
+	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
+	{
+		CL9PlayerState->HandItem = FCL9CarriedItem();
+	}
+	return Taken;
+}
+
+void ACL9Character::HostReceiveItem(ACL9Item* Item)
+{
+	if (!HasAuthority() || HeldItem != nullptr || Item == nullptr)
+	{
+		return;
+	}
+
+	if (const UCL9RulesDef* Rules = GetRules())
+	{
+		HostPickUp(Item, Rules);
 	}
 }
 

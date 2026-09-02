@@ -105,6 +105,22 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation
 	SetActorRelativeLocation(RelativeLocation);
 }
 
+void ACL9Item::OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	HoldState = ECL9ItemHoldState::Held;
+	SimVelocity = FVector::ZeroVector;
+	bAtRest = true;
+	ApplyHoldState();
+
+	AttachToComponent(Cart->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	SetActorRelativeLocation(RelativeLocation);
+}
+
 void ACL9Item::OnPlaced(const FVector& WorldLocation)
 {
 	if (!HasAuthority())

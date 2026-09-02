@@ -64,6 +64,12 @@ public:
 	/** Host only: destroys the held item and clears the mirrors (jar returns eat it) */
 	void HostConsumeHeldItem();
 
+	/** Host only: detaches the held item from the mirrors and hands the actor over (cart loading) */
+	ACL9Item* HostTakeHeldItem();
+
+	/** Host only: puts an item actor into an empty hand (cart unloading) */
+	void HostReceiveItem(ACL9Item* Item);
+
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
 

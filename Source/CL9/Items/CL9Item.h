@@ -55,6 +55,9 @@ public:
 	/** Host only: attach to the holder's capsule at the given relative spot */
 	void OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation);
 
+	/** Host only: attach to a cart's bed at the given relative spot (docs/plan/data/item/cart.md 적재) */
+	void OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation);
+
 	/** Host only: detach and drop gently at the given world spot */
 	void OnPlaced(const FVector& WorldLocation);
 

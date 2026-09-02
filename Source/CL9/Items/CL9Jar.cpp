@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "Character/CL9Character.h"
 #include "GameMode/CL9GameState.h"
+#include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
 
 ACL9Jar::ACL9Jar()
@@ -20,18 +21,17 @@ FText ACL9Jar::GetPrompt(const ACL9Character* Who) const
 
 bool ACL9Jar::CanInteract(const ACL9Character* Who) const
 {
-	return Who != nullptr && Who->GetHeldItem() != nullptr;
+	if (Who == nullptr)
+	{
+		return false;
+	}
+	const ACL9Cart* Cart = Who->GetPullingCart();
+	return Who->GetHeldItem() != nullptr || (Cart != nullptr && Cart->HasLoadedItems());
 }
 
 void ACL9Jar::Interact(ACL9Character* Who)
 {
 	if (!HasAuthority())
-	{
-		return;
-	}
-
-	ACL9Item* Held = Who->GetHeldItem();
-	if (Held == nullptr)
 	{
 		return;
 	}
@@ -42,6 +42,15 @@ void ACL9Jar::Interact(ACL9Character* Who)
 		return;
 	}
 
-	GameState->RecordReturn(Held->GetAlias(), Held->GetSubAlias());
-	Who->HostConsumeHeldItem();
+	if (ACL9Item* Held = Who->GetHeldItem())
+	{
+		GameState->RecordReturn(Held->GetAlias(), Held->GetSubAlias());
+		Who->HostConsumeHeldItem();
+	}
+
+	// 수레째 반납 (2026-09-02 적재 규칙): a pulled cart empties its whole bed.
+	if (ACL9Cart* Cart = Who->GetPullingCart())
+	{
+		Cart->ReturnAllLoaded(GameState);
+	}
 }
