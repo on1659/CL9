@@ -61,6 +61,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatAddItem(
 		RouteCL9Cheat(TEXT("additem"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatAddMonster(
+	TEXT("cl9.addmonster"),
+	TEXT("cl9.addmonster <alias|number> [count] — spawns monsters ahead of the player (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("addmonster"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),

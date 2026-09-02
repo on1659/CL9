@@ -9,6 +9,7 @@
 class UCL9CharacterDef;
 class UCL9DefBase;
 class UCL9ItemDef;
+class UCL9MonsterDef;
 class UCL9RulesDef;
 
 /**
@@ -78,6 +79,9 @@ public:
 	/** Returns the usable item row for the key, or null when missing/broken */
 	const UCL9ItemDef* FindItem(FName Alias, FName SubAlias = NAME_None) const;
 
+	/** Returns the usable monster row for the key, or null when missing/broken */
+	const UCL9MonsterDef* FindMonster(FName Alias, FName SubAlias = NAME_None) const;
+
 	/** The one global rules row, or null when the table lacks a usable one */
 	const UCL9RulesDef* GetRules() const
 	{
@@ -96,6 +100,12 @@ public:
 		return OrderedCharacters;
 	}
 
+	/** Usable monster rows in list order */
+	const TArray<TObjectPtr<const UCL9MonsterDef>>& GetMonsters() const
+	{
+		return OrderedMonsters;
+	}
+
 	/** Broken rows with their reasons, for cl9.list (schema.md EDefStatus) */
 	const TArray<FString>& GetBrokenRows() const
 	{
@@ -106,10 +116,10 @@ private:
 	/** Validates and indexes one row — shared by table rows and standalone assets */
 	void RegisterDef(const UCL9DefBase* Def);
 
-	/** Per-row relation checks A1/A2 (docs/plan/economy.md) — run for every character row */
+	/** Per-row relation checks A1/A2 against every monster row (docs/plan/economy.md) */
 	void CheckCharacterRelations(const UCL9CharacterDef& Row) const;
 
-	/** Reference integrity across rows (cook chains) — runs after every row loaded */
+	/** Reference integrity across rows (cook chains, drops) — runs after every row loaded */
 	void CheckItemReferences() const;
 
 	/** Keeps every usable row alive for the GC; the lookup maps point into this */
@@ -123,9 +133,13 @@ private:
 	TArray<TObjectPtr<const UCL9CharacterDef>> OrderedCharacters;
 
 	UPROPERTY()
+	TArray<TObjectPtr<const UCL9MonsterDef>> OrderedMonsters;
+
+	UPROPERTY()
 	TObjectPtr<const UCL9RulesDef> Rules;
 
 	TMap<TPair<FName, FName>, const UCL9CharacterDef*> Characters;
 	TMap<TPair<FName, FName>, const UCL9ItemDef*> Items;
+	TMap<TPair<FName, FName>, const UCL9MonsterDef*> Monsters;
 	TArray<FString> BrokenRows;
 };

@@ -9,6 +9,8 @@
 #include "GameMode/CL9GameState.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Item.h"
+#include "Data/CL9MonsterDef.h"
+#include "Monsters/CL9Monster.h"
 
 ACL9GameMode::ACL9GameMode()
 {
@@ -81,4 +83,50 @@ ACL9Item* ACL9GameMode::SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTr
 		Item->SetAlias(ItemAlias, ItemSubAlias);
 	}
 	return Item;
+}
+
+ACL9Monster* ACL9GameMode::SpawnMonster(FName MonsterAlias, FName MonsterSubAlias, const FTransform& Transform)
+{
+	if (!HasAuthority())
+	{
+		return nullptr;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(MonsterAlias, MonsterSubAlias) : nullptr;
+	if (Def == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("SpawnMonster: monster row '%s'/'%s' is missing or broken — nothing spawned."),
+			*MonsterAlias.ToString(), *MonsterSubAlias.ToString());
+		return nullptr;
+	}
+
+	UClass* SpawnClass = MonsterClass;
+	if (!Def->ActorClass.IsNull())
+	{
+		UClass* DedicatedClass = Def->ActorClass.LoadSynchronous();
+		if (DedicatedClass != nullptr && DedicatedClass->IsChildOf(ACL9Monster::StaticClass()))
+		{
+			SpawnClass = DedicatedClass;
+		}
+		else
+		{
+			UE_LOG(LogCL9, Error, TEXT("SpawnMonster: '%s' ActorClass does not derive from ACL9Monster — using the shared BP."), *MonsterAlias.ToString());
+		}
+	}
+	if (SpawnClass == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("SpawnMonster: no monster class — assign MonsterClass in the game mode BP."));
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	ACL9Monster* Monster = GetWorld()->SpawnActor<ACL9Monster>(SpawnClass, Transform, SpawnParameters);
+	if (Monster != nullptr)
+	{
+		Monster->SetAlias(MonsterAlias, MonsterSubAlias);
+	}
+	return Monster;
 }

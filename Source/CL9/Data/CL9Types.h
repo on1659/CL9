@@ -73,6 +73,33 @@ struct FCL9CarriedItem : public FCL9ItemRef
 	GENERATED_BODY()
 };
 
+/** Item reference plus a count — order ingredients and drops share it (docs/data/schema.md) */
+USTRUCT(BlueprintType)
+struct FCL9ItemCount : public FCL9ItemRef
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Count = 1;
+};
+
+/** One monster drop entry — quantity rolls Min..Max, the base Count is unused here */
+USTRUCT(BlueprintType)
+struct FDropItem : public FCL9ItemCount
+{
+	GENERATED_BODY()
+
+	/** 0..1 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DropChance = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MinQuantity = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MaxQuantity = 1;
+};
+
 /** One eat effect row — target, amount and duration all come from the table */
 USTRUCT(BlueprintType)
 struct FCL9StatEffect

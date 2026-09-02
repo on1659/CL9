@@ -7,6 +7,7 @@
 #include "CL9GameMode.generated.h"
 
 class ACL9Item;
+class ACL9Monster;
 
 /**
  * Base game mode. Exists on the listen host only — authoritative game-flow
@@ -32,6 +33,9 @@ public:
 	 */
 	ACL9Item* SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform);
 
+	/** Host only: spawns one monster through the standard data path — same ActorClass rule as items */
+	ACL9Monster* SpawnMonster(FName MonsterAlias, FName MonsterSubAlias, const FTransform& Transform);
+
 protected:
 	/**
 	 * Character row every player spawns as, set in the BP child. Interim until
@@ -44,4 +48,8 @@ protected:
 	/** The shared item BP — used whenever a row leaves ActorClass empty */
 	UPROPERTY(EditDefaultsOnly, Category="Classes")
 	TSubclassOf<ACL9Item> ItemClass;
+
+	/** The shared monster BP — used whenever a row leaves ActorClass empty */
+	UPROPERTY(EditDefaultsOnly, Category="Classes")
+	TSubclassOf<ACL9Monster> MonsterClass;
 };

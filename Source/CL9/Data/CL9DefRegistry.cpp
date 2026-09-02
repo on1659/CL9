@@ -4,6 +4,7 @@
 #include "CL9.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9ItemDef.h"
+#include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
 
 #if WITH_EDITOR
@@ -98,6 +99,13 @@ void UCL9DefRegistry::Init(const UCL9DefList* DefList)
 
 	CheckItemReferences();
 
+	// Relation checks need the whole registry, so they run after every table
+	// loaded — A1/A2 compare character rows against monster rows.
+	for (const UCL9CharacterDef* Character : OrderedCharacters)
+	{
+		CheckCharacterRelations(*Character);
+	}
+
 	if (Rules == nullptr)
 	{
 		UE_LOG(LogCL9, Error, TEXT("No usable rules row loaded — carry/throw rulings will refuse to run (docs/plan/data/rules.md)."));
@@ -132,7 +140,6 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		}
 		Characters.Add(Key, CharacterDef);
 		OrderedCharacters.Add(CharacterDef);
-		CheckCharacterRelations(*CharacterDef);
 	}
 	else if (const UCL9ItemDef* ItemDef = Cast<UCL9ItemDef>(Def))
 	{
@@ -144,6 +151,17 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		}
 		Items.Add(Key, ItemDef);
 		OrderedItems.Add(ItemDef);
+	}
+	else if (const UCL9MonsterDef* MonsterDef = Cast<UCL9MonsterDef>(Def))
+	{
+		if (Monsters.Contains(Key))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate monster key '%s'/'%s' — the first row stays."),
+				*Def->GetName(), *Def->Alias.ToString(), *Def->SubAlias.ToString());
+			return;
+		}
+		Monsters.Add(Key, MonsterDef);
+		OrderedMonsters.Add(MonsterDef);
 	}
 	else if (const UCL9RulesDef* RulesDef = Cast<UCL9RulesDef>(Def))
 	{
@@ -162,6 +180,12 @@ const UCL9CharacterDef* UCL9DefRegistry::FindCharacter(FName Alias, FName SubAli
 	return Found ? *Found : nullptr;
 }
 
+const UCL9MonsterDef* UCL9DefRegistry::FindMonster(FName Alias, FName SubAlias) const
+{
+	const UCL9MonsterDef* const* Found = Monsters.Find(TPair<FName, FName>(Alias, SubAlias));
+	return Found ? *Found : nullptr;
+}
+
 const UCL9ItemDef* UCL9DefRegistry::FindItem(FName Alias, FName SubAlias) const
 {
 	const UCL9ItemDef* const* Found = Items.Find(TPair<FName, FName>(Alias, SubAlias));
@@ -170,22 +194,37 @@ const UCL9ItemDef* UCL9DefRegistry::FindItem(FName Alias, FName SubAlias) const
 
 void UCL9DefRegistry::CheckCharacterRelations(const UCL9CharacterDef& Row) const
 {
-	// Derived values from docs/plan/economy.md. Both right-hand sides (catch
-	// monster chase speed for A1, sight radius for A2) live in the monster
-	// table, which arrives in build-order ③ — until then the derived numbers
-	// are logged so a bad edit is still visible.
+	// Derived values from docs/plan/economy.md — checked per character row
+	// against every catch-capable monster row. A silent break here means a
+	// player who cannot escape even after dropping everything.
 	const float CycleTime = Row.StaminaDrainTime + Row.StaminaRegenTime;
 	const float SustainedTiredSpeed = (Row.RunSpeed * Row.StaminaDrainTime + Row.WalkSpeed * Row.StaminaRegenTime) / FMath::Max(CycleTime, UE_KINDA_SMALL_NUMBER);
 	const float SprintBudget = Row.RunSpeed * Row.StaminaDrainTime;
 
-	UE_LOG(LogCL9, Log, TEXT("%s: sustained tired speed %.1f cm/s (A1 left side), sprint budget %.0f cm (A2 left side) — monster table pending, comparisons activate in step ③."),
+	UE_LOG(LogCL9, Log, TEXT("%s: sustained tired speed %.1f cm/s (A1 left side), sprint budget %.0f cm (A2 left side)."),
 		*Row.Alias.ToString(), SustainedTiredSpeed, SprintBudget);
+
+	for (const UCL9MonsterDef* Monster : OrderedMonsters)
+	{
+		const bool bCatcher = Monster->CatchRadius > 0.f;
+		if (bCatcher && SustainedTiredSpeed <= Monster->ChaseSpeed)
+		{
+			UE_LOG(LogCL9, Error, TEXT("A1 broken: %s sustained tired speed %.1f <= %s chase %.1f — dropping everything no longer escapes."),
+				*Row.Alias.ToString(), SustainedTiredSpeed, *Monster->Alias.ToString(), Monster->ChaseSpeed);
+		}
+		if (SprintBudget <= Monster->SightIn)
+		{
+			UE_LOG(LogCL9, Error, TEXT("A2 broken: %s sprint budget %.0f <= %s sight %.0f — a straight corridor never breaks sight."),
+				*Row.Alias.ToString(), SprintBudget, *Monster->Alias.ToString(), Monster->SightIn);
+		}
+	}
+	// A4 (운반 질주 vs 추격) waits on the weight→slowdown formula (economy.md 미결)
 }
 
 void UCL9DefRegistry::CheckItemReferences() const
 {
-	// Reference integrity (docs/data/schema.md 로드 검사): cook chains must
-	// point at rows that actually loaded, or cooking would silently eat items.
+	// Reference integrity (docs/data/schema.md 로드 검사): cook chains and
+	// drops must point at rows that actually loaded.
 	for (const UCL9ItemDef* Item : OrderedItems)
 	{
 		const FCL9ItemRef* Refs[] = { &Item->CookResult, &Item->BurnResult };
@@ -195,6 +234,18 @@ void UCL9DefRegistry::CheckItemReferences() const
 			{
 				UE_LOG(LogCL9, Error, TEXT("%s: cook chain points at '%s'/'%s' which is missing or broken."),
 					*Item->GetName(), *Ref->ItemAlias.ToString(), *Ref->ItemSubAlias.ToString());
+			}
+		}
+	}
+
+	for (const UCL9MonsterDef* Monster : OrderedMonsters)
+	{
+		for (const FDropItem& Drop : Monster->DropItems)
+		{
+			if (Drop.IsSet() && FindItem(Drop.ItemAlias, Drop.ItemSubAlias) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: drop points at '%s'/'%s' which is missing or broken."),
+					*Monster->GetName(), *Drop.ItemAlias.ToString(), *Drop.ItemSubAlias.ToString());
 			}
 		}
 	}
