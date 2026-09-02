@@ -19,4 +19,7 @@ namespace CL9
 
 	/** First person camera height above the floor in cm */
 	inline constexpr float EyeHeight = 156.f;
+
+	/** Engine default gravity magnitude in cm/s² — JumpGravity from the character table divides by this to produce GravityScale */
+	inline constexpr float DefaultGravityZ = 980.f;
 }
