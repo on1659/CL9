@@ -8,6 +8,7 @@
 
 class ACL9Character;
 class UCL9ItemDef;
+class UPhysicalMaterial;
 class USphereComponent;
 class UStaticMeshComponent;
 
@@ -79,6 +80,10 @@ protected:
 	UFUNCTION()
 	void OnRep_HoldState();
 
+	/** Host, physics rows only: impact ruling from real collisions */
+	UFUNCTION()
+	void OnPhysicsHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+
 	/** Applies collision/sim side effects of the current hold state on this machine */
 	void ApplyHoldState();
 
@@ -104,4 +109,8 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ItemDef> ItemDef;
+
+	/** Per-row friction/restitution for the physics path, built from the table at load */
+	UPROPERTY()
+	TObjectPtr<UPhysicalMaterial> PhysicsMaterial;
 };

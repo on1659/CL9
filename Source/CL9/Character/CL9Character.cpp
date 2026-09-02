@@ -544,6 +544,16 @@ ACL9Item* ACL9Character::HostTakeHeldItem()
 	return Taken;
 }
 
+bool ACL9Character::IsCarryingAnything() const
+{
+	if (HeldItem != nullptr || PullingCart != nullptr)
+	{
+		return true;
+	}
+	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
+	return CL9PlayerState != nullptr && (CL9PlayerState->IsHandFull() || CL9PlayerState->PocketItems.Num() > 0);
+}
+
 const UCL9RulesDef* ACL9Character::GetRules() const
 {
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();

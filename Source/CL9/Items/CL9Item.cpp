@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Net/UnrealNetwork.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
@@ -25,11 +26,13 @@ ACL9Item::ACL9Item()
 	SetReplicateMovement(true);
 
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
 	SphereComponent->SetCollisionResponseToAllChannels(ECR_Block);
 	SphereComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	SphereComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	SphereComponent->SetNotifyRigidBodyCollision(true);
+	SphereComponent->OnComponentHit.AddDynamic(this, &ACL9Item::OnPhysicsHit);
 	SetRootComponent(SphereComponent);
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
@@ -60,6 +63,18 @@ void ACL9Item::LoadData()
 
 	SphereComponent->SetSphereRadius(Def->Radius);
 
+	// The table's friction/restitution drive the physics path via a per-row material
+	if (Def->bPhysicsEnabled)
+	{
+		if (PhysicsMaterial == nullptr)
+		{
+			PhysicsMaterial = NewObject<UPhysicalMaterial>(this);
+		}
+		PhysicsMaterial->Friction = Def->Friction;
+		PhysicsMaterial->Restitution = Def->Restitution;
+		SphereComponent->SetPhysMaterialOverride(PhysicsMaterial);
+	}
+
 	if (UStaticMesh* Mesh = Def->Mesh.LoadSynchronous())
 	{
 		MeshComponent->SetStaticMesh(Mesh);
@@ -80,6 +95,9 @@ void ACL9Item::LoadData()
 			Gimmick->OnActorLoaded(this);
 		}
 	}
+
+	// The row decides the sim (physics vs simple bounce) — re-apply for it
+	ApplyHoldState();
 }
 
 bool ACL9Item::CanBePickedUp() const
@@ -151,6 +169,11 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 	SimVelocity = LaunchVelocity;
 	bAtRest = false;
 	ApplyHoldState();
+
+	if (SphereComponent->IsSimulatingPhysics())
+	{
+		SphereComponent->SetPhysicsLinearVelocity(LaunchVelocity);
+	}
 }
 
 void ACL9Item::Tick(float DeltaSeconds)
@@ -159,7 +182,23 @@ void ACL9Item::Tick(float DeltaSeconds)
 
 	// The sim is host-only and authoritative — clients interpolate replicated
 	// movement (docs/systems/item.md 액터 틀).
-	if (!HasAuthority() || HoldState != ECL9ItemHoldState::Free || bAtRest || ItemDef == nullptr)
+	if (!HasAuthority() || HoldState != ECL9ItemHoldState::Free || ItemDef == nullptr)
+	{
+		return;
+	}
+
+	// Physics rows: the engine simulates; only the table's custom gravity is
+	// injected (as acceleration, so mass stays irrelevant).
+	if (ItemDef->bPhysicsEnabled)
+	{
+		if (SphereComponent->IsSimulatingPhysics() && SphereComponent->IsAnyRigidBodyAwake())
+		{
+			SphereComponent->AddForce(FVector(0.f, 0.f, -ItemDef->Gravity), NAME_None, true);
+		}
+		return;
+	}
+
+	if (bAtRest)
 	{
 		return;
 	}
@@ -224,4 +263,33 @@ void ACL9Item::ApplyHoldState()
 	// the holder around, so it goes dark. Cart-bed items keep query collision
 	// so the aim detection can still find them.
 	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held);
+
+	// Real physics runs only for free items on the host (2026-09-03 결정) —
+	// clients render replicated movement, every other state is attached.
+	const bool bWantPhysics = HoldState == ECL9ItemHoldState::Free
+		&& HasAuthority()
+		&& ItemDef != nullptr
+		&& ItemDef->bPhysicsEnabled;
+	if (SphereComponent->IsSimulatingPhysics() != bWantPhysics)
+	{
+		SphereComponent->SetSimulatePhysics(bWantPhysics);
+	}
+	if (bWantPhysics)
+	{
+		// The table's Gravity column replaces world gravity (injected in Tick)
+		SphereComponent->SetEnableGravity(false);
+	}
+}
+
+void ACL9Item::OnPhysicsHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!HasAuthority() || ItemDef == nullptr || !ItemDef->bFragile || HoldState != ECL9ItemHoldState::Free)
+	{
+		return;
+	}
+
+	// Impulse ≈ m·(1+e)·v_impact, so recover the approach speed from it
+	const float Mass = FMath::Max(HitComponent->GetMass(), UE_KINDA_SMALL_NUMBER);
+	const float ImpactSpeed = NormalImpulse.Size() / (Mass * (1.f + ItemDef->Restitution));
+	HandleImpact(ImpactSpeed);
 }

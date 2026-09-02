@@ -68,6 +68,9 @@ public:
 	/** Host only: detaches the held item from the mirrors and hands the actor over (cart loading) */
 	ACL9Item* HostTakeHeldItem();
 
+	/** Hand, pocket or cart — anything at all; empty hands release chases at DeaggroRadius */
+	bool IsCarryingAnything() const;
+
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
 

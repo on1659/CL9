@@ -34,6 +34,14 @@ public:
 
 	// -- Physics --
 
+	/**
+	 * Released items ride real host physics — rolling, sliding, natural rest
+	 * (2026-09-03 결정). Off falls back to the simple bounce sim (the cart
+	 * keeps this off — its sphere body would roll the whole wagon).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
+	bool bPhysicsEnabled = true;
+
 	/** Collision radius in cm */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	float Radius = 20.f;

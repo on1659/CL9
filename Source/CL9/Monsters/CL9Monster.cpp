@@ -1,17 +1,21 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Monsters/CL9Monster.h"
+#include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
-#include "Animation/AnimInstance.h"
+#include "EngineUtils.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
 #include "CL9.h"
+#include "Character/CL9Character.h"
+#include "Character/CL9CharacterMovement.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9RulesDef.h"
 #include "GameMode/CL9GameInstance.h"
 
 namespace
@@ -25,6 +29,15 @@ namespace
 
 	/** Client mesh smoothing speed against 20Hz root snaps */
 	constexpr float SmoothingInterpSpeed = 12.f;
+
+	/** How often a chase re-paths to the moving target, in seconds */
+	constexpr float ChaseRepathInterval = 0.5f;
+
+	/** Investigate hop spread around the last sensed spot, in cm */
+	constexpr float SearchHopRadius = 300.f;
+
+	/** Navmesh projection extent — bodies float Radius above the floor */
+	const FVector NavProjectExtent(500.f, 500.f, 500.f);
 }
 
 ACL9Monster::ACL9Monster()
@@ -33,7 +46,7 @@ ACL9Monster::ACL9Monster()
 	SetReplicateMovement(true);
 
 	// Walls (WorldStatic) block; pawns, items and other monsters only overlap —
-	// body separation is SeparationDist steering, not physics (3c 이후).
+	// the corridor threat is detection, never body blocking (2026-09-03 결정).
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
@@ -64,6 +77,7 @@ void ACL9Monster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 
 	DOREPLIFETIME(ACL9Monster, State);
 	DOREPLIFETIME(ACL9Monster, Hp);
+	DOREPLIFETIME(ACL9Monster, DetectGauge);
 }
 
 void ACL9Monster::LoadData()
@@ -113,7 +127,9 @@ void ACL9Monster::Tick(float DeltaSeconds)
 
 	if (HasAuthority())
 	{
+		const FVector Before = GetActorLocation();
 		HostTickAI(DeltaSeconds);
+		DisplaySpeed = (GetActorLocation() - Before).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
 		return;
 	}
 
@@ -125,8 +141,10 @@ void ACL9Monster::Tick(float DeltaSeconds)
 		SmoothedRotation = GetActorRotation();
 		bSmoothingInitialized = true;
 	}
+	const FVector PreviousSmoothed = SmoothedLocation;
 	SmoothedLocation = FMath::VInterpTo(SmoothedLocation, GetActorLocation(), DeltaSeconds, SmoothingInterpSpeed);
 	SmoothedRotation = FMath::RInterpTo(SmoothedRotation, GetActorRotation(), DeltaSeconds, SmoothingInterpSpeed);
+	DisplaySpeed = (SmoothedLocation - PreviousSmoothed).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
 	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation);
 }
@@ -138,28 +156,237 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		return;
 	}
 
+	ChaseCooldownRemaining = FMath::Max(ChaseCooldownRemaining - DeltaSeconds, 0.f);
+	SenseTick(DeltaSeconds);
+
 	switch (State)
 	{
 	case ECL9MonsterState::Wander:
+	case ECL9MonsterState::Patrol:
+	case ECL9MonsterState::Return:
+	{
+		// A full gauge alerts — straight to the chase when the target is in
+		// sight, to the last sensed spot otherwise (docs/systems/monster.md).
+		if (DetectGauge >= 1.f && ChaseCooldownRemaining <= 0.f)
+		{
+			EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
+			break;
+		}
+
 		if (PathPoints.Num() == 0)
 		{
+			if (State == ECL9MonsterState::Return)
+			{
+				EnterState(ECL9MonsterState::Wander);
+				break;
+			}
 			WanderWaitRemaining -= DeltaSeconds;
 			if (WanderWaitRemaining <= 0.f)
 			{
 				StartNewWander();
 			}
 		}
-		else if (MoveAlongPath(DeltaSeconds, MonsterDef->WanderSpeed))
+		else if (MoveAlongPath(DeltaSeconds, State == ECL9MonsterState::Return ? MonsterDef->PatrolSpeed : MonsterDef->WanderSpeed))
 		{
 			PathPoints.Reset();
-			WanderWaitRemaining = FMath::FRandRange(WanderDwellMin, WanderDwellMax);
+			if (State == ECL9MonsterState::Return)
+			{
+				EnterState(ECL9MonsterState::Wander);
+			}
+			else
+			{
+				WanderWaitRemaining = FMath::FRandRange(WanderDwellMin, WanderDwellMax);
+			}
 		}
 		break;
+	}
 
-	default:
-		// Later steps (3d~3f) fill the remaining states
+	case ECL9MonsterState::Investigate:
+	{
+		if (bHadSight && SensedCharacter.IsValid() && ChaseCooldownRemaining <= 0.f)
+		{
+			EnterState(ECL9MonsterState::Chase);
+			break;
+		}
+
+		if (PathPoints.Num() > 0)
+		{
+			if (MoveAlongPath(DeltaSeconds, MonsterDef->PatrolSpeed))
+			{
+				PathPoints.Reset();
+				SearchDwellRemaining = MonsterDef->SearchDwellTime;
+			}
+		}
+		else
+		{
+			SearchDwellRemaining -= DeltaSeconds;
+			if (SearchDwellRemaining <= 0.f)
+			{
+				if (SearchHopsRemaining <= 0)
+				{
+					EnterState(ECL9MonsterState::Return);
+					break;
+				}
+				--SearchHopsRemaining;
+				UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+				FNavLocation Hop;
+				if (NavSystem != nullptr && NavSystem->GetRandomReachablePointInRadius(LastSensedLocation, SearchHopRadius, Hop))
+				{
+					StartPathTo(Hop.Location);
+				}
+				else
+				{
+					SearchDwellRemaining = MonsterDef->SearchDwellTime;
+				}
+			}
+		}
 		break;
 	}
+
+	case ECL9MonsterState::Chase:
+	{
+		ACL9Character* Target = SensedCharacter.Get();
+		ChaseBudgetRemaining -= DeltaSeconds;
+
+		const bool bSeesTarget = Target != nullptr && bHadSight;
+		ChaseLoseRemaining = bSeesTarget ? MonsterDef->ChaseLoseTime : ChaseLoseRemaining - DeltaSeconds;
+
+		// Dropping everything releases the chase past DeaggroRadius
+		const float TargetDistance = Target ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
+		const bool bDeaggro = Target != nullptr
+			&& MonsterDef->DeaggroRadius > 0.f
+			&& TargetDistance > MonsterDef->DeaggroRadius
+			&& !Target->IsCarryingAnything();
+
+		const bool bOutOfHome = FVector::Dist2D(GetActorLocation(), HomeLocation) > MonsterDef->HomeRange;
+		if (Target == nullptr || ChaseBudgetRemaining <= 0.f || ChaseLoseRemaining <= 0.f || bOutOfHome || bDeaggro)
+		{
+			EnterState(ECL9MonsterState::Break);
+			break;
+		}
+
+		ChaseRepathRemaining -= DeltaSeconds;
+		if (ChaseRepathRemaining <= 0.f || PathPoints.Num() == 0)
+		{
+			ChaseRepathRemaining = ChaseRepathInterval;
+			StartPathTo(Target->GetActorLocation());
+		}
+		MoveAlongPath(DeltaSeconds, MonsterDef->ChaseSpeed);
+		// Catching inside CatchRadius lands in 3e
+		break;
+	}
+
+	case ECL9MonsterState::Break:
+	{
+		BreakRemaining -= DeltaSeconds;
+		if (BreakRemaining <= 0.f)
+		{
+			EnterState(ECL9MonsterState::Return);
+		}
+		break;
+	}
+
+	default:
+		// Asleep/WakeTelegraph/Stun/Dead arrive with 3e~3f
+		break;
+	}
+}
+
+void ACL9Monster::SenseTick(float DeltaSeconds)
+{
+	// Three inputs, one gauge (docs/systems/monster.md 감각 파이프라인):
+	// sight with hysteresis, run noise from the action table, and proximity.
+	ACL9Character* Best = nullptr;
+	float BestDistance = TNumericLimits<float>::Max();
+	bool bBestBySight = false;
+
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		ACL9Character* Candidate = *It;
+		const float Distance = FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation());
+
+		const float SightRange = bHadSight ? MonsterDef->SightOut : MonsterDef->SightIn;
+		const bool bInSight = Distance <= SightRange && HasLineOfSight(*Candidate);
+
+		bool bHeard = false;
+		if (const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>())
+		{
+			const UCL9RulesDef* Rules = GameInstance->GetDefRegistry() ? GameInstance->GetDefRegistry()->GetRules() : nullptr;
+			// 걷기는 어그로 0 — only running carries (docs/plan/data/rules.md 소리)
+			bHeard = Rules != nullptr
+				&& Distance <= Rules->RunNoiseRadius
+				&& Candidate->GetCL9CharacterMovement()->IsRunning();
+		}
+
+		if ((bInSight || bHeard) && Distance < BestDistance)
+		{
+			Best = Candidate;
+			BestDistance = Distance;
+			bBestBySight = bInSight;
+		}
+	}
+
+	if (Best != nullptr)
+	{
+		SensedCharacter = Best;
+		LastSensedLocation = Best->GetActorLocation();
+		bHadSight = bBestBySight;
+		SightGraceRemaining = MonsterDef->DetectGrace;
+
+		const float Rate = BestDistance <= MonsterDef->DetectNearRadius ? MonsterDef->DetectRateNear : MonsterDef->DetectRateFar;
+		DetectGauge = FMath::Min(DetectGauge + Rate * DeltaSeconds, 1.f);
+	}
+	else
+	{
+		bHadSight = false;
+		SightGraceRemaining -= DeltaSeconds;
+		if (SightGraceRemaining <= 0.f)
+		{
+			DetectGauge = FMath::Max(DetectGauge - MonsterDef->DetectDecay * DeltaSeconds, 0.f);
+		}
+	}
+}
+
+bool ACL9Monster::HasLineOfSight(const ACL9Character& Target) const
+{
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(CL9MonsterSight), false, this);
+	QueryParams.AddIgnoredActor(&Target);
+	return !GetWorld()->LineTraceTestByChannel(GetActorLocation(), Target.GetActorLocation(), ECC_Visibility, QueryParams);
+}
+
+void ACL9Monster::EnterState(ECL9MonsterState NewState)
+{
+	PathPoints.Reset();
+	State = NewState;
+
+	switch (NewState)
+	{
+	case ECL9MonsterState::Chase:
+		ChaseBudgetRemaining = MonsterDef->ChaseBudget;
+		ChaseLoseRemaining = MonsterDef->ChaseLoseTime;
+		ChaseRepathRemaining = 0.f;
+		break;
+	case ECL9MonsterState::Investigate:
+		SearchHopsRemaining = MonsterDef->SearchHops;
+		SearchDwellRemaining = 0.f;
+		StartPathTo(LastSensedLocation);
+		break;
+	case ECL9MonsterState::Break:
+		BreakRemaining = MonsterDef->ChaseBreakTime;
+		ChaseCooldownRemaining = MonsterDef->ChaseCooldown;
+		DetectGauge = 0.f;
+		break;
+	case ECL9MonsterState::Return:
+		StartPathTo(HomeLocation);
+		break;
+	case ECL9MonsterState::Wander:
+		WanderWaitRemaining = FMath::FRandRange(WanderDwellMin, WanderDwellMax);
+		break;
+	default:
+		break;
+	}
+
+	ApplyState();
 }
 
 void ACL9Monster::StartNewWander()
@@ -167,19 +394,12 @@ void ACL9Monster::StartNewWander()
 	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
 	if (NavSystem == nullptr)
 	{
-		UE_LOG(LogCL9, Warning, TEXT("%s: no navigation system — wander stalled."), *GetNameSafe(this));
 		return;
 	}
 
-	// The body sphere floats Radius above the floor, so raw locations miss the
-	// navmesh — project home and start down onto it with a generous extent.
-	const FVector ProjectExtent(500.f, 500.f, 500.f);
 	FNavLocation HomeOnNav;
-	FNavLocation StartOnNav;
-	if (!NavSystem->ProjectPointToNavigation(HomeLocation, HomeOnNav, ProjectExtent)
-		|| !NavSystem->ProjectPointToNavigation(GetActorLocation(), StartOnNav, ProjectExtent))
+	if (!NavSystem->ProjectPointToNavigation(HomeLocation, HomeOnNav, NavProjectExtent))
 	{
-		UE_LOG(LogCL9, Warning, TEXT("%s: not over the navmesh at %s."), *GetNameSafe(this), *GetActorLocation().ToCompactString());
 		WanderWaitRemaining = 0.5f;
 		return;
 	}
@@ -188,21 +408,43 @@ void ACL9Monster::StartNewWander()
 	FNavLocation Target;
 	if (!NavSystem->GetRandomReachablePointInRadius(HomeOnNav.Location, Range, Target))
 	{
-		UE_LOG(LogCL9, Warning, TEXT("%s: no reachable point near home %s."), *GetNameSafe(this), *HomeOnNav.Location.ToCompactString());
 		WanderWaitRemaining = 0.5f;
 		return;
 	}
 
-	const UNavigationPath* Path = NavSystem->FindPathToLocationSynchronously(GetWorld(), StartOnNav.Location, Target.Location);
+	if (!StartPathTo(Target.Location))
+	{
+		WanderWaitRemaining = 0.5f;
+	}
+}
+
+bool ACL9Monster::StartPathTo(const FVector& WorldLocation)
+{
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	if (NavSystem == nullptr)
+	{
+		return false;
+	}
+
+	// The body sphere floats Radius above the floor, so raw locations miss the
+	// navmesh — project both ends before pathing.
+	FNavLocation StartOnNav;
+	FNavLocation TargetOnNav;
+	if (!NavSystem->ProjectPointToNavigation(GetActorLocation(), StartOnNav, NavProjectExtent)
+		|| !NavSystem->ProjectPointToNavigation(WorldLocation, TargetOnNav, NavProjectExtent))
+	{
+		return false;
+	}
+
+	const UNavigationPath* Path = NavSystem->FindPathToLocationSynchronously(GetWorld(), StartOnNav.Location, TargetOnNav.Location);
 	if (Path == nullptr || Path->PathPoints.Num() < 2)
 	{
-		UE_LOG(LogCL9, Warning, TEXT("%s: pathing to %s failed."), *GetNameSafe(this), *Target.Location.ToCompactString());
-		WanderWaitRemaining = 0.5f;
-		return;
+		return false;
 	}
 
 	PathPoints = Path->PathPoints;
 	PathIndex = 1;
+	return true;
 }
 
 bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
@@ -248,6 +490,6 @@ void ACL9Monster::OnRep_State()
 
 void ACL9Monster::ApplyState()
 {
-	// Animation and sound switch here once presentation lands (3d~) — the
+	// Animation and sound switch here once presentation lands (3e~) — the
 	// replicated state is the subscription point (docs/systems/animation.md).
 }

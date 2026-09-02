@@ -14,7 +14,8 @@ public class CL9 : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
-			"NavigationSystem"
+			"NavigationSystem",
+			"PhysicsCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
