@@ -27,6 +27,7 @@ class ACL9Cart : public ACL9Item, public ICL9Interactable
 	GENERATED_BODY()
 
 public:
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual FText GetPrompt(const ACL9Character* Who) const override;
@@ -60,4 +61,8 @@ private:
 	/** Items riding the bed, oldest first — attached actors, truth in the world */
 	UPROPERTY(Replicated)
 	TArray<TObjectPtr<ACL9Item>> LoadedItems;
+
+	/** Who tows this cart — host only; clients read the character's replicated pointer instead */
+	UPROPERTY()
+	TObjectPtr<ACL9Character> Puller;
 };

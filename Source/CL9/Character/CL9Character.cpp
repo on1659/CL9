@@ -241,7 +241,8 @@ AActor* ACL9Character::ResolveFocus() const
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		AActor* Actor = Overlap.GetActor();
-		if (Actor == nullptr || Actor == HeldItem || Actor == PullingCart)
+		// The pulled cart stays a valid target — aiming it releases or loads.
+		if (Actor == nullptr || Actor == HeldItem)
 		{
 			continue;
 		}
@@ -347,7 +348,7 @@ void ACL9Character::Server_PickPlace_Implementation()
 	}
 
 	// Nothing aimed: a full hand sets its item down, a bare hand lets go of
-	// the cart (it hangs behind the view, so it can never be aimed at).
+	// the cart (aiming the trailing cart releases it too).
 	if (HeldItem != nullptr)
 	{
 		HostPlaceHeld(Rules);

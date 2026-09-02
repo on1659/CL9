@@ -18,7 +18,9 @@ enum class ECL9ItemHoldState : uint8
 	Free,
 	Held,
 	/** On a cart bed — no physics, but still aimable and pickable */
-	OnCart
+	OnCart,
+	/** Being towed (the cart itself) — no physics, stays aimable, never attached */
+	Pulled
 };
 
 /**
@@ -77,10 +79,18 @@ protected:
 	UFUNCTION()
 	void OnRep_HoldState();
 
-private:
 	/** Applies collision/sim side effects of the current hold state on this machine */
 	void ApplyHoldState();
 
+	/** State shared with the cart subclass, which runs its own towing transitions */
+	UPROPERTY(ReplicatedUsing=OnRep_HoldState)
+	ECL9ItemHoldState HoldState = ECL9ItemHoldState::Free;
+
+	/** Host-only sim state — clients only see replicated movement */
+	FVector SimVelocity = FVector::ZeroVector;
+	bool bAtRest = false;
+
+private:
 	/** Host only: crack/break transitions — swaps the SubAlias per the three thresholds */
 	void HandleImpact(float ImpactSpeed);
 
@@ -94,11 +104,4 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ItemDef> ItemDef;
-
-	UPROPERTY(ReplicatedUsing=OnRep_HoldState)
-	ECL9ItemHoldState HoldState = ECL9ItemHoldState::Free;
-
-	/** Host-only sim state — clients only see replicated movement */
-	FVector SimVelocity = FVector::ZeroVector;
-	bool bAtRest = false;
 };
