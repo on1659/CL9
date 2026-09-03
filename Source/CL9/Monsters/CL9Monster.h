@@ -99,6 +99,13 @@ public:
 	 */
 	void ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds);
 
+	/**
+	 * Host only: shoved by a player (frying pan) — PushStun stagger, knockback
+	 * away from the shover, and it turns to chase the culprit
+	 * (docs/systems/monster.md 반격, docs/plan/data/monster/common.md PushStun).
+	 */
+	void OnShove(AActor* Shover);
+
 protected:
 	virtual void LoadData() override;
 
@@ -199,6 +206,11 @@ private:
 	float CatchCooldownRemaining = 0.f;
 	float CatchPauseRemaining = 0.f;
 	float StunRemaining = 0.f;
+
+	/** Shove knockback carried through the Stun state — distance left and its direction */
+	float KnockbackRemaining = 0.f;
+	FVector KnockbackDir = FVector::ZeroVector;
+	float KnockbackSpeed = 0.f;
 
 	/** RageTime hunt mode after a death scream — pins the gauge, bypasses ChaseCooldown */
 	float RageRemaining = 0.f;

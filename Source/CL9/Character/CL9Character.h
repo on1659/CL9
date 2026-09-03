@@ -144,6 +144,10 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_Swap();
 
+	/** Empty-hand LMB — shoves the monster ahead (frying pan stand-in, docs/systems/input.md) */
+	UFUNCTION(Server, Reliable)
+	void Server_Shove();
+
 	UFUNCTION()
 	void OnRep_CharacterAlias();
 
@@ -227,6 +231,9 @@ private:
 
 	/** Host clock when the current throw charge began; negative when idle */
 	float ThrowChargeStartTime = -1.f;
+
+	/** Host clock until which another shove is refused (swing recovery) */
+	float ShoveReadyTime = 0.f;
 
 	/**
 	 * Server time until which the knockdown pins the character (0 = up). A

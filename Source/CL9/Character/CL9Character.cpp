@@ -28,6 +28,7 @@
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
+#include "Monsters/CL9Monster.h"
 
 namespace
 {
@@ -211,7 +212,16 @@ void ACL9Character::PickPlaceInput()
 
 void ACL9Character::ThrowStartInput()
 {
-	Server_ThrowChargeStart();
+	// Empty hands shove (frying pan stand-in until ④ equipment); a full hand
+	// charges a throw (docs/systems/input.md · monster.md 반격).
+	if (GetHeldItem() != nullptr)
+	{
+		Server_ThrowChargeStart();
+	}
+	else
+	{
+		Server_Shove();
+	}
 }
 
 void ACL9Character::ThrowEndInput()
@@ -403,6 +413,53 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 	CL9PlayerState->HandItem = FCL9CarriedItem();
 	Thrown->SetOwner(nullptr);
 	Thrown->OnThrown(Origin, Direction * Speed);
+}
+
+void ACL9Character::Server_Shove_Implementation()
+{
+	// Reach and recovery are pan-feel constants until ④ turns this into real
+	// equipment; the stun/knockback amounts still come from the monster row.
+	constexpr float ShoveReach = 200.f;
+	constexpr float ShoveHalfAngleDot = 0.3f;
+	constexpr float ShoveRecovery = 0.6f;
+
+	const float Now = GetServerTime();
+	if (IsKnockedDown() || Now < ShoveReadyTime)
+	{
+		return;
+	}
+	ShoveReadyTime = Now + ShoveRecovery;
+
+	// Nearest monster ahead within reach (bodies overlap, so a sphere query)
+	const FVector Origin = GetActorLocation();
+	const FVector Forward = GetControlRotation().Vector();
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9Shove), false, this);
+	GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
+		FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(ShoveReach), Params);
+
+	ACL9Monster* Target = nullptr;
+	float BestDot = ShoveHalfAngleDot;
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		ACL9Monster* Monster = Cast<ACL9Monster>(Overlap.GetActor());
+		if (Monster == nullptr)
+		{
+			continue;
+		}
+		const FVector ToMonster = (Monster->GetActorLocation() - Origin).GetSafeNormal();
+		const float Dot = FVector::DotProduct(Forward, ToMonster);
+		if (Dot > BestDot)
+		{
+			BestDot = Dot;
+			Target = Monster;
+		}
+	}
+
+	if (Target != nullptr)
+	{
+		Target->OnShove(this);
+	}
 }
 
 void ACL9Character::Server_Swap_Implementation()

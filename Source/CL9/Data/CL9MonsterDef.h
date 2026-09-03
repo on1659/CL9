@@ -38,6 +38,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftClassPtr<UAnimInstance> AnimBP;
 
+	/**
+	 * Yaw added to the visual mesh so the model faces the actor's forward (+X).
+	 * Different animal packs export facing different axes — this corrects it
+	 * from data instead of code (docs/systems/animation.md 원칙 1).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
+	float MeshYawOffset = 0.f;
+
 	// -- Health --
 
 	/** HP rolls HpMin..HpMax per individual — no-instakill is a value choice, not a rule */

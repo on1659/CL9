@@ -107,6 +107,8 @@ void ACL9Monster::LoadData()
 
 	SphereComponent->SetSphereRadius(Def->Radius);
 	MeshComponent->SetRelativeLocation(FVector(0.f, 0.f, -Def->Radius));
+	// Face the actor forward — the pack's model axis is corrected from the row
+	MeshComponent->SetRelativeRotation(FRotator(0.f, Def->MeshYawOffset, 0.f));
 
 	if (USkeletalMesh* Mesh = Def->SkeletalMesh.LoadSynchronous())
 	{
@@ -170,7 +172,8 @@ void ACL9Monster::Tick(float DeltaSeconds)
 		return;
 	}
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
-	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation);
+	const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
+	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation + FRotator(0.f, YawOffset, 0.f));
 }
 
 void ACL9Monster::HostTickAI(float DeltaSeconds)
@@ -418,6 +421,14 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 
 	case ECL9MonsterState::Stun:
 	{
+		// A shove flings it back over the stun; walls stop the slide
+		if (KnockbackRemaining > 0.f)
+		{
+			const float StepDist = FMath::Min(KnockbackSpeed * DeltaSeconds, KnockbackRemaining);
+			FHitResult Hit;
+			AddActorWorldOffset(KnockbackDir * StepDist, true, &Hit);
+			KnockbackRemaining = Hit.bBlockingHit ? 0.f : KnockbackRemaining - StepDist;
+		}
 		StunRemaining -= DeltaSeconds;
 		if (StunRemaining <= 0.f)
 		{
@@ -707,7 +718,38 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 		bHadSight = true;
 		DetectGauge = 1.f;
 	}
+	KnockbackRemaining = 0.f;
 	StunRemaining = MonsterDef->HitStunMs / 1000.f;
+	EnterState(ECL9MonsterState::Stun);
+}
+
+void ACL9Monster::OnShove(AActor* Shover)
+{
+	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead || Shover == nullptr)
+	{
+		return;
+	}
+
+	// Knockback away from the shover, spread across the stun (common.md 반격).
+	FVector Away = GetActorLocation() - Shover->GetActorLocation();
+	Away.Z = 0.f;
+	KnockbackDir = Away.GetSafeNormal();
+	if (KnockbackDir.IsNearlyZero())
+	{
+		KnockbackDir = -GetActorForwardVector();
+	}
+	KnockbackRemaining = MonsterDef->PushKnockback;
+	KnockbackSpeed = MonsterDef->PushKnockback / FMath::Max(MonsterDef->PushStun, UE_KINDA_SMALL_NUMBER);
+
+	// A shove provokes — after the stun it chases the culprit
+	if (ACL9Character* Attacker = Cast<ACL9Character>(Shover))
+	{
+		SensedCharacter = Attacker;
+		LastSensedLocation = Attacker->GetActorLocation();
+		bHadSight = true;
+		DetectGauge = 1.f;
+	}
+	StunRemaining = MonsterDef->PushStun;
 	EnterState(ECL9MonsterState::Stun);
 }
 
@@ -904,7 +946,8 @@ void ACL9Monster::ApplyState()
 	if (MeshComponent != nullptr)
 	{
 		const bool bDead = State == ECL9MonsterState::Dead;
+		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 		MeshComponent->GlobalAnimRateScale = bDead ? 0.f : 1.f;
-		MeshComponent->SetRelativeRotation(bDead ? FRotator(0.f, 0.f, 90.f) : FRotator::ZeroRotator);
+		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, bDead ? 90.f : 0.f));
 	}
 }
