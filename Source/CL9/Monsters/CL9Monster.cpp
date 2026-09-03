@@ -165,12 +165,6 @@ void ACL9Monster::Tick(float DeltaSeconds)
 	SmoothedRotation = FMath::RInterpTo(SmoothedRotation, GetActorRotation(), DeltaSeconds, SmoothingInterpSpeed);
 	DisplaySpeed = (SmoothedLocation - PreviousSmoothed).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
 
-	// A corpse keeps the tipped pose ApplyState gave the mesh — overwriting its
-	// rotation here every frame would undo the death tilt on clients.
-	if (State == ECL9MonsterState::Dead)
-	{
-		return;
-	}
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
 	const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation + FRotator(0.f, YawOffset, 0.f));
@@ -939,15 +933,12 @@ void ACL9Monster::OnRep_State()
 
 void ACL9Monster::ApplyState()
 {
-	// The replicated state is the subscription point for presentation
-	// (docs/systems/animation.md). Until species ABPs grow death/stun states,
-	// a corpse freezes its pose and tips onto its side — readable on every
-	// machine without a single animation asset.
+	// The AnimBP now switches locomotion/hurt/attack/death by the replicated
+	// state (docs/systems/animation.md); presentation here only keeps the mesh
+	// facing corrected per the row.
 	if (MeshComponent != nullptr)
 	{
-		const bool bDead = State == ECL9MonsterState::Dead;
 		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
-		MeshComponent->GlobalAnimRateScale = bDead ? 0.f : 1.f;
-		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, bDead ? 90.f : 0.f));
+		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, 0.f));
 	}
 }

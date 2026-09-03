@@ -309,6 +309,17 @@ void ACL9Character::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// First person means a catch has to read as the view dropping to the floor —
+	// the owner never sees their own body, so knockdown/death sinks the camera
+	// instead of a body anim (docs/systems/character.md 피격·넘어짐).
+	const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const float EyeZ = CharacterDef ? CharacterDef->EyeHeight - HalfHeight : FirstPersonCameraComponent->GetRelativeLocation().Z;
+	const float DownedZ = -HalfHeight + 30.f;
+	const bool bDowned = IsKnockedDown() || IsDead();
+	FVector CameraRel = FirstPersonCameraComponent->GetRelativeLocation();
+	CameraRel.Z = FMath::FInterpTo(CameraRel.Z, bDowned ? DownedZ : EyeZ, DeltaSeconds, 6.f);
+	FirstPersonCameraComponent->SetRelativeLocation(CameraRel);
+
 	AActor* NewFocus = ResolveFocus();
 	if (NewFocus != FocusedActor.Get())
 	{
