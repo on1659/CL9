@@ -12,6 +12,7 @@
 #include "Data/CL9MonsterDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameState.h"
 #include "Monsters/CL9Monster.h"
 
 void UCL9CheatManager::HandleCommand(const FString& CommandLine)
@@ -42,6 +43,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("list"))
 	{
 		ListDefs(Tokens);
+	}
+	else if (Command == TEXT("night"))
+	{
+		Night(Tokens);
 	}
 	else
 	{
@@ -246,6 +251,31 @@ const UCL9MonsterDef* UCL9CheatManager::ResolveMonster(const FString& Token) con
 	FString SubAliasPart;
 	Token.Split(TEXT("+"), &AliasPart, &SubAliasPart);
 	return Registry->FindMonster(FName(*AliasPart), SubAliasPart.IsEmpty() ? NAME_None : FName(*SubAliasPart));
+}
+
+void UCL9CheatManager::Night(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	if (GameMode == nullptr || CL9GameState == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.night: host only."));
+		return;
+	}
+
+	switch (CL9GameState->GetPhase())
+	{
+	case ECL9NightPhase::Lobby:
+		GameMode->StartNight();
+		break;
+	case ECL9NightPhase::Night:
+		GameMode->EndNight();
+		break;
+	default:
+		UE_LOG(LogCL9, Log, TEXT("cl9.night: dawn is running — wait for the lobby."));
+		break;
+	}
 }
 
 const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const

@@ -8,6 +8,7 @@
 
 class ACL9Item;
 class ACL9Monster;
+class UCL9RulesDef;
 
 /**
  * Base game mode. Exists on the listen host only — authoritative game-flow
@@ -36,7 +37,21 @@ public:
 	/** Host only: spawns one monster through the standard data path — same ActorClass rule as items */
 	ACL9Monster* SpawnMonster(FName MonsterAlias, FName MonsterSubAlias, const FTransform& Transform);
 
+	/** Host only: Lobby → Night — arms the clock and schedules the expiry (docs/plan/data/rules.md 밤) */
+	void StartNight();
+
+	/** Host only: Night → Dawn now. Expiry lands here; the wipe joins in 4a */
+	void EndNight();
+
 protected:
+	/** Dawn → Lobby with the day advanced — the stop that hosts the next night (docs/plan/loop.md 정차) */
+	void EnterLobby();
+
+	const UCL9RulesDef* GetRules() const;
+
+	FTimerHandle NightExpiryHandle;
+	FTimerHandle DawnHandle;
+
 	/**
 	 * Character row every player spawns as, set in the BP child. Interim until
 	 * the lobby carries a per-player selection in PlayerState

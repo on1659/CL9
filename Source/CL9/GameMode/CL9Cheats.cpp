@@ -77,6 +77,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatHitMonster(
 		RouteCL9Cheat(TEXT("hitmonster"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatNight(
+	TEXT("cl9.night"),
+	TEXT("cl9.night — starts the night from the lobby, ends it during the night (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("night"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),

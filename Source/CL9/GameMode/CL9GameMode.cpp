@@ -10,7 +10,9 @@
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Item.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9RulesDef.h"
 #include "Monsters/CL9Monster.h"
+#include "TimerManager.h"
 
 ACL9GameMode::ACL9GameMode()
 {
@@ -129,4 +131,76 @@ ACL9Monster* ACL9GameMode::SpawnMonster(FName MonsterAlias, FName MonsterSubAlia
 		Monster->SetAlias(MonsterAlias, MonsterSubAlias);
 	}
 	return Monster;
+}
+
+void ACL9GameMode::StartNight()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (CL9GameState == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("StartNight: only the lobby can start a night."));
+		return;
+	}
+
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("StartNight: no usable rules row — night not started."));
+		return;
+	}
+
+	CL9GameState->StartNightClock(*Rules);
+	CL9GameState->SetPhase(ECL9NightPhase::Night);
+	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, Rules->NightLength);
+
+	UE_LOG(LogCL9, Log, TEXT("Night %d started — %.0fs to dawn, blackout base %.0fs."),
+		CL9GameState->GetCurrentDay(), Rules->NightLength, Rules->DarkBase);
+}
+
+void ACL9GameMode::EndNight()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (CL9GameState == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Night)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("EndNight: no night is running."));
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(NightExpiryHandle);
+	CL9GameState->SetPhase(ECL9NightPhase::Dawn);
+	UE_LOG(LogCL9, Log, TEXT("Night %d over — dawn."), CL9GameState->GetCurrentDay());
+
+	// DawnLength is undecided (0) — until it lands, dawn passes straight through.
+	const UCL9RulesDef* Rules = GetRules();
+	const float DawnLength = Rules ? Rules->DawnLength : 0.f;
+	if (DawnLength > 0.f)
+	{
+		GetWorldTimerManager().SetTimer(DawnHandle, this, &ACL9GameMode::EnterLobby, DawnLength);
+	}
+	else
+	{
+		EnterLobby();
+	}
+}
+
+void ACL9GameMode::EnterLobby()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (CL9GameState == nullptr)
+	{
+		return;
+	}
+
+	GetWorldTimerManager().ClearTimer(DawnHandle);
+	CL9GameState->ClearNightClock();
+	CL9GameState->AdvanceDay();
+	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
+	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
+}
+
+const UCL9RulesDef* ACL9GameMode::GetRules() const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	return Registry ? Registry->GetRules() : nullptr;
 }

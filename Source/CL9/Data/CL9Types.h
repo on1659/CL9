@@ -46,6 +46,22 @@ enum class ECL9Stat : uint8
 	StaminaMinResume
 };
 
+/**
+ * Night lifecycle phase (docs/systems/session.md · docs/plan/loop.md). The host
+ * game mode rules every transition; clients derive presentation from the
+ * replicated value. Loading joins with seamless travel later.
+ */
+UENUM(BlueprintType)
+enum class ECL9NightPhase : uint8
+{
+	/** Waiting at the truck between nights — the stop that becomes the lobby */
+	Lobby,
+	/** The raid — the night clock runs, expiry is a dawn failure */
+	Night,
+	/** Dawn screen between night end and the next lobby */
+	Dawn
+};
+
 /** Points at an item row and state — the cook chain and carry mirrors use it (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9ItemRef
