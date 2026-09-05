@@ -33,8 +33,8 @@
 
 | 컬럼 | 기본값 | 뜻 | 구 CCL8 상수 |
 |---|---|---|---|
-| `SpectateDelay` | 미정 | 죽고 관전으로 넘어가기까지 (초) | **신규** |
-| `TruckPadHealTime` | 미정 | 트럭 패드 회복 시간 (초) | **신규** |
+| `SpectateDelay` | 3.0 (초안) | 죽고 관전으로 넘어가기까지 (초) | **신규** |
+| `TruckPadHealTime` | 5.0 (초안) | 트럭 패드 위에 연속으로 서 있어야 HP가 만회복되는 시간 (초) | **신규** |
 | `LeaverGraceTime` | 3.0 | 이탈 후 폰이 남는 시간 (초) | `AbandonT` |
 | `ThreatActMinRadius` | 420 | 이 안에서는 위협이 안 깨어난다 (cm) | `ThreatActMinR 140` |
 
@@ -108,4 +108,4 @@
 
 ## 미결
 
-- `SpectateDelay` · `TruckPadHealTime` · `DawnLength` — 플레이해보고 정한다
+- `SpectateDelay` · `TruckPadHealTime` — 초안 3초 · 5초로 4a에 넣었다 (2026-09-05). `DawnLength`는 아직 0 — 플레이해보고 정한다

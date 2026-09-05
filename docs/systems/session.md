@@ -174,6 +174,9 @@ float NightStart/End/BlackoutServerTime  // 밤 시계 — 클라가 서버시�
   `GetPhase`·`GetCurrentDay`. 조명(5c `ACL9NightLighting` — [light.md](light.md))과 HUD가 구독한다.
 - 전이 검증 치트: `cl9.night`(로비면 시작, 밤이면 종료). 시계 값은 `DA_CL9Rules`에서 읽는다
   (`NightLength`·`DarkBase`·`DarkAccel`·`DarkMin` — [../plan/data/rules.md](../plan/data/rules.md) 밤).
+- 4a(2026-09-05)가 얹은 것: **전멸**(생존자 0, `HandlePlayerDeath`)도 `EndNight`로 들어오고,
+  `EnterLobby`는 `ReviveDead()`로 죽은 전원을 트럭 패드 위에 만HP로 세운 뒤 로비 페이즈로
+  바꾼다 — [character.md](character.md) 죽음 절.
 
 **미구현 — 세션/매칭 수명주기**: 위 로비 대기·심리스 트래블·재접속·참가 코드는 Steam 리슨
 세션 층을 지을 때(1f 이후) 이 GameState에 더해진다 — `ESessionState`(Lobby/Loading/InGame)·

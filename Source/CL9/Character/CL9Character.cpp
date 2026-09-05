@@ -84,9 +84,10 @@ void ACL9Character::SetCharacterAlias(FName NewAlias)
 	// The individual's HP rolls once, on the host (docs/systems/character.md —
 	// HP lives on the PlayerState, never the character).
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (CL9PlayerState != nullptr && CL9PlayerState->Hp == 0 && CharacterDef != nullptr)
+	if (CL9PlayerState != nullptr && CL9PlayerState->MaxHp == 0 && CharacterDef != nullptr)
 	{
-		CL9PlayerState->Hp = FMath::RandRange(CharacterDef->HpMin, CharacterDef->HpMax);
+		CL9PlayerState->MaxHp = FMath::RandRange(CharacterDef->HpMin, CharacterDef->HpMax);
+		CL9PlayerState->Hp = CL9PlayerState->MaxHp;
 		CL9PlayerState->NotifyHpChanged();
 	}
 }
@@ -104,6 +105,7 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, HeldItem);
 	DOREPLIFETIME(ACL9Character, PullingCart);
 	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
+	DOREPLIFETIME(ACL9Character, WornItem);
 }
 
 void ACL9Character::OnRep_CharacterAlias()
@@ -222,6 +224,7 @@ void ACL9Character::ThrowStartInput()
 	// charges a throw (docs/systems/input.md · monster.md 반격).
 	if (GetHeldItem() != nullptr)
 	{
+		LocalThrowChargeStartTime = GetWorld()->GetTimeSeconds();
 		Server_ThrowChargeStart();
 	}
 	else
@@ -232,7 +235,48 @@ void ACL9Character::ThrowStartInput()
 
 void ACL9Character::ThrowEndInput()
 {
+	LocalThrowChargeStartTime = -1.f;
 	Server_ThrowRelease();
+}
+
+float ACL9Character::GetThrowChargeAlpha() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (LocalThrowChargeStartTime < 0.f || Rules == nullptr || Rules->ThrowChargeTime <= 0.f)
+	{
+		return -1.f;
+	}
+	return FMath::Clamp((GetWorld()->GetTimeSeconds() - LocalThrowChargeStartTime) / Rules->ThrowChargeTime, 0.f, 1.f);
+}
+
+FText ACL9Character::GetFocusPrompt() const
+{
+	// Same order as Server_PickPlace: wearable > pickable item > interactable > place/release
+	AActor* Focus = FocusedActor.Get();
+	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
+		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
+	{
+		return NSLOCTEXT("CL9", "PromptWear", "[E] 착용");
+	}
+	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
+		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
+		&& HeldItem == nullptr && PullingCart == nullptr)
+	{
+		return NSLOCTEXT("CL9", "PromptPickUp", "[E] 줍기");
+	}
+	if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Focus); Interactable != nullptr && Interactable->CanInteract(this))
+	{
+		return Interactable->GetPrompt(this);
+	}
+	if (Focus == nullptr && HeldItem != nullptr)
+	{
+		return NSLOCTEXT("CL9", "PromptPlace", "[E] 놓기");
+	}
+	if (Focus == nullptr && PullingCart != nullptr)
+	{
+		return NSLOCTEXT("CL9", "PromptReleaseCart", "[E] 수레 놓기");
+	}
+	return FText::GetEmpty();
 }
 
 void ACL9Character::SwapInput()
@@ -247,11 +291,14 @@ void ACL9Character::FlashlightInput()
 
 void ACL9Character::Server_Flashlight_Implementation()
 {
-	// Only a held flashlight toggles — the item itself refuses to light past the
-	// blackout (docs/systems/light.md).
-	if (HeldItem != nullptr && HeldItem->IsFlashlight())
+	// The worn headlamp takes F first; otherwise a held flashlight. The item
+	// itself refuses to light a hand flashlight past the blackout (docs/systems/light.md).
+	ACL9Item* Lamp = (WornItem != nullptr && WornItem->IsFlashlight()) ? WornItem.Get()
+		: (HeldItem != nullptr && HeldItem->IsFlashlight()) ? HeldItem.Get()
+		: nullptr;
+	if (Lamp != nullptr)
 	{
-		HeldItem->SetLightSwitch(!HeldItem->IsLightOn());
+		Lamp->SetLightSwitch(!Lamp->IsLightOn());
 	}
 }
 
@@ -294,7 +341,10 @@ AActor* ACL9Character::ResolveFocus() const
 
 		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp())
 		{
-			if (!bHandsBusy && AimDot > BestItemDot)
+			// A Head-slot item goes on the head, so busy hands don't matter — a bare head does
+			const bool bWearable = Item->GetItemDef()->CarrySlot == ECL9CarrySlot::Head;
+			const bool bCanTake = bWearable ? (WornItem == nullptr) : !bHandsBusy;
+			if (bCanTake && AimDot > BestItemDot)
 			{
 				BestItem = Actor;
 				BestItemDot = AimDot;
@@ -353,6 +403,15 @@ void ACL9Character::Tick(float DeltaSeconds)
 			SetFocusHighlight(NewFocus, true);
 		}
 		FocusedActor = NewFocus;
+	}
+
+	// The prompt can change without the target changing (cart: 끌기 → 놓기), so
+	// compare the text itself and notify the HUD only on a difference.
+	const FText Prompt = GetFocusPrompt();
+	if (!Prompt.EqualTo(LastFocusPrompt))
+	{
+		LastFocusPrompt = Prompt;
+		OnFocusPromptChanged.Broadcast();
 	}
 
 	UpdateStaminaShake();
@@ -424,7 +483,20 @@ void ACL9Character::Server_PickPlace_Implementation()
 	// the same resolver and never trusts the client (docs/systems/input.md).
 	AActor* Focus = ResolveFocus();
 
+	// A Head-slot item is worn, not held — the same press, hands untouched
+	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
+		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
+	{
+		if (ACL9Cart* BedCart = Cast<ACL9Cart>(Wearable->GetAttachParentActor()))
+		{
+			BedCart->RemoveLoadedItem(Wearable);
+		}
+		HostWear(Wearable);
+		return;
+	}
+
 	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
+		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
 		&& HeldItem == nullptr && PullingCart == nullptr)
 	{
 		// Taking an item off a cart bed is the same press as off the ground.
@@ -629,6 +701,23 @@ void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
 	Item->OnPickedUp(this, FVector(ForwardOffset, 0.f, HandZ));
 }
 
+void ACL9Character::HostWear(ACL9Item* Item)
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr || Item == nullptr || Item->GetItemDef() == nullptr || WornItem != nullptr)
+	{
+		return;
+	}
+
+	// Mirror for UI, actor for the world (docs/systems/inventory.md 상태 모델)
+	CL9PlayerState->HeadItem.ItemAlias = Item->GetAlias();
+	CL9PlayerState->HeadItem.ItemSubAlias = Item->GetSubAlias();
+	CL9PlayerState->NotifyCarryChanged();
+	WornItem = Item;
+	Item->SetOwner(this);
+	Item->OnWorn(this);
+}
+
 void ACL9Character::HostPlaceHeld(const UCL9RulesDef* Rules)
 {
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
@@ -715,8 +804,8 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 	CL9PlayerState->NotifyHpChanged();
 	HostDropEverything();
 
-	// Down and unable to move; HP 0 stays down until 4a brings spectate
-	// (docs/systems/character.md 피격·넘어짐·죽음).
+	// Down and unable to move; HP 0 stays down until the next lobby revives
+	// (docs/systems/character.md 피격·넘어짐·죽음 — 부활은 없다).
 	const float Duration = CL9PlayerState->Hp > 0
 		? (CharacterDef ? CharacterDef->KnockdownTime : 1.5f)
 		: TNumericLimits<float>::Max();
@@ -724,7 +813,40 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 
 	UE_LOG(LogCL9, Log, TEXT("'%s' caught by '%s': -%d HP → %d%s"),
 		*GetNameSafe(this), *GetNameSafe(Source), Amount, CL9PlayerState->Hp,
-		CL9PlayerState->Hp <= 0 ? TEXT(" (down for good — 관전은 4a)") : TEXT(""));
+		CL9PlayerState->Hp <= 0 ? TEXT(" (dead — down for the night)") : TEXT(""));
+
+	// The flow ruling (wipe, spectate) is the game mode's — host only, so it exists here
+	if (CL9PlayerState->Hp <= 0)
+	{
+		if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
+		{
+			GameMode->HandlePlayerDeath(this);
+		}
+	}
+}
+
+void ACL9Character::HostHealFull()
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr || CL9PlayerState->MaxHp <= 0)
+	{
+		return;
+	}
+
+	CL9PlayerState->Hp = CL9PlayerState->MaxHp;
+	CL9PlayerState->NotifyHpChanged();
+}
+
+void ACL9Character::HostRevive()
+{
+	if (!HasAuthority() || !IsDead())
+	{
+		return;
+	}
+
+	HostHealFull();
+	KnockdownEndServerTime = 0.f;
+	UE_LOG(LogCL9, Log, TEXT("'%s' revived at the truck."), *GetNameSafe(this));
 }
 
 bool ACL9Character::IsKnockedDown() const
@@ -734,9 +856,9 @@ bool ACL9Character::IsKnockedDown() const
 
 bool ACL9Character::IsDead() const
 {
-	// Hp starts 0 until the alias applies and rolls it — only a rolled 0 is death
+	// MaxHp is 0 until the alias applies and rolls it — only a rolled 0 is death
 	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
-	return CL9PlayerState != nullptr && CL9PlayerState->Hp <= 0 && CharacterDef != nullptr;
+	return CL9PlayerState != nullptr && CL9PlayerState->IsDead();
 }
 
 void ACL9Character::HostDropEverything()

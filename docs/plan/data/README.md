@@ -5,7 +5,7 @@
 | 표 | 무엇 |
 |---|---|
 | [rules.md](rules.md) | 게임 전체 규칙 — 이동 · 스태미나 · 소리 · 죽음 · 밤 |
-| [item/](item/common.md) | 아이템 — 공통 컬럼([common](item/common.md)) + [계란](item/egg.md)·[고기](item/meat.md)·[수레](item/cart.md)·[손전등](item/flashlight.md) |
+| [item/](item/common.md) | 아이템 — 공통 컬럼([common](item/common.md)) + [계란](item/egg.md)·[고기](item/meat.md)·[수레](item/cart.md)·[손전등](item/flashlight.md)·[헤드램프](item/headlamp.md) |
 | [monster/](monster/common.md) | 몬스터 — 공통 컬럼([common](monster/common.md)) + [닭](monster/chicken.md)·[거위](monster/goose.md)·[너구리](monster/raccoon.md) |
 | [character.md](character.md) | 플레이어 외형 |
 | [site.md](site.md) | 목적지 — 양계장 · (나중에) 벌집 |

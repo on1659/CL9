@@ -14,7 +14,7 @@
 | `ActorClass` | 소프트 참조 | 전용 BP |
 | `Price` | int | 이더 가격 |
 | `Slot` | enum | `Kitchen` 주방 고정 / `Carryable` 들고 다님 |
-| `bPhysicalProp` | bool | 월드에 놓을 수 있는 물건인가. **true만 판다** (현재 상점 범위 — 착용형·스탯형 장비 없음) |
+| `bPhysicalProp` | bool | 월드에 놓을 수 있는 물건인가. **true만 판다** (현재 상점 범위 — 스탯형 장비 없음. 착용형은 **헤드램프 하나만** 예외 — 실물이되 주우면 머리에 쓴다, 2026-09-05) |
 | `bUsableAsTool` | bool | 몬스터를 상대하는 도구로 쓸 수 있나 |
 | `ItemDef` | `Alias` | 들고 다닐 때 어떤 아이템으로 취급하나 |
 | `UnlockDay` | int | 몇 일차부터 살 수 있나 |
@@ -48,6 +48,7 @@
 | `cart` | 미정 | `Carryable` | ✕ | `CartOnly` 아이템 운반을 연다. 끌면 `CartMult` 0.75 — 물건 정의는 [item/cart.md](item/cart.md) |
 | `pot` | 미정 | `Carryable` | 미정 | 두 번째 조리 용기 — 동시에 두 요리 |
 | `standing_lamp` | 미정 | `Carryable` | ✕ | 놓으면 주변을 밝힌다. 조명 세팅([../../systems/light.md](../../systems/light.md)) 검토 후 값을 정한다 |
+| `headlamp` | 미정 | `Carryable` (ItemDef `headlamp`, CarrySlot `Head`) | ✕ | 머리에 쓰는 빛 — 손이 빈다. 정전에 안 꺼진다. 4f 전엔 바닥에 놓아 준다 — [item/headlamp.md](item/headlamp.md) |
 
 ---
 

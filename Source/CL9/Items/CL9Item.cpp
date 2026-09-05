@@ -3,6 +3,7 @@
 #include "Items/CL9Item.h"
 #include "Character/CL9Character.h"
 #include "Components/CapsuleComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/SphereComponent.h"
@@ -150,9 +151,10 @@ void ACL9Item::SetLightSwitch(bool bOn)
 		return;
 	}
 
-	// The blackout is the flashlight's counter — it cannot be lit past it (light.md)
+	// The blackout is the flashlight's counter — it cannot be lit past it (light.md).
+	// A worn lamp is the wearer's own gear and stays out of it.
 	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
-	if (bOn && CL9GameState != nullptr && CL9GameState->IsBlackout())
+	if (bOn && !IsWorn() && CL9GameState != nullptr && CL9GameState->IsBlackout())
 	{
 		return;
 	}
@@ -179,7 +181,7 @@ void ACL9Item::UpdateLightVisibility()
 	// Each machine derives the same result: switch on, minus the blackout for a
 	// flashlight (a glow stays lit — it's the light that remains, light.md).
 	bool bVisible = bLightOn;
-	if (bVisible && IsFlashlight())
+	if (bVisible && IsFlashlight() && !IsWorn())
 	{
 		const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
 		if (CL9GameState != nullptr && CL9GameState->IsBlackout())
@@ -221,6 +223,31 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation
 
 	AttachToComponent(Holder->GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SetActorRelativeLocation(RelativeLocation);
+}
+
+void ACL9Item::OnWorn(ACL9Character* Wearer)
+{
+	if (!HasAuthority() || Wearer == nullptr)
+	{
+		return;
+	}
+
+	HoldState = ECL9ItemHoldState::Worn;
+	SimVelocity = FVector::ZeroVector;
+	bAtRest = true;
+	ApplyHoldState();
+
+	// Same start as a held flashlight: off until the wearer toggles it
+	if (ItemDef != nullptr && ItemDef->bEmitsLight)
+	{
+		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
+		OnRep_LightOn();
+	}
+
+	// The camera carries the owner's full look; on other machines it only yaws
+	// with the body (pitch follow is a later step). Sits just above the eyes.
+	AttachToComponent(Wearer->GetFirstPersonCameraComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	SetActorRelativeLocation(FVector(8.f, 0.f, 10.f));
 }
 
 void ACL9Item::OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation)
@@ -294,7 +321,7 @@ void ACL9Item::Tick(float DeltaSeconds)
 	// A lit flashlight polls the blackout on every machine so the beam dies the
 	// moment it hits — returns pull the moment forward, so a fixed timer would be
 	// wrong (docs/systems/light.md). The host also flips the switch off to persist it.
-	if (bLightOn && IsFlashlight())
+	if (bLightOn && IsFlashlight() && !IsWorn())
 	{
 		UpdateLightVisibility();
 		if (HasAuthority())
@@ -389,7 +416,10 @@ void ACL9Item::ApplyHoldState()
 	// Held items ride the holder's capsule — their own collision would push
 	// the holder around, so it goes dark. Cart-bed items keep query collision
 	// so the aim detection can still find them.
-	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held);
+	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held && HoldState != ECL9ItemHoldState::Worn);
+
+	// A worn lamp sits in front of the wearer's eyes — only others see it
+	MeshComponent->SetOwnerNoSee(HoldState == ECL9ItemHoldState::Worn);
 
 	// Real physics runs only for free items on the host (2026-09-03 결정) —
 	// clients render replicated movement, every other state is attached.

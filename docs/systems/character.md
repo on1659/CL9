@@ -129,8 +129,25 @@ class ICL9Damageable {
 - 넘어짐 동안 이동 불가 — CMC 최대 속도 0 방식으로 확정 (Replicated
   `KnockdownEndServerTime`을 양쪽 CMC가 읽는다; `KnockdownTime` 캐릭터 표 컬럼 —
   2026-09-03 decisions.md)
-- HP 0 → 사망 → `SpectateDelay` 뒤 관전 ([ui.md](ui.md)) — 회복 채널은 트럭 패드
-- 트럭 패드 회복: `TruckPadHealTime` (미정 — rules.md)
+- HP 0 → 사망 (4a 구현, 2026-09-05). 폰은 그 자리에 누운 채 남고(넘어짐 무기한, 몬스터는 죽은
+  대상을 건너뛴다) 캐릭터가 호스트 GameMode `HandlePlayerDeath`에 넘긴다:
+  - **전멸** — 생존자가 0이면 트럭이 일행을 두고 떠난다 = `EndNight()` (밤 중일 때만. rules.md 실패 축)
+  - 아니면 `SpectateDelay` 뒤 **관전**: 호스트가 `PlayerController::SetViewTarget(생존 동료 폰)`
+    (엔진이 소유 클라에 ClientSetViewTarget 전달) + `bSpectating`(ReplicatedUsing) = true.
+    OnRep이 로컬에서 관전 화면(`CL9UINames::Spectate` 행)과 `IMC_Spectate`를 **함께** 켠다 —
+    화면·IMC 불일치 원천 차단([input.md](input.md)). 대상 전환은 `SpectateNext()`
+    (BlueprintCallable → Server RPC → 접속 순서로 다음 생존자, 순환). 보던 동료가 죽으면
+    자동으로 다음 생존자로 넘어간다.
+  - 관전 시점은 동료의 1인칭 그대로 — 동료 폰이 뷰 타깃이 되면 OnlyOwnerSee/OwnerNoSee가
+    뷰 타깃 기준으로 풀려 그 동료의 팔·시야를 본다.
+- **부활은 없다** — 다음 로비(`EnterLobby`)에서 `ReviveDead()`: 죽은 전원을 `HostRevive()`
+  (HP = `MaxHp`, 넘어짐 해제)하고 트럭 패드 위로 옮기며 관전을 끝낸다(뷰 타깃 = 자기 폰).
+- **트럭 패드 회복** (`ACL9TruckPad`, Source/CL9/World): HealZone 안에 **살아 있고 다친**
+  캐릭터가 `TruckPadHealTime`초 연속으로 서 있으면 HP가 `MaxHp`로 찬다. 벗어나면 카운트
+  초기화. 죽은 사람은 여기서 안 살아난다. 호스트 전용 틱, 복제 없음(HP는 PlayerState로 도착).
+- `MaxHp`는 PlayerState에 HP와 함께 한 번 굴린다(`HpMin..HpMax`). `IsDead()` = MaxHp>0 && Hp≤0
+  (굴리기 전 0은 죽음이 아니다).
+- 치트 `cl9.damage [n]` — 몬스터 없이 죽음→관전→패드 회복을 검증한다 ([cheats.md](cheats.md)).
 
 ## 네트워크 정리
 

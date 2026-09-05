@@ -33,11 +33,12 @@
 | 요소 | 내용 | 근거 |
 |---|---|---|
 | 밤 시계 | `NightLength` 잔여 — 만료가 실패라 보여야 한다 | rules.md |
-| 스태미나 | 정규화 0~1 바. 탈진 래치 중에는 색이 바뀐다. CMC에 변경 이벤트가 없어 **여기만 폴링**한다 | character.md |
+| 스태미나 | 정규화 0~1 바. 탈진 래치 중에는 색이 바뀐다. CMC에 변경 이벤트가 없어 **폴링**한다 (차징 게이지와 함께 유일한 예외 — ui_system.md) | character.md |
 | 이더 | `GameState.SharedMoney` (판 공유) | economy.md |
 | 짐 슬롯 | 손에 든 것 + 품(Pocketable) | inventory.md |
 | 주문 | 선택한 주문의 남은 재료·마감 | order.md |
-| 상호작용 | 줍기·놓기·반납 프롬프트, 던지기 차징 게이지 | raiding.md |
+| 상호작용 | 줍기·놓기·반납 프롬프트(하단 중앙 — 문구는 캐릭터 `GetFocusPrompt`가 조립, 비면 숨김), 던지기 차징 게이지(차징 중에만 표시) | raiding.md · input.md |
+| 아이템 라벨 | 아웃라인된 아이템 머리 위에 월드→2D 투영으로 붙는 라벨: 이름 · `ValueMin~ValueMax` 이더 · 무게/품·손·수레/깨지기 쉬움 (2026-09-05 사용자 요청). 아이템(ACL9Item)만, 수레·항아리 같은 상호작용 액터는 프롬프트로 충분 | item/common.md · economy.md |
 
 - 던지기 차징은 조작 피드백이라 게이지가 허용된다 — 스태미나 같은 "관리 자원"이 아니다.
 - 미니맵은 초기 구현에서 생략. 넣을 때 무엇이 그려지는지는 개체별 `bShowOnMinimap` 값이 정한다.
@@ -76,6 +77,13 @@
 
 죽으면 `SpectateDelay` 뒤 동료 시점 관전으로 넘어간다. 부활 UI는 없다 — 회복 채널은
 트럭 패드뿐이다.
+
+구현(4a, 2026-09-05): UI 표 `Spectate` 행(Screen 레이어). 열고 닫는 주체는
+`ACL9PlayerController`의 `bSpectating` OnRep이다 — 위젯이 스스로 열지 않는다. 위젯이 읽는
+값: 관전 대상 = `PlayerController->GetViewTarget()`(동료 폰 → `GetPlayerState()`로 이름),
+`IsSpectating()`. 대상 전환 버튼은 `SpectateNext()`를 부른다(IA_SpectateNext와 같은 함수).
+카운트다운은 없다 — 화면은 딜레이가 끝난 뒤 열린다. 일시정지가 이 화면을 대체했다가 닫히면
+관전 화면이 다시 열린다(PauseInput). 흐름 전체는 [character.md](character.md) 죽음 절.
 
 ### 일시정지
 

@@ -59,9 +59,20 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="HUD")
 	FCL9PlayerHudChanged OnCarryChanged;
 
+	/** Rolled and spent — 0 before the roll is "not yet", not death (docs/systems/character.md 죽음) */
+	UFUNCTION(BlueprintPure, Category="Health")
+	bool IsDead() const
+	{
+		return MaxHp > 0 && Hp <= 0;
+	}
+
 	/** Rolled once at spawn from the character row's HpMin..HpMax; host-only writes. 0 = dead */
 	UPROPERTY(ReplicatedUsing=OnRep_Hp, BlueprintReadOnly, Category="Health")
 	int32 Hp = 0;
+
+	/** The roll Hp started at — the truck pad heals back to this, the next lobby revives to it */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Health")
+	int32 MaxHp = 0;
 
 	/** What the hand holds — mirror of the attached item actor (None when empty) */
 	UPROPERTY(ReplicatedUsing=OnRep_HandItem, BlueprintReadOnly, Category="Carry")
@@ -70,6 +81,10 @@ public:
 	/** Pocketed items, newest last — data only, the actors are gone (Pocketable rows only) */
 	UPROPERTY(ReplicatedUsing=OnRep_PocketItems, BlueprintReadOnly, Category="Carry")
 	TArray<FCL9CarriedItem> PocketItems;
+
+	/** What sits on the head (Head carry slot — headlamp) — mirror of the worn item actor (None when bare) */
+	UPROPERTY(ReplicatedUsing=OnRep_HeadItem, BlueprintReadOnly, Category="Carry")
+	FCL9CarriedItem HeadItem;
 
 	/** Server world time until which swap/pick/throw inputs are refused (docs/systems/input.md) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Carry")
@@ -84,4 +99,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_PocketItems();
+
+	UFUNCTION()
+	void OnRep_HeadItem();
 };

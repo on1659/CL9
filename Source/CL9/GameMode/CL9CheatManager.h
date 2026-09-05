@@ -44,6 +44,9 @@ public:
 	/** cl9.blackout — pulls the blackout to now (flashlight/sound-off verification) */
 	void Blackout(const TArray<FString>& Args);
 
+	/** cl9.damage [양] [플레이어 번호] — hurts your own character, or player N by join order (death → spectate → truck pad checks without a monster) */
+	void Damage(const TArray<FString>& Args);
+
 private:
 	/** Resolves "egg", "egg+cooked" or a cl9.list number to a usable item row */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;

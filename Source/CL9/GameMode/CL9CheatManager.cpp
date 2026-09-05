@@ -5,7 +5,9 @@
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "CL9.h"
+#include "Character/CL9Character.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
@@ -51,6 +53,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("blackout"))
 	{
 		Blackout(Tokens);
+	}
+	else if (Command == TEXT("damage"))
+	{
+		Damage(Tokens);
 	}
 	else
 	{
@@ -297,6 +303,33 @@ void UCL9CheatManager::Blackout(const TArray<FString>& Args)
 		return;
 	}
 	CL9GameState->ForceBlackout();
+}
+
+void UCL9CheatManager::Damage(const TArray<FString>& Args)
+{
+	// Optional second arg picks another player by join order, so the listen host
+	// can down a client's character for spectate checks without that console.
+	APlayerController* Controller = GetOuterAPlayerController();
+	APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
+	if (Args.IsValidIndex(1))
+	{
+		const AGameStateBase* State = GetWorld()->GetGameState();
+		const int32 Index = FCString::Atoi(*Args[1]);
+		const APlayerState* Target = (State != nullptr && State->PlayerArray.IsValidIndex(Index)) ? State->PlayerArray[Index] : nullptr;
+		Pawn = Target ? Target->GetPawn() : nullptr;
+	}
+
+	ACL9Character* Character = Cast<ACL9Character>(Pawn);
+	if (Character == nullptr || !Character->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.damage: needs a character on the host (cl9.damage [amount] [player index])."));
+		return;
+	}
+
+	// Same host entry a catch uses — knockdown, spill, death all follow (docs/systems/character.md)
+	const int32 Amount = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
+	Character->OnDamage(Amount, nullptr);
+	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s'."), Amount, *GetNameSafe(Character));
 }
 
 const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const

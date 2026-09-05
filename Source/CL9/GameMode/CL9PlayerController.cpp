@@ -6,7 +6,9 @@
 #include "Engine/LocalPlayer.h"
 #include "GameMode/CL9CameraManager.h"
 #include "GameMode/CL9CheatManager.h"
+#include "GameMode/CL9GameMode.h"
 #include "InputMappingContext.h"
+#include "Net/UnrealNetwork.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
 
@@ -62,8 +64,16 @@ void ACL9PlayerController::SetupInputComponent()
 		if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
 		{
 			EnhancedInput->BindAction(PauseAction, ETriggerEvent::Started, this, &ACL9PlayerController::PauseInput);
+			EnhancedInput->BindAction(SpectateNextAction, ETriggerEvent::Started, this, &ACL9PlayerController::SpectateNext);
 		}
 	}
+}
+
+void ACL9PlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACL9PlayerController, bSpectating);
 }
 
 void ACL9PlayerController::PauseInput()
@@ -82,6 +92,74 @@ void ACL9PlayerController::PauseInput()
 	else
 	{
 		UIManager->CloseWidget(OpenScreen);
+		// Spectating has no "closed" state — the screen the flag derives comes back
+		if (bSpectating)
+		{
+			UIManager->OpenWidget(CL9UINames::Spectate);
+		}
+	}
+}
+
+void ACL9PlayerController::SpectateNext()
+{
+	Server_SpectateNext();
+}
+
+void ACL9PlayerController::Server_SpectateNext_Implementation()
+{
+	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
+	{
+		GameMode->SpectateNext(this);
+	}
+}
+
+void ACL9PlayerController::HostSetSpectating(bool bNewSpectating)
+{
+	if (!HasAuthority() || bSpectating == bNewSpectating)
+	{
+		return;
+	}
+
+	bSpectating = bNewSpectating;
+	// OnRep never runs on the listen host — fire the local hook directly
+	OnRep_Spectating();
+}
+
+void ACL9PlayerController::OnRep_Spectating()
+{
+	if (!IsLocalPlayerController())
+	{
+		return;
+	}
+
+	// Screen and IMC flip in one place with the flag (docs/systems/input.md 전환)
+	if (UCL9UIManager* UIManager = UCL9UIManager::Get(this))
+	{
+		if (bSpectating)
+		{
+			UIManager->OpenWidget(CL9UINames::Spectate);
+		}
+		else
+		{
+			UIManager->CloseWidget(CL9UINames::Spectate);
+		}
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if (Subsystem == nullptr || SpectateMappingContext == nullptr)
+	{
+		return;
+	}
+	if (bSpectating)
+	{
+		if (!Subsystem->HasMappingContext(SpectateMappingContext))
+		{
+			Subsystem->AddMappingContext(SpectateMappingContext, 5);
+		}
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(SpectateMappingContext);
 	}
 }
 

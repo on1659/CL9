@@ -14,7 +14,9 @@ enum class ECL9CarrySlot : uint8
 	/** Fits in the pocket (loses light there, stays detectable) */
 	Pocketable,
 	/** Cart only — cannot be hand-carried at all */
-	CartOnly
+	CartOnly,
+	/** Worn on the head — picking it up puts it on, the hands stay free (headlamp, 2026-09-05) */
+	Head
 };
 
 /** How a light-emitting item lights (docs/systems/light.md 광원 목록) */

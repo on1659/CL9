@@ -54,9 +54,21 @@ public:
 
 - HUD 값은 전부 GameState/PlayerState의 Replicated 값에서 읽는다 — OnRep 콜백이 위젯 갱신을
   호출한다 (conventions.md § 5·§ 6). 위젯이 Tick으로 폴링하지 않는다.
-- **예외는 스태미나 바 하나다** — 스태미나는 CMC 틱에서 시뮬레이션되고 변경 이벤트가 없어
-  (복제되지도 않는다) HUD가 `GetStamina()`를 매 프레임 읽는다. 소유 클라의 로컬 값이라
-  네트워크 비용이 없다. 다른 값에 이 예외를 넓히지 않는다.
+- **예외는 로컬 입력 피드백 둘 — 스태미나 바와 던지기 차징 게이지.** 스태미나는 CMC 틱에서
+  시뮬레이션되고 변경 이벤트가 없어 (복제되지도 않는다) HUD가 `GetStamina()`를 매 프레임
+  읽는다. 차징 게이지는 버튼을 누른 시간의 함수라 차징 중 매 프레임 `GetThrowChargeAlpha()`
+  (로컬 예측 — [input.md](input.md) 던지기 차징)를 읽는다. 둘 다 소유 클라의 로컬 값이라
+  네트워크 비용이 없다. 복제 값에는 이 예외를 넓히지 않는다.
+- **상호작용 프롬프트는 이벤트다** — 캐릭터가 포커스 틱에서 `GetFocusPrompt()` 문구를 계산하고
+  **문구가 바뀔 때만** `OnFocusPromptChanged`를 쏜다. HUD는 그 이벤트에서 문구를 읽어 표시하고,
+  비면 숨긴다. 액터 변경이 아니라 문구 변경 기준인 이유: 수레처럼 같은 액터라도 상태에 따라
+  문구가 바뀐다 ("[E] 수레 끌기" → "[E] 수레 놓기"). 문구 자체(줍기·놓기·GetPrompt 위임)는
+  캐릭터가 Server_PickPlace의 분기 순서대로 조립한다 — HUD는 문구를 만들지 않는다.
+- **아이템 라벨의 위치는 표시 문제라 매 프레임 재투영한다** — 캐릭터 `GetFocusedActor()`(아웃라인과 같은
+  대상)가 아이템이면 `ProjectWorldLocationToWidgetPosition`으로 머리 위 좌표를 구해 HUD 캔버스 슬롯을
+  옮긴다. 라벨 **내용**은 대상이 바뀔 때만 채운다(아이템 표 `DisplayName`·`ValueMin/Max`·`Weight`·
+  `CarrySlot`·`bFragile`). 값 폴링이 아니라 좌표 추적이므로 위의 폴링 예외와는 별개다. 액터에
+  WidgetComponent를 붙이지 않는다 — 위젯은 WBP_HUD 하나에 있다.
 - 서버가 화면 전환을 지시할 때는 Multicast RPC → 로컬에서 `OpenWidget` 호출
   (예: 밤 종료 → 전원 새벽 화면). 단 "지금 열려 있어야 할 Screen"은 **GameState 페이즈에서
   파생 가능**해야 한다 — Multicast를 놓친 중간 참가자가 페이즈에서 파생한 이름과

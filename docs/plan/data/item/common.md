@@ -11,7 +11,7 @@
 
 | 컬럼 | 타입 | 뜻 | 기본값 |
 |---|---|---|---|
-| `CarrySlot` | enum | `Hand` 손 전용 / `Pocketable` 품에 넣을 수 있음 / `CartOnly` 수레만 | `Pocketable` |
+| `CarrySlot` | enum | `Hand` 손 전용 / `Pocketable` 품에 넣을 수 있음 / `CartOnly` 수레만 / `Head` 머리에 쓴다(주우면 착용, 손은 빈다 — [headlamp.md](headlamp.md), 2026-09-05) | `Pocketable` |
 | `Weight` | float | 무게 — 들었을 때의 감속이 여기서 계산된다 | **미정** |
 | `bStackable` | bool | 겹치나 | false |
 

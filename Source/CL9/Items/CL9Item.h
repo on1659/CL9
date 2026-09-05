@@ -22,7 +22,9 @@ enum class ECL9ItemHoldState : uint8
 	/** On a cart bed — no physics, but still aimable and pickable */
 	OnCart,
 	/** Being towed (the cart itself) — no physics, stays aimable, never attached */
-	Pulled
+	Pulled,
+	/** Worn on a character's head (Head carry slot) — rides the view, hands stay free */
+	Worn
 };
 
 /**
@@ -60,6 +62,20 @@ public:
 
 	/** Host only: attach to the holder's capsule at the given relative spot */
 	void OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation);
+
+	/**
+	 * Host only: put on the wearer's head (Head carry slot — docs/plan/data/item/headlamp.md).
+	 * Rides the first person camera so the beam follows the wearer's look; the
+	 * wearer never sees the lamp itself. Worn lights ignore the blackout — the
+	 * blackout kills the site's systems, not what you brought (2026-09-05).
+	 */
+	void OnWorn(ACL9Character* Wearer);
+
+	/** True while worn on a head — the blackout leaves worn lights alone */
+	bool IsWorn() const
+	{
+		return HoldState == ECL9ItemHoldState::Worn;
+	}
 
 	/** Host only: attach to a cart's bed at the given relative spot (docs/plan/data/item/cart.md 적재) */
 	void OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation);

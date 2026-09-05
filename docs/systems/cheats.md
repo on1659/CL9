@@ -76,6 +76,7 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.list <종류>` | items · monsters · sites · orders · equipment · characters · sequences | 번호+Alias+상태 출력 — Broken 행은 `✗ (사유)` 표시 ([../data/schema.md](../data/schema.md) EDefStatus) |
 | `cl9.additem <alias\|번호> [수량]` | | 플레이어 전방에 아이템 실물 스폰 |
 | `cl9.addmonster <alias\|번호> [수량]` | | 전방 바닥에 몬스터 스폰 (AI 즉시 가동) |
+| `cl9.damage [양] [플레이어 번호]` | 기본 1 · 번호 생략 = 자기 | 캐릭터에 데미지 — 잡힘과 같은 OnDamage 경로(넘어짐·짐 흘림·죽음). 번호는 접속 순서(PlayerArray 인덱스, 호스트 0)라 리슨 호스트 콘솔에서 클라를 죽여 관전을 검증할 수 있다 (4a) |
 | `cl9.day <N>` | | 특정 일차로 이동 — 곡선 적용 확인 (구 bp_debug_day) |
 | `cl9.money <N>` | | 판 공유 자금 설정 (GameState.SharedMoney) |
 | `cl9.seed <N>` | | 특정 시드로 맵 재생성 (구 bp_map_seed) |

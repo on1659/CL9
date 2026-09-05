@@ -15,6 +15,7 @@
 
 | 광원 | 값 | 출처 |
 |---|---|---|
+| 헤드램프 (`headlamp`) | **머리에 쓰는 장비** (CarrySlot `Head`) — 쓰면 손이 빈 채 시선 방향 스포트라이트, F 토글. **정전에 안 꺼진다**(내 장비지 시설이 아니다 — 2026-09-05) | [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md) |
 | 손전등 (`flashlight`) | **손에 드는 아이템** — 들면 지향성 스포트라이트 320u(960cm), 품에 넣으면 꺼짐 | [../plan/data/item/flashlight.md](../plan/data/item/flashlight.md) |
 | 발광 아이템 (계란) | `LightRadius` 192cm. 품에 넣으면 꺼짐(`bLightLostInPocket`). 정전 때 소지자가 `CarrierSeenRadius` 276cm에서 몬스터에게 보인다 | [../plan/data/item/egg.md](../plan/data/item/egg.md) |
 | 시설 조명 | 목적지 고정 조명 — 정전 시 소등 | site (연출 미정) |
@@ -38,6 +39,12 @@
 같은 경로다. F(`IA_Flashlight`)→`Server_Flashlight`→아이템 `bLightOn` 복제(각 머신 OnRep로
 빔 표시). 들면 flashlight는 off로 시작(glow는 자동 on), 놓기·던지기·품 넣기는 off, 정전이면
 flashlight 강제 off. 빔 방향은 현재 아이템 전방(캐릭터 yaw) — 카메라 피치 추종은 후속.
+
+**헤드램프** (2026-09-05): 같은 아이템 광원 경로에 `CarrySlot::Head`가 얹힌다. E로 줍는 대신
+`HostWear` → `ACL9Item::OnWorn`(HoldState `Worn`): 1인칭 카메라 컴포넌트에 부착(착용자 시선을
+그대로 따름 — 타인 화면은 yaw만), 착용자에겐 메시가 안 보인다(OwnerNoSee), 충돌 없음.
+`Server_Flashlight`는 **쓴 램프 → 손 손전등** 순으로 토글한다. 정전 강제 소등(SetLightSwitch·
+UpdateLightVisibility·Tick)은 `IsWorn()`이면 건너뛴다. 미러는 `PlayerState.HeadItem`.
 
 ## 정전 (Blackout)
 

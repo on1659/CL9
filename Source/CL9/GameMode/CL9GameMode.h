@@ -6,8 +6,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "CL9GameMode.generated.h"
 
+class ACL9Character;
 class ACL9Item;
 class ACL9Monster;
+class ACL9PlayerController;
 class UCL9RulesDef;
 
 /**
@@ -40,12 +42,32 @@ public:
 	/** Host only: Lobby → Night — arms the clock and schedules the expiry (docs/plan/data/rules.md 밤) */
 	void StartNight();
 
-	/** Host only: Night → Dawn now. Expiry lands here; the wipe joins in 4a */
+	/** Host only: Night → Dawn now. Expiry and the wipe both land here */
 	void EndNight();
+
+	/**
+	 * Host only: a character's HP hit 0 (docs/systems/character.md 죽음). Nobody
+	 * left standing is the wipe — the truck leaves and the night ends. Otherwise
+	 * the dead player rides a living teammate's view after SpectateDelay.
+	 * 부활은 없다 — the next lobby revives (ReviveDead).
+	 */
+	void HandlePlayerDeath(ACL9Character* Dead);
+
+	/** Host only: moves a spectator's view to the next living teammate (docs/systems/input.md 관전 대상 전환) */
+	void SpectateNext(ACL9PlayerController* Spectator);
 
 protected:
 	/** Dawn → Lobby with the day advanced — the stop that hosts the next night (docs/plan/loop.md 정차) */
 	void EnterLobby();
+
+	/** Host only: SpectateDelay ran out — the view rides the first living teammate */
+	void BeginSpectating(ACL9PlayerController* Spectator);
+
+	/** The living player pawn after `After` in join order (wrapping), never `Except`; null when nobody lives */
+	ACL9Character* FindLivingPawn(const AActor* Except, const AActor* After) const;
+
+	/** Host only: every dead player stands up on the truck pad with full HP and stops spectating */
+	void ReviveDead();
 
 	const UCL9RulesDef* GetRules() const;
 

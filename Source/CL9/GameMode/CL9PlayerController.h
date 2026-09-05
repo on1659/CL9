@@ -33,12 +33,34 @@ public:
 	/** UI manager toggles the gameplay contexts off while a screen is open (docs/systems/input.md) */
 	void SetGameplayInputEnabled(bool bEnabled);
 
+	/** True while the view rides a living teammate after death (docs/systems/ui.md 관전) */
+	UFUNCTION(BlueprintPure, Category="CL9|Spectate")
+	bool IsSpectating() const
+	{
+		return bSpectating;
+	}
+
+	/** Next living teammate — IA_SpectateNext and the spectate screen's button both land here (local → host ruling) */
+	UFUNCTION(BlueprintCallable, Category="CL9|Spectate")
+	void SpectateNext();
+
+	/** Host only: flips the flag and fires the local hook (the owner's OnRep covers a client) */
+	void HostSetSpectating(bool bNewSpectating);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/** Esc — opens the pause screen, or closes whatever screen is open (docs/systems/input.md IA_Pause) */
+	/** M (IA_Pause) — opens the pause screen, or closes whatever screen is open; a spectator gets the spectate screen back (docs/systems/input.md) */
 	void PauseInput();
+
+	UFUNCTION(Server, Reliable)
+	void Server_SpectateNext();
+
+	/** Local: the spectate screen and IMC_Spectate follow the flag together, so the two never diverge */
+	UFUNCTION()
+	void OnRep_Spectating();
 
 	/** Mapping contexts added for the local player — assigned in the BP child (docs/systems/input.md) */
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -47,4 +69,16 @@ protected:
 	/** Pause/close action — assigned in the BP child, lives on the controller so it works without a pawn */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> PauseAction;
+
+	/** IMC_Spectate — added while spectating, above the gameplay contexts; not part of DefaultMappingContexts */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputMappingContext> SpectateMappingContext;
+
+	/** Spectate target switch action — assigned in the BP child */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> SpectateNextAction;
+
+	/** Host-written after SpectateDelay; cleared by the lobby revive. Owner-only by PlayerController replication */
+	UPROPERTY(ReplicatedUsing=OnRep_Spectating)
+	bool bSpectating = false;
 };

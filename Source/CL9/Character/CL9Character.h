@@ -19,6 +19,9 @@ class UInputAction;
 class UMaterialInterface;
 struct FInputActionValue;
 
+/** Fires on the owning client when the "[E] …" prompt text changes — the HUD subscribes instead of polling (docs/systems/ui_system.md) */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9FocusPromptChanged);
+
 /**
  * First person co-op character: capsule, movement, camera and input live here.
  * Every number and mesh comes from the character table row (UCL9CharacterDef)
@@ -55,6 +58,12 @@ public:
 		return HeldItem;
 	}
 
+	/** The item worn on the head (headlamp), or null — hands stay free of it */
+	ACL9Item* GetWornItem() const
+	{
+		return WornItem;
+	}
+
 	/** The cart this character drags, or null — the predicted movement reads it for CartMult */
 	ACL9Cart* GetPullingCart() const
 	{
@@ -74,10 +83,17 @@ public:
 	bool IsCarryingAnything() const;
 
 	/**
-	 * Host only (docs/systems/character.md 피격·넘어짐): HP down, knockdown,
-	 * spill of hand + pocket. HP 0 stays down — spectate arrives in 4a.
+	 * Host only (docs/systems/character.md 피격·넘어짐·죽음): HP down, knockdown,
+	 * spill of hand + pocket. HP 0 stays down for the night and hands the death
+	 * to the game mode (wipe check, spectate after SpectateDelay).
 	 */
 	virtual void OnDamage(int32 Amount, AActor* Source) override;
+
+	/** Host only: HP back to the rolled maximum — the truck pad's heal (docs/plan/data/rules.md 죽음과 회복) */
+	void HostHealFull();
+
+	/** Host only: the next lobby stands the dead back up with full HP — 부활은 없다, 밤이 끝나야 돌아온다 */
+	void HostRevive();
 
 	/** True while the catch knockdown blocks movement — the CMC reads this for speed 0 */
 	UFUNCTION(BlueprintPure, Category="CL9")
@@ -86,6 +102,33 @@ public:
 	/** HP 0 on the PlayerState — monsters skip dead targets */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	bool IsDead() const;
+
+	/**
+	 * What one press of E would do right now, as the HUD prompt ("[E] 줍기" …) —
+	 * mirrors Server_PickPlace's branch order on the local focus; empty when
+	 * nothing. Presentation only (docs/systems/input.md 상호작용 프롬프트).
+	 */
+	UFUNCTION(BlueprintPure, Category="Interaction")
+	FText GetFocusPrompt() const;
+
+	/** Owning client: the prompt text changed (target or its state) — HUD refresh */
+	UPROPERTY(BlueprintAssignable, Category="Interaction")
+	FCL9FocusPromptChanged OnFocusPromptChanged;
+
+	/** What the local aim is on right now (the outlined actor) — null when nothing; the HUD's world label follows it */
+	UFUNCTION(BlueprintPure, Category="Interaction")
+	AActor* GetFocusedActor() const
+	{
+		return FocusedActor.Get();
+	}
+
+	/**
+	 * Owning client's local charge read for the HUD gauge: -1 when not charging,
+	 * else 0..1 over ThrowChargeTime (docs/systems/input.md 던지기 차징 — 로컬 예측,
+	 * the host clocks the ruling separately).
+	 */
+	UFUNCTION(BlueprintPure, Category="Throw")
+	float GetThrowChargeAlpha() const;
 
 	/** Returns the movement component as the CL9 predicted-movement type */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
@@ -220,11 +263,17 @@ private:
 	/** What the local player currently aims at (highlight bookkeeping) */
 	TWeakObjectPtr<AActor> FocusedActor;
 
+	/** Last prompt handed to the HUD — OnFocusPromptChanged fires only when the text differs */
+	FText LastFocusPrompt;
+
 	/** Host only: spills hand and pocket onto the floor and lets go of the cart (잡힘 짐 흘림) */
 	void HostDropEverything();
 
 	/** Host only: attaches the item to this character's hand spot and mirrors it */
 	void HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules);
+
+	/** Host only: puts a Head-slot item on (headlamp) and mirrors it — one press of E, hands untouched */
+	void HostWear(ACL9Item* Item);
 
 	/** Host only: sets the held item down in front */
 	void HostPlaceHeld(const UCL9RulesDef* Rules);
@@ -248,8 +297,15 @@ private:
 	UPROPERTY(Replicated)
 	TObjectPtr<ACL9Cart> PullingCart;
 
+	/** The head-worn item actor (Head carry slot) — PlayerState.HeadItem mirrors it */
+	UPROPERTY(Replicated)
+	TObjectPtr<ACL9Item> WornItem;
+
 	/** Host clock when the current throw charge began; negative when idle */
 	float ThrowChargeStartTime = -1.f;
+
+	/** Owning client's local clock for the same charge (gauge only, never a ruling); negative when idle */
+	float LocalThrowChargeStartTime = -1.f;
 
 	/** Host clock until which another shove is refused (swing recovery) */
 	float ShoveReadyTime = 0.f;

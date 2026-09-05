@@ -47,13 +47,13 @@ public:
 
 	// -- Death and recovery --
 
-	/** Seconds from death to spectating — 미정, decided by playing */
+	/** Seconds from death to spectating a teammate — 초안 3, tuned by playing (docs/plan/data/rules.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
-	float SpectateDelay = 0.f;
+	float SpectateDelay = 3.f;
 
-	/** Truck pad heal time in seconds — 미정 */
+	/** Seconds standing on the truck pad before HP refills — 초안 5, tuned by playing */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
-	float TruckPadHealTime = 0.f;
+	float TruckPadHealTime = 5.f;
 
 	/** Seconds a leaver's pawn lingers */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")

@@ -24,7 +24,13 @@ TArray<FCL9CarriedItem> PocketItems;   // 품 (Pocketable만 — 용량 규칙 �
 
 UPROPERTY(Replicated)
 float SwapLockUntil;                   // 손↔품 교체 잠금 (1.2초) — GetServerWorldTimeSeconds 기준
+
+UPROPERTY(Replicated)
+FCL9CarriedItem HeadItem;              // 머리에 쓴 것 (CarrySlot Head — 헤드램프, 2026-09-05). 캐릭터 WornItem의 미러
 ```
+
+- **머리 슬롯은 손과 별개다** — `Head` 아이템은 E로 주우면 쓰이고(손이 차 있어도), 손·품·수레
+  규칙을 타지 않는다. 벗기 없음(현재 설계) — [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md).
 
 - 손에 든 아이템은 실물 액터가 캐릭터에 Attach되어 **보인다** — 타인 시점은 풀바디의
   `CarryHeight`(120cm) 위치, **자기 1인칭 화면에서는 손(팔) 뷰모델의 소켓에 붙는다**

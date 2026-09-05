@@ -62,4 +62,5 @@ public:
 namespace CL9UINames
 {
 	inline const FName Pause(TEXT("Pause"));
+	inline const FName Spectate(TEXT("Spectate"));
 }

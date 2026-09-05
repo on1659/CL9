@@ -93,6 +93,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatBlackout(
 		RouteCL9Cheat(TEXT("blackout"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatDamage(
+	TEXT("cl9.damage"),
+	TEXT("cl9.damage [amount] [player index] — hurts your own character, or player N by join order (host ruling; death/spectate/truck pad checks)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("damage"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),

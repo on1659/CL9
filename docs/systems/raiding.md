@@ -61,7 +61,8 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 
 - 밤 시계는 `NightLength`(245초) 하나 — 만료는 새벽 실패다 ([balance.md](balance.md))
 - 정전이 오면 손전등도 죽는다 — 정전 시계는 반납이 앞당긴다
-- 트럭 패드가 유일한 회복 채널이다. 죽으면 관전으로 넘어간다 (`SpectateDelay`, 값 미정)
+- 트럭 패드가 유일한 회복 채널이다. 죽으면 관전으로 넘어간다 (`SpectateDelay` 초안 3초).
+  전원이 죽으면 전멸 — 밤이 그 자리에서 끝난다 (4a, [character.md](character.md) 죽음 절)
 
 ## 네트워크 동기화
 

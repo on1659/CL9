@@ -18,7 +18,7 @@
 |---|---|---|
 | `IMC_Gameplay` | 폰 빙의 중 (기본) | 이동·시점·달리기·점프·줍기/놓기·던지기·품 교체·손전등·상호작용 |
 | `IMC_UI` | 전면 화면 열림 (`WBP_Main.ShowScreen ≠ None`) | 메뉴 탐색·닫기 — Gameplay보다 우선 |
-| `IMC_Spectate` | 사망 후 관전 | 시점·관전 대상 전환·(밤 종료 대기) |
+| `IMC_Spectate` | 사망 후 관전 (`ACL9PlayerController.SpectateMappingContext`, 우선순위 5 — `bSpectating` OnRep이 관전 화면과 함께 붙였다 뗀다. DefaultMappingContexts에 넣지 않는다) | 관전 대상 전환·(밤 종료 대기). 시점은 동료 1인칭 승계라 별도 Look 없음 |
 
 - 전환은 `ShowScreen`/관전 진입과 한 곳에서 묶어서 처리한다 ([ui_system.md](ui_system.md)) —
   IMC 부착 상태가 화면 상태와 어긋나는 버그를 원천 차단.
@@ -35,15 +35,17 @@
 | `IA_PickPlace` | Pressed | 줍기 (빈손) / 놓기 (든 상태) | Server RPC |
 | `IA_Throw` | Pressed(Started/Completed) | 던지기 차징 — 누른 시간 0~`ThrowChargeTime`(0.85s) → `ThrowMin~MaxSpeed`. **Hold 트리거 금지** — 임계 전에 떼면 Canceled가 떠서 짧은 던지기가 먹힌다 | Server RPC (아래) |
 | `IA_Swap` | Pressed | 손↔품 교체 — `SwapTime` 1.2s 잠금 | Server RPC |
-| `IA_Flashlight` | Pressed | **들고 있는 손전등** 켜기/끄기 — 손전등은 아이템이다 ([light.md](light.md) · [../plan/data/item/flashlight.md](../plan/data/item/flashlight.md)) | Server RPC (아이템 상태 Replicated) |
+| `IA_Flashlight` | Pressed | 빛 켜기/끄기 — **쓴 헤드램프가 먼저**, 없으면 **들고 있는 손전등** ([light.md](light.md) · [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md) · [../plan/data/item/flashlight.md](../plan/data/item/flashlight.md)) | Server RPC (아이템 상태 Replicated) |
 | `IA_Interact` | Pressed | 컨텍스트 상호작용 — 반납·트럭 패널·창구 | Server RPC |
 | `IA_Skip` | Pressed | 시퀀스 로컬 스킵 (`bSkippable`) | 로컬 |
 | `IA_Pause` | Pressed | 일시정지 화면 (멀티에선 게임 안 멈춤) | 로컬 |
+| `IA_SpectateNext` | Pressed | 관전 대상 전환 — `ACL9PlayerController.SpectateNextAction` → `SpectateNext()` (관전 화면 버튼도 같은 함수) | Server RPC (호스트가 다음 생존자로 뷰 타깃 교체) |
 
 **키 배치 초안** (전부 리바인딩 가능 — 미결, 플레이해보고 확정):
 WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호작용/줍기·놓기** ·
-**마우스좌 던지기 차징** · R 품 교체 · F 손전등 · **M 일시정지** · Esc 화면 닫기
-(2026-09-05: 일시정지 열기를 Esc→M으로 변경 — 닫기는 M·Esc 둘 다, Esc 닫기는 고정 키).
+**마우스좌 던지기 차징** · R 품 교체 · F 손전등 · **M 일시정지 열기·닫기**
+(2026-09-05: 일시정지를 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
+PIE 정지 키와 겹쳐 에디터가 꺼진다. IMC_Gameplay·IMC_UI 모두 M→IA_Pause 한 행, Esc 행 없음).
 
 ## 던지기 차징 — 시간 판정은 호스트가
 
@@ -90,7 +92,7 @@ class ICL9Interactable {
 
 - **Enhanced Input User Settings** (UE5.3+)로 키 리매핑 — 저장·로드 내장.
 - 설정 화면은 [settings.md](settings.md). 감도(Look 배율)도 거기서.
-- 고정 키: Esc (화면 닫기)는 리바인딩 대상에서 제외.
+- 고정 키 없음 — Esc는 게임 키가 아니다(2026-09-05). 화면 닫기도 M(IA_Pause)이라 리바인딩을 따라간다.
 
 ## 네트워크 정리
 
