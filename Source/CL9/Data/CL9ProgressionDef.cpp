@@ -13,6 +13,11 @@ void UCL9ProgressionDef::Validate(TArray<FString>& OutErrors) const
 			OutErrors.Add(FString::Printf(TEXT("DayOverride for day %d needs Day >= 1 and non-negative multipliers (0 = use the curve)."), Override.Day));
 		}
 	}
+
+	if (OrdersOfferedPerDay < 1 || OrdersRequiredPerDay < 1 || OrdersRequiredPerDay > OrdersOfferedPerDay)
+	{
+		OutErrors.Add(TEXT("Orders need 1 <= OrdersRequiredPerDay <= OrdersOfferedPerDay (docs/plan/data/progression.md 주문서)."));
+	}
 }
 
 float UCL9ProgressionDef::MonsterCountAt(int32 Day) const

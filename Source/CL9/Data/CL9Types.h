@@ -185,6 +185,23 @@ struct FCL9DayOverride
 	bool bNoBlackout = false;
 };
 
+/** One accepted order on the run — replicated progress, saved with the run (docs/systems/order.md 주문 흐름) */
+USTRUCT(BlueprintType)
+struct FCL9AcceptedOrder
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	FName OrderAlias;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 AcceptedDay = 0;
+
+	/** Last day it can still be delivered — AcceptedDay + DeadlineDays − 1 */
+	UPROPERTY(BlueprintReadOnly)
+	int32 DeadlineDay = 0;
+};
+
 namespace CL9
 {
 	/** Impact state chain — 성함 → 금감 → 깨짐 swaps the SubAlias (docs/systems/item.md 상태 = SubAlias) */

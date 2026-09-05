@@ -19,6 +19,38 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, BlackoutServerTime);
 	DOREPLIFETIME(ACL9GameState, CurrentSiteAlias);
 	DOREPLIFETIME(ACL9GameState, DangerScale);
+	DOREPLIFETIME(ACL9GameState, OfferedOrders);
+	DOREPLIFETIME(ACL9GameState, OrdersRequired);
+	DOREPLIFETIME(ACL9GameState, AcceptedOrders);
+}
+
+void ACL9GameState::SetOfferedOrders(const TArray<FName>& Aliases, int32 Required)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	OfferedOrders = Aliases;
+	OrdersRequired = Required;
+	// OnRep never runs on the listen host — fire the local hook directly
+	OnRep_Orders();
+}
+
+void ACL9GameState::SetAcceptedOrders(const TArray<FCL9AcceptedOrder>& Orders)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	AcceptedOrders = Orders;
+	OnRep_Orders();
+}
+
+void ACL9GameState::OnRep_Orders()
+{
+	OnOrdersChanged.Broadcast();
 }
 
 void ACL9GameState::RecordReturn(FName ItemAlias, FName ItemSubAlias)

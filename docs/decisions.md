@@ -561,3 +561,13 @@
   하나로 실어 몬스터의 ChaseBudget·DetectRate·Sight 세 읽기 지점에 곱한다(표 값 불변).
   ⑤ 1일차 덮어쓰기: 정전 없음. 곡선 초안 값은 progression.md 그대로. 미구현: ValueCurve·
   QuotaCurve(4e), 주문서 컬럼(4c), ForcedSite(4g).
+
+- **4c 주문서 구현 — 게임플레이 절반** (build-order ④ 4c). `UCL9OrderDef`(DA_OrderTable: omelette·
+  fried_egg·meat_dish 초안 값) + 진행 에셋의 N/M(3·2). 로비마다(게임 시작·로비 진입·cl9.day) 호스트가
+  MinDay/MaxDay 필터 → Weight 가중 무중복 추첨으로 N개를 제시하고, **호스트 컨트롤러만** 정확히 M개를
+  확정한다(`AcceptOrders(indices)` Server RPC — 클라 요청은 거부). 수락 주문은 `AcceptedOrders{alias,
+  받은 날, 마감 일차 = 받은 날 + DeadlineDays − 1}`로 GameState에 누적·복제되고 제시는 비워진다.
+  구현 결정: ① 주문을 고르지 않아도 밤은 시작된다 — 선택 화면이 생기기 전 개발 편의, 4e(납품·위약금)
+  에서 "M개 미선택 시 밤 시작 금지"를 재검토. ② 납품·보상·위약금·세이브는 4e. ③ 주문 선택 화면과
+  HUD 진행 중 주문 표시는 UI 세션(OnOrdersChanged 델리게이트 + OfferedOrders/AcceptedOrders 읽기).
+  치트 `cl9.orders`·`cl9.pick`.

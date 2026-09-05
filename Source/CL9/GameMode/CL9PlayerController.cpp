@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "GameMode/CL9PlayerController.h"
+#include "CL9.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
@@ -195,5 +196,24 @@ void ACL9PlayerController::SetGameplayInputEnabled(bool bEnabled)
 		{
 			Subsystem->RemoveMappingContext(Context);
 		}
+	}
+}
+
+void ACL9PlayerController::AcceptOrders(const TArray<int32>& OfferedIndices)
+{
+	Server_AcceptOrders(OfferedIndices);
+}
+
+void ACL9PlayerController::Server_AcceptOrders_Implementation(const TArray<int32>& OfferedIndices)
+{
+	// The host confirms the pick (docs/systems/order.md 주문 흐름) — a client's request is refused
+	if (!IsLocalController())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("AcceptOrders: only the host confirms the order pick — request from '%s' refused."), *GetNameSafe(this));
+		return;
+	}
+	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
+	{
+		GameMode->AcceptOrders(OfferedIndices);
 	}
 }

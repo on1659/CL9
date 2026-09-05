@@ -58,7 +58,22 @@ public:
 	/** Host only: moves a spectator's view to the next living teammate (docs/systems/input.md 관전 대상 전환) */
 	void SpectateNext(ACL9PlayerController* Spectator);
 
+	/**
+	 * Host only, lobby: draws the day's order candidates — MinDay/MaxDay filter,
+	 * weighted draw without repeats, N and M from the progression row
+	 * (docs/systems/order.md 주문 흐름). Runs at start, every lobby and cl9.day.
+	 */
+	void OfferOrders();
+
+	/**
+	 * Host only, lobby: confirms the pick — exactly M distinct indices into the
+	 * offer. Accepted orders carry a deadline day and stay until delivered or
+	 * expired (4e). Returns false when the pick is refused.
+	 */
+	bool AcceptOrders(const TArray<int32>& OfferedIndices);
+
 protected:
+	virtual void StartPlay() override;
 	/** Dawn → Lobby with the day advanced — the stop that hosts the next night (docs/plan/loop.md 정차) */
 	void EnterLobby();
 

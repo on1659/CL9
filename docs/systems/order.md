@@ -65,6 +65,23 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
 - 진행 중 주문: HUD에 남은 재료·마감 일수 표시 ([ui.md](ui.md))
 - 납품 결과: 창구 연출 + 이더 증가 표시
 
+## 구현 상태 (4c, 2026-09-05)
+
+- **데이터**: `UCL9OrderDef`(Source/CL9/Data) — Ingredients·RewardMin/Max·DeadlineDays·FailPenaltyRate·
+  MinDay/MaxDay/Weight (Gimmicks는 베이스). 에셋 `DA_OrderTable`(Content/Data) 행 omelette·fried_egg·
+  meat_dish. 로드 검사가 재료 alias+sub가 아이템 행인지 확인한다. N/M은 `DA_CL9Progression`의
+  `OrdersOfferedPerDay`(3)·`OrdersRequiredPerDay`(2).
+- **추첨**: `ACL9GameMode::OfferOrders` — 게임 시작(StartPlay)·로비 진입·`cl9.day` 때 호스트가
+  MinDay/MaxDay로 거른 뒤 Weight 가중 무작위(중복 없음)로 N개. 결과는 `GameState.OfferedOrders`
+  (alias 배열)·`OrdersRequired`(M)로 복제.
+- **확정**: `ACL9PlayerController::AcceptOrders(indices)`(BlueprintCallable → Server RPC) — 호스트의
+  컨트롤러만 확정한다(클라 요청은 거부·로그). `ACL9GameMode::AcceptOrders`가 로비에서만, 정확히 M개
+  서로 다른 인덱스일 때 받아 `GameState.AcceptedOrders{OrderAlias, AcceptedDay, DeadlineDay = 받은 날 +
+  DeadlineDays − 1}`에 누적하고 제시를 비운다. 변경은 `OnOrdersChanged`(BlueprintAssignable)로 알린다.
+- **미구현**: 납품 판정·보상·위약금(4e), 주문 선택 화면·HUD 진행 중 주문(UI 세션), 세이브.
+  주문을 안 골라도 밤은 시작된다(선택 화면 전까지 개발 편의 — 4e에서 재검토).
+- 치트: `cl9.orders`(제시·수락 목록), `cl9.pick <n> [m]`(번호로 확정).
+
 ## 참고
 
 - N/M 값과 곡선: [../plan/data/progression.md](../plan/data/progression.md)

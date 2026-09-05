@@ -50,6 +50,12 @@ public:
 	/** cl9.day <N> — jumps the lobby to day N so the next cl9.night rolls that day's curves (docs/systems/balance.md) */
 	void Day(const TArray<FString>& Args);
 
+	/** cl9.orders — prints the lobby's offer (numbered) and the accepted orders with deadlines (local read) */
+	void Orders(const TArray<FString>& Args);
+
+	/** cl9.pick <n> [m] … — confirms the offer by number (the order screen stand-in; host ruling) */
+	void Pick(const TArray<FString>& Args);
+
 private:
 	/** Resolves "egg", "egg+cooked" or a cl9.list number to a usable item row */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;

@@ -12,6 +12,7 @@
 #include "Items/CL9Item.h"
 #include "Components/CapsuleComponent.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9SiteDef.h"
@@ -229,6 +230,7 @@ void ACL9GameMode::EnterLobby()
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
+	OfferOrders();
 }
 
 void ACL9GameMode::HandlePlayerDeath(ACL9Character* Dead)
@@ -555,4 +557,139 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 		}
 	}
 	return false;
+}
+
+void ACL9GameMode::StartPlay()
+{
+	Super::StartPlay();
+
+	// The first lobby needs its offer too — later lobbies draw in EnterLobby
+	OfferOrders();
+}
+
+void ACL9GameMode::OfferOrders()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
+	{
+		return;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9ProgressionDef* Progression = GetProgression();
+	if (Registry == nullptr || Progression == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("OfferOrders: no registry or progression row — nothing to offer."));
+		CL9GameState->SetOfferedOrders(TArray<FName>(), 0);
+		return;
+	}
+
+	const int32 Day = CL9GameState->GetCurrentDay();
+	TArray<const UCL9OrderDef*> Candidates;
+	for (const UCL9OrderDef* Order : Registry->GetOrders())
+	{
+		if (Order->IsOfferedOn(Day))
+		{
+			Candidates.Add(Order);
+		}
+	}
+
+	// Weighted draw without repeats — N from the progression row (docs/systems/order.md 주문 흐름)
+	TArray<FName> Offer;
+	const int32 Wanted = FMath::Min(Progression->OrdersOfferedPerDay, Candidates.Num());
+	while (Offer.Num() < Wanted && Candidates.Num() > 0)
+	{
+		float Total = 0.f;
+		for (const UCL9OrderDef* Candidate : Candidates)
+		{
+			Total += Candidate->Weight;
+		}
+		float Roll = FMath::FRandRange(0.f, Total);
+		int32 PickedIndex = Candidates.Num() - 1;
+		for (int32 Index = 0; Index < Candidates.Num(); ++Index)
+		{
+			Roll -= Candidates[Index]->Weight;
+			if (Roll <= 0.f)
+			{
+				PickedIndex = Index;
+				break;
+			}
+		}
+		Offer.Add(Candidates[PickedIndex]->Alias);
+		Candidates.RemoveAt(PickedIndex);
+	}
+
+	const int32 Required = FMath::Min(Progression->OrdersRequiredPerDay, Offer.Num());
+	CL9GameState->SetOfferedOrders(Offer, Required);
+
+	FString Names;
+	for (const FName& Alias : Offer)
+	{
+		Names += (Names.IsEmpty() ? TEXT("") : TEXT(", ")) + Alias.ToString();
+	}
+	UE_LOG(LogCL9, Log, TEXT("Day %d offer: %d orders [%s] — take %d (cl9.orders / cl9.pick)."), Day, Offer.Num(), *Names, Required);
+}
+
+bool ACL9GameMode::AcceptOrders(const TArray<int32>& OfferedIndices)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return false;
+	}
+	if (CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("AcceptOrders: orders are picked in the lobby only."));
+		return false;
+	}
+
+	const TArray<FName>& Offer = CL9GameState->OfferedOrders;
+	const int32 Required = CL9GameState->OrdersRequired;
+	if (Offer.Num() == 0)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("AcceptOrders: nothing is on offer (already picked, or no order rows for this day)."));
+		return false;
+	}
+
+	// Exactly M distinct picks, all inside the offer — the choice is the day's plan
+	const TSet<int32> Unique(OfferedIndices);
+	if (Unique.Num() != OfferedIndices.Num() || OfferedIndices.Num() != Required)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("AcceptOrders: need exactly %d distinct picks, got %d (%d distinct)."), Required, OfferedIndices.Num(), Unique.Num());
+		return false;
+	}
+	for (int32 Index : OfferedIndices)
+	{
+		if (!Offer.IsValidIndex(Index))
+		{
+			UE_LOG(LogCL9, Warning, TEXT("AcceptOrders: index %d is outside the offer of %d."), Index, Offer.Num());
+			return false;
+		}
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const int32 Day = CL9GameState->GetCurrentDay();
+
+	TArray<FCL9AcceptedOrder> Accepted = CL9GameState->AcceptedOrders;
+	for (int32 Index : OfferedIndices)
+	{
+		const UCL9OrderDef* Order = Registry ? Registry->FindOrder(Offer[Index]) : nullptr;
+		if (Order == nullptr)
+		{
+			UE_LOG(LogCL9, Error, TEXT("AcceptOrders: offered order '%s' has no usable row — pick refused."), *Offer[Index].ToString());
+			return false;
+		}
+		FCL9AcceptedOrder& Entry = Accepted.AddDefaulted_GetRef();
+		Entry.OrderAlias = Order->Alias;
+		Entry.AcceptedDay = Day;
+		Entry.DeadlineDay = Day + Order->DeadlineDays - 1;
+		UE_LOG(LogCL9, Log, TEXT("Order accepted: %s — deliver by day %d."), *Order->Alias.ToString(), Entry.DeadlineDay);
+	}
+
+	CL9GameState->SetAcceptedOrders(Accepted);
+	// The offer is spent — the next lobby draws again
+	CL9GameState->SetOfferedOrders(TArray<FName>(), 0);
+	return true;
 }

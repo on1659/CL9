@@ -11,6 +11,9 @@ class UCL9RulesDef;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCL9NightPhaseChanged, ECL9NightPhase, NewPhase);
 
+/** Fires on every machine when the offered or accepted orders change — the lobby screen and HUD subscribe (docs/systems/order.md UI) */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9OrdersChanged);
+
 /**
  * Shared runtime state (conventions § 4·5) — static tables never replicate,
  * only what changes during a night. Transition rulings live in the game mode;
@@ -53,6 +56,28 @@ public:
 	UFUNCTION(BlueprintPure, Category="Night")
 	float GetDangerScale() const { return DangerScale; }
 
+	/** Host only: the lobby's draw — N candidates and how many must be taken (docs/systems/order.md 주문 흐름) */
+	void SetOfferedOrders(const TArray<FName>& Aliases, int32 Required);
+
+	/** Host only: the confirmed pick replaces the offer; accepted orders accumulate across days until delivered/expired (4e) */
+	void SetAcceptedOrders(const TArray<FCL9AcceptedOrder>& Orders);
+
+	/** Local presentation hook — order screen and HUD subscribe (fires on every machine) */
+	UPROPERTY(BlueprintAssignable, Category="Orders")
+	FCL9OrdersChanged OnOrdersChanged;
+
+	/** Tonight's candidates by alias — empty once picked or outside the lobby */
+	UPROPERTY(ReplicatedUsing=OnRep_Orders, BlueprintReadOnly, Category="Orders")
+	TArray<FName> OfferedOrders;
+
+	/** How many of the offer must be taken (M) */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Orders")
+	int32 OrdersRequired = 0;
+
+	/** Orders the run is working on, with their deadlines — run progress, saved (docs/systems/save.md) */
+	UPROPERTY(ReplicatedUsing=OnRep_Orders, BlueprintReadOnly, Category="Orders")
+	TArray<FCL9AcceptedOrder> AcceptedOrders;
+
 	/** The destination being raided (docs/plan/data/site.md) — the game mode's default until 4g adds a choice */
 	UFUNCTION(BlueprintPure, Category="Night")
 	FName GetCurrentSiteAlias() const { return CurrentSiteAlias; }
@@ -85,6 +110,9 @@ public:
 protected:
 	UFUNCTION()
 	void OnRep_Phase();
+
+	UFUNCTION()
+	void OnRep_Orders();
 
 	UPROPERTY(ReplicatedUsing=OnRep_Phase, BlueprintReadOnly, Category="Night")
 	ECL9NightPhase Phase = ECL9NightPhase::Lobby;

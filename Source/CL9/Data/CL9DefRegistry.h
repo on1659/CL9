@@ -10,6 +10,7 @@ class UCL9CharacterDef;
 class UCL9DefBase;
 class UCL9ItemDef;
 class UCL9MonsterDef;
+class UCL9OrderDef;
 class UCL9ProgressionDef;
 class UCL9RulesDef;
 class UCL9SiteDef;
@@ -105,6 +106,15 @@ public:
 		return OrderedSites;
 	}
 
+	/** Returns the usable order row for the alias, or null when missing/broken */
+	const UCL9OrderDef* FindOrder(FName Alias) const;
+
+	/** Usable order rows in list order — the lobby draw filters these by day (docs/systems/order.md) */
+	const TArray<TObjectPtr<const UCL9OrderDef>>& GetOrders() const
+	{
+		return OrderedOrders;
+	}
+
 	/** Usable item rows in list order — cheat number arguments index into this (docs/systems/cheats.md) */
 	const TArray<TObjectPtr<const UCL9ItemDef>>& GetItems() const
 	{
@@ -142,6 +152,9 @@ private:
 	/** Site spawn entries must name rows that loaded — a typo there spawns nothing silently otherwise */
 	void CheckSiteReferences() const;
 
+	/** Order ingredients must be item rows (alias+sub) — an order nobody can fill is a broken row */
+	void CheckOrderReferences() const;
+
 	/** Keeps every usable row alive for the GC; the lookup maps point into this */
 	UPROPERTY()
 	TArray<TObjectPtr<const UCL9DefBase>> LoadedDefs;
@@ -168,5 +181,10 @@ private:
 	TMap<TPair<FName, FName>, const UCL9ItemDef*> Items;
 	TMap<TPair<FName, FName>, const UCL9MonsterDef*> Monsters;
 	TMap<FName, const UCL9SiteDef*> Sites;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9OrderDef>> OrderedOrders;
+
+	TMap<FName, const UCL9OrderDef*> Orders;
 	TArray<FString> BrokenRows;
 };

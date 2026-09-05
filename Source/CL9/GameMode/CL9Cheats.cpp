@@ -109,6 +109,22 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatDay(
 		RouteCL9Cheat(TEXT("day"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatOrders(
+	TEXT("cl9.orders"),
+	TEXT("cl9.orders — prints the lobby's numbered offer and the accepted orders with deadlines (local, read-only)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("orders"), Args, World, true);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatPick(
+	TEXT("cl9.pick"),
+	TEXT("cl9.pick <n> [m] … — confirms the lobby offer by number, exactly the required count (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("pick"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),

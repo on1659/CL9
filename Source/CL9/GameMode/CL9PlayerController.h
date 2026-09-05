@@ -47,6 +47,15 @@ public:
 	/** Host only: flips the flag and fires the local hook (the owner's OnRep covers a client) */
 	void HostSetSpectating(bool bNewSpectating);
 
+	/**
+	 * Confirms the lobby's order pick — indices into GameState.OfferedOrders,
+	 * exactly OrdersRequired of them. Only the listen host's own controller may
+	 * confirm (docs/systems/order.md 호스트가 확정); the order screen's button
+	 * and cl9.pick both land here.
+	 */
+	UFUNCTION(BlueprintCallable, Category="CL9|Orders")
+	void AcceptOrders(const TArray<int32>& OfferedIndices);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -57,6 +66,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SpectateNext();
+
+	UFUNCTION(Server, Reliable)
+	void Server_AcceptOrders(const TArray<int32>& OfferedIndices);
 
 	/** Local: the spectate screen and IMC_Spectate follow the flag together, so the two never diverge */
 	UFUNCTION()

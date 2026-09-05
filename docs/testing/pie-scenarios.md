@@ -292,6 +292,29 @@
 
 ---
 
+## K. 주문서 (④ 4c)
+
+### K1. 로비 제시 → 확정
+- **절차**: PIE 시작(로비) → `cl9.orders` → `cl9.pick 1 2` → `cl9.orders` → `cl9.pick 1 2`(다시).
+- **기대**: 시작 로그 `Day 1 offer: 3 orders [...] — take 2`. `cl9.orders`에 1~3번(재료·보상·마감)이
+  뜬다. `cl9.pick 1 2` → `Order accepted: … — deliver by day N` 2줄, 제시는 비고 Accepted 2건.
+  두 번째 `cl9.pick`은 "nothing is on offer"로 거부. `cl9.pick 1`(1개)·`cl9.pick 1 1`(중복)·밤 중
+  `cl9.pick`은 전부 거부 로그.
+- **일차 필터**: `cl9.day 10` → 제시가 다시 뽑힌다(현재 세 행 모두 MinDay 1이라 같은 풀).
+- **값 반영**: `DA_CL9Progression.OrdersOfferedPerDay/RequiredPerDay`를 바꾸면 다음 제시의 N/M이 따라온다.
+
+### K2. 2인 — 호스트만 확정
+- **절차**: 2인 PIE, 클라 콘솔에서 `cl9.pick 1 2`.
+- **기대**: 호스트 로그 `only the host confirms the order pick — … refused`, 수락 없음. 호스트가 확정하면
+  클라 `cl9.orders`에도 같은 Accepted가 뜬다(복제).
+- **자동 검증(2026-09-05)**: K1 전부 통과 — 시작 시 `Day 1 offer: 3 orders [meat_dish, omelette, fried_egg] —
+  take 2`, `cl9.pick 1 2` → 2건 수락(마감 1일차), 재확정 "nothing is on offer" 거부, `cl9.day 2` 재제시,
+  `cl9.pick 1`·`cl9.pick 1 1` 거부, `cl9.pick 2 3` 수락 → Accepted 4건 누적. **K2는 미실측**: 파이썬으로
+  클라 PC의 `AcceptOrders`를 부르면 에디터 스크립트 실행 가드가 Server RPC를 로컬에서 실행해 호스트에
+  닿지 않는다(테스트 한계 — 주문 선택 화면 버튼이 생기면 사람이 클라에서 눌러 확인).
+
+---
+
 ## 알려진 미결 (버그 아님)
 
 - **관전자에게 동료의 넘어짐 카메라 낙하가 안 보인다**: 카메라 낙하는 소유자 전용 틱(폴리시).

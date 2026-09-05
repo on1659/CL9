@@ -12,6 +12,7 @@
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9OrderDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
@@ -61,6 +62,14 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("day"))
 	{
 		Day(Tokens);
+	}
+	else if (Command == TEXT("orders"))
+	{
+		Orders(Tokens);
+	}
+	else if (Command == TEXT("pick"))
+	{
+		Pick(Tokens);
 	}
 	else
 	{
@@ -359,6 +368,12 @@ void UCL9CheatManager::Day(const TArray<FString>& Args)
 	}
 	CL9GameState->SetDay(NewDay);
 	UE_LOG(LogCL9, Log, TEXT("cl9.day: lobby moved to day %d — cl9.night rolls that day's curves."), NewDay);
+
+	// The offer depends on the day (MinDay/MaxDay) — redraw for the new one
+	if (ACL9GameMode* GameMode = World->GetAuthGameMode<ACL9GameMode>())
+	{
+		GameMode->OfferOrders();
+	}
 }
 
 const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const
@@ -366,4 +381,70 @@ const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const
 	const UWorld* World = GetWorld();
 	const UCL9GameInstance* GameInstance = World ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
 	return GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+}
+
+void UCL9CheatManager::Orders(const TArray<FString>& Args)
+{
+	const UWorld* World = GetWorld();
+	const ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	const UCL9DefRegistry* Registry = GetRegistry();
+	if (CL9GameState == nullptr || Registry == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.orders: no game state or registry."));
+		return;
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Offer (day %d, take %d):"), CL9GameState->GetCurrentDay(), CL9GameState->OrdersRequired);
+	int32 Number = 1;
+	for (const FName& Alias : CL9GameState->OfferedOrders)
+	{
+		const UCL9OrderDef* Order = Registry->FindOrder(Alias);
+		FString Needs;
+		if (Order != nullptr)
+		{
+			for (const FCL9ItemCount& Need : Order->Ingredients)
+			{
+				Needs += FString::Printf(TEXT("%s%s+%s×%d"), Needs.IsEmpty() ? TEXT("") : TEXT(", "),
+					*Need.ItemAlias.ToString(), *Need.ItemSubAlias.ToString(), Need.Count);
+			}
+		}
+		UE_LOG(LogCL9, Log, TEXT("  %d: %s — %s — %d~%d ether, %d day(s)"), Number++, *Alias.ToString(), *Needs,
+			Order ? Order->RewardMin : 0, Order ? Order->RewardMax : 0, Order ? Order->DeadlineDays : 0);
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Accepted (%d):"), CL9GameState->AcceptedOrders.Num());
+	for (const FCL9AcceptedOrder& Accepted : CL9GameState->AcceptedOrders)
+	{
+		UE_LOG(LogCL9, Log, TEXT("  %s — accepted day %d, deliver by day %d"), *Accepted.OrderAlias.ToString(), Accepted.AcceptedDay, Accepted.DeadlineDay);
+	}
+}
+
+void UCL9CheatManager::Pick(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	if (GameMode == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.pick: host only."));
+		return;
+	}
+
+	TArray<int32> Indices;
+	for (const FString& Arg : Args)
+	{
+		const int32 Number = FCString::Atoi(*Arg);
+		if (Number >= 1)
+		{
+			Indices.Add(Number - 1);
+		}
+	}
+	if (Indices.Num() == 0)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.pick: usage cl9.pick <n> [m] … (numbers from cl9.orders)."));
+		return;
+	}
+	if (GameMode->AcceptOrders(Indices))
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.pick: %d order(s) accepted."), Indices.Num());
+	}
 }

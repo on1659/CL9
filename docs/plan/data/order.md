@@ -81,7 +81,8 @@
 
 ## 지금 있는 것
 
-없다. 아래는 초안이다.
+`DA_OrderTable`(Content/Data)에 아래 세 행이 들어갔다 (4c, 2026-09-05 — 값은 초안 그대로,
+`honey_butter`는 벌집이 없어 제외). 구현 상태는 [../../systems/order.md](../../systems/order.md).
 
 | Alias | 재료 | 보상 (이더) | 비고 |
 |---|---|---|---|

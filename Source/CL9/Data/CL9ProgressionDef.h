@@ -60,6 +60,14 @@ public:
 	UPROPERTY(EditAnywhere, Category="Overrides")
 	TArray<FCL9DayOverride> DayOverrides;
 
+	/** Orders offered per lobby, N (progression.md 주문서 — N = M kills the choice) */
+	UPROPERTY(EditAnywhere, Category="Orders")
+	int32 OrdersOfferedPerDay = 3;
+
+	/** Orders that must be taken, M */
+	UPROPERTY(EditAnywhere, Category="Orders")
+	int32 OrdersRequiredPerDay = 2;
+
 private:
 	const FCL9DayOverride* FindOverride(int32 Day) const;
 

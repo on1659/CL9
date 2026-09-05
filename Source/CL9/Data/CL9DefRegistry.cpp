@@ -5,6 +5,7 @@
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9SiteDef.h"
@@ -101,6 +102,7 @@ void UCL9DefRegistry::Init(const UCL9DefList* DefList)
 
 	CheckItemReferences();
 	CheckSiteReferences();
+	CheckOrderReferences();
 
 	// Relation checks need the whole registry, so they run after every table
 	// loaded — A1/A2 compare character rows against monster rows.
@@ -193,6 +195,37 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		}
 		Sites.Add(Def->Alias, SiteDef);
 		OrderedSites.Add(SiteDef);
+	}
+	else if (const UCL9OrderDef* OrderDef = Cast<UCL9OrderDef>(Def))
+	{
+		if (Orders.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate order key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		Orders.Add(Def->Alias, OrderDef);
+		OrderedOrders.Add(OrderDef);
+	}
+}
+
+const UCL9OrderDef* UCL9DefRegistry::FindOrder(FName Alias) const
+{
+	const UCL9OrderDef* const* Found = Orders.Find(Alias);
+	return Found ? *Found : nullptr;
+}
+
+void UCL9DefRegistry::CheckOrderReferences() const
+{
+	for (const UCL9OrderDef* Order : OrderedOrders)
+	{
+		for (const FCL9ItemCount& Need : Order->Ingredients)
+		{
+			if (FindItem(Need.ItemAlias, Need.ItemSubAlias) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: Ingredients names '%s'/'%s' which is missing or broken — nobody can fill this order."),
+					*Order->GetName(), *Need.ItemAlias.ToString(), *Need.ItemSubAlias.ToString());
+			}
+		}
 	}
 }
 
