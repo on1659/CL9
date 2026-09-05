@@ -14,6 +14,9 @@ namespace
 	/** Free ground between the barns and the boundary walls */
 	constexpr float Margin = 600.f;
 
+	/** 1F ceiling above its floor — the barn's inner height (구 CCL8 BarnHeightU 210u); equals the wall Height by coincidence */
+	constexpr float BarnCeiling = 630.f;
+
 	void InitFloor(FCL9FloorLayout& Floor, int32 Aisles, int32 Cols)
 	{
 		Floor.Aisles = Aisles;
@@ -326,6 +329,14 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 	AddBox(Out, CL9SegKind::Stair(), 1, B0.Max.X, CorrY0, B1.Min.X, -HalfA);
 	AddBox(Out, CL9SegKind::Stair(), 1, B0.Max.X, HalfA, B1.Min.X, CorrY1);
 
+	// ---- Ceilings: the barns and the corridor are roofed so the inside is dark
+	//      (2026-09-06 사용자 결정 — 건물 안에 들어가는 느낌). B1's roof sits at ground level;
+	//      the corridor's roof runs at the 1F height, so the B1 mouth is walled above its roof.
+	AddBox(Out, CL9SegKind::Ceiling(), 0, B0.Min.X - W, B0.Min.Y - W, B0.Max.X + W, B0.Max.Y + W);
+	AddBox(Out, CL9SegKind::Ceiling(), 0, B0.Max.X, CorrY0, B1.Min.X, CorrY1);
+	AddBox(Out, CL9SegKind::Ceiling(), 1, B1.Min.X - W, B1.Min.Y - W, B1.Max.X + W, B1.Max.Y + W);
+	AddBox(Out, CL9SegKind::Barn(), 0, B1.Min.X - W, -HalfA, B1.Min.X, HalfA);
+
 	if (!L.bHasMaze)
 	{
 		return;
@@ -371,6 +382,11 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 			}
 		}
 	}
+}
+
+float CL9SiteLayout::CeilingBase(const FCL9SiteFrame& F, int32 Floor)
+{
+	return Floor == 0 ? F.FloorBase(0) + BarnCeiling : F.FloorBase(0);
 }
 
 FVector2D CL9SiteLayout::CellCenter(const FCL9HenhouseParams& P, const FCL9SiteFrame& F, int32 Floor, int32 Aisle, int32 Col)

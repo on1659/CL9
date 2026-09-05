@@ -277,7 +277,7 @@ void UCL9DefRegistry::CheckSiteReferences() const
 		// The generator names its pieces by kind — a missing row leaves holes in the map
 		if (Site->Generator == ECL9Generator::Henhouse)
 		{
-			for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::Cage(), CL9SegKind::Plug(), CL9SegKind::Stair(), CL9SegKind::FlapIn(), CL9SegKind::Floor()})
+			for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::Cage(), CL9SegKind::Plug(), CL9SegKind::Stair(), CL9SegKind::FlapIn(), CL9SegKind::Floor(), CL9SegKind::Ceiling()})
 			{
 				if (FindSegKind(Kind) == nullptr)
 				{

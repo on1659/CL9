@@ -188,6 +188,11 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 			Top = Frame.FloorBase(Seg.Floor);
 			Base = Top - Kind->Height;
 		}
+		else if (Seg.Kind == CL9SegKind::Ceiling())
+		{
+			Base = CL9SiteLayout::CeilingBase(Frame, Seg.Floor);
+			Top = Base + Kind->Height;
+		}
 		else
 		{
 			Base = Frame.FloorBase(Seg.Floor);

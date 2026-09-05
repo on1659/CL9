@@ -127,6 +127,7 @@ namespace CL9SegKind
 	inline const FName& Stair() { static const FName Name(TEXT("stair")); return Name; }
 	inline const FName& FlapIn() { static const FName Name(TEXT("flapIn")); return Name; }
 	inline const FName& Floor() { static const FName Name(TEXT("floor")); return Name; }
+	inline const FName& Ceiling() { static const FName Name(TEXT("ceiling")); return Name; }
 }
 
 namespace CL9SiteLayout
@@ -138,6 +139,13 @@ namespace CL9SiteLayout
 
 	/** Every box the map actor places — shell, slabs, stairs, then the maze when present */
 	void BuildSegments(const FCL9HenhouseParams& Params, const FCL9SiteFrame& Frame, const FCL9SiteLayout& Layout, TArray<FCL9SiteSeg>& OutSegs);
+
+	/**
+	 * Where a floor's ceiling slab rests: 1F at the barn height above its floor, B1 at
+	 * ground level so the basement is roofed by the yard. A separate number from the
+	 * wall Height column on purpose (segkind.md 높이 210은 천장이 아니다).
+	 */
+	float CeilingBase(const FCL9SiteFrame& Frame, int32 Floor);
 
 	/** Centre of a cell's aisle stretch, site-local (no Z) */
 	FVector2D CellCenter(const FCL9HenhouseParams& Params, const FCL9SiteFrame& Frame, int32 Floor, int32 Aisle, int32 Col);

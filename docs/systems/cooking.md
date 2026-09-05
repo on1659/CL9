@@ -74,3 +74,27 @@ void ACL9HeatSource::TickCooking(float Now) {
 - 무엇이 무엇이 되는지: [../plan/data/item/common.md](../plan/data/item/common.md) 요리 절 (계란 체인은 [../plan/data/item/egg.md](../plan/data/item/egg.md))
 - 완성물 판매·납품: [economy.md](economy.md) · [order.md](order.md)
 - 먹기 효과 (Dish 타입): [../plan/data/item/common.md](../plan/data/item/common.md) 타입과 먹기 절
+
+---
+
+## 구현 상태 (④ 4d — 2026-09-06)
+
+`ACL9FryingPan : ACL9Item`(Source/CL9/Items) — 아이템 표의 `frying_pan` 행(Tool · Hand · 물리 없음 · `ActorClass` =
+네이티브 클래스)이 이 액터로 스폰된다. 위 "구현 구조"의 열원 코드 그대로다:
+
+- 팬 위 `HeatZone`(상판 위 60cm 상자)에 **놓인**(Free) 아이템을 호스트가 매 틱 질의해서 시간을 누적한다. 행에
+  `CookResult`가 있으면 `CookTime` 뒤 그 행으로, 없고 `BurnResult`만 있으면 `BurnTime` 뒤 그 행으로 `SetAlias`
+  (액터 교체 없음 — OnRep으로 클라 메시 갱신). 둘 다 없는 행(탄 것·도구)은 그대로 둔다.
+- 팬에서 내려오면(집거나 굴러 나가면) 시계가 0으로 돌아간다. 손에 든 팬은 요리하지 않는다.
+- `BurnWarnTime` 전 "연기" 로그만 있다 — **연기 VFX·소리는 미구현** (표현 계층, 에셋 없음).
+- 팬 상판은 별도 `Bed` 상자 콜리전이다 — 아이템의 자체 콜라이더가 구(球)라 그냥 두면 재료가 굴러 떨어진다.
+- **불(버너)은 아직 없다** — 팬은 놓인 자리에서 늘 뜨겁다. 트럭 주방(4f)이 생기면 "팬을 불에 올려야 익는다"로
+  좁힌다. 동시 요리 수 = 팬 수는 그대로 성립한다.
+
+조작은 운반 그대로: 계란을 들고 팬 앞에서 놓기(E)를 누르면 팬 위로 떨어진다. 검증 치트 없음 —
+`cl9.additem frying_pan` + `cl9.additem egg`로 만든다 (testing/pie-scenarios.md M절).
+
+**미결 — 손 높이 낙하가 계란을 깨뜨린다.** 놓기는 손 높이(`CarryHeight` 120)에서 떨어뜨리는데 바닥의 팬까지 ~90cm 낙하면
+충돌 속도 ≈ 590 cm/s > `CrackSpeed` 450이라 `egg+cracked`가 되고, 금 간 행에는 `CookResult`가 없어 익지 않는다
+(2026-09-06 PIE 실측: 45cm 낙하도 금이 감). 후보: ① 금 간 계란도 익게 표에 `CookResult` 추가, ② 놓기를 낙하 없이
+바닥에 안착, ③ 4f 트럭 주방에서 팬을 손 높이 조리대에 둠. 결정 전까지 검증은 살짝 얹기(py 텔레포트)로 한다.

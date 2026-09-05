@@ -88,6 +88,7 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("shell has no flap"), Count(Shell, CL9SegKind::FlapIn()), 0);
 	TestTrue(TEXT("shell has floors"), Count(Shell, CL9SegKind::Floor()) > 0);
 	TestEqual(TEXT("two stair walls"), Count(Shell, CL9SegKind::Stair()), 2);
+	TestEqual(TEXT("three ceilings — 1F, corridor, B1"), Count(Shell, CL9SegKind::Ceiling()), 3);
 
 	TArray<FCL9SiteSeg> Night;
 	CL9SiteLayout::BuildSegments(Params, Frame, CL9SiteLayout::Generate(Params, 873), Night);

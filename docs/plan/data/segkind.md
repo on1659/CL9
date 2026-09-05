@@ -121,6 +121,8 @@
   바닥이 없어서 추가했다. 슬래브는 자기 층 바닥면 아래로 매달린다.
 - `stair`의 `WorldTop`은 3D에서 "아랫층 바닥에서 시작해 윗층 바닥 + Height까지"로 해석했다 — 경사로 양옆 벽이
   구덩이 바닥부터 1층 위 630까지 한 장으로 선다.
+- **13번째 행 `ceiling`**(높이 30, 시야 차단, 2026-09-06): 1층 축사 천장(바닥 위 630 — `BarnCeiling` 상수, 벽 Height와
+  같은 값이지만 별개)·계단 복도 천장·지하 천장(지면 높이). 건물 안이 어두워야 해서 넣었다.
 - `flapIn`은 ISM이 아니라 `ACL9FlapIn` 액터다 (일방향 — systems/map.md 구현 상태).
-- 생성기가 지금 내는 종류: `wall`·`barn`·`cage`·`plug`·`stair`·`flapIn`·`floor`. `truck`·`hay`·`trough`·`crate`·
+- 생성기가 지금 내는 종류: `wall`·`barn`·`cage`·`plug`·`stair`·`flapIn`·`floor`·`ceiling`. `truck`·`hay`·`trough`·`crate`·
   `brooder` 행은 있지만 배치 규칙이 기획에 없어 아직 안 깐다.
