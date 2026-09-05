@@ -12,3 +12,18 @@ void ACL9PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ACL9PlayerState, PocketItems);
 	DOREPLIFETIME(ACL9PlayerState, SwapLockUntil);
 }
+
+void ACL9PlayerState::OnRep_Hp()
+{
+	OnHpChanged.Broadcast();
+}
+
+void ACL9PlayerState::OnRep_HandItem()
+{
+	OnCarryChanged.Broadcast();
+}
+
+void ACL9PlayerState::OnRep_PocketItems()
+{
+	OnCarryChanged.Broadcast();
+}
