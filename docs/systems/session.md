@@ -158,12 +158,27 @@ GameMode: N일차 밤 시작 (세이브의 현재 일차)
 PlayerController를 볼 수 없으므로, 로비 UI가 전원의 준비 상태를 보여주려면 Replicated
 PlayerState여야 한다 (PC 참조를 구조체에 담지 않는다).
 
+**밤 페이즈(게임플레이 낮밤)와 세션 상태(매칭·로딩)는 다른 축이다** — 아래처럼 나눈다.
+
+**구현됨 — 밤 수명주기** (build-order ④, 커밋 dc407d3 · `ACL9GameState`):
+
 ```
-ACL9GameState (Replicated):
-  ESessionState CurrentState    // Lobby / Loading / InGame
-  int32 CurrentDay              // 판 일차 (호스트 세이브에서)
-  FString SessionCode           // 참가 코드
+ECL9NightPhase Phase                     // Lobby / Night / Dawn — 밤 페이즈 (Loading/InGame 아님)
+int32 CurrentDay                         // 판 일차
+float NightStart/End/BlackoutServerTime  // 밤 시계 — 클라가 서버시간에서 잔여·정전 파생
 ```
+
+- 페이즈 전이는 호스트 GameMode가 판정: `StartNight`(로비→밤) → `EndNight`(밤→새벽) →
+  `EnterLobby`(새벽→로비, 일차+1). 클라는 복제된 Phase에서 화면을 파생한다.
+- 표현 훅 `OnNightPhaseChanged`(BlueprintAssignable) + 게터 `GetNightRemaining`·`IsBlackout`·
+  `GetPhase`·`GetCurrentDay`. 조명(5c `ACL9NightLighting` — [light.md](light.md))과 HUD가 구독한다.
+- 전이 검증 치트: `cl9.night`(로비면 시작, 밤이면 종료). 시계 값은 `DA_CL9Rules`에서 읽는다
+  (`NightLength`·`DarkBase`·`DarkAccel`·`DarkMin` — [../plan/data/rules.md](../plan/data/rules.md) 밤).
+
+**미구현 — 세션/매칭 수명주기**: 위 로비 대기·심리스 트래블·재접속·참가 코드는 Steam 리슨
+세션 층을 지을 때(1f 이후) 이 GameState에 더해진다 — `ESessionState`(Lobby/Loading/InGame)·
+`SessionCode` 같은 상태. 밤 페이즈의 `Lobby`는 밤 사이의 정차이고, 이 세션 상태의 `Lobby`는
+접속 대기 화면이다 (겹치는 이름, 다른 축).
 
 ## 세이브 (판)
 

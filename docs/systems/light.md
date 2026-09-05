@@ -52,10 +52,26 @@ GameState.bBlackout = true (Replicated)
 - 정전 후 광원은 발광 아이템과 스탠드 램프뿐이다 — "소리로 길을 찾는" 설계는 본편이 아니라
   별도 목적지의 몫이다 (plan/loop.md 귀환 절).
 
-## 렌더 세팅 (어둠 톤 유지 — 값은 5c에서 확정)
+**구현 상태** (밤 수명주기 dc407d3 · session.md): 정전 시각은 `bBlackout` 복제 bool + OnRep이
+아니라 `ACL9GameState.BlackoutServerTime`(복제) 하나로 두고, 각 머신이 서버시간과 비교해
+`IsBlackout()`으로 파생한다 (반납 때 `RecordReturn`이 앞당김, DarkMin 하한). OnRep 트리거 대신
+표현 측이 매 틱 `IsBlackout()`을 읽는다 — 조명이 이미 그렇게 한다(아래). `bNoBlackout`·시설
+조명 소등·손전등 소등·정전 예고 연출·`SightDark` 전환은 아직 미구현(남은 5c·③ 감각 연동).
 
-- 자동 노출(Eye Adaptation)은 끄고 고정 노출을 기본으로 — 어두운 곳에서 화면이 저절로
-  밝아지지 않게.
+## 렌더 세팅 (어둠 톤 유지)
+
+**구현: `ACL9NightLighting`** (5c 앞당김, 커밋 7dd22c3 · `Source/CL9/World/`). 레벨에 1개
+놓이는 로컬 표현 액터로, `OnNightPhaseChanged`를 구독해 밤 페이즈에 맞춰 씬을 낮춘다:
+
+- BeginPlay에 맵의 태양(DirectionalLight)·SkyLight authored 강도를 베이스라인으로 잡고,
+  페이즈별 **배율**을 곱한다 (로비 0.35·밤 0.05·정전 0 초안 — 값은 액터 프로퍼티라 에디터에서
+  튜닝, 리빌드 불필요). 밤엔 태양이 달빛 색으로도 전이. `TransitionSpeed`로 이징.
+- 자동 노출(Eye Adaptation)은 **min=max 밝기 고정**(`ExposureLock`)으로 잠근다 — 어두운 곳에서
+  화면이 저절로 밝아지지 않게. 액터가 소유한 `UPostProcessComponent`(bUnbound)에서 세팅하므로
+  맵에 별도 PostProcessVolume이 필요 없다.
+- 판정 아님 — 몬스터 시야는 화면 밝기가 아니라 값으로 판정한다(`SightIn`→`SightDark`, monster.md).
+  ⑤ 맵 스포너가 생기면 이 액터를 정식 배치하고 배율 값을 재사용한다.
+
 - Lumen GI·앰비언트·포스트프로세스 최소 밝기는 어둠 톤을 해치지 않는 값으로 세팅한다 (미결).
 - 감마 슬라이더 범위는 이 세팅과 함께 정한다 ([settings.md](settings.md)).
 
