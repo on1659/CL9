@@ -58,7 +58,7 @@
 |---|---|---|---|
 | `StaminaDrainTime` | 만충에서 0까지 (초) | 6.0 | `StamDrainT` |
 | `StaminaRegenTime` | 0에서 만충까지 (초) | 8.0 | `StamRegenT` |
-| `StaminaMinResume` | 탈진 후 재개 문턱 (스태미나는 0~1 정규화 — 0.25 = 25%) | 0.25 | `StamMinResume` |
+| `StaminaMinResume` | 탈진 후 재개 문턱 (스태미나는 0~1 정규화 — 1.0 = 만충까지 잠금) | 1.0 | `StamMinResume` |
 
 **세 조항이 전부 있어야 한다** — 탈진 래치 · 재개 히스테리시스 · 실이동 조건.
 하나라도 빠지면 탈출 보증의 산수 전제가 무너진다. 지친 빈손 지속 속도 506이 "질주 1.5초 +
