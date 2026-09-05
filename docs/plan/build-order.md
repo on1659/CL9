@@ -193,11 +193,10 @@ TArray<TObjectPtr<UCL9Gimmick>> Gimmicks;   // 에디터에서 + 로 추가
 
 ```
 WBP_Main            ← 뷰포트에 붙는 유일한 위젯
-  ├ 상태 표시 (짐 슬롯 등)
-  ├ 정산 화면
-  ├ 로비 화면
-  └ 관전 화면
-전환은 WidgetSwitcher로. 새 UI는 여기 하위로만 추가한다.
+  ├ HUD 레이어 (짐 슬롯 등 — 항상 표시)
+  ├ Layer_Screen    ← 전면 화면 (정산·로비·관전…) — UIManager가 UI 표를 읽어 배타로 연다
+  └ Layer_Popup
+새 UI는 WBP 제작 + UI 표에 행 추가다 (systems/ui_system.md — 2026-09-05 결정).
 ```
 
 위젯마다 뷰포트에 직접 넣으면 z 순서·정리·전환이 전부 손으로 관리하는 일이 된다.

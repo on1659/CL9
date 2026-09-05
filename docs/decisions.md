@@ -475,3 +475,14 @@
   밤 수명주기와 묶어 평지 단계에서 구현한다: 페이즈 연동 어둠 렌더(태양·SkyLight 전환 +
   노출 수동 고정) → 손전등 아이템(스포트라이트 + IA_Flashlight 토글, 복제) → 정전 연출.
   build-order ⑤의 5c "진짜 맵 조명"은 그때 값 재사용. 밝기 값은 에셋에서 읽는다 (원칙 3).
+
+- **UI 구조 번복: WidgetSwitcher → UIManager(레이어 + UI 표)** (사용자 확정 — 비교 전문은
+  review/ui-structure-2026-09-05.md). ui_system.md의 "전면 화면은 WidgetSwitcher, 화면
+  enum 하나" 설계를 버리고, 이전 프로젝트 NPCSimulation의 구조를 CL9 규약에 맞게 이식한다.
+  "뷰포트에 붙는 위젯은 메인 위젯 하나"는 유지하되, 그 안의 레이어 패널에 **UI 표**
+  (`UCL9UITable` — FName 키 → 위젯 클래스·레이어)를 읽는 UIManager가 위젯을 **열 때 생성해**
+  붙인다. UI 추가 = WBP 제작 + 표에 행 추가 (C++ 무접촉 — "표에 행 추가" 원칙 4와 같은 결).
+  이식하며 고친 것 두 가지: 하드코딩 UI 표 경로 → BP_CL9GameInstance 프로퍼티 주입,
+  `AddToRoot` 싱글턴 → GameInstanceSubsystem (싱글턴 접근 `Get()`은 유지 — 사용자 허용).
+  Screen 레이어는 배타(전면 화면 동시 1장 기획은 레이어 정책으로 지켜진다), Popup 레이어는
+  중첩 허용. 전문은 systems/ui_system.md.
