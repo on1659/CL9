@@ -591,3 +591,9 @@
   트럭 옆에 축사가 서 있고 밤에만 미로가 찬다. ⑤ 지하는 1층 동쪽에 나란히 450cm 아래 구덩이로 (평지 바닥
   Floor_0는 −500 아래로 내림). ⑥ 주방 셀은 뺐다(요리는 트럭). ⑦ 5a "창"은 미루고 에디터 콘솔 `cl9.seed`가 같은
   코드를 돈다. ⑧ 조각 표에 `floor` 12번째 행 추가. 근거·상세: systems/map.md 구현 상태.
+
+- **평지 테스트 레벨과 생성 맵 레벨 분리** (2026-09-06, 사용자 — "원래 쓰던 그 평지는 어디감?"). 맵 생성기를 붙이며
+  `Lvl_Flat`의 바닥을 내리고 3a 회색 벽을 지웠던 로컬 변경을 되돌리고, 생성 맵은 `Content/Maps/Lvl_Henhouse`(Lvl_Flat
+  복제, Floor_0 −500)에서 쓴다. 레벨별 생성 여부는 코드가 아니라 **목적지 행**으로 고른다: 목적지 표에 테스트 전용
+  `flat` 행(`Generator=None`)을 두고 `BP_CL9GameMode_Flat`(BP_CL9GameMode 자식, DefaultSiteAlias=flat)을 Lvl_Flat
+  월드 세팅에 건다. 레벨 폴더는 기존 `Content/Maps` 하나로 모은다(별도 Lv 폴더 없음). 두 .umap은 정책대로 미커밋.

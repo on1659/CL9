@@ -110,6 +110,7 @@
 
 | Alias | 상태 |
 |---|---|
+| `flat` | **테스트 전용** (2026-09-06) — `Generator=None`, 서식·재료는 양계장과 같은 값. 평지 레벨 `Lvl_Flat`의 게임모드 `BP_CL9GameMode_Flat`이 가리킨다. 기획상의 목적지가 아니다 |
 | `henhouse` | 격자·개구부 값 전부 있음. **4b 구현(2026-09-05)**: `UCL9SiteDef`(Source/CL9/Data)에 `MonsterSpawns`·`ItemSpawns`·`BaseDanger`·`UnlockDay`. **5a 선행(2026-09-06)**: 격자 컬럼(`Generator`·`AisleCount`…·`TargetOpen1F/B1`·`JarCount1F/B1`, 위 표 값이 C++ 기본값) + 생성기 — [../../systems/map.md](../../systems/map.md) 구현 상태. `ValueRate`·`TravelDays`·밤 시계 덮어쓰기는 아직. 에셋 `DA_SiteTable`(Content/Data) 행 `henhouse` — BP_CL9GameMode `DefaultSiteAlias`가 가리킨다(4g 목적지 선택 전까지) |
 
 ---
