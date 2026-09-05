@@ -39,6 +39,9 @@ public:
 	/** Host only: next day — the lobby between nights carries the new number */
 	void AdvanceDay();
 
+	/** Host only: pull the blackout to now (cl9.blackout — verification without waiting out the clock) */
+	void ForceBlackout();
+
 	/** Seconds until night expiry — 0 outside the night */
 	UFUNCTION(BlueprintPure, Category="Night")
 	float GetNightRemaining() const;

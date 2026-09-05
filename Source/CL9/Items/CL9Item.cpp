@@ -3,6 +3,8 @@
 #include "Items/CL9Item.h"
 #include "Character/CL9Character.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -13,6 +15,7 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9Types.h"
 #include "GameMode/CL9GameInstance.h"
+#include "GameMode/CL9GameState.h"
 
 namespace
 {
@@ -45,6 +48,7 @@ void ACL9Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACL9Item, HoldState);
+	DOREPLIFETIME(ACL9Item, bLightOn);
 }
 
 void ACL9Item::LoadData()
@@ -96,8 +100,94 @@ void ACL9Item::LoadData()
 		}
 	}
 
+	SetupLight();
+
 	// The row decides the sim (physics vs simple bounce) — re-apply for it
 	ApplyHoldState();
+}
+
+bool ACL9Item::IsFlashlight() const
+{
+	return ItemDef != nullptr && ItemDef->bEmitsLight && ItemDef->LightKind == ECL9ItemLight::Flashlight;
+}
+
+void ACL9Item::SetupLight()
+{
+	// The row's light fields turn into a real component here — a point light for
+	// a glow (egg), a forward spot for a flashlight (docs/systems/light.md). Built
+	// once; a SubAlias reload (cooked/cracked) keeps the same component.
+	if (LightComponent != nullptr || ItemDef == nullptr || !ItemDef->bEmitsLight)
+	{
+		return;
+	}
+
+	if (ItemDef->LightKind == ECL9ItemLight::Flashlight)
+	{
+		USpotLightComponent* Spot = NewObject<USpotLightComponent>(this, TEXT("ItemLight"));
+		Spot->SetOuterConeAngle(ItemDef->LightConeAngle);
+		Spot->SetInnerConeAngle(FMath::Max(0.f, ItemDef->LightConeAngle - 8.f));
+		Spot->SetAttenuationRadius(FMath::Max(ItemDef->LightRadius, 100.f));
+		LightComponent = Spot;
+	}
+	else
+	{
+		UPointLightComponent* Point = NewObject<UPointLightComponent>(this, TEXT("ItemLight"));
+		Point->SetAttenuationRadius(FMath::Max(ItemDef->LightRadius, 50.f));
+		LightComponent = Point;
+	}
+
+	LightComponent->SetIntensity(ItemDef->LightIntensity);
+	LightComponent->SetupAttachment(MeshComponent);
+	LightComponent->SetVisibility(false);
+	LightComponent->RegisterComponent();
+	UpdateLightVisibility();
+}
+
+void ACL9Item::SetLightSwitch(bool bOn)
+{
+	if (!HasAuthority() || !IsFlashlight())
+	{
+		return;
+	}
+
+	// The blackout is the flashlight's counter — it cannot be lit past it (light.md)
+	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
+	if (bOn && CL9GameState != nullptr && CL9GameState->IsBlackout())
+	{
+		return;
+	}
+
+	if (bLightOn != bOn)
+	{
+		bLightOn = bOn;
+		OnRep_LightOn();
+	}
+}
+
+void ACL9Item::OnRep_LightOn()
+{
+	UpdateLightVisibility();
+}
+
+void ACL9Item::UpdateLightVisibility()
+{
+	if (LightComponent == nullptr)
+	{
+		return;
+	}
+
+	// Each machine derives the same result: switch on, minus the blackout for a
+	// flashlight (a glow stays lit — it's the light that remains, light.md).
+	bool bVisible = bLightOn;
+	if (bVisible && IsFlashlight())
+	{
+		const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
+		if (CL9GameState != nullptr && CL9GameState->IsBlackout())
+		{
+			bVisible = false;
+		}
+	}
+	LightComponent->SetVisibility(bVisible);
 }
 
 bool ACL9Item::CanBePickedUp() const
@@ -120,6 +210,14 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = true;
 	ApplyHoldState();
+
+	// A glow lights up the moment it is carried; a flashlight starts off and the
+	// holder toggles it (docs/systems/light.md).
+	if (ItemDef != nullptr && ItemDef->bEmitsLight)
+	{
+		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
+		OnRep_LightOn();
+	}
 
 	AttachToComponent(Holder->GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SetActorRelativeLocation(RelativeLocation);
@@ -154,6 +252,13 @@ void ACL9Item::OnPlaced(const FVector& WorldLocation)
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = false;
 	ApplyHoldState();
+
+	// Dropped items are dark — a glow only glows while carried, a flashlight is off
+	if (bLightOn)
+	{
+		bLightOn = false;
+		OnRep_LightOn();
+	}
 }
 
 void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
@@ -170,6 +275,12 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 	bAtRest = false;
 	ApplyHoldState();
 
+	if (bLightOn)
+	{
+		bLightOn = false;
+		OnRep_LightOn();
+	}
+
 	if (SphereComponent->IsSimulatingPhysics())
 	{
 		SphereComponent->SetPhysicsLinearVelocity(LaunchVelocity);
@@ -179,6 +290,22 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 void ACL9Item::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// A lit flashlight polls the blackout on every machine so the beam dies the
+	// moment it hits — returns pull the moment forward, so a fixed timer would be
+	// wrong (docs/systems/light.md). The host also flips the switch off to persist it.
+	if (bLightOn && IsFlashlight())
+	{
+		UpdateLightVisibility();
+		if (HasAuthority())
+		{
+			const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
+			if (CL9GameState != nullptr && CL9GameState->IsBlackout())
+			{
+				bLightOn = false;
+			}
+		}
+	}
 
 	// The sim is host-only and authoritative — clients interpolate replicated
 	// movement (docs/systems/item.md 액터 틀).

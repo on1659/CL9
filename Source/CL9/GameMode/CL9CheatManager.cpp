@@ -48,6 +48,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		Night(Tokens);
 	}
+	else if (Command == TEXT("blackout"))
+	{
+		Blackout(Tokens);
+	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("cl9.%s: unknown cheat."), *Command);
@@ -276,6 +280,23 @@ void UCL9CheatManager::Night(const TArray<FString>& Args)
 		UE_LOG(LogCL9, Log, TEXT("cl9.night: dawn is running — wait for the lobby."));
 		break;
 	}
+}
+
+void UCL9CheatManager::Blackout(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	if (CL9GameState == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.blackout: host only."));
+		return;
+	}
+	if (CL9GameState->GetPhase() != ECL9NightPhase::Night)
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.blackout: only during the night — cl9.night first."));
+		return;
+	}
+	CL9GameState->ForceBlackout();
 }
 
 const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const

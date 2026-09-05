@@ -78,9 +78,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	bool bEmitsLight = false;
 
-	/** Glow radius in cm while carried */
+	/** Glow vs toggled flashlight — only read when bEmitsLight (docs/systems/light.md) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
+	ECL9ItemLight LightKind = ECL9ItemLight::Glow;
+
+	/** Glow radius / flashlight reach in cm while carried */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	float LightRadius = 0.f;
+
+	/** Brightness — point light candelas, or the flashlight's beam intensity */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
+	float LightIntensity = 5000.f;
+
+	/** Flashlight outer cone half-angle in degrees (ignored by Glow) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
+	float LightConeAngle = 32.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	bool bLightLostInPocket = true;

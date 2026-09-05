@@ -6,6 +6,8 @@
 #include "Data/CL9DefBase.h"
 #include "CL9RulesDef.generated.h"
 
+class UCameraShakeBase;
+
 /**
  * The one global rules asset — values no character can differ on: noise,
  * death, the night clock, carry friction (docs/plan/data/rules.md). Defaults
@@ -118,4 +120,14 @@ public:
 	/** Pickup reach in cm */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float PickRadius = 120.f;
+
+	// -- Stamina display (bar-less — the screen shakes instead, docs/plan/data/rules.md) --
+
+	/** Camera shake played while tired — amplitude/frequency live in the shake asset, not here */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
+	TSoftClassPtr<UCameraShakeBase> StaminaShake;
+
+	/** Shake begins once normalized stamina drops below this (0..1); scale ramps to full at 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
+	float StaminaShakeStart = 0.5f;
 };

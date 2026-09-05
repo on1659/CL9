@@ -3,6 +3,8 @@
 #include "Character/CL9Character.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeBase.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Character/CL9CharacterMovement.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -13,6 +15,7 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
 #include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
@@ -83,6 +86,7 @@ void ACL9Character::SetCharacterAlias(FName NewAlias)
 	if (CL9PlayerState != nullptr && CL9PlayerState->Hp == 0 && CharacterDef != nullptr)
 	{
 		CL9PlayerState->Hp = FMath::RandRange(CharacterDef->HpMin, CharacterDef->HpMax);
+		CL9PlayerState->NotifyHpChanged();
 	}
 }
 
@@ -166,6 +170,7 @@ void ACL9Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Started, this, &ACL9Character::ThrowStartInput);
 		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ACL9Character::ThrowEndInput);
 		EnhancedInput->BindAction(SwapAction, ETriggerEvent::Started, this, &ACL9Character::SwapInput);
+		EnhancedInput->BindAction(FlashlightAction, ETriggerEvent::Started, this, &ACL9Character::FlashlightInput);
 	}
 	else
 	{
@@ -232,6 +237,21 @@ void ACL9Character::ThrowEndInput()
 void ACL9Character::SwapInput()
 {
 	Server_Swap();
+}
+
+void ACL9Character::FlashlightInput()
+{
+	Server_Flashlight();
+}
+
+void ACL9Character::Server_Flashlight_Implementation()
+{
+	// Only a held flashlight toggles — the item itself refuses to light past the
+	// blackout (docs/systems/light.md).
+	if (HeldItem != nullptr && HeldItem->IsFlashlight())
+	{
+		HeldItem->SetLightSwitch(!HeldItem->IsLightOn());
+	}
 }
 
 AActor* ACL9Character::ResolveFocus() const
@@ -333,6 +353,46 @@ void ACL9Character::Tick(float DeltaSeconds)
 		}
 		FocusedActor = NewFocus;
 	}
+
+	UpdateStaminaShake();
+}
+
+void ACL9Character::UpdateStaminaShake()
+{
+	// Stamina has no bar — the screen shakes as it empties (docs/plan/data/rules.md).
+	// Owning client only; display-only, never a ruling.
+	const UCL9RulesDef* Rules = GetRules();
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	APlayerCameraManager* CameraManager = PC ? PC->PlayerCameraManager : nullptr;
+	if (Rules == nullptr || CameraManager == nullptr || Rules->StaminaShakeStart <= 0.f)
+	{
+		return;
+	}
+
+	const float Stamina = GetCL9CharacterMovement()->GetStamina();
+	const float Intensity = Stamina < Rules->StaminaShakeStart
+		? (Rules->StaminaShakeStart - Stamina) / Rules->StaminaShakeStart
+		: 0.f;
+
+	if (Intensity > 0.f)
+	{
+		if (StaminaShakeInstance == nullptr || StaminaShakeInstance->IsFinished())
+		{
+			if (UClass* ShakeClass = Rules->StaminaShake.LoadSynchronous())
+			{
+				StaminaShakeInstance = CameraManager->StartCameraShake(ShakeClass, 1.f);
+			}
+		}
+		if (StaminaShakeInstance != nullptr)
+		{
+			StaminaShakeInstance->ShakeScale = Intensity;
+		}
+	}
+	else if (StaminaShakeInstance != nullptr)
+	{
+		CameraManager->StopCameraShake(StaminaShakeInstance, false);
+		StaminaShakeInstance = nullptr;
+	}
 }
 
 void ACL9Character::SetFocusHighlight(AActor* Target, bool bOn) const
@@ -422,6 +482,7 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 	ACL9Item* Thrown = HeldItem;
 	HeldItem = nullptr;
 	CL9PlayerState->HandItem = FCL9CarriedItem();
+	CL9PlayerState->NotifyCarryChanged();
 	Thrown->SetOwner(nullptr);
 	Thrown->OnThrown(Origin, Direction * Speed);
 }
@@ -540,6 +601,9 @@ void ACL9Character::Server_Swap_Implementation()
 	}
 
 	CL9PlayerState->SwapLockUntil = Now + Rules->SwapTime;
+	// Covers the pocket-in path's hand/pocket writes; the take-out path also
+	// fires through HostPickUp, a harmless double refresh.
+	CL9PlayerState->NotifyCarryChanged();
 }
 
 void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
@@ -552,6 +616,7 @@ void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
 
 	CL9PlayerState->HandItem.ItemAlias = Item->GetAlias();
 	CL9PlayerState->HandItem.ItemSubAlias = Item->GetSubAlias();
+	CL9PlayerState->NotifyCarryChanged();
 	HeldItem = Item;
 	Item->SetOwner(this);
 
@@ -576,6 +641,7 @@ void ACL9Character::HostPlaceHeld(const UCL9RulesDef* Rules)
 	ACL9Item* Placed = HeldItem;
 	HeldItem = nullptr;
 	CL9PlayerState->HandItem = FCL9CarriedItem();
+	CL9PlayerState->NotifyCarryChanged();
 	Placed->SetOwner(nullptr);
 	Placed->OnPlaced(DropLocation);
 }
@@ -601,6 +667,7 @@ void ACL9Character::HostConsumeHeldItem()
 	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
 	{
 		CL9PlayerState->HandItem = FCL9CarriedItem();
+		CL9PlayerState->NotifyCarryChanged();
 	}
 }
 
@@ -617,6 +684,7 @@ ACL9Item* ACL9Character::HostTakeHeldItem()
 	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
 	{
 		CL9PlayerState->HandItem = FCL9CarriedItem();
+		CL9PlayerState->NotifyCarryChanged();
 	}
 	return Taken;
 }
@@ -640,6 +708,7 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 	}
 
 	CL9PlayerState->Hp = FMath::Max(CL9PlayerState->Hp - Amount, 0);
+	CL9PlayerState->NotifyHpChanged();
 	HostDropEverything();
 
 	// Down and unable to move; HP 0 stays down until 4a brings spectate
@@ -695,6 +764,8 @@ void ACL9Character::HostDropEverything()
 			Sideways * FMath::FRandRange(120.f, 240.f));
 	};
 
+	const bool bHadCarry = (HeldItem != nullptr) || CL9PlayerState->PocketItems.Num() > 0;
+
 	if (HeldItem != nullptr)
 	{
 		ACL9Item* Dropped = HeldItem;
@@ -711,6 +782,11 @@ void ACL9Character::HostDropEverything()
 		{
 			Spill(Spawned);
 		}
+	}
+
+	if (bHadCarry)
+	{
+		CL9PlayerState->NotifyCarryChanged();
 	}
 }
 

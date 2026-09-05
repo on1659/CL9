@@ -18,4 +18,8 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("Throw needs 0 < ThrowMinSpeed <= ThrowMaxSpeed and a positive ThrowChargeTime."));
 	}
+	if (StaminaShakeStart < 0.f || StaminaShakeStart > 1.f)
+	{
+		OutErrors.Add(TEXT("StaminaShakeStart must be within 0..1 (normalized stamina)."));
+	}
 }

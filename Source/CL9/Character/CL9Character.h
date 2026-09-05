@@ -14,6 +14,7 @@ class UCameraComponent;
 class UCL9CharacterDef;
 class UCL9CharacterMovement;
 class UCL9RulesDef;
+class UCameraShakeBase;
 class UInputAction;
 class UMaterialInterface;
 struct FInputActionValue;
@@ -131,6 +132,9 @@ protected:
 	/** Handles IA_Swap (R) — hand↔pocket under the SwapTime lock */
 	void SwapInput();
 
+	/** Handles IA_Flashlight (F) — toggles the held flashlight (docs/systems/light.md) */
+	void FlashlightInput();
+
 	/** One press of E — priority: pickable item > interactable > place (docs/systems/input.md 감지) */
 	UFUNCTION(Server, Reliable)
 	void Server_PickPlace();
@@ -148,11 +152,22 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_Shove();
 
+	/** Toggles the held flashlight on the host (item state is replicated — light.md) */
+	UFUNCTION(Server, Reliable)
+	void Server_Flashlight();
+
 	UFUNCTION()
 	void OnRep_CharacterAlias();
 
 	/** Reads the row from the local registry and applies ruling values plus presentation */
 	void ApplyCharacterDef();
+
+	/** Owning-client only: stamina below the rule threshold shakes the camera, harder as it empties (docs/systems/character.md) */
+	void UpdateStaminaShake();
+
+	/** Active tired-shake instance on the local player — null when rested */
+	UPROPERTY(Transient)
+	TObjectPtr<UCameraShakeBase> StaminaShakeInstance;
 
 	/** Move input action — assigned in the BP child, never loaded from C++ */
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -181,6 +196,10 @@ protected:
 	/** Hand↔pocket swap action (R) */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SwapAction;
+
+	/** Flashlight toggle action (F) */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> FlashlightAction;
 
 	/** Overlay drawn on whatever the aim would interact with — assigned in the BP child */
 	UPROPERTY(EditAnywhere, Category="Interaction")

@@ -41,6 +41,9 @@ public:
 	/** cl9.night — starts the night from the lobby, ends it during the night (lobby UI stand-in) */
 	void Night(const TArray<FString>& Args);
 
+	/** cl9.blackout — pulls the blackout to now (flashlight/sound-off verification) */
+	void Blackout(const TArray<FString>& Args);
+
 private:
 	/** Resolves "egg", "egg+cooked" or a cl9.list number to a usable item row */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;

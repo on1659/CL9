@@ -17,6 +17,16 @@ enum class ECL9CarrySlot : uint8
 	CartOnly
 };
 
+/** How a light-emitting item lights (docs/systems/light.md 광원 목록) */
+UENUM(BlueprintType)
+enum class ECL9ItemLight : uint8
+{
+	/** Omni glow while carried — egg. Stays lit through the blackout */
+	Glow,
+	/** Forward spot, toggled with IA_Flashlight. Forced off by the blackout */
+	Flashlight
+};
+
 /** Item kind — only Dish items are edible, no separate flag (docs/plan/data/item/common.md 타입과 먹기) */
 UENUM(BlueprintType)
 enum class ECL9ItemType : uint8

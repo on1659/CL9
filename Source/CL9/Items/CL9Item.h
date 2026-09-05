@@ -8,6 +8,7 @@
 
 class ACL9Character;
 class UCL9ItemDef;
+class ULightComponent;
 class UPhysicalMaterial;
 class USphereComponent;
 class UStaticMeshComponent;
@@ -74,11 +75,32 @@ public:
 		return MeshComponent;
 	}
 
+	/** True while this item's light switch is on (glow: carried; flashlight: toggled) */
+	bool IsLightOn() const
+	{
+		return bLightOn;
+	}
+
+	/** True when the row gives this item a toggled flashlight (docs/systems/light.md) */
+	bool IsFlashlight() const;
+
+	/** Host only: flip the flashlight on/off — refused during the blackout (light.md) */
+	void SetLightSwitch(bool bOn);
+
 protected:
 	virtual void LoadData() override;
 
 	UFUNCTION()
 	void OnRep_HoldState();
+
+	UFUNCTION()
+	void OnRep_LightOn();
+
+	/** Builds the point/spot light from the row (once, at load) */
+	void SetupLight();
+
+	/** Pushes the effective light visibility on this machine (blackout forces the flashlight dark) */
+	void UpdateLightVisibility();
 
 	/** Host, physics rows only: impact ruling from real collisions */
 	UFUNCTION()
@@ -90,6 +112,10 @@ protected:
 	/** State shared with the cart subclass, which runs its own towing transitions */
 	UPROPERTY(ReplicatedUsing=OnRep_HoldState)
 	ECL9ItemHoldState HoldState = ECL9ItemHoldState::Free;
+
+	/** Light switch state (host writes) — glow follows carry, flashlight follows the toggle */
+	UPROPERTY(ReplicatedUsing=OnRep_LightOn)
+	bool bLightOn = false;
 
 	/** Host-only sim state — clients only see replicated movement */
 	FVector SimVelocity = FVector::ZeroVector;
@@ -106,6 +132,10 @@ private:
 	/** Visual mesh from the row — auto-fitted to the collision radius until real assets land */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
+
+	/** Point (glow) or spot (flashlight) light, built from the row when bEmitsLight — null otherwise */
+	UPROPERTY()
+	TObjectPtr<ULightComponent> LightComponent;
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ItemDef> ItemDef;

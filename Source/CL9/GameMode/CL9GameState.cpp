@@ -89,6 +89,17 @@ void ACL9GameState::AdvanceDay()
 	++CurrentDay;
 }
 
+void ACL9GameState::ForceBlackout()
+{
+	if (!HasAuthority() || Phase != ECL9NightPhase::Night)
+	{
+		return;
+	}
+
+	BlackoutServerTime = GetServerWorldTimeSeconds();
+	UE_LOG(LogCL9, Log, TEXT("Blackout forced (cl9.blackout)."));
+}
+
 float ACL9GameState::GetNightRemaining() const
 {
 	if (Phase != ECL9NightPhase::Night || NightEndServerTime <= 0.f)

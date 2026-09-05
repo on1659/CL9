@@ -32,6 +32,13 @@
 - 어둠 속 동료 식별은 손전등 + 슬롯 색(`TintColor`)이 담당한다.
 - 배터리·연료 시스템을 만들지 않는다 — 손전등의 카운터는 정전이다.
 
+**구현** (5c): 아이템 광원은 데이터 드리븐이다 — `UCL9ItemDef`의 `bEmitsLight`·`LightKind`
+(Glow/Flashlight)·`LightRadius`·`LightIntensity`·`LightConeAngle`을 `ACL9Item`이 읽어 라이트
+컴포넌트를 스폰한다(Glow=포인트, Flashlight=스폿). 손전등 행 하나 추가로 만들고 계란 발광도
+같은 경로다. F(`IA_Flashlight`)→`Server_Flashlight`→아이템 `bLightOn` 복제(각 머신 OnRep로
+빔 표시). 들면 flashlight는 off로 시작(glow는 자동 on), 놓기·던지기·품 넣기는 off, 정전이면
+flashlight 강제 off. 빔 방향은 현재 아이템 전방(캐릭터 yaw) — 카메라 피치 추종은 후속.
+
 ## 정전 (Blackout)
 
 판정은 호스트, 연출은 각 클라:
@@ -55,8 +62,10 @@ GameState.bBlackout = true (Replicated)
 **구현 상태** (밤 수명주기 dc407d3 · session.md): 정전 시각은 `bBlackout` 복제 bool + OnRep이
 아니라 `ACL9GameState.BlackoutServerTime`(복제) 하나로 두고, 각 머신이 서버시간과 비교해
 `IsBlackout()`으로 파생한다 (반납 때 `RecordReturn`이 앞당김, DarkMin 하한). OnRep 트리거 대신
-표현 측이 매 틱 `IsBlackout()`을 읽는다 — 조명이 이미 그렇게 한다(아래). `bNoBlackout`·시설
-조명 소등·손전등 소등·정전 예고 연출·`SightDark` 전환은 아직 미구현(남은 5c·③ 감각 연동).
+표현 측이 매 틱 `IsBlackout()`을 읽는다 — 조명(NightLighting)과 손전등이 그렇게 한다. **손전등
+소등 구현됨**(아래 손전등 절 — `IsBlackout`이면 빔 강제 off, 발광 아이템은 유지). 테스트는
+`cl9.blackout` 치트로 정전을 즉시 트리거. `bNoBlackout`·시설 조명 소등(평지엔 시설 조명 없음,
+⑤)·정전 예고 연출·`SightDark` 전환은 아직 미구현.
 
 ## 렌더 세팅 (어둠 톤 유지)
 

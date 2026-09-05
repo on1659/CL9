@@ -58,7 +58,9 @@ UI용 미러만 복제한다.
 
 - 소모/회복은 시간 기반: 만충→0 `StaminaDrainTime`(6.0초), 0→만충 `StaminaRegenTime`(8.0초)
 - 셋 중 하나라도 빠지면 "지친 빈손 지속 속도 506" 산수가 무너진다 — 로드 검사 A1의 전제
-- HUD에 바를 그리지 않는다 — 화면 흔들림 진폭으로만 (rules.md)
+- HUD에 바를 그리지 않는다 — 화면 흔들림 진폭으로만 (rules.md). 구현: 소유 클라 로컬 틱이
+  `Stamina < StaminaShakeStart`면 `StaminaShake` 카메라 셰이크를 재생하고 스케일을
+  `(Start−Stamina)/Start`로 키운다 (표시 전용·복제 무접촉 — [../plan/data/rules.md](../plan/data/rules.md) 스태미나 표시).
 
 ## 유효 무게 감속
 
