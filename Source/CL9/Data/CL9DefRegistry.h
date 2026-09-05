@@ -10,7 +10,9 @@ class UCL9CharacterDef;
 class UCL9DefBase;
 class UCL9ItemDef;
 class UCL9MonsterDef;
+class UCL9ProgressionDef;
 class UCL9RulesDef;
+class UCL9SiteDef;
 
 /**
  * One table asset per data kind, Excel-style (2026-09-02 결정): open the
@@ -88,6 +90,21 @@ public:
 		return Rules;
 	}
 
+	/** The one day-progression row (docs/plan/data/progression.md), or null when none loaded — callers treat null as "no scaling" */
+	const UCL9ProgressionDef* GetProgression() const
+	{
+		return Progression;
+	}
+
+	/** Returns the usable site row for the alias, or null when missing/broken */
+	const UCL9SiteDef* FindSite(FName Alias) const;
+
+	/** Usable site rows in list order */
+	const TArray<TObjectPtr<const UCL9SiteDef>>& GetSites() const
+	{
+		return OrderedSites;
+	}
+
 	/** Usable item rows in list order — cheat number arguments index into this (docs/systems/cheats.md) */
 	const TArray<TObjectPtr<const UCL9ItemDef>>& GetItems() const
 	{
@@ -122,6 +139,9 @@ private:
 	/** Reference integrity across rows (cook chains, drops) — runs after every row loaded */
 	void CheckItemReferences() const;
 
+	/** Site spawn entries must name rows that loaded — a typo there spawns nothing silently otherwise */
+	void CheckSiteReferences() const;
+
 	/** Keeps every usable row alive for the GC; the lookup maps point into this */
 	UPROPERTY()
 	TArray<TObjectPtr<const UCL9DefBase>> LoadedDefs;
@@ -138,8 +158,15 @@ private:
 	UPROPERTY()
 	TObjectPtr<const UCL9RulesDef> Rules;
 
+	UPROPERTY()
+	TObjectPtr<const UCL9ProgressionDef> Progression;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9SiteDef>> OrderedSites;
+
 	TMap<TPair<FName, FName>, const UCL9CharacterDef*> Characters;
 	TMap<TPair<FName, FName>, const UCL9ItemDef*> Items;
 	TMap<TPair<FName, FName>, const UCL9MonsterDef*> Monsters;
+	TMap<FName, const UCL9SiteDef*> Sites;
 	TArray<FString> BrokenRows;
 };

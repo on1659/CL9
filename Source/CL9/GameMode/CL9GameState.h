@@ -30,14 +30,32 @@ public:
 	/** Host only: flips the phase and fires the local change hook (clients fire it via OnRep) */
 	void SetPhase(ECL9NightPhase NewPhase);
 
-	/** Host only: arms the night clock from the rules — start/end/blackout stamped in server time */
-	void StartNightClock(const UCL9RulesDef& Rules);
+	/**
+	 * Host only: arms the night clock — start/end/blackout stamped in server time.
+	 * NightLength is the day-scaled length; bNoBlackout leaves the blackout unarmed
+	 * (docs/plan/data/progression.md 특정 일자 덮어쓰기).
+	 */
+	void StartNightClock(const UCL9RulesDef& Rules, float NightLength, bool bNoBlackout);
 
 	/** Host only: zeroes the clock (back at the lobby) */
 	void ClearNightClock();
 
 	/** Host only: next day — the lobby between nights carries the new number */
 	void AdvanceDay();
+
+	/** Host only: jumps to a day (cl9.day — curve checks without playing the nights through) */
+	void SetDay(int32 NewDay);
+
+	/** Host only: the destination this run raids and tonight's danger multiplier (site × curve — docs/systems/balance.md) */
+	void SetSiteAndDanger(FName SiteAlias, float NewDangerScale);
+
+	/** Multiplier on chase budget, detection speed and sight tonight — 1 outside a night (docs/systems/monster.md 일자 스케일링) */
+	UFUNCTION(BlueprintPure, Category="Night")
+	float GetDangerScale() const { return DangerScale; }
+
+	/** The destination being raided (docs/plan/data/site.md) — the game mode's default until 4g adds a choice */
+	UFUNCTION(BlueprintPure, Category="Night")
+	FName GetCurrentSiteAlias() const { return CurrentSiteAlias; }
 
 	/** Host only: pull the blackout to now (cl9.blackout — verification without waiting out the clock) */
 	void ForceBlackout();
@@ -86,6 +104,14 @@ protected:
 	/** Server time the blackout hits — returns pull it forward, never below DarkMin (0 outside the night) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
 	float BlackoutServerTime = 0.f;
+
+	/** Destination row alias for this run — derived runtime state, the row itself stays in each machine's registry */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
+	FName CurrentSiteAlias;
+
+	/** Tonight's danger multiplier (site BaseDanger × DangerCurve) — 1 outside a night */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
+	float DangerScale = 1.f;
 
 	const UCL9RulesDef* GetRules() const;
 };

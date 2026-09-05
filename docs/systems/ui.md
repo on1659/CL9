@@ -82,6 +82,12 @@
 `ACL9PlayerController`의 `bSpectating` OnRep이다 — 위젯이 스스로 열지 않는다. 위젯이 읽는
 값: 관전 대상 = `PlayerController->GetViewTarget()`(동료 폰 → `GetPlayerState()`로 이름),
 `IsSpectating()`. 대상 전환 버튼은 `SpectateNext()`를 부른다(IA_SpectateNext와 같은 함수).
+
+화면 구성(`WBP_Spectate`, 부모 `UCL9SpectateWidget` — Source/CL9/UI): 상단 중앙의 작은 패널 하나.
+「관전 중 · <동료 이름>」(뷰 타깃 폰의 PlayerState 이름 — 뷰 타깃 교체는 ClientSetViewTarget으로
+와서 로컬 이벤트가 없으므로 0.25초 타이머로 다시 읽는다; 아직 자기 폰이면 「동료를 찾는 중…」) ·
+안내 「다음 정차 때 트럭 패드에서 돌아옵니다」 · [다음 동료 (Tab)] 버튼. **화면을 어둡게 덮지 않는다** —
+동료의 시점이 그대로 보여야 한다. 관전 중 M은 일시정지를 열고, 닫으면 관전 화면이 돌아온다.
 카운트다운은 없다 — 화면은 딜레이가 끝난 뒤 열린다. 일시정지가 이 화면을 대체했다가 닫히면
 관전 화면이 다시 열린다(PauseInput). 흐름 전체는 [character.md](character.md) 죽음 절.
 

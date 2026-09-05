@@ -84,15 +84,17 @@ void ACL9PlayerController::PauseInput()
 		return;
 	}
 
+	// The spectate screen counts as "nothing open" for M: pausing replaces it
+	// (Screen layer is exclusive) and closing the pause brings it back — the
+	// screen the spectate flag derives has no "closed" state of its own.
 	const FName OpenScreen = UIManager->GetOpenScreen();
-	if (OpenScreen.IsNone())
+	if (OpenScreen.IsNone() || OpenScreen == CL9UINames::Spectate)
 	{
 		UIManager->OpenWidget(CL9UINames::Pause);
 	}
 	else
 	{
 		UIManager->CloseWidget(OpenScreen);
-		// Spectating has no "closed" state — the screen the flag derives comes back
 		if (bSpectating)
 		{
 			UIManager->OpenWidget(CL9UINames::Spectate);

@@ -19,6 +19,7 @@
 #include "Data/CL9RulesDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameState.h"
 
 namespace
 {
@@ -472,7 +473,7 @@ void ACL9Monster::SenseTick(float DeltaSeconds)
 		}
 		const float Distance = FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation());
 
-		const float SightRange = bHadSight ? MonsterDef->SightOut : MonsterDef->SightIn;
+		const float SightRange = (bHadSight ? MonsterDef->SightOut : MonsterDef->SightIn) * GetDangerScale();
 		const bool bInSight = Distance <= SightRange && HasLineOfSight(*Candidate);
 
 		bool bHeard = false;
@@ -500,7 +501,7 @@ void ACL9Monster::SenseTick(float DeltaSeconds)
 		bHadSight = bBestBySight;
 		SightGraceRemaining = MonsterDef->DetectGrace;
 
-		const float Rate = BestDistance <= MonsterDef->DetectNearRadius ? MonsterDef->DetectRateNear : MonsterDef->DetectRateFar;
+		const float Rate = (BestDistance <= MonsterDef->DetectNearRadius ? MonsterDef->DetectRateNear : MonsterDef->DetectRateFar) * GetDangerScale();
 		DetectGauge = FMath::Min(DetectGauge + Rate * DeltaSeconds, 1.f);
 	}
 	else
@@ -529,7 +530,8 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 	switch (NewState)
 	{
 	case ECL9MonsterState::Chase:
-		ChaseBudgetRemaining = MonsterDef->ChaseBudget;
+		// The day curve stretches the budget — same flock, longer chases (docs/systems/monster.md 일자 스케일링)
+		ChaseBudgetRemaining = MonsterDef->ChaseBudget * GetDangerScale();
 		ChaseLoseRemaining = MonsterDef->ChaseLoseTime;
 		ChaseRepathRemaining = 0.f;
 		// The first alert of an episode wakes the pack — the alarmist (goose)
@@ -941,4 +943,11 @@ void ACL9Monster::ApplyState()
 		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, 0.f));
 	}
+}
+
+float ACL9Monster::GetDangerScale() const
+{
+	// Derived runtime value on the game state (site BaseDanger × DangerCurve, 1 in the lobby)
+	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
+	return CL9GameState != nullptr ? CL9GameState->GetDangerScale() : 1.f;
 }

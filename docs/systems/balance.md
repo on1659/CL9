@@ -85,10 +85,20 @@ int32 ChickenCount = FMath::RoundToInt(
   * Progression->MonsterCountCurve->GetFloatValue(Day));
 ```
 
+**구현 (4b, 2026-09-05)**: 위 식 그대로 `ACL9GameMode::SpawnNightPopulation`(밤 시작, 호스트).
+`RoundToInt(RandRange(Min,Max) × MonsterCountAt(Day))` — 배율은 `UCL9ProgressionDef`가 덮어쓰기 →
+곡선 순으로 준다. 재료도 같은 식(`ItemCountAt`). 위치는 맵 생성기 전까지 평지 스탠드인(트럭 패드
+앵커 원환, `ThreatActMinRadius` 안 회피, 바닥 트레이스). `DangerScale = Site.BaseDanger ×
+DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sight에 곱한다(monster.md).
+`NightLength × NightLengthAt(Day)`. 로비 복귀(`EnterLobby`) 때 밤 스폰분 철거·DangerScale 1 복귀.
+로그 `Night N: chicken ×P placed (base 8~12 × 0.60 = C)`로 곡선 반영을 읽는다.
+
 ## 일자 덮어쓰기
 
 `DayOverrides` 배열로 특정 일자를 손으로 잡는다 — 1일차는 튜토리얼처럼
 (목적지 하나·주문 하나·정전 없음·몬스터 적게). 컬럼은 progression.md의 `FCL9DayOverride`.
+구현(4b): `MonsterCountMult`·`DangerMult`(0 = 곡선)·`bNoBlackout`만 먼저 — DA_CL9Progression 1일차
+행은 `bNoBlackout`만 켰다(`cl9.blackout`은 여전히 강제 발동).
 
 ## 네트워크·상태
 

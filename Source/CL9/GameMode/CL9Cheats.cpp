@@ -101,6 +101,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatDamage(
 		RouteCL9Cheat(TEXT("damage"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatDay(
+	TEXT("cl9.day"),
+	TEXT("cl9.day <N> — jumps the lobby to day N; the next cl9.night rolls that day's curves (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("day"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
 	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),

@@ -95,6 +95,11 @@
 `DangerCurve`(progression.md)가 **추격 예산·발각 속도·시야**에 곱해진다 ([balance.md](balance.md)).
 같은 마릿수로 압박이 오르는 축이다. 값 자체를 표에서 바꾸지 않고 곡선이 배율만 준다.
 
+구현 (4b, 2026-09-05): 배율은 GameState `DangerScale`(밤 시작에 `Site.BaseDanger × DangerCurve`,
+로비 1) 하나이고, `ACL9Monster::GetDangerScale()`이 세 읽기 지점에 곱한다 — `ChaseBudget`(추격
+진입 시 예산), `DetectRateNear/Far`(게이지 상승), `SightIn/SightOut`(시야 거리). 로드 검사 A1/A2는
+배율 없는 표 값으로 돈다.
+
 ## 종별 차이를 다루는 규칙
 
 1. **1순위 — 표의 값.** 닭과 거위의 차이 대부분은 같은 컬럼의 다른 값이다

@@ -110,7 +110,7 @@
 
 | Alias | 상태 |
 |---|---|
-| `henhouse` | 격자·개구부 값 전부 있음. 맵 생성기는 아직 없다 |
+| `henhouse` | 격자·개구부 값 전부 있음. 맵 생성기는 아직 없다. **4b 구현(2026-09-05)**: `UCL9SiteDef`(Source/CL9/Data)에 `MonsterSpawns`·`ItemSpawns`·`BaseDanger`·`UnlockDay`만 먼저 들어갔고, 격자 컬럼은 ⑤ 생성기와 함께. 에셋 `DA_SiteTable`(Content/Data) 행 `henhouse` — BP_CL9GameMode `DefaultSiteAlias`가 가리킨다(4g 목적지 선택 전까지) |
 
 ---
 

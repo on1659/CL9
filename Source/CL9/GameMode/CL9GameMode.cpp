@@ -12,8 +12,11 @@
 #include "Items/CL9Item.h"
 #include "Components/CapsuleComponent.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SiteDef.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerStart.h"
 #include "Monsters/CL9Monster.h"
 #include "TimerManager.h"
 #include "World/CL9TruckPad.h"
@@ -153,12 +156,35 @@ void ACL9GameMode::StartNight()
 		return;
 	}
 
-	CL9GameState->StartNightClock(*Rules);
-	CL9GameState->SetPhase(ECL9NightPhase::Night);
-	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, Rules->NightLength);
+	// Day curves scale the rules' night and the site's population (docs/plan/data/progression.md);
+	// a missing progression asset means no scaling, a missing site means an empty night.
+	const int32 Day = CL9GameState->GetCurrentDay();
+	const UCL9ProgressionDef* Progression = GetProgression();
+	const float NightLength = Rules->NightLength * (Progression ? Progression->NightLengthAt(Day) : 1.f);
+	const bool bNoBlackout = Progression != nullptr && Progression->IsBlackoutDisabled(Day);
 
-	UE_LOG(LogCL9, Log, TEXT("Night %d started — %.0fs to dawn, blackout base %.0fs."),
-		CL9GameState->GetCurrentDay(), Rules->NightLength, Rules->DarkBase);
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9SiteDef* Site = Registry ? Registry->FindSite(DefaultSiteAlias) : nullptr;
+	if (Site == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("StartNight: site row '%s' is missing or broken — no animals or ingredients tonight (assign DefaultSiteAlias in the game mode BP)."),
+			*DefaultSiteAlias.ToString());
+	}
+	const float Danger = (Site ? Site->BaseDanger : 1.f) * (Progression ? Progression->DangerAt(Day) : 1.f);
+	CL9GameState->SetSiteAndDanger(Site ? Site->Alias : NAME_None, Danger);
+
+	CL9GameState->StartNightClock(*Rules, NightLength, bNoBlackout);
+	CL9GameState->SetPhase(ECL9NightPhase::Night);
+	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, NightLength);
+
+	UE_LOG(LogCL9, Log, TEXT("Night %d started — %.0fs to dawn, blackout %s, danger ×%.2f."),
+		Day, NightLength, bNoBlackout ? TEXT("off (day override)") : *FString::Printf(TEXT("base %.0fs"), Rules->DarkBase), Danger);
+
+	if (Site != nullptr)
+	{
+		SpawnNightPopulation(*Site, Progression, Day);
+	}
 }
 
 void ACL9GameMode::EndNight()
@@ -198,6 +224,8 @@ void ACL9GameMode::EnterLobby()
 	GetWorldTimerManager().ClearTimer(DawnHandle);
 	CL9GameState->ClearNightClock();
 	CL9GameState->AdvanceDay();
+	ClearNightPopulation();
+	CL9GameState->SetSiteAndDanger(CL9GameState->GetCurrentSiteAlias(), 1.f);
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
@@ -366,4 +394,165 @@ const UCL9RulesDef* ACL9GameMode::GetRules() const
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 	return Registry ? Registry->GetRules() : nullptr;
+}
+
+const UCL9ProgressionDef* ACL9GameMode::GetProgression() const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	return Registry ? Registry->GetProgression() : nullptr;
+}
+
+void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9ProgressionDef* Progression, int32 Day)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// Count = roll in [Min, Max] × the day multiplier, rounded (docs/systems/balance.md).
+	// The roll is per entry, not per animal — the whole flock scales together.
+	auto RollCount = [](const FCL9SpawnEntry& Entry, float Multiplier)
+	{
+		return FMath::Max(0, FMath::RoundToInt(FMath::RandRange(Entry.MinCount, Entry.MaxCount) * Multiplier));
+	};
+
+	const float MonsterMult = Progression ? Progression->MonsterCountAt(Day) : 1.f;
+	const float ItemMult = Progression ? Progression->ItemCountAt(Day) : 1.f;
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+
+	// Flat-level stand-in for the generator's coordinates: animals farther out
+	// than the truck's calm radius, ingredients closer in (⑤ replaces this).
+	for (const FCL9SpawnEntry& Entry : Site.MonsterSpawns)
+	{
+		const int32 Count = RollCount(Entry, MonsterMult);
+		const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(Entry.Alias) : nullptr;
+		const float Radius = Def ? Def->Radius : 50.f;
+		int32 Placed = 0;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			FVector Location;
+			if (!FindSpawnPoint(900.f, 2400.f, Location))
+			{
+				continue;
+			}
+			Location.Z += Radius;
+			if (ACL9Monster* Monster = SpawnMonster(Entry.Alias, NAME_None, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Location)))
+			{
+				NightSpawned.Add(Monster);
+				++Placed;
+			}
+		}
+		UE_LOG(LogCL9, Log, TEXT("Night %d: %s ×%d placed (base %d~%d × %.2f = %d)."),
+			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, MonsterMult, Count);
+	}
+
+	for (const FCL9SpawnEntry& Entry : Site.ItemSpawns)
+	{
+		const int32 Count = RollCount(Entry, ItemMult);
+		int32 Placed = 0;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			FVector Location;
+			if (!FindSpawnPoint(400.f, 1800.f, Location))
+			{
+				continue;
+			}
+			if (ACL9Item* Item = SpawnItem(Entry.Alias, NAME_None, FTransform(Location + FVector(0.f, 0.f, 30.f))))
+			{
+				NightSpawned.Add(Item);
+				++Placed;
+			}
+		}
+		UE_LOG(LogCL9, Log, TEXT("Night %d: %s ×%d placed (base %d~%d × %.2f = %d)."),
+			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
+	}
+}
+
+void ACL9GameMode::ClearNightPopulation()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// The site leaves with the night — what the spawner placed and nobody
+	// carried out is gone. Carried items detached from the spawner's list by
+	// being attached to a character or worn, so those survive.
+	int32 Removed = 0;
+	for (AActor* Actor : NightSpawned)
+	{
+		if (!IsValid(Actor))
+		{
+			continue;
+		}
+		if (const ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && !Item->IsFree())
+		{
+			continue;
+		}
+		Actor->Destroy();
+		++Removed;
+	}
+	NightSpawned.Reset();
+	UE_LOG(LogCL9, Log, TEXT("Night population cleared — %d actors removed."), Removed);
+}
+
+bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector& OutLocation) const
+{
+	// The truck pad is the site's anchor on the flat level; a PlayerStart stands in when none is placed
+	FVector Anchor = FVector::ZeroVector;
+	bool bAnchorFound = false;
+	for (TActorIterator<ACL9TruckPad> It(GetWorld()); It; ++It)
+	{
+		Anchor = It->GetActorLocation();
+		bAnchorFound = true;
+		break;
+	}
+	if (!bAnchorFound)
+	{
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			Anchor = It->GetActorLocation();
+			break;
+		}
+	}
+
+	const UCL9RulesDef* Rules = GetRules();
+	const float CalmRadius = Rules ? Rules->ThreatActMinRadius : 420.f;
+
+	for (int32 Attempt = 0; Attempt < 12; ++Attempt)
+	{
+		const float Bearing = FMath::FRandRange(0.f, 2.f * UE_PI);
+		const float Distance = FMath::FRandRange(MinDistance, MaxDistance);
+		const FVector Candidate = Anchor + FVector(FMath::Cos(Bearing), FMath::Sin(Bearing), 0.f) * Distance;
+
+		// Nothing wakes or spawns inside ThreatActMinRadius of a player (docs/plan/data/rules.md)
+		bool bTooClose = false;
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			const APawn* Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
+			if (Pawn != nullptr && FVector::Dist2D(Pawn->GetActorLocation(), Candidate) < CalmRadius)
+			{
+				bTooClose = true;
+				break;
+			}
+		}
+		if (bTooClose)
+		{
+			continue;
+		}
+
+		// Ground it: trace down from above; no floor there means try elsewhere
+		FHitResult Hit;
+		const FVector Start = Candidate + FVector(0.f, 0.f, 500.f);
+		const FVector End = Candidate - FVector(0.f, 0.f, 500.f);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic))
+		{
+			OutLocation = Hit.ImpactPoint + FVector(0.f, 0.f, 5.f);
+			return true;
+		}
+	}
+	return false;
 }

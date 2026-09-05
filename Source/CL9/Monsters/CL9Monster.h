@@ -117,6 +117,9 @@ private:
 
 	void HostTickAI(float DeltaSeconds);
 
+	/** Tonight's DangerCurve × site multiplier from the game state — chase budget, detection speed and sight scale by it (docs/systems/monster.md 일자 스케일링) */
+	float GetDangerScale() const;
+
 	/** Feeds the detection gauge from sight, run noise and proximity; remembers the last sensed spot */
 	void SenseTick(float DeltaSeconds);
 

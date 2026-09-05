@@ -550,3 +550,14 @@
   (사용자). 손전등의 정전 소등 규칙은 그대로다(사용자 답변이 헤드램프에 한정된 것으로 읽음 —
   손전등까지 바꿀지는 미결). 구현: 아이템 HoldState `Worn`(1인칭 카메라 부착·OwnerNoSee·충돌 없음),
   F는 쓴 램프 우선, PlayerState `HeadItem` 미러. 벗기·타인 화면 피치 추종·가격은 미결.
+
+- **4b 일자 진행 곡선 구현** (build-order ④ 4b). 정본 두 층 그대로 — 목적지(`UCL9SiteDef`,
+  DA_SiteTable `henhouse`: 닭 8~12·거위 0~1·계란 16~20·고기 8~12) × 일자 곡선(`UCL9ProgressionDef`
+  단일 에셋). 구현 결정: ① 곡선은 별도 `UCurveFloat` 에셋 대신 **`FRuntimeFloatCurve` 인라인**
+  (같은 그래프 편집, 외부 곡선 참조도 가능, 에셋 수 절약). ② 밤 시작 스폰은 맵 생성기 전까지
+  **평지 스탠드인**: 트럭 패드(없으면 PlayerStart)를 앵커로 몬스터 900~2400cm·재료 400~1800cm
+  원환에 무작위 배치, 플레이어 `ThreatActMinRadius` 안은 피한다. ③ 로비 복귀 시 밤 스폰분만
+  철거(들고 나온 것·치트 스폰·레벨 배치물은 남긴다). ④ DangerCurve는 GameState `DangerScale`
+  하나로 실어 몬스터의 ChaseBudget·DetectRate·Sight 세 읽기 지점에 곱한다(표 값 불변).
+  ⑤ 1일차 덮어쓰기: 정전 없음. 곡선 초안 값은 progression.md 그대로. 미구현: ValueCurve·
+  QuotaCurve(4e), 주문서 컬럼(4c), ForcedSite(4g).

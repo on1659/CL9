@@ -10,7 +10,9 @@ class ACL9Character;
 class ACL9Item;
 class ACL9Monster;
 class ACL9PlayerController;
+class UCL9ProgressionDef;
 class UCL9RulesDef;
+class UCL9SiteDef;
 
 /**
  * Base game mode. Exists on the listen host only — authoritative game-flow
@@ -69,10 +71,28 @@ protected:
 	/** Host only: every dead player stands up on the truck pad with full HP and stops spectating */
 	void ReviveDead();
 
+	/**
+	 * Host only, night start: rolls the site's baselines × the day curves and
+	 * spawns the night's animals and ingredients (docs/systems/raiding.md 스폰).
+	 * No map generator yet (⑤) — the flat level scatters them around the truck.
+	 */
+	void SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9ProgressionDef* Progression, int32 Day);
+
+	/** Host only, lobby: the site vanishes with the night — everything the spawner placed goes (docs/plan/data/equipment.md 원정과 분실) */
+	void ClearNightPopulation();
+
+	/** A ground spot at a random bearing and distance from the truck, outside ThreatActMinRadius of every player */
+	bool FindSpawnPoint(float MinDistance, float MaxDistance, FVector& OutLocation) const;
+
 	const UCL9RulesDef* GetRules() const;
+	const UCL9ProgressionDef* GetProgression() const;
 
 	FTimerHandle NightExpiryHandle;
 	FTimerHandle DawnHandle;
+
+	/** What the night spawner placed — cleared at the next lobby; cheat spawns and level props stay */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<AActor>> NightSpawned;
 
 	/**
 	 * Character row every player spawns as, set in the BP child. Interim until
@@ -81,6 +101,10 @@ protected:
 	 */
 	UPROPERTY(EditDefaultsOnly, Category="Character")
 	FName DefaultCharacterAlias;
+
+	/** Site row every night raids, set in the BP child — interim until 4g adds the destination choice */
+	UPROPERTY(EditDefaultsOnly, Category="Night")
+	FName DefaultSiteAlias;
 
 	/** The shared item BP — used whenever a row leaves ActorClass empty */
 	UPROPERTY(EditDefaultsOnly, Category="Classes")

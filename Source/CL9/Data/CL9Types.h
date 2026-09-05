@@ -145,6 +145,46 @@ struct FCL9StatEffect
 	float DurationSec = 0.f;
 };
 
+/** One spawn baseline row — a site's animals or ingredients; the day curve scales the roll (docs/data/schema.md) */
+USTRUCT(BlueprintType)
+struct FCL9SpawnEntry
+{
+	GENERATED_BODY()
+
+	/** Monster or item alias */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName Alias;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MinCount = 0;
+
+	/** The day curve multiplies the roll between Min and Max (docs/plan/data/progression.md) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 MaxCount = 0;
+};
+
+/** Hand-set exceptions for one day — a 0 multiplier means "use the curve" (docs/plan/data/progression.md 특정 일자 덮어쓰기) */
+USTRUCT(BlueprintType)
+struct FCL9DayOverride
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Day = 1;
+
+	/** Replaces MonsterCountCurve for this day when > 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MonsterCountMult = 0.f;
+
+	/** Replaces DangerCurve for this day when > 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float DangerMult = 0.f;
+
+	/** No blackout this night (the tutorial day) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bNoBlackout = false;
+};
+
 namespace CL9
 {
 	/** Impact state chain — 성함 → 금감 → 깨짐 swaps the SubAlias (docs/systems/item.md 상태 = SubAlias) */

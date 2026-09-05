@@ -58,6 +58,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		Damage(Tokens);
 	}
+	else if (Command == TEXT("day"))
+	{
+		Day(Tokens);
+	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("cl9.%s: unknown cheat."), *Command);
@@ -330,6 +334,31 @@ void UCL9CheatManager::Damage(const TArray<FString>& Args)
 	const int32 Amount = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
 	Character->OnDamage(Amount, nullptr);
 	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s'."), Amount, *GetNameSafe(Character));
+}
+
+void UCL9CheatManager::Day(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	if (CL9GameState == nullptr || !CL9GameState->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.day: host only."));
+		return;
+	}
+	if (CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.day: only in the lobby — the day is fixed once a night starts."));
+		return;
+	}
+
+	const int32 NewDay = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) : 0;
+	if (NewDay < 1)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.day: usage cl9.day <N> (N >= 1)."));
+		return;
+	}
+	CL9GameState->SetDay(NewDay);
+	UE_LOG(LogCL9, Log, TEXT("cl9.day: lobby moved to day %d — cl9.night rolls that day's curves."), NewDay);
 }
 
 const UCL9DefRegistry* UCL9CheatManager::GetRegistry() const

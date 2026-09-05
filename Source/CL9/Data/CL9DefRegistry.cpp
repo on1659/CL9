@@ -5,7 +5,9 @@
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
+#include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SiteDef.h"
 
 #if WITH_EDITOR
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -98,6 +100,7 @@ void UCL9DefRegistry::Init(const UCL9DefList* DefList)
 	}
 
 	CheckItemReferences();
+	CheckSiteReferences();
 
 	// Relation checks need the whole registry, so they run after every table
 	// loaded — A1/A2 compare character rows against monster rows.
@@ -171,6 +174,54 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 			return;
 		}
 		Rules = RulesDef;
+	}
+	else if (const UCL9ProgressionDef* ProgressionDef = Cast<UCL9ProgressionDef>(Def))
+	{
+		if (Progression != nullptr)
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: a second progression row — the first one stays (the progression asset is singular)."), *Def->GetName());
+			return;
+		}
+		Progression = ProgressionDef;
+	}
+	else if (const UCL9SiteDef* SiteDef = Cast<UCL9SiteDef>(Def))
+	{
+		if (Sites.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate site key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		Sites.Add(Def->Alias, SiteDef);
+		OrderedSites.Add(SiteDef);
+	}
+}
+
+const UCL9SiteDef* UCL9DefRegistry::FindSite(FName Alias) const
+{
+	const UCL9SiteDef* const* Found = Sites.Find(Alias);
+	return Found ? *Found : nullptr;
+}
+
+void UCL9DefRegistry::CheckSiteReferences() const
+{
+	for (const UCL9SiteDef* Site : OrderedSites)
+	{
+		for (const FCL9SpawnEntry& Entry : Site->MonsterSpawns)
+		{
+			if (FindMonster(Entry.Alias) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: MonsterSpawns names '%s' which is missing or broken — that entry spawns nothing."),
+					*Site->GetName(), *Entry.Alias.ToString());
+			}
+		}
+		for (const FCL9SpawnEntry& Entry : Site->ItemSpawns)
+		{
+			if (FindItem(Entry.Alias) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: ItemSpawns names '%s' which is missing or broken — that entry spawns nothing."),
+					*Site->GetName(), *Entry.Alias.ToString());
+			}
+		}
 	}
 }
 

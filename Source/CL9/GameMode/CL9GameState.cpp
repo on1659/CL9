@@ -17,6 +17,8 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, NightStartServerTime);
 	DOREPLIFETIME(ACL9GameState, NightEndServerTime);
 	DOREPLIFETIME(ACL9GameState, BlackoutServerTime);
+	DOREPLIFETIME(ACL9GameState, CurrentSiteAlias);
+	DOREPLIFETIME(ACL9GameState, DangerScale);
 }
 
 void ACL9GameState::RecordReturn(FName ItemAlias, FName ItemSubAlias)
@@ -54,7 +56,7 @@ void ACL9GameState::SetPhase(ECL9NightPhase NewPhase)
 	OnRep_Phase();
 }
 
-void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules)
+void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules, float NightLength, bool bNoBlackout)
 {
 	if (!HasAuthority())
 	{
@@ -62,8 +64,30 @@ void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules)
 	}
 
 	NightStartServerTime = GetServerWorldTimeSeconds();
-	NightEndServerTime = NightStartServerTime + Rules.NightLength;
-	BlackoutServerTime = NightStartServerTime + Rules.DarkBase;
+	NightEndServerTime = NightStartServerTime + NightLength;
+	// 0 keeps IsBlackout false all night; ForceBlackout (cl9.blackout) can still arm it
+	BlackoutServerTime = bNoBlackout ? 0.f : NightStartServerTime + Rules.DarkBase;
+}
+
+void ACL9GameState::SetDay(int32 NewDay)
+{
+	if (!HasAuthority() || NewDay < 1)
+	{
+		return;
+	}
+
+	CurrentDay = NewDay;
+}
+
+void ACL9GameState::SetSiteAndDanger(FName SiteAlias, float NewDangerScale)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	CurrentSiteAlias = SiteAlias;
+	DangerScale = FMath::Max(NewDangerScale, UE_KINDA_SMALL_NUMBER);
 }
 
 void ACL9GameState::ClearNightClock()
