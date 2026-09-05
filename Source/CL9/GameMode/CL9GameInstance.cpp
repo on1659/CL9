@@ -4,7 +4,27 @@
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ShakeTable.h"
+#include "Misc/ConfigCacheIni.h"
 #include "UI/CL9UITable.h"
+
+UCL9DefRegistry* UCL9GameInstance::CreateStandaloneRegistry(UObject* Outer)
+{
+	// The project's game instance class from the engine config — read directly so
+	// the module needs no EngineSettings dependency for one editor tool
+	FString ClassPath;
+	GConfig->GetString(TEXT("/Script/EngineSettings.GameMapsSettings"), TEXT("GameInstanceClass"), ClassPath, GEngineIni);
+	const UClass* Class = FSoftClassPath(ClassPath).TryLoadClass<UGameInstance>();
+	const UCL9GameInstance* Defaults = Class ? Cast<UCL9GameInstance>(Class->GetDefaultObject()) : nullptr;
+	if (Defaults == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("The project's game instance class is not a CL9 game instance — no def list to read."));
+		return nullptr;
+	}
+
+	UCL9DefRegistry* Registry = NewObject<UCL9DefRegistry>(Outer);
+	Registry->Init(Defaults->DefListAsset.LoadSynchronous());
+	return Registry;
+}
 
 void UCL9GameInstance::Init()
 {

@@ -13,6 +13,7 @@ class UCL9MonsterDef;
 class UCL9OrderDef;
 class UCL9ProgressionDef;
 class UCL9RulesDef;
+class UCL9SegKindDef;
 class UCL9SiteDef;
 
 /**
@@ -115,6 +116,15 @@ public:
 		return OrderedOrders;
 	}
 
+	/** Returns the usable map piece row for the alias, or null when missing/broken (docs/plan/data/segkind.md) */
+	const UCL9SegKindDef* FindSegKind(FName Alias) const;
+
+	/** Usable map piece rows in list order */
+	const TArray<TObjectPtr<const UCL9SegKindDef>>& GetSegKinds() const
+	{
+		return OrderedSegKinds;
+	}
+
 	/** Usable item rows in list order — cheat number arguments index into this (docs/systems/cheats.md) */
 	const TArray<TObjectPtr<const UCL9ItemDef>>& GetItems() const
 	{
@@ -186,5 +196,10 @@ private:
 	TArray<TObjectPtr<const UCL9OrderDef>> OrderedOrders;
 
 	TMap<FName, const UCL9OrderDef*> Orders;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9SegKindDef>> OrderedSegKinds;
+
+	TMap<FName, const UCL9SegKindDef*> SegKinds;
 	TArray<FString> BrokenRows;
 };

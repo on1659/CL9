@@ -56,6 +56,9 @@ public:
 	/** cl9.pick <n> [m] … — confirms the offer by number (the order screen stand-in; host ruling) */
 	void Pick(const TArray<FString>& Args);
 
+	/** cl9.seed <N> — rebuilds the site with seed N now (0 = shell only) and pins the next night to it (docs/systems/map.md 디버깅) */
+	void Seed(const TArray<FString>& Args);
+
 private:
 	/** Resolves "egg", "egg+cooked" or a cl9.list number to a usable item row */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;

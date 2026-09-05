@@ -8,6 +8,7 @@
 
 class ACL9Character;
 class ACL9Item;
+class ACL9Jar;
 class ACL9Monster;
 class ACL9PlayerController;
 class UCL9ProgressionDef;
@@ -72,6 +73,9 @@ public:
 	 */
 	bool AcceptOrders(const TArray<int32>& OfferedIndices);
 
+	/** Pins the next night's map seed (cl9.seed) — 0 rolls a random one again */
+	void SetForcedMapSeed(uint32 Seed) { ForcedMapSeed = Seed; }
+
 protected:
 	virtual void StartPlay() override;
 	/** Dawn → Lobby with the day advanced — the stop that hosts the next night (docs/plan/loop.md 정차) */
@@ -98,6 +102,12 @@ protected:
 
 	/** A ground spot at a random bearing and distance from the truck, outside ThreatActMinRadius of every player */
 	bool FindSpawnPoint(float MinDistance, float MaxDistance, FVector& OutLocation) const;
+
+	/** True inside ThreatActMinRadius of any player — nothing wakes or spawns there (docs/plan/data/rules.md) */
+	bool IsInsideCalmRadius(const FVector& Location) const;
+
+	/** Seed pinned by cl9.seed for the next night; 0 = roll one */
+	uint32 ForcedMapSeed = 0;
 
 	const UCL9RulesDef* GetRules() const;
 	const UCL9ProgressionDef* GetProgression() const;
@@ -128,4 +138,8 @@ protected:
 	/** The shared monster BP — used whenever a row leaves ActorClass empty */
 	UPROPERTY(EditDefaultsOnly, Category="Classes")
 	TSubclassOf<ACL9Monster> MonsterClass;
+
+	/** Return jar BP the night spawner places on the generator's jar cells (docs/systems/map.md 항아리) */
+	UPROPERTY(EditDefaultsOnly, Category="Classes")
+	TSubclassOf<ACL9Jar> JarClass;
 };

@@ -81,7 +81,7 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.orders` | 로컬 읽기 | 로비 제시(번호·재료·보상·마감)와 수락한 주문(마감 일차) 출력 (4c) |
 | `cl9.pick <n> [m] …` | 로비에서만 | 제시 번호로 주문 확정 — 정확히 M개 (주문 선택 화면의 스탠드인, 4c) |
 | `cl9.money <N>` | | 판 공유 자금 설정 (GameState.SharedMoney) |
-| `cl9.seed <N>` | | 특정 시드로 맵 재생성 (구 bp_map_seed) |
+| `cl9.seed <N>` | 0 = 외곽만 | 지금 그 시드로 맵을 다시 깔고 다음 밤도 그 시드로 고정 (호스트). **PIE 없이 에디터 콘솔에서 치면** 같은 생성기로 레벨에 트랜지언트 액터를 깐다 — 5a 맵 배치 툴의 창 없는 판 (`cl9.seed clear`로 제거, 두 번째 인자로 목적지 alias) |
 | `cl9.shownav` | | 몬스터 이동·경로 시각화 (구 bp_show_cells) |
 | `cl9.showjars` | | 항아리 배치·1500u 커버리지 확인 (구 bp_show_jars) |
 | `cl9.playseq <alias\|번호>` | | 시퀀스 로컬 재생 테스트 ([sequence.md](sequence.md)) — RPC 안 탐 |

@@ -28,6 +28,13 @@ public:
 		return DefRegistry;
 	}
 
+	/**
+	 * A registry outside any game instance — editor tools (cl9.seed without PIE)
+	 * read the project's game instance defaults for the def list. Null, logged,
+	 * when the project's game instance is not a CL9 one.
+	 */
+	static UCL9DefRegistry* CreateStandaloneRegistry(UObject* Outer);
+
 	/** The UI table the UI manager reads (docs/systems/ui_system.md) — null logs once in Init */
 	const UCL9UITable* GetUITable() const
 	{

@@ -15,6 +15,24 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCL9NightPhaseChanged, ECL9NightPhas
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9OrdersChanged);
 
 /**
+ * Which site map every machine stands in (docs/systems/map.md 생성 흐름). Only the
+ * seed travels; Build ticks on every set so the notify fires even when the same
+ * seed is laid twice (and on the first join, whose seed 0 equals the default).
+ */
+USTRUCT()
+struct FCL9SiteMapKey
+{
+	GENERATED_BODY()
+
+	/** 0 = the fixed shell only (lobby), otherwise the night's maze */
+	UPROPERTY()
+	uint32 Seed = 0;
+
+	UPROPERTY()
+	int32 Build = 0;
+};
+
+/**
  * Shared runtime state (conventions § 4·5) — static tables never replicate,
  * only what changes during a night. Transition rulings live in the game mode;
  * this class only carries the results.
@@ -55,6 +73,16 @@ public:
 	/** Multiplier on chase budget, detection speed and sight tonight — 1 outside a night (docs/systems/monster.md 일자 스케일링) */
 	UFUNCTION(BlueprintPure, Category="Night")
 	float GetDangerScale() const { return DangerScale; }
+
+	/**
+	 * Host only: lays the current site's map from a seed on every machine —
+	 * 0 lays the fixed shell only. The site row comes from CurrentSiteAlias,
+	 * so set that first (docs/systems/map.md 생성 흐름).
+	 */
+	void SetSiteMap(uint32 Seed);
+
+	/** Tonight's map seed — 0 outside a night */
+	uint32 GetMapSeed() const { return SiteMapKey.Seed; }
 
 	/** Host only: the lobby's draw — N candidates and how many must be taken (docs/systems/order.md 주문 흐름) */
 	void SetOfferedOrders(const TArray<FName>& Aliases, int32 Required);
@@ -114,8 +142,18 @@ protected:
 	UFUNCTION()
 	void OnRep_Orders();
 
+	UFUNCTION()
+	void OnRep_SiteMap();
+
+	/** Local: rebuilds the site map for the current site row and seed — the shell alone when the seed is 0 */
+	void RebuildSiteMap();
+
 	UPROPERTY(ReplicatedUsing=OnRep_Phase, BlueprintReadOnly, Category="Night")
 	ECL9NightPhase Phase = ECL9NightPhase::Lobby;
+
+	/** The map every machine builds locally — never the walls themselves */
+	UPROPERTY(ReplicatedUsing=OnRep_SiteMap)
+	FCL9SiteMapKey SiteMapKey;
 
 	/** Day of the host's run — starts at 1 (docs/systems/session.md) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")

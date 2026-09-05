@@ -8,7 +8,9 @@
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SegKindDef.h"
 #include "Data/CL9SiteDef.h"
+#include "World/CL9SiteLayout.h"
 
 #if WITH_EDITOR
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -206,6 +208,22 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		Orders.Add(Def->Alias, OrderDef);
 		OrderedOrders.Add(OrderDef);
 	}
+	else if (const UCL9SegKindDef* SegKindDef = Cast<UCL9SegKindDef>(Def))
+	{
+		if (SegKinds.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate seg kind key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		SegKinds.Add(Def->Alias, SegKindDef);
+		OrderedSegKinds.Add(SegKindDef);
+	}
+}
+
+const UCL9SegKindDef* UCL9DefRegistry::FindSegKind(FName Alias) const
+{
+	const UCL9SegKindDef* const* Found = SegKinds.Find(Alias);
+	return Found ? *Found : nullptr;
 }
 
 const UCL9OrderDef* UCL9DefRegistry::FindOrder(FName Alias) const
@@ -253,6 +271,19 @@ void UCL9DefRegistry::CheckSiteReferences() const
 			{
 				UE_LOG(LogCL9, Error, TEXT("%s: ItemSpawns names '%s' which is missing or broken — that entry spawns nothing."),
 					*Site->GetName(), *Entry.Alias.ToString());
+			}
+		}
+
+		// The generator names its pieces by kind — a missing row leaves holes in the map
+		if (Site->Generator == ECL9Generator::Henhouse)
+		{
+			for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::Cage(), CL9SegKind::Plug(), CL9SegKind::Stair(), CL9SegKind::FlapIn(), CL9SegKind::Floor()})
+			{
+				if (FindSegKind(Kind) == nullptr)
+				{
+					UE_LOG(LogCL9, Error, TEXT("%s: the henhouse generator needs seg kind '%s' which is missing or broken — those boxes are skipped."),
+						*Site->GetName(), *Kind.ToString());
+				}
 			}
 		}
 	}

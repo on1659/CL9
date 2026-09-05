@@ -71,6 +71,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		Pick(Tokens);
 	}
+	else if (Command == TEXT("seed"))
+	{
+		Seed(Tokens);
+	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("cl9.%s: unknown cheat."), *Command);
@@ -447,4 +451,28 @@ void UCL9CheatManager::Pick(const TArray<FString>& Args)
 	{
 		UE_LOG(LogCL9, Log, TEXT("cl9.pick: %d order(s) accepted."), Indices.Num());
 	}
+}
+
+void UCL9CheatManager::Seed(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	if (CL9GameState == nullptr || GameMode == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.seed: host only."));
+		return;
+	}
+	if (!Args.IsValidIndex(0))
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.seed: usage cl9.seed <N> (0 = shell only)."));
+		return;
+	}
+
+	const uint32 Seed = static_cast<uint32>(FCString::Strtoui64(*Args[0], nullptr, 10));
+	GameMode->SetForcedMapSeed(Seed);
+	CL9GameState->SetSiteMap(Seed);
+	UE_LOG(LogCL9, Log, TEXT("cl9.seed: site rebuilt with seed %u%s%s."), Seed,
+		Seed == 0 ? TEXT(" (shell only)") : TEXT(" — the next night uses it too"),
+		CL9GameState->GetPhase() == ECL9NightPhase::Night ? TEXT("; animals already out may now stand inside walls") : TEXT(""));
 }

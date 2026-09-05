@@ -10,6 +10,7 @@
 #include "GameMode/CL9PlayerController.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Item.h"
+#include "Items/CL9Jar.h"
 #include "Components/CapsuleComponent.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
@@ -20,6 +21,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Monsters/CL9Monster.h"
 #include "TimerManager.h"
+#include "World/CL9SiteMap.h"
 #include "World/CL9TruckPad.h"
 
 ACL9GameMode::ACL9GameMode()
@@ -175,6 +177,11 @@ void ACL9GameMode::StartNight()
 	const float Danger = (Site ? Site->BaseDanger : 1.f) * (Progression ? Progression->DangerAt(Day) : 1.f);
 	CL9GameState->SetSiteAndDanger(Site ? Site->Alias : NAME_None, Danger);
 
+	// Only the seed is shared — every machine lays the same maze from it (docs/systems/map.md).
+	// The host builds synchronously here so the spawner below can read the cells.
+	const uint32 MapSeed = ForcedMapSeed != 0 ? ForcedMapSeed : static_cast<uint32>(FMath::RandRange(1, MAX_int32));
+	CL9GameState->SetSiteMap(MapSeed);
+
 	CL9GameState->StartNightClock(*Rules, NightLength, bNoBlackout);
 	CL9GameState->SetPhase(ECL9NightPhase::Night);
 	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, NightLength);
@@ -227,6 +234,8 @@ void ACL9GameMode::EnterLobby()
 	CL9GameState->AdvanceDay();
 	ClearNightPopulation();
 	CL9GameState->SetSiteAndDanger(CL9GameState->GetCurrentSiteAlias(), 1.f);
+	// The maze leaves with the night; the fixed shell stays around the truck
+	CL9GameState->SetSiteMap(0);
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
@@ -425,8 +434,31 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 
-	// Flat-level stand-in for the generator's coordinates: animals farther out
-	// than the truck's calm radius, ingredients closer in (⑤ replaces this).
+	// Generated map: animals and ingredients land on random cells of either floor
+	// (the generator's coordinates — docs/systems/map.md 생성 흐름). Without a
+	// maze the flat-level ring around the truck stands in.
+	const ACL9SiteMap* SiteMap = ACL9SiteMap::Find(GetWorld());
+	const bool bUseCells = SiteMap != nullptr && SiteMap->GetLayout().bHasMaze;
+	auto FindCellSpot = [this, SiteMap](FVector& OutLocation)
+	{
+		const FCL9HenhouseParams& Params = SiteMap->GetParams();
+		for (int32 Attempt = 0; Attempt < 12; ++Attempt)
+		{
+			const int32 Floor = FMath::RandRange(0, 1);
+			const FCL9FloorLayout& Grid = SiteMap->GetLayout().Floors[Floor];
+			FVector Candidate = SiteMap->CellToWorld(Floor, FMath::RandRange(0, Grid.Aisles - 1), FMath::RandRange(0, Grid.Cols - 1));
+			// Jitter along the aisle stretch, clear of the plugs at the cell ends and the cage rows beside it
+			Candidate.X += FMath::FRandRange(-Params.ColWidth * 0.5f + 150.f, Params.ColWidth * 0.5f - 150.f);
+			Candidate.Y += FMath::FRandRange(-Params.AisleWidth * 0.5f + 60.f, Params.AisleWidth * 0.5f - 60.f);
+			if (!IsInsideCalmRadius(Candidate))
+			{
+				OutLocation = Candidate + FVector(0.f, 0.f, 5.f);
+				return true;
+			}
+		}
+		return false;
+	};
+
 	for (const FCL9SpawnEntry& Entry : Site.MonsterSpawns)
 	{
 		const int32 Count = RollCount(Entry, MonsterMult);
@@ -436,7 +468,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
 			FVector Location;
-			if (!FindSpawnPoint(900.f, 2400.f, Location))
+			if (!(bUseCells ? FindCellSpot(Location) : FindSpawnPoint(900.f, 2400.f, Location)))
 			{
 				continue;
 			}
@@ -458,7 +490,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
 			FVector Location;
-			if (!FindSpawnPoint(400.f, 1800.f, Location))
+			if (!(bUseCells ? FindCellSpot(Location) : FindSpawnPoint(400.f, 1800.f, Location)))
 			{
 				continue;
 			}
@@ -471,6 +503,50 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		UE_LOG(LogCL9, Log, TEXT("Night %d: %s ×%d placed (base %d~%d × %.2f = %d)."),
 			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
 	}
+
+	// Return jars on the generator's jar cells, against the cage row so the aisle stays open
+	if (bUseCells)
+	{
+		if (JarClass == nullptr)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("Night %d: no JarClass on the game mode — jar cells stay empty (assign BP_CL9Jar in BP_CL9GameMode)."), Day);
+		}
+		else
+		{
+			int32 Jars = 0;
+			for (int32 Floor = 0; Floor < 2; ++Floor)
+			{
+				for (const FIntPoint& Cell : SiteMap->GetLayout().Floors[Floor].JarCells)
+				{
+					FVector Location = SiteMap->CellToWorld(Floor, Cell.X, Cell.Y);
+					Location.Y += SiteMap->GetParams().AisleWidth * 0.5f - 45.f;
+					FActorSpawnParameters SpawnParams;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					if (AActor* Jar = GetWorld()->SpawnActor<ACL9Jar>(JarClass, Location, FRotator::ZeroRotator, SpawnParams))
+					{
+						NightSpawned.Add(Jar);
+						++Jars;
+					}
+				}
+			}
+			UE_LOG(LogCL9, Log, TEXT("Night %d: %d jars placed."), Day, Jars);
+		}
+	}
+}
+
+bool ACL9GameMode::IsInsideCalmRadius(const FVector& Location) const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	const float CalmRadius = Rules ? Rules->ThreatActMinRadius : 420.f;
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const APawn* Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
+		if (Pawn != nullptr && FVector::Dist2D(Pawn->GetActorLocation(), Location) < CalmRadius)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void ACL9GameMode::ClearNightPopulation()
@@ -521,9 +597,6 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 		}
 	}
 
-	const UCL9RulesDef* Rules = GetRules();
-	const float CalmRadius = Rules ? Rules->ThreatActMinRadius : 420.f;
-
 	for (int32 Attempt = 0; Attempt < 12; ++Attempt)
 	{
 		const float Bearing = FMath::FRandRange(0.f, 2.f * UE_PI);
@@ -531,17 +604,7 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 		const FVector Candidate = Anchor + FVector(FMath::Cos(Bearing), FMath::Sin(Bearing), 0.f) * Distance;
 
 		// Nothing wakes or spawns inside ThreatActMinRadius of a player (docs/plan/data/rules.md)
-		bool bTooClose = false;
-		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-		{
-			const APawn* Pawn = It->Get() ? It->Get()->GetPawn() : nullptr;
-			if (Pawn != nullptr && FVector::Dist2D(Pawn->GetActorLocation(), Candidate) < CalmRadius)
-			{
-				bTooClose = true;
-				break;
-			}
-		}
-		if (bTooClose)
+		if (IsInsideCalmRadius(Candidate))
 		{
 			continue;
 		}
@@ -562,6 +625,13 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 void ACL9GameMode::StartPlay()
 {
 	Super::StartPlay();
+
+	// The site's fixed shell stands from the first lobby — the maze only comes with a night's seed
+	if (ACL9GameState* CL9GameState = GetGameState<ACL9GameState>())
+	{
+		CL9GameState->SetSiteAndDanger(DefaultSiteAlias, 1.f);
+		CL9GameState->SetSiteMap(0);
+	}
 
 	// The first lobby needs its offer too — later lobbies draw in EnterLobby
 	OfferOrders();

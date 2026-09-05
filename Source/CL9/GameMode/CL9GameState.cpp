@@ -5,11 +5,14 @@
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SiteDef.h"
 #include "GameMode/CL9GameInstance.h"
+#include "World/CL9SiteMap.h"
 
 void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACL9GameState, SiteMapKey);
 
 	DOREPLIFETIME(ACL9GameState, ReturnedItems);
 	DOREPLIFETIME(ACL9GameState, Phase);
@@ -175,6 +178,40 @@ bool ACL9GameState::IsBlackout() const
 void ACL9GameState::OnRep_Phase()
 {
 	OnNightPhaseChanged.Broadcast(Phase);
+}
+
+void ACL9GameState::SetSiteMap(uint32 Seed)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	SiteMapKey.Seed = Seed;
+	++SiteMapKey.Build;
+	// OnRep never runs on the listen host — build locally right away
+	OnRep_SiteMap();
+}
+
+void ACL9GameState::OnRep_SiteMap()
+{
+	RebuildSiteMap();
+}
+
+void ACL9GameState::RebuildSiteMap()
+{
+	UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = World ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9SiteDef* Site = Registry ? Registry->FindSite(CurrentSiteAlias) : nullptr;
+	if (Site != nullptr && Site->Generator != ECL9Generator::None)
+	{
+		ACL9SiteMap::Rebuild(World, *Site, *Registry, SiteMapKey.Seed);
+	}
+	else
+	{
+		ACL9SiteMap::Clear(World);
+	}
 }
 
 const UCL9RulesDef* ACL9GameState::GetRules() const

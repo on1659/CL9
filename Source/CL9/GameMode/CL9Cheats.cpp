@@ -10,13 +10,61 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "CL9.h"
+#include "Data/CL9DefRegistry.h"
+#include "Data/CL9SiteDef.h"
 #include "GameMode/CL9CheatManager.h"
+#include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9PlayerController.h"
+#include "World/CL9SiteMap.h"
 
 #if !UE_BUILD_SHIPPING
 
 namespace
 {
+#if WITH_EDITOR
+	/**
+	 * The 5a map tool without a window: in the editor (no PIE) cl9.seed lays the
+	 * site into the level as transient, editor-only actors — the same generator
+	 * the night runs, so what you inspect is what players get (build-order 5a).
+	 */
+	void LayEditorSiteMap(const TArray<FString>& Args, UWorld* World)
+	{
+		if (!Args.IsValidIndex(0))
+		{
+			UE_LOG(LogCL9, Warning, TEXT("cl9.seed: usage cl9.seed <N> [site alias] — 0 = shell only, 'clear' removes the map."));
+			return;
+		}
+		if (Args[0].Equals(TEXT("clear"), ESearchCase::IgnoreCase))
+		{
+			ACL9SiteMap::Clear(World);
+			UE_LOG(LogCL9, Log, TEXT("cl9.seed: editor site map removed."));
+			return;
+		}
+
+		UCL9DefRegistry* Registry = UCL9GameInstance::CreateStandaloneRegistry(GetTransientPackage());
+		if (Registry == nullptr)
+		{
+			return;
+		}
+		const UCL9SiteDef* Site = nullptr;
+		if (Args.IsValidIndex(1))
+		{
+			Site = Registry->FindSite(FName(*Args[1]));
+		}
+		else if (Registry->GetSites().Num() > 0)
+		{
+			Site = Registry->GetSites()[0].Get();
+		}
+		if (Site == nullptr || Site->Generator == ECL9Generator::None)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("cl9.seed: no site row with a generator%s."), Args.IsValidIndex(1) ? *FString::Printf(TEXT(" named '%s'"), *Args[1]) : TEXT(""));
+			return;
+		}
+		const uint32 Seed = static_cast<uint32>(FCString::Strtoui64(*Args[0], nullptr, 10));
+		ACL9SiteMap::Rebuild(World, *Site, *Registry, Seed);
+	}
+#endif
+
 	void RouteCL9Cheat(const FString& Command, const TArray<FString>& Args, UWorld* World, bool bLocalOnly)
 	{
 		if (World == nullptr)
@@ -123,6 +171,21 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatPick(
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		RouteCL9Cheat(TEXT("pick"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSeed(
+	TEXT("cl9.seed"),
+	TEXT("cl9.seed <N> — rebuilds the site with seed N now (0 = shell only) and pins the next night to it (host ruling). In the editor without PIE it lays the map into the level as transient actors."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+#if WITH_EDITOR
+		if (World != nullptr && World->WorldType == EWorldType::Editor)
+		{
+			LayEditorSiteMap(Args, World);
+			return;
+		}
+#endif
+		RouteCL9Cheat(TEXT("seed"), Args, World, false);
 	}));
 
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(

@@ -74,6 +74,16 @@ enum class ECL9NightPhase : uint8
 	Dawn
 };
 
+/** Which map generator a site uses — one destination is one generator (docs/plan/data/site.md ★) */
+UENUM(BlueprintType)
+enum class ECL9Generator : uint8
+{
+	/** No generated map — the bare flat level */
+	None,
+	/** Aisle × column grid with cage rows, a basement and a one-way flap (docs/systems/map.md 양계장 구조) */
+	Henhouse
+};
+
 /** Points at an item row and state — the cook chain and carry mirrors use it (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9ItemRef

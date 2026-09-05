@@ -107,3 +107,20 @@
 - 메시가 아직 없다 — ⑤에서 회색 상자로 세운 뒤 진짜 메시로 교체한다
 - `MinimapColor` 값이 아직 안 정해졌다
 - 스텝 높이(`MaxStepHeight`)의 정확한 값 — 점프 통과 셋을 걸어서 못 넘는지 실측 확인 필요
+
+---
+
+## 구현 상태 (2026-09-06, ⑤ 5a 선행)
+
+`UCL9SegKindDef`(Source/CL9/Data) — 고유 컬럼은 `Height`·`BaseZMode`·`bBlocksSight`, `Mesh`·`ActorClass`는
+공통 베이스(`UCL9DefBase`) 컬럼을 그대로 쓴다 (`CollisionProfile`·`MinimapColor`는 첫 소비처와 함께). 에셋 `DA_SegKindTable`(Content/Data).
+메시는 **100cm 단위 큐브를 발자국×Height로 스케일**하는 규약이라 지금은 전 행이 엔진 기본 큐브(회색 상자)다 —
+5b에서 행마다 진짜 조각으로 바꾼다.
+
+- **12번째 행 `floor`**(높이 30, 시야 차단): 마당·1층·지하·경사로의 지면 슬래브. 위 11종은 벽·소품이라
+  바닥이 없어서 추가했다. 슬래브는 자기 층 바닥면 아래로 매달린다.
+- `stair`의 `WorldTop`은 3D에서 "아랫층 바닥에서 시작해 윗층 바닥 + Height까지"로 해석했다 — 경사로 양옆 벽이
+  구덩이 바닥부터 1층 위 630까지 한 장으로 선다.
+- `flapIn`은 ISM이 아니라 `ACL9FlapIn` 액터다 (일방향 — systems/map.md 구현 상태).
+- 생성기가 지금 내는 종류: `wall`·`barn`·`cage`·`plug`·`stair`·`flapIn`·`floor`. `truck`·`hay`·`trough`·`crate`·
+  `brooder` 행은 있지만 배치 규칙이 기획에 없어 아직 안 깐다.
