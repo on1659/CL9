@@ -571,3 +571,14 @@
   에서 "M개 미선택 시 밤 시작 금지"를 재검토. ② 납품·보상·위약금·세이브는 4e. ③ 주문 선택 화면과
   HUD 진행 중 주문 표시는 UI 세션(OnOrdersChanged 델리게이트 + OfferedOrders/AcceptedOrders 읽기).
   치트 `cl9.orders`·`cl9.pick`.
+
+- **UI 전역 배율 1.4** (사용자 — "UI들 대체적으로 작은데 좀 크게"). 위젯별 글자 크기를 손대지 않고 프로젝트
+  설정 `UserInterfaceSettings.ApplicationScale`을 1.0→1.4로 올렸다(Config/DefaultEngine.ini). 이후 전체 크기는
+  이 값 하나로 조정하고, 위젯은 1080p·배율 1.0 기준으로 만든다 (ui_system.md 구조).
+
+- **돼지·양을 몬스터 표에 올림 — 시스템 검증용** (2026-09-05, 사용자 — "몬스터 시스템이 잘 돌아가는지 봐야
+  되니까"). 기획에 없는 종이지만 보유 팩에 풀셋이 있어 `DA_MonsterTable`에 `pig`·`sheep` 행(값은 닭 복사)과
+  `ABP_Pig`·`ABP_Sheep`(ABP_Chicken 복제 → 스켈레톤·애님 교체)을 추가했다. 목적은 "새 종 = 행 + AnimBP"
+  틀의 실증이지 기획 편입이 아니다 — 역할·값은 미결([pig.md](plan/data/monster/pig.md)·
+  [sheep.md](plan/data/monster/sheep.md)). 같이 `ABP_Fox`에 여우 팩의 휴식·기상 쌍을 연결해 너구리도 8종
+  커버리지를 갖췄다 (SleepTime 0이라 지금은 안 잔다).

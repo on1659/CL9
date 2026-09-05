@@ -22,7 +22,7 @@
 | UE5 마네킹 (Manny/Quinn) + 애님 (Walk/Jog/Jump/Attack/Death/HitReact) | `Content/Characters/Mannequins/` | 1c 임시 캐릭터 메시 — 계획 그대로 |
 | FPP 팔 (ABP_FP + 컨트롤릭) | `Content/FirstPerson/Anims/` | 1인칭 손 뷰모델의 출발점 |
 | 닭 SK_Chicken + 애님 8종 | `Content/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/` | ③ 1호 몬스터 — 커버리지 전수 확인 ([chicken.md](../plan/data/monster/chicken.md) 에셋 절) |
-| 돼지·양 SK + 애님 풀셋 | 같은 팩 `Chars/Pig` · `Chars/Sheep` | 예비 (기획에 아직 없는 종) |
+| 돼지·양 SK + 애님 풀셋 | 같은 팩 `Chars/Pig` · `Chars/Sheep` | 몬스터 시스템 검증용으로 표에 올림 (2026-09-05) — `ABP_Pig`·`ABP_Sheep`은 ABP_Chicken 복제, 커버리지는 [pig.md](../plan/data/monster/pig.md)·[sheep.md](../plan/data/monster/sheep.md) |
 | Farmlands 환경 (농장 건물·지형·폴리지) + Horror 조명 깜빡임 | `DreamscapeFarmlands/` · `Variant_Horror/` | 5a 맵·light.md 참고 |
 
 **없는 것: 거위·너구리 메시.** 거위는 닭과 기능이 같고 에셋만 다르므로(2026-09-01 확인),

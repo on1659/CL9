@@ -158,3 +158,5 @@ HP는 `HpMin`~`HpMax`에서 굴린 정수다. 즉사를 피하고 싶은 종은 
 | `chicken` | [chicken.md](chicken.md) | 이동·감각·추격·HP 값 있음. 드롭 연결 미정 |
 | `goose` | [goose.md](goose.md) | 값 있음 (양계장 기본 스폰 0~1 — site.md) |
 | `raccoon` | [raccoon.md](raccoon.md) | 값 전부 미결 (③에서) |
+| `pig` | [pig.md](pig.md) | 시스템 검증용 — 값은 닭 복사, 역할 미결 (2026-09-05) |
+| `sheep` | [sheep.md](sheep.md) | 시스템 검증용 — 값은 닭 복사, 역할 미결 (2026-09-05) |

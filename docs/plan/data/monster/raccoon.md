@@ -47,7 +47,7 @@
 |---|---|
 | `SkeletalMesh` | `SK_Fox` |
 | `Skeleton` | `SK_Fox_Skeleton` |
-| `AnimBP` | `ABP_Fox` (Idle/Walk/Run 속도 블렌드 — 3g에서 제작) |
+| `AnimBP` | `ABP_Fox` (Idle/Walk/Run 속도 블렌드 — 3g에서 제작. 물기·피격·죽음에 더해 2026-09-05에 휴식·기상 쌍 `ANIM_Fox_Resting`/`RestToGoBackUp`도 연결 — `SleepTime` 0이라 지금은 미사용) |
 
 ## 미결
 
