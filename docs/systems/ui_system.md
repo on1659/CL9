@@ -54,6 +54,9 @@ public:
 
 - HUD 값은 전부 GameState/PlayerState의 Replicated 값에서 읽는다 — OnRep 콜백이 위젯 갱신을
   호출한다 (conventions.md § 5·§ 6). 위젯이 Tick으로 폴링하지 않는다.
+- **예외는 스태미나 바 하나다** — 스태미나는 CMC 틱에서 시뮬레이션되고 변경 이벤트가 없어
+  (복제되지도 않는다) HUD가 `GetStamina()`를 매 프레임 읽는다. 소유 클라의 로컬 값이라
+  네트워크 비용이 없다. 다른 값에 이 예외를 넓히지 않는다.
 - 서버가 화면 전환을 지시할 때는 Multicast RPC → 로컬에서 `OpenWidget` 호출
   (예: 밤 종료 → 전원 새벽 화면). 단 "지금 열려 있어야 할 Screen"은 **GameState 페이즈에서
   파생 가능**해야 한다 — Multicast를 놓친 중간 참가자가 페이즈에서 파생한 이름과

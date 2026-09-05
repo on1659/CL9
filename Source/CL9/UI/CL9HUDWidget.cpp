@@ -1,9 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9HUDWidget.h"
+#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "Character/CL9Character.h"
+#include "Character/CL9CharacterMovement.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
 #include "GameMode/CL9GameInstance.h"
@@ -26,6 +29,13 @@ void UCL9HUDWidget::NativeDestruct()
 	}
 
 	Super::NativeDestruct();
+}
+
+void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	RefreshStamina();
 }
 
 void UCL9HUDWidget::TryWire()
@@ -146,6 +156,19 @@ void UCL9HUDWidget::RefreshClock()
 		ClockText->SetText(FText::Format(NSLOCTEXT("CL9", "HudLobby", "{0}일차 · 정차"), Day));
 		break;
 	}
+}
+
+void UCL9HUDWidget::RefreshStamina()
+{
+	const ACL9Character* Character = Cast<ACL9Character>(GetOwningPlayerPawn());
+	const UCL9CharacterMovement* Movement = (Character != nullptr) ? Character->GetCL9CharacterMovement() : nullptr;
+	if (StaminaBar == nullptr || Movement == nullptr)
+	{
+		return;
+	}
+
+	StaminaBar->SetPercent(Movement->GetStamina());
+	StaminaBar->SetFillColorAndOpacity(Movement->IsExhausted() ? StaminaExhaustedColor : StaminaColor);
 }
 
 FText UCL9HUDWidget::ItemLabel(const FCL9CarriedItem& Item) const

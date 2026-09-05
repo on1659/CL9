@@ -9,6 +9,7 @@
 
 class ACL9GameState;
 class ACL9PlayerState;
+class UProgressBar;
 class UTextBlock;
 
 /**
@@ -26,6 +27,9 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
+	/** Stamina has no change event — it is simulated in the CMC, so the bar polls */
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
 	/** One ♥ per HP point (초안 — ui.md의 "HP 표시 방식 미정" 자리), 10 초과는 숫자 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> HpText;
@@ -41,6 +45,18 @@ protected:
 	/** Day number, phase and the running night clock */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> ClockText;
+
+	/** Normalized stamina (2026-09-05 결정 — the bar joins the shake, it does not replace it) */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UProgressBar> StaminaBar;
+
+	/** Fill while stamina is spendable — edit in WBP_HUD */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	FLinearColor StaminaColor = FLinearColor(0.85f, 0.85f, 0.75f, 1.f);
+
+	/** Fill while the exhaustion latch blocks running (docs/systems/character.md 세 조항) */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	FLinearColor StaminaExhaustedColor = FLinearColor(0.75f, 0.25f, 0.2f, 1.f);
 
 private:
 	UFUNCTION()
@@ -58,6 +74,7 @@ private:
 	void RefreshHp();
 	void RefreshCarry();
 	void RefreshClock();
+	void RefreshStamina();
 
 	/** Display name from the item table row, alias as fallback */
 	FText ItemLabel(const FCL9CarriedItem& Item) const;

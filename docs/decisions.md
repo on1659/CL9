@@ -486,3 +486,17 @@
   `AddToRoot` 싱글턴 → GameInstanceSubsystem (싱글턴 접근 `Get()`은 유지 — 사용자 허용).
   Screen 레이어는 배타(전면 화면 동시 1장 기획은 레이어 정책으로 지켜진다), Popup 레이어는
   중첩 허용. 전문은 systems/ui_system.md.
+
+- **셰이크 등록을 규칙 컬럼 → 셰이크 표로** (사용자 지시). `UCL9RulesDef`의 `StaminaShake`·
+  `StaminaShakeStart` 두 컬럼을 버리고 `UCL9ShakeTable`(FName → {셰이크 에셋, 발동 문턱})을
+  신설한다 — UI 표와 같은 모양이고, 흔들림이 늘어도(운반·착지·피격) 규칙 에셋에 컬럼이 늘지
+  않고 표에 행만 추가된다. 진폭·주파수는 여전히 셰이크 에셋 안에서 튜닝한다(표에 강도 컬럼을
+  두지 않는다). 에셋은 `Content/Effects/DA_ShakeTable`, 주입은 BP_CL9GameInstance.
+
+- **스태미나 표시 번복: 흔들림 + HUD 바 병행** (사용자 지시 — "흔들림도 있고 UI 표시도
+  필요해"). rules.md의 "스태미나는 바 없이 화면 흔들림으로만"을 스태미나에 한해 번복한다.
+  흔들림만으로는 **남은 양과 탈진 래치 해제 시점**(StaminaMinResume 0.25)이 안 읽힌다는
+  판단이다. HUD에 정규화 바를 두고 탈진 중에는 색을 바꾼다. **운반 흔들림에는 이 예외를
+  적용하지 않는다** — 그쪽은 "관리 자원화 방지" 논리가 그대로 유효하다.
+  스태미나는 CMC 틱 시뮬 값이라 변경 이벤트가 없어 HUD가 폴링한다 — OnRep 원칙의 유일한
+  예외로 두고 넓히지 않는다 (systems/ui_system.md).
