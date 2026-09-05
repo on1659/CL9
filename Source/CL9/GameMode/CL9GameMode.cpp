@@ -24,6 +24,15 @@
 #include "World/CL9SiteMap.h"
 #include "World/CL9TruckPad.h"
 
+namespace
+{
+	/** Tonight's map seed — the pinned one (cl9.seed) or a fresh roll; never 0, which means "shell only" */
+	uint32 RollMapSeed(uint32 Forced)
+	{
+		return Forced != 0 ? Forced : static_cast<uint32>(FMath::RandRange(1, MAX_int32));
+	}
+}
+
 ACL9GameMode::ACL9GameMode()
 {
 	GameStateClass = ACL9GameState::StaticClass();
@@ -177,10 +186,13 @@ void ACL9GameMode::StartNight()
 	const float Danger = (Site ? Site->BaseDanger : 1.f) * (Progression ? Progression->DangerAt(Day) : 1.f);
 	CL9GameState->SetSiteAndDanger(Site ? Site->Alias : NAME_None, Danger);
 
-	// Only the seed is shared — every machine lays the same maze from it (docs/systems/map.md).
-	// The host builds synchronously here so the spawner below can read the cells.
-	const uint32 MapSeed = ForcedMapSeed != 0 ? ForcedMapSeed : static_cast<uint32>(FMath::RandRange(1, MAX_int32));
-	CL9GameState->SetSiteMap(MapSeed);
+	// The lobby already stood tonight's maze (2026-09-06 결정 — 로비부터 오늘 밤 미로); only a
+	// world that somehow has none gets one now. Only the seed is shared — every machine
+	// lays the same maze from it (docs/systems/map.md).
+	if (CL9GameState->GetMapSeed() == 0)
+	{
+		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
+	}
 
 	CL9GameState->StartNightClock(*Rules, NightLength, bNoBlackout);
 	CL9GameState->SetPhase(ECL9NightPhase::Night);
@@ -234,8 +246,8 @@ void ACL9GameMode::EnterLobby()
 	CL9GameState->AdvanceDay();
 	ClearNightPopulation();
 	CL9GameState->SetSiteAndDanger(CL9GameState->GetCurrentSiteAlias(), 1.f);
-	// The maze leaves with the night; the fixed shell stays around the truck
-	CL9GameState->SetSiteMap(0);
+	// A new night, a new maze — it stands from the lobby so the stop shows where tonight goes
+	CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
@@ -626,11 +638,11 @@ void ACL9GameMode::StartPlay()
 {
 	Super::StartPlay();
 
-	// The site's fixed shell stands from the first lobby — the maze only comes with a night's seed
+	// Tonight's maze stands from the first lobby — the stop shows where the night goes
 	if (ACL9GameState* CL9GameState = GetGameState<ACL9GameState>())
 	{
 		CL9GameState->SetSiteAndDanger(DefaultSiteAlias, 1.f);
-		CL9GameState->SetSiteMap(0);
+		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	}
 
 	// The first lobby needs its offer too — later lobbies draw in EnterLobby
