@@ -88,10 +88,15 @@
 (HUD 바 없음 — 위 운반 흔들림과 같은 철학, 다른 대상). 소유 클라 로컬 표현이고 판정·복제와
 무관하다. 진폭·주기는 셰이크 에셋이 가지고, 표는 어느 에셋을 언제부터 켜는지만 정한다.
 
-| 컬럼 | 기본값 | 뜻 |
+**셰이크는 규칙 컬럼이 아니라 셰이크 표에서 읽는다** (2026-09-05 결정 — 앞으로 흔들림이
+늘 때 규칙에 컬럼을 늘리지 않고 표에 행만 추가한다). `UCL9ShakeTable`(`DA_ShakeTable`,
+`UCL9UITable`과 같은 모양)의 `Rows`에 이름→`FCL9ShakeInfo{ Shake, StartAt }`로 등록하고,
+캐릭터가 `CL9ShakeNames::Stamina` 행을 조회한다. 스케일 = (StartAt−Stamina)/StartAt, 0에서 만충.
+
+| 행 (`Rows` 키) | 필드 | 뜻 |
 |---|---|---|
-| `StaminaShake` | (에셋) | 지쳤을 때 재생할 카메라 셰이크 (`UCameraShakeBase` 소프트 클래스) |
-| `StaminaShakeStart` | 0.5 | 정규화 스태미나가 이 값 아래부터 흔들림. 스케일 = (Start−Stamina)/Start, 0에서 만충 |
+| `Stamina` | `Shake` | 지쳤을 때 재생할 카메라 셰이크 (`UCameraShakeBase` 소프트 클래스) |
+| `Stamina` | `StartAt` (0.5) | 정규화 스태미나가 이 값 아래부터 흔들림 |
 
 **던지기 원점에 점프 높이를 더하지 않는다.**
 

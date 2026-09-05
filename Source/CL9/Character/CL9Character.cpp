@@ -26,6 +26,7 @@
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9ShakeTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9PlayerState.h"
@@ -360,25 +361,28 @@ void ACL9Character::Tick(float DeltaSeconds)
 void ACL9Character::UpdateStaminaShake()
 {
 	// Stamina has no bar — the screen shakes as it empties (docs/plan/data/rules.md).
-	// Owning client only; display-only, never a ruling.
-	const UCL9RulesDef* Rules = GetRules();
+	// Owning client only; display-only, never a ruling. The shake and its threshold
+	// come from the shake table (a row, not a rules column — new shakes add rows).
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	APlayerCameraManager* CameraManager = PC ? PC->PlayerCameraManager : nullptr;
-	if (Rules == nullptr || CameraManager == nullptr || Rules->StaminaShakeStart <= 0.f)
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9ShakeTable* ShakeTable = GameInstance ? GameInstance->GetShakeTable() : nullptr;
+	const FCL9ShakeInfo* Info = ShakeTable ? ShakeTable->Rows.Find(CL9ShakeNames::Stamina) : nullptr;
+	if (CameraManager == nullptr || Info == nullptr || Info->StartAt <= 0.f)
 	{
 		return;
 	}
 
 	const float Stamina = GetCL9CharacterMovement()->GetStamina();
-	const float Intensity = Stamina < Rules->StaminaShakeStart
-		? (Rules->StaminaShakeStart - Stamina) / Rules->StaminaShakeStart
+	const float Intensity = Stamina < Info->StartAt
+		? (Info->StartAt - Stamina) / Info->StartAt
 		: 0.f;
 
 	if (Intensity > 0.f)
 	{
 		if (StaminaShakeInstance == nullptr || StaminaShakeInstance->IsFinished())
 		{
-			if (UClass* ShakeClass = Rules->StaminaShake.LoadSynchronous())
+			if (UClass* ShakeClass = Info->Shake.LoadSynchronous())
 			{
 				StaminaShakeInstance = CameraManager->StartCameraShake(ShakeClass, 1.f);
 			}
