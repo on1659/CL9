@@ -20,7 +20,7 @@
 
 namespace
 {
-	/** Below this impact-frame speed a bouncing item settles, in cm/s */
+	/** 충돌 프레임 속도가 이 값 아래로 떨어지면 튀던 아이템이 멈춘다, cm/s 단위 */
 	constexpr float RestSpeed = 30.f;
 }
 
@@ -50,6 +50,7 @@ void ACL9Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
 	DOREPLIFETIME(ACL9Item, HoldState);
 	DOREPLIFETIME(ACL9Item, bLightOn);
+	DOREPLIFETIME(ACL9Item, Value);
 }
 
 void ACL9Item::LoadData()
@@ -64,11 +65,17 @@ void ACL9Item::LoadData()
 			*GetNameSafe(this), *GetAlias().ToString(), *GetSubAlias().ToString());
 		return;
 	}
+	// 개체마다 값을 굴린다 — 행이 바뀔 때마다(첫 로드·상태 전환) 호스트가 새 범위에서 뽑고 복제한다
+	const bool bRowChanged = ItemDef != Def;
 	ItemDef = Def;
+	if (HasAuthority() && bRowChanged)
+	{
+		Value = FMath::RandRange(Def->ValueMin, Def->ValueMax);
+	}
 
 	SphereComponent->SetSphereRadius(Def->Radius);
 
-	// The table's friction/restitution drive the physics path via a per-row material
+	// 테이블의 마찰/반발 값이 행별 머티리얼을 통해 물리 경로를 움직인다
 	if (Def->bPhysicsEnabled)
 	{
 		if (PhysicsMaterial == nullptr)
@@ -84,8 +91,8 @@ void ACL9Item::LoadData()
 	{
 		MeshComponent->SetStaticMesh(Mesh);
 
-		// Temp meshes are basic shapes — fit them to the ruling radius until
-		// bought assets replace them through the table (build-order 원칙 2).
+		// 임시 메시는 기본 도형이다 — 구매한 에셋이 테이블을 통해 이를 대체하기 전까지는
+		// 판정 반지름에 맞춰 크기를 조정해 둔다 (build-order 원칙 2).
 		const float MeshRadius = Mesh->GetBounds().SphereRadius;
 		if (MeshRadius > UE_KINDA_SMALL_NUMBER)
 		{
@@ -103,7 +110,7 @@ void ACL9Item::LoadData()
 
 	SetupLight();
 
-	// The row decides the sim (physics vs simple bounce) — re-apply for it
+	// 시뮬레이션 방식(물리냐 단순 바운스냐)은 행이 결정한다 — 다시 적용해 준다
 	ApplyHoldState();
 }
 
@@ -114,9 +121,9 @@ bool ACL9Item::IsFlashlight() const
 
 void ACL9Item::SetupLight()
 {
-	// The row's light fields turn into a real component here — a point light for
-	// a glow (egg), a forward spot for a flashlight (docs/systems/light.md). Built
-	// once; a SubAlias reload (cooked/cracked) keeps the same component.
+	// 행의 조명 필드가 여기서 실제 컴포넌트로 바뀐다 — 발광(달걀)은 점광원으로, 손전등은
+	// 앞을 향한 스포트라이트로 (docs/systems/light.md). 한 번만 만들어지며, SubAlias
+	// 재로드(조리됨/균열)가 일어나도 같은 컴포넌트를 그대로 쓴다.
 	if (LightComponent != nullptr || ItemDef == nullptr || !ItemDef->bEmitsLight)
 	{
 		return;
@@ -151,8 +158,8 @@ void ACL9Item::SetLightSwitch(bool bOn)
 		return;
 	}
 
-	// The blackout is the flashlight's counter — it cannot be lit past it (light.md).
-	// A worn lamp is the wearer's own gear and stays out of it.
+	// 정전은 손전등의 천적이다 — 정전 중에는 켤 수 없다 (light.md).
+	// 착용한 램프는 착용자 본인의 장비라 정전의 영향을 받지 않는다.
 	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
 	if (bOn && !IsWorn() && CL9GameState != nullptr && CL9GameState->IsBlackout())
 	{
@@ -178,8 +185,8 @@ void ACL9Item::UpdateLightVisibility()
 		return;
 	}
 
-	// Each machine derives the same result: switch on, minus the blackout for a
-	// flashlight (a glow stays lit — it's the light that remains, light.md).
+	// 모든 머신이 같은 결과를 도출한다: 스위치가 켜져 있으면 켜지되, 손전등이라면
+	// 정전을 뺀다 (발광은 계속 켜져 있다 — 남는 쪽은 발광이다, light.md).
 	bool bVisible = bLightOn;
 	if (bVisible && IsFlashlight() && !IsWorn())
 	{
@@ -194,8 +201,8 @@ void ACL9Item::UpdateLightVisibility()
 
 bool ACL9Item::CanBePickedUp() const
 {
-	// Items on a cart bed stay pickable — taking one off the bed is the same
-	// aim-and-press as picking it off the ground (2026-09-02 상호작용 통합).
+	// 수레 짐칸에 실린 아이템도 계속 집을 수 있다 — 짐칸에서 꺼내는 것은 바닥에서
+	// 줍는 것과 똑같이 조준하고 누르면 된다 (2026-09-02 상호작용 통합).
 	return (HoldState == ECL9ItemHoldState::Free || HoldState == ECL9ItemHoldState::OnCart)
 		&& ItemDef != nullptr
 		&& ItemDef->CarrySlot != ECL9CarrySlot::CartOnly;
@@ -213,8 +220,8 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation
 	bAtRest = true;
 	ApplyHoldState();
 
-	// A glow lights up the moment it is carried; a flashlight starts off and the
-	// holder toggles it (docs/systems/light.md).
+	// 발광은 소지되는 순간 켜지고, 손전등은 꺼진 채로 시작해 소지자가 직접
+	// 토글해야 한다 (docs/systems/light.md).
 	if (ItemDef != nullptr && ItemDef->bEmitsLight)
 	{
 		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
@@ -237,15 +244,15 @@ void ACL9Item::OnWorn(ACL9Character* Wearer)
 	bAtRest = true;
 	ApplyHoldState();
 
-	// Same start as a held flashlight: off until the wearer toggles it
+	// 손에 든 손전등과 시작 방식이 같다: 착용자가 토글하기 전까지는 꺼져 있다
 	if (ItemDef != nullptr && ItemDef->bEmitsLight)
 	{
 		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
 		OnRep_LightOn();
 	}
 
-	// The camera carries the owner's full look; on other machines it only yaws
-	// with the body (pitch follow is a later step). Sits just above the eyes.
+	// 카메라는 소유자의 시선을 온전히 따라간다. 다른 머신에서는 몸통과 함께
+	// 요(yaw)만 돌아간다(피치 추종은 나중 단계). 눈 바로 위에 자리한다.
 	AttachToComponent(Wearer->GetFirstPersonCameraComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SetActorRelativeLocation(FVector(8.f, 0.f, 10.f));
 }
@@ -280,7 +287,7 @@ void ACL9Item::OnPlaced(const FVector& WorldLocation)
 	bAtRest = false;
 	ApplyHoldState();
 
-	// Dropped items are dark — a glow only glows while carried, a flashlight is off
+	// 내려놓은 아이템은 불이 꺼진다 — 발광은 소지 중일 때만 빛나고, 손전등은 꺼진다
 	if (bLightOn)
 	{
 		bLightOn = false;
@@ -318,9 +325,9 @@ void ACL9Item::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// A lit flashlight polls the blackout on every machine so the beam dies the
-	// moment it hits — returns pull the moment forward, so a fixed timer would be
-	// wrong (docs/systems/light.md). The host also flips the switch off to persist it.
+	// 켜진 손전등은 모든 머신에서 정전 여부를 매 틱 확인해서, 정전이 시작되는
+	// 순간 빛이 꺼지게 한다 — 반납은 그 순간을 앞당길 수 있으므로 고정 타이머로는
+	// 틀린다 (docs/systems/light.md). 호스트는 스위치도 꺼서 이 상태를 유지시킨다.
 	if (bLightOn && IsFlashlight() && !IsWorn())
 	{
 		UpdateLightVisibility();
@@ -334,15 +341,15 @@ void ACL9Item::Tick(float DeltaSeconds)
 		}
 	}
 
-	// The sim is host-only and authoritative — clients interpolate replicated
-	// movement (docs/systems/item.md 액터 틀).
+	// 시뮬레이션은 호스트 전용이며 권위를 가진다 — 클라이언트는 복제된 이동값을
+	// 보간할 뿐이다 (docs/systems/item.md 액터 틀).
 	if (!HasAuthority() || HoldState != ECL9ItemHoldState::Free || ItemDef == nullptr)
 	{
 		return;
 	}
 
-	// Physics rows: the engine simulates; only the table's custom gravity is
-	// injected (as acceleration, so mass stays irrelevant).
+	// 물리 행: 엔진이 시뮬레이션하고, 테이블이 정한 중력값만 (질량과 무관하도록
+	// 가속도로) 주입해 준다.
 	if (ItemDef->bPhysicsEnabled)
 	{
 		if (SphereComponent->IsSimulatingPhysics() && SphereComponent->IsAnyRigidBodyAwake())
@@ -387,8 +394,8 @@ void ACL9Item::HandleImpact(float ImpactSpeed)
 		return;
 	}
 
-	// Only the base state and the cracked state ride the impact chain — a
-	// cooked/burnt variant keeps its cooking state (조합 상태는 미정).
+	// 기본 상태와 균열 상태만 충격 연쇄를 탄다 — 조리됨/탄 것 변형은 조리 상태를
+	// 그대로 유지한다 (조합 상태는 미정).
 	const bool bCracked = GetSubAlias() == CL9::SubAliasCracked;
 	if (!bCracked && !GetSubAlias().IsNone())
 	{
@@ -413,16 +420,16 @@ void ACL9Item::OnRep_HoldState()
 
 void ACL9Item::ApplyHoldState()
 {
-	// Held items ride the holder's capsule — their own collision would push
-	// the holder around, so it goes dark. Cart-bed items keep query collision
-	// so the aim detection can still find them.
+	// 손에 든 아이템은 소지자의 캡슐에 얹혀 있다 — 자기 자신의 충돌체가 켜져
+	// 있으면 소지자를 밀어내 버리므로 충돌을 꺼 둔다. 수레 짐칸의 아이템은
+	// 조준 감지가 계속 찾을 수 있도록 쿼리 충돌은 유지한다.
 	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held && HoldState != ECL9ItemHoldState::Worn);
 
-	// A worn lamp sits in front of the wearer's eyes — only others see it
+	// 착용한 램프는 착용자 눈앞에 있다 — 다른 사람에게만 보인다
 	MeshComponent->SetOwnerNoSee(HoldState == ECL9ItemHoldState::Worn);
 
-	// Real physics runs only for free items on the host (2026-09-03 결정) —
-	// clients render replicated movement, every other state is attached.
+	// 실제 물리는 호스트에서 자유 상태인 아이템에만 돌아간다 (2026-09-03 결정) —
+	// 클라이언트는 복제된 이동을 렌더링할 뿐이고, 그 외 모든 상태는 부착돼 있다.
 	const bool bWantPhysics = HoldState == ECL9ItemHoldState::Free
 		&& HasAuthority()
 		&& ItemDef != nullptr
@@ -433,7 +440,7 @@ void ACL9Item::ApplyHoldState()
 	}
 	if (bWantPhysics)
 	{
-		// The table's Gravity column replaces world gravity (injected in Tick)
+		// 테이블의 Gravity 열이 월드 중력을 대체한다 (Tick에서 주입됨)
 		SphereComponent->SetEnableGravity(false);
 	}
 }
@@ -445,7 +452,7 @@ void ACL9Item::OnPhysicsHit(UPrimitiveComponent* HitComponent, AActor* OtherActo
 		return;
 	}
 
-	// Impulse ≈ m·(1+e)·v_impact, so recover the approach speed from it
+	// 충격량 ≈ m·(1+e)·v_충돌 이므로, 여기서 접근 속도를 역산한다
 	const float Mass = FMath::Max(HitComponent->GetMass(), UE_KINDA_SMALL_NUMBER);
 	const float ImpactSpeed = NormalImpulse.Size() / (Mass * (1.f + ItemDef->Restitution));
 	HandleImpact(ImpactSpeed);

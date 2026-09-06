@@ -70,7 +70,7 @@
 
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
-| `ValueMin` / `ValueMax` | int | 판매가 범위 (이더) — 개체마다 굴린다 |
+| `ValueMin` / `ValueMax` | int | 판매가 범위 (이더) — 개체마다 굴린다. **구현(2026-09-06)**: `ACL9Item::Value`(복제) — 호스트가 행을 로드할 때 굴리고 상태가 바뀌면(익음·탐·깨짐) 새 행 범위로 다시 굴린다. UI는 범위가 아니라 이 값을 보여 준다. 배율은 4e |
 | `bWorthlessIfBroken` | bool | 깨지면 값이 0인가 |
 | `bWorthlessIfBurnt` | bool | 타면 값이 0인가 |
 
