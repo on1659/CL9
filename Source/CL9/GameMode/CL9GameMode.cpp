@@ -9,6 +9,8 @@
 #include "GameMode/CL9GameState.h"
 #include "GameMode/CL9PlayerController.h"
 #include "GameMode/CL9PlayerState.h"
+#include "GameMode/CL9SaveGame.h"
+#include "Items/CL9Counter.h"
 #include "Items/CL9Item.h"
 #include "Items/CL9Jar.h"
 #include "Components/CapsuleComponent.h"
@@ -19,6 +21,7 @@
 #include "Data/CL9SiteDef.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
 #include "Monsters/CL9Monster.h"
 #include "TimerManager.h"
 #include "World/CL9SiteMap.h"
@@ -26,7 +29,7 @@
 
 namespace
 {
-	/** Tonight's map seed — the pinned one (cl9.seed) or a fresh roll; never 0, which means "shell only" */
+	/** 오늘 밤의 맵 시드 — 고정된 값(cl9.seed)이거나 새로 굴린 값이며, 0이 되는 일은 없다. 0은 "껍데기만 있음"을 뜻하기 때문이다 */
 	uint32 RollMapSeed(uint32 Forced)
 	{
 		return Forced != 0 ? Forced : static_cast<uint32>(FMath::RandRange(1, MAX_int32));
@@ -54,8 +57,8 @@ bool ACL9GameMode::AllowCheats(APlayerController* P)
 #if UE_BUILD_SHIPPING
 	return Super::AllowCheats(P);
 #else
-	// Packaged development builds default to no cheats — cl9.* commands are the
-	// step-verification tool, so they stay on outside shipping (docs/systems/cheats.md).
+	// 패키징된 개발 빌드는 기본적으로 치트를 끈다 — cl9.* 명령어는 단계 검증용
+	// 도구이므로, shipping이 아닌 한 계속 켜둔다(docs/systems/cheats.md).
 	return true;
 #endif
 }
@@ -168,8 +171,8 @@ void ACL9GameMode::StartNight()
 		return;
 	}
 
-	// Day curves scale the rules' night and the site's population (docs/plan/data/progression.md);
-	// a missing progression asset means no scaling, a missing site means an empty night.
+	// 날짜 곡선이 규칙의 밤 길이와 사이트의 개체 수를 조정한다(docs/plan/data/progression.md);
+	// progression 애셋이 없으면 보정이 없다는 뜻이고, site가 없으면 그날 밤은 텅 빈다.
 	const int32 Day = CL9GameState->GetCurrentDay();
 	const UCL9ProgressionDef* Progression = GetProgression();
 	const float NightLength = Rules->NightLength * (Progression ? Progression->NightLengthAt(Day) : 1.f);
@@ -186,9 +189,9 @@ void ACL9GameMode::StartNight()
 	const float Danger = (Site ? Site->BaseDanger : 1.f) * (Progression ? Progression->DangerAt(Day) : 1.f);
 	CL9GameState->SetSiteAndDanger(Site ? Site->Alias : NAME_None, Danger);
 
-	// The lobby already stood tonight's maze (2026-09-06 결정 — 로비부터 오늘 밤 미로); only a
-	// world that somehow has none gets one now. Only the seed is shared — every machine
-	// lays the same maze from it (docs/systems/map.md).
+	// 로비가 이미 오늘 밤의 미로를 세워뒀다(2026-09-06 결정 — 로비부터 오늘 밤 미로); 어쩌다
+	// 미로가 없는 월드만 지금 하나 받는다. 공유되는 것은 시드뿐이다 — 모든 머신이
+	// 그 시드로부터 같은 미로를 깐다(docs/systems/map.md).
 	if (CL9GameState->GetMapSeed() == 0)
 	{
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
@@ -220,7 +223,7 @@ void ACL9GameMode::EndNight()
 	CL9GameState->SetPhase(ECL9NightPhase::Dawn);
 	UE_LOG(LogCL9, Log, TEXT("Night %d over — dawn."), CL9GameState->GetCurrentDay());
 
-	// DawnLength is undecided (0) — until it lands, dawn passes straight through.
+	// DawnLength는 아직 정해지지 않았다(0) — 값이 정해지기 전까지 새벽은 그냥 곧바로 지나간다.
 	const UCL9RulesDef* Rules = GetRules();
 	const float DawnLength = Rules ? Rules->DawnLength : 0.f;
 	if (DawnLength > 0.f)
@@ -244,13 +247,17 @@ void ACL9GameMode::EnterLobby()
 	GetWorldTimerManager().ClearTimer(DawnHandle);
 	CL9GameState->ClearNightClock();
 	CL9GameState->AdvanceDay();
+	// 날이 바뀌었으니 어제까지였던 주문은 여기서 끝난다 — 위약금이 먼저, 새 offer가 나중
+	ExpireOrders();
 	ClearNightPopulation();
 	CL9GameState->SetSiteAndDanger(CL9GameState->GetCurrentSiteAlias(), 1.f);
-	// A new night, a new maze — it stands from the lobby so the stop shows where tonight goes
+	// 새로운 밤, 새로운 미로 — 로비에서부터 세워둬서 정차 지점이 오늘 밤 갈 곳을 보여준다
 	CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
+	// 새벽마다 한 번 — 밤을 통째로 치른 뒤에 저장한다(docs/systems/save.md 저장 시점)
+	SaveRun();
 	OfferOrders();
 }
 
@@ -261,7 +268,7 @@ void ACL9GameMode::HandlePlayerDeath(ACL9Character* Dead)
 		return;
 	}
 
-	// Wipe — nobody left standing, the truck leaves the party (docs/plan/data/rules.md 실패 축)
+	// 전멸 — 아무도 서 있지 않다, 트럭이 파티를 두고 떠난다(docs/plan/data/rules.md 실패 축)
 	if (FindLivingPawn(nullptr, nullptr) == nullptr)
 	{
 		UE_LOG(LogCL9, Log, TEXT("Wipe — everyone is down, the truck leaves."));
@@ -273,7 +280,7 @@ void ACL9GameMode::HandlePlayerDeath(ACL9Character* Dead)
 		return;
 	}
 
-	// Anyone watching the one who just died moves on to a living teammate
+	// 방금 죽은 사람을 보고 있던 관전자는 모두 살아있는 팀원으로 넘어간다
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACL9PlayerController* Spectator = Cast<ACL9PlayerController>(It->Get());
@@ -297,8 +304,8 @@ void ACL9GameMode::HandlePlayerDeath(ACL9Character* Dead)
 		return;
 	}
 
-	// Fire-and-forget: BeginSpectating re-checks that the player is still dead,
-	// so a lobby revive during the delay simply makes it a no-op.
+	// 발사 후 신경 끄기: BeginSpectating이 플레이어가 여전히 죽어있는지 다시 확인하므로,
+	// 지연 시간 동안 로비 부활이 일어나면 그냥 아무 일도 하지 않게 된다.
 	TWeakObjectPtr<ACL9PlayerController> WeakController = DeadController;
 	FTimerHandle Unused;
 	GetWorldTimerManager().SetTimer(Unused, FTimerDelegate::CreateWeakLambda(this, [this, WeakController]()
@@ -330,15 +337,15 @@ void ACL9GameMode::BeginSpectating(ACL9PlayerController* Spectator)
 		return;
 	}
 
-	// Nobody to watch (the wipe already ended the night) — the floor view stays
+	// 볼 대상이 없다(전멸이 이미 밤을 끝냈다) — 바닥 시점 그대로 유지된다
 	ACL9Character* Target = FindLivingPawn(Own, nullptr);
 	if (Target == nullptr)
 	{
 		return;
 	}
 
-	// Server-side SetViewTarget reaches the owning client through ClientSetViewTarget;
-	// the flag's OnRep opens the screen and IMC there (docs/systems/ui_system.md)
+	// 서버 쪽 SetViewTarget은 ClientSetViewTarget을 거쳐 소유 클라이언트에 전달된다;
+	// 그 플래그의 OnRep이 거기서 화면과 IMC를 연다(docs/systems/ui_system.md)
 	Spectator->SetViewTarget(Target);
 	Spectator->HostSetSpectating(true);
 	UE_LOG(LogCL9, Log, TEXT("'%s' now spectates '%s'."), *GetNameSafe(Own), *GetNameSafe(Target));
@@ -365,7 +372,7 @@ ACL9Character* ACL9GameMode::FindLivingPawn(const AActor* Except, const AActor* 
 		return nullptr;
 	}
 
-	// INDEX_NONE + 1 lands on the first — `After` missing (null, or just died) starts over
+	// INDEX_NONE + 1은 첫 번째에 떨어진다 — `After`가 없으면(null이거나 방금 죽었으면) 처음부터 다시 시작한다
 	const int32 AfterIndex = Living.IndexOfByPredicate([After](const ACL9Character* Candidate)
 	{
 		return Candidate == After;
@@ -380,7 +387,7 @@ void ACL9GameMode::ReviveDead()
 		return;
 	}
 
-	// The pad is where the party wakes up (docs/plan/loop.md 귀환) — none placed means in place
+	// 패드는 파티가 깨어나는 곳이다(docs/plan/loop.md 귀환) — 배치된 게 없으면 제자리에서 그대로
 	const ACL9TruckPad* Pad = nullptr;
 	for (TActorIterator<ACL9TruckPad> It(GetWorld()); It; ++It)
 	{
@@ -433,8 +440,8 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		return;
 	}
 
-	// Count = roll in [Min, Max] × the day multiplier, rounded (docs/systems/balance.md).
-	// The roll is per entry, not per animal — the whole flock scales together.
+	// 개수 = [Min, Max] 사이에서 굴린 값 × 날짜 배율, 반올림(docs/systems/balance.md).
+	// 굴림은 엔트리 단위지 동물 단위가 아니다 — 무리 전체가 함께 규모가 조정된다.
 	auto RollCount = [](const FCL9SpawnEntry& Entry, float Multiplier)
 	{
 		return FMath::Max(0, FMath::RoundToInt(FMath::RandRange(Entry.MinCount, Entry.MaxCount) * Multiplier));
@@ -446,9 +453,9 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 
-	// Generated map: animals and ingredients land on random cells of either floor
-	// (the generator's coordinates — docs/systems/map.md 생성 흐름). Without a
-	// maze the flat-level ring around the truck stands in.
+	// 생성된 맵: 동물과 재료는 두 층 중 무작위 셀 위에 떨어진다
+	// (생성기 좌표계 — docs/systems/map.md 생성 흐름). 미로가 없으면
+	// 평지 레벨의 트럭 주변 원형 배치가 대신한다.
 	const ACL9SiteMap* SiteMap = ACL9SiteMap::Find(GetWorld());
 	const bool bUseCells = SiteMap != nullptr && SiteMap->GetLayout().bHasMaze;
 	auto FindCellSpot = [this, SiteMap](FVector& OutLocation)
@@ -459,7 +466,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 			const int32 Floor = FMath::RandRange(0, 1);
 			const FCL9FloorLayout& Grid = SiteMap->GetLayout().Floors[Floor];
 			FVector Candidate = SiteMap->CellToWorld(Floor, FMath::RandRange(0, Grid.Aisles - 1), FMath::RandRange(0, Grid.Cols - 1));
-			// Jitter along the aisle stretch, clear of the plugs at the cell ends and the cage rows beside it
+			// 통로를 따라 흔들리게 하되, 셀 끝의 플러그와 옆의 케이지 열은 피한다
 			Candidate.X += FMath::FRandRange(-Params.ColWidth * 0.5f + 150.f, Params.ColWidth * 0.5f - 150.f);
 			Candidate.Y += FMath::FRandRange(-Params.AisleWidth * 0.5f + 60.f, Params.AisleWidth * 0.5f - 60.f);
 			if (!IsInsideCalmRadius(Candidate))
@@ -516,7 +523,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
 	}
 
-	// Return jars on the generator's jar cells, against the cage row so the aisle stays open
+	// 생성기의 항아리 셀 위에 반환용 항아리를 배치하되, 통로가 막히지 않도록 케이지 열에 붙여 놓는다
 	if (bUseCells)
 	{
 		if (JarClass == nullptr)
@@ -568,9 +575,9 @@ void ACL9GameMode::ClearNightPopulation()
 		return;
 	}
 
-	// The site leaves with the night — what the spawner placed and nobody
-	// carried out is gone. Carried items detached from the spawner's list by
-	// being attached to a character or worn, so those survive.
+	// 사이트는 밤과 함께 사라진다 — 스포너가 배치했지만 아무도
+	// 가져가지 않은 것은 없어진다. 들고 나간 아이템은 캐릭터에 부착되거나
+	// 착용되면서 스포너 목록에서 이미 분리됐으므로 살아남는다.
 	int32 Removed = 0;
 	for (AActor* Actor : NightSpawned)
 	{
@@ -591,7 +598,7 @@ void ACL9GameMode::ClearNightPopulation()
 
 bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector& OutLocation) const
 {
-	// The truck pad is the site's anchor on the flat level; a PlayerStart stands in when none is placed
+	// 트럭 패드는 평지 레벨에서 사이트의 기준점이다; 배치된 게 없으면 PlayerStart가 대신한다
 	FVector Anchor = FVector::ZeroVector;
 	bool bAnchorFound = false;
 	for (TActorIterator<ACL9TruckPad> It(GetWorld()); It; ++It)
@@ -615,13 +622,13 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 		const float Distance = FMath::FRandRange(MinDistance, MaxDistance);
 		const FVector Candidate = Anchor + FVector(FMath::Cos(Bearing), FMath::Sin(Bearing), 0.f) * Distance;
 
-		// Nothing wakes or spawns inside ThreatActMinRadius of a player (docs/plan/data/rules.md)
+		// 플레이어의 ThreatActMinRadius 안에서는 아무것도 깨어나거나 스폰되지 않는다(docs/plan/data/rules.md)
 		if (IsInsideCalmRadius(Candidate))
 		{
 			continue;
 		}
 
-		// Ground it: trace down from above; no floor there means try elsewhere
+		// 지면에 붙인다: 위에서 아래로 트레이스한다; 바닥이 없으면 다른 곳을 시도한다
 		FHitResult Hit;
 		const FVector Start = Candidate + FVector(0.f, 0.f, 500.f);
 		const FVector End = Candidate - FVector(0.f, 0.f, 500.f);
@@ -638,14 +645,14 @@ void ACL9GameMode::StartPlay()
 {
 	Super::StartPlay();
 
-	// Tonight's maze stands from the first lobby — the stop shows where the night goes
+	// 오늘 밤의 미로는 첫 로비에서부터 세워진다 — 정차 지점이 밤이 향할 곳을 보여준다
 	if (ACL9GameState* CL9GameState = GetGameState<ACL9GameState>())
 	{
 		CL9GameState->SetSiteAndDanger(DefaultSiteAlias, 1.f);
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	}
 
-	// The first lobby needs its offer too — later lobbies draw in EnterLobby
+	// 첫 로비도 offer가 필요하다 — 이후 로비들은 EnterLobby에서 뽑는다
 	OfferOrders();
 }
 
@@ -677,7 +684,7 @@ void ACL9GameMode::OfferOrders()
 		}
 	}
 
-	// Weighted draw without repeats — N from the progression row (docs/systems/order.md 주문 흐름)
+	// 중복 없는 가중치 추첨 — N은 progression 행에서 온다(docs/systems/order.md 주문 흐름)
 	TArray<FName> Offer;
 	const int32 Wanted = FMath::Min(Progression->OrdersOfferedPerDay, Candidates.Num());
 	while (Offer.Num() < Wanted && Candidates.Num() > 0)
@@ -713,6 +720,265 @@ void ACL9GameMode::OfferOrders()
 	UE_LOG(LogCL9, Log, TEXT("Day %d offer: %d orders [%s] — take %d (cl9.orders / cl9.pick)."), Day, Offer.Num(), *Names, Required);
 }
 
+bool ACL9GameMode::SaveRun(int32 Slot)
+{
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return false;
+	}
+
+	UCL9SaveGame* Save = Cast<UCL9SaveGame>(UGameplayStatics::CreateSaveGameObject(UCL9SaveGame::StaticClass()));
+	if (Save == nullptr)
+	{
+		return false;
+	}
+
+	Save->CurrentDay = CL9GameState->GetCurrentDay();
+	Save->SharedMoney = CL9GameState->GetSharedMoney();
+	Save->PeriodIncome = CL9GameState->GetPeriodIncome();
+	Save->ActiveOrders = CL9GameState->AcceptedOrders;
+
+	const FString SlotName = UCL9SaveGame::SlotName(Slot);
+	if (!UGameplayStatics::SaveGameToSlot(Save, SlotName, 0))
+	{
+		UE_LOG(LogCL9, Error, TEXT("Save failed: slot '%s' could not be written."), *SlotName);
+		return false;
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Saved '%s' — day %d, %d ether, %d order(s) in progress."),
+		*SlotName, Save->CurrentDay, Save->SharedMoney, Save->ActiveOrders.Num());
+	return true;
+}
+
+bool ACL9GameMode::LoadRun(int32 Slot)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return false;
+	}
+	if (CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("Load refused: a run is only restored in the lobby — the save unit is a day."));
+		return false;
+	}
+
+	const FString SlotName = UCL9SaveGame::SlotName(Slot);
+	const UCL9SaveGame* Save = Cast<UCL9SaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (Save == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("Load: slot '%s' is empty or unreadable."), *SlotName);
+		return false;
+	}
+	if (Save->SaveVersion > UCL9SaveGame::CurrentVersion)
+	{
+		// 미래 버전은 조용히 버리지 않는다 — 읽지 않고 그대로 둔다(docs/systems/save.md 마이그레이션)
+		UE_LOG(LogCL9, Error, TEXT("Load refused: slot '%s' is version %d, this build reads %d."),
+			*SlotName, Save->SaveVersion, UCL9SaveGame::CurrentVersion);
+		return false;
+	}
+
+	// 저장에 없는 Alias는 버린다 — 표에서 사라진 주문을 안고 있으면 영원히 못 내는 주문이 된다
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	TArray<FCL9AcceptedOrder> Restored;
+	for (const FCL9AcceptedOrder& Entry : Save->ActiveOrders)
+	{
+		if (Registry != nullptr && Registry->FindOrder(Entry.OrderAlias) == nullptr)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("Load: order '%s' has no row any more — dropped from the restored run."), *Entry.OrderAlias.ToString());
+			continue;
+		}
+		Restored.Add(Entry);
+	}
+
+	CL9GameState->RestoreRun(Save->CurrentDay, Save->SharedMoney, Save->PeriodIncome, Restored);
+	UE_LOG(LogCL9, Log, TEXT("Loaded '%s' — day %d, %d ether, %d order(s) in progress."),
+		*SlotName, CL9GameState->GetCurrentDay(), CL9GameState->GetSharedMoney(), Restored.Num());
+
+	// 제시는 저장하지 않는다 — 불러온 일차 기준으로 다시 뽑는다
+	OfferOrders();
+	return true;
+}
+
+int32 ACL9GameMode::SettleOrdersAt(ACL9Counter& Counter)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return 0;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	if (Registry == nullptr)
+	{
+		return 0;
+	}
+
+	// 마감이 급한 주문부터 채운다 — 같은 완성물을 두 주문이 노릴 때 먼저 끝나는 쪽이 가져간다
+	TArray<FCL9AcceptedOrder> Accepted = CL9GameState->AcceptedOrders;
+	TArray<int32> ByDeadline;
+	for (int32 Index = 0; Index < Accepted.Num(); ++Index)
+	{
+		ByDeadline.Add(Index);
+	}
+	ByDeadline.StableSort([&Accepted](int32 A, int32 B)
+	{
+		return Accepted[A].DeadlineDay < Accepted[B].DeadlineDay;
+	});
+
+	int32 Paid = 0;
+	TArray<int32> Delivered;
+	for (int32 Index : ByDeadline)
+	{
+		const FCL9AcceptedOrder& Entry = Accepted[Index];
+		const UCL9OrderDef* Order = Registry->FindOrder(Entry.OrderAlias);
+		if (Order == nullptr || Order->Ingredients.Num() == 0)
+		{
+			continue;
+		}
+
+		// 재료가 하나라도 모자라면 아무것도 소비하지 않는다 — 반쯤 낸 주문은 없다
+		bool bComplete = true;
+		for (const FCL9ItemCount& Need : Order->Ingredients)
+		{
+			int32 Found = 0;
+			for (const FCL9CounterItem& Stocked : Counter.GetStock())
+			{
+				if (Stocked.ItemAlias == Need.ItemAlias && Stocked.ItemSubAlias == Need.ItemSubAlias)
+				{
+					++Found;
+				}
+			}
+			if (Found < Need.Count)
+			{
+				bComplete = false;
+				break;
+			}
+		}
+		if (!bComplete)
+		{
+			continue;
+		}
+
+		for (const FCL9ItemCount& Need : Order->Ingredients)
+		{
+			for (int32 Taken = 0; Taken < Need.Count; ++Taken)
+			{
+				Counter.TakeStock(Need.ItemAlias, Need.ItemSubAlias);
+			}
+		}
+		CL9GameState->AddIncome(Entry.Reward);
+		Paid += Entry.Reward;
+		Delivered.Add(Index);
+		UE_LOG(LogCL9, Log, TEXT("Order delivered: %s — %d ether (day %d of %d). Money %d."),
+			*Entry.OrderAlias.ToString(), Entry.Reward, CL9GameState->GetCurrentDay(), Entry.DeadlineDay, CL9GameState->GetSharedMoney());
+	}
+
+	if (Delivered.Num() > 0)
+	{
+		Delivered.Sort([](int32 A, int32 B) { return A > B; });
+		for (int32 Index : Delivered)
+		{
+			Accepted.RemoveAt(Index);
+		}
+		CL9GameState->SetAcceptedOrders(Accepted);
+	}
+	else
+	{
+		UE_LOG(LogCL9, Log, TEXT("Counter: %d item(s) waiting, no order filled yet."), Counter.GetStock().Num());
+	}
+	return Paid;
+}
+
+int32 ACL9GameMode::SellStockAt(ACL9Counter& Counter)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return 0;
+	}
+
+	TArray<FCL9CounterItem> Sold;
+	Counter.TakeAllStock(Sold);
+	if (Sold.Num() == 0)
+	{
+		return 0;
+	}
+
+	int32 Total = 0;
+	for (const FCL9CounterItem& Item : Sold)
+	{
+		Total += ComputeSellPrice(Item.Value);
+	}
+	CL9GameState->AddIncome(Total);
+	UE_LOG(LogCL9, Log, TEXT("Counter sale: %d item(s) for %d ether. Money %d."), Sold.Num(), Total, CL9GameState->GetSharedMoney());
+	return Total;
+}
+
+void ACL9GameMode::ExpireOrders()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const int32 Day = CL9GameState->GetCurrentDay();
+
+	TArray<FCL9AcceptedOrder> Kept;
+	int32 Penalty = 0;
+	for (const FCL9AcceptedOrder& Entry : CL9GameState->AcceptedOrders)
+	{
+		if (Entry.DeadlineDay >= Day)
+		{
+			Kept.Add(Entry);
+			continue;
+		}
+
+		// 마감을 놓쳤다 — 벌지 못한 것에 더해 보상의 일정 비율을 물어낸다(docs/plan/data/order.md 마감)
+		const UCL9OrderDef* Order = Registry ? Registry->FindOrder(Entry.OrderAlias) : nullptr;
+		const int32 Fine = Order ? FMath::RoundToInt(Entry.Reward * Order->FailPenaltyRate) : 0;
+		Penalty += Fine;
+		UE_LOG(LogCL9, Log, TEXT("Order expired: %s — was due day %d, penalty %d ether."), *Entry.OrderAlias.ToString(), Entry.DeadlineDay, Fine);
+	}
+
+	if (Kept.Num() == CL9GameState->AcceptedOrders.Num())
+	{
+		return;
+	}
+
+	CL9GameState->SetAcceptedOrders(Kept);
+	if (Penalty > 0)
+	{
+		const int32 Taken = CL9GameState->Deduct(Penalty);
+		UE_LOG(LogCL9, Log, TEXT("Penalties: %d ether due, %d taken. Money %d."), Penalty, Taken, CL9GameState->GetSharedMoney());
+	}
+}
+
+int32 ACL9GameMode::ComputeSellPrice(int32 RolledValue) const
+{
+	if (RolledValue <= 0)
+	{
+		return 0;
+	}
+
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9SiteDef* Site = (Registry != nullptr && CL9GameState != nullptr) ? Registry->FindSite(CL9GameState->GetCurrentSiteAlias()) : nullptr;
+	const UCL9ProgressionDef* Progression = GetProgression();
+
+	// 굴림값 × 목적지 배율 × 일자 배율 — 세 항 모두 표에 있다(docs/plan/economy.md 가격식)
+	const float SiteRate = Site ? Site->ValueRate : 1.f;
+	const float DayRate = Progression ? Progression->ValueAt(CL9GameState ? CL9GameState->GetCurrentDay() : 1) : 1.f;
+	return FMath::RoundToInt(RolledValue * SiteRate * DayRate);
+}
+
 bool ACL9GameMode::AcceptOrders(const TArray<int32>& OfferedIndices)
 {
 	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
@@ -734,7 +1000,7 @@ bool ACL9GameMode::AcceptOrders(const TArray<int32>& OfferedIndices)
 		return false;
 	}
 
-	// Exactly M distinct picks, all inside the offer — the choice is the day's plan
+	// 정확히 M개의 서로 다른 선택, 모두 offer 안에 있어야 한다 — 이 선택이 그날의 계획이 된다
 	const TSet<int32> Unique(OfferedIndices);
 	if (Unique.Num() != OfferedIndices.Num() || OfferedIndices.Num() != Required)
 	{
@@ -767,11 +1033,14 @@ bool ACL9GameMode::AcceptOrders(const TArray<int32>& OfferedIndices)
 		Entry.OrderAlias = Order->Alias;
 		Entry.AcceptedDay = Day;
 		Entry.DeadlineDay = Day + Order->DeadlineDays - 1;
-		UE_LOG(LogCL9, Log, TEXT("Order accepted: %s — deliver by day %d."), *Order->Alias.ToString(), Entry.DeadlineDay);
+		// 보상은 수락하는 순간 굴려 고정한다 — 카드가 범위가 아니라 실제로 받을 값을 보여주고,
+		// 위약금도 같은 값에서 나온다(2026-09-06 결정)
+		Entry.Reward = FMath::RandRange(Order->RewardMin, Order->RewardMax);
+		UE_LOG(LogCL9, Log, TEXT("Order accepted: %s — %d ether, deliver by day %d."), *Order->Alias.ToString(), Entry.Reward, Entry.DeadlineDay);
 	}
 
 	CL9GameState->SetAcceptedOrders(Accepted);
-	// The offer is spent — the next lobby draws again
+	// offer는 소진됐다 — 다음 로비가 다시 뽑는다
 	CL9GameState->SetOfferedOrders(TArray<FName>(), 0);
 	return true;
 }

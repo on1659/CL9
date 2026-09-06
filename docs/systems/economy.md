@@ -83,6 +83,18 @@ struct FTransaction {
 };
 ```
 
+## 구현 상태 (4e, 2026-09-06)
+
+- **자금**: `ACL9GameState.SharedMoney`·`PeriodIncome`(둘 다 Replicated) +
+  `AddIncome(양)`(수입 — 둘 다 오른다) · `Deduct(양)`(지출 — 잔액 하한 0, 실제로 빠진 액수를 반환).
+  변경은 `OnMoneyChanged`(BlueprintAssignable)로 알린다. 읽기는 `GetSharedMoney()`/`GetPeriodIncome()`.
+- **가격식**: `ACL9GameMode::ComputeSellPrice(굴림값)` = 굴림값 × `UCL9SiteDef::ValueRate` ×
+  `UCL9ProgressionDef::ValueAt(일자)`. 세 항이 전부 표에 있다 — 가격을 바꾸려면 C++이 아니라 표를 고친다.
+- **판매 경로**: 납품 창구(`ACL9Counter`)에 남은 보관분을 빈손 상호작용으로 판다
+  (`ACL9GameMode::SellStockAt`). 주문 보상은 이 식을 타지 않는다 — 수락 때 굴린 확정값 그대로다.
+- **미구현**: 구매(4f, 장비 `Price`), 정산 판정(⑥ — `PeriodIncome`을 읽을 쪽), 거래 로그, 세이브.
+- 치트: `cl9.money [양]` — 자금을 출력하고, 양이 붙으면 지급(양수)하거나 차감(음수)한다.
+
 ## 참고
 
 - 주문 보상·위약금: [order.md](order.md)

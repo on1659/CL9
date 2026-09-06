@@ -25,6 +25,55 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, OfferedOrders);
 	DOREPLIFETIME(ACL9GameState, OrdersRequired);
 	DOREPLIFETIME(ACL9GameState, AcceptedOrders);
+	DOREPLIFETIME(ACL9GameState, SharedMoney);
+	DOREPLIFETIME(ACL9GameState, PeriodIncome);
+}
+
+void ACL9GameState::AddIncome(int32 Amount)
+{
+	if (!HasAuthority() || Amount <= 0)
+	{
+		return;
+	}
+
+	SharedMoney += Amount;
+	PeriodIncome += Amount;
+	// 리슨 호스트에서는 OnRep이 절대 실행되지 않는다 — 로컬 훅을 직접 발동시킨다
+	OnRep_Money();
+}
+
+int32 ACL9GameState::Deduct(int32 Amount)
+{
+	if (!HasAuthority() || Amount <= 0)
+	{
+		return 0;
+	}
+
+	// 채무는 없다 — 잔액이 모자라면 있는 만큼만 빠진다(docs/plan/economy.md 이더의 흐름)
+	const int32 Taken = FMath::Min(Amount, SharedMoney);
+	SharedMoney -= Taken;
+	OnRep_Money();
+	return Taken;
+}
+
+void ACL9GameState::RestoreRun(int32 Day, int32 Money, int32 Income, const TArray<FCL9AcceptedOrder>& Orders)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	CurrentDay = FMath::Max(1, Day);
+	SharedMoney = FMath::Max(0, Money);
+	PeriodIncome = FMath::Max(0, Income);
+	AcceptedOrders = Orders;
+	OnRep_Money();
+	OnRep_Orders();
+}
+
+void ACL9GameState::OnRep_Money()
+{
+	OnMoneyChanged.Broadcast();
 }
 
 void ACL9GameState::SetOfferedOrders(const TArray<FName>& Aliases, int32 Required)
@@ -36,7 +85,7 @@ void ACL9GameState::SetOfferedOrders(const TArray<FName>& Aliases, int32 Require
 
 	OfferedOrders = Aliases;
 	OrdersRequired = Required;
-	// OnRep never runs on the listen host — fire the local hook directly
+	// 리슨 호스트에서는 OnRep이 절대 실행되지 않는다 — 로컬 훅을 직접 발동시킨다
 	OnRep_Orders();
 }
 
@@ -67,8 +116,8 @@ void ACL9GameState::RecordReturn(FName ItemAlias, FName ItemSubAlias)
 	Returned.ItemAlias = ItemAlias;
 	Returned.ItemSubAlias = ItemSubAlias;
 
-	// Each return pulls the blackout forward, floored at DarkMin past night start
-	// (docs/plan/data/rules.md 밤 — "반납이 시계를 앞당긴다").
+	// 반납할 때마다 정전 시각이 앞당겨지되, 밤 시작으로부터 DarkMin 지난 시점 아래로는
+	// 내려가지 않는다(docs/plan/data/rules.md 밤 — "반납이 시계를 앞당긴다").
 	const UCL9RulesDef* Rules = GetRules();
 	if (Rules != nullptr && Phase == ECL9NightPhase::Night && BlackoutServerTime > 0.f)
 	{
@@ -87,7 +136,7 @@ void ACL9GameState::SetPhase(ECL9NightPhase NewPhase)
 	}
 
 	Phase = NewPhase;
-	// OnRep never runs on the listen host — fire the local hook directly.
+	// 리슨 호스트에서는 OnRep이 절대 실행되지 않는다 — 로컬 훅을 직접 발동시킨다.
 	OnRep_Phase();
 }
 
@@ -100,7 +149,7 @@ void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules, float NightLength
 
 	NightStartServerTime = GetServerWorldTimeSeconds();
 	NightEndServerTime = NightStartServerTime + NightLength;
-	// 0 keeps IsBlackout false all night; ForceBlackout (cl9.blackout) can still arm it
+	// 0이면 밤 내내 IsBlackout이 false로 유지된다; 그래도 ForceBlackout(cl9.blackout)으로 걸 수는 있다
 	BlackoutServerTime = bNoBlackout ? 0.f : NightStartServerTime + Rules.DarkBase;
 }
 
@@ -189,7 +238,7 @@ void ACL9GameState::SetSiteMap(uint32 Seed)
 
 	SiteMapKey.Seed = Seed;
 	++SiteMapKey.Build;
-	// OnRep never runs on the listen host — build locally right away
+	// 리슨 호스트에서는 OnRep이 절대 실행되지 않는다 — 바로 로컬에서 빌드한다
 	OnRep_SiteMap();
 }
 

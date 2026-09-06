@@ -31,8 +31,9 @@ bool ACL9Cart::CanInteract(const ACL9Character* Who) const
 	{
 		return false;
 	}
-	// Its own puller may always address it; otherwise it must be free and the
-	// character not pulling anything — bare hand pulls, a full hand loads.
+	// 자기가 끌고 있는 캐릭터는 언제든 상호작용할 수 있고, 그 외에는 수레가
+	// 자유 상태이고 캐릭터가 아무것도 끌고 있지 않아야 한다 — 빈손이면 끌기,
+	// 손에 들고 있으면 싣기다.
 	return Who->GetPullingCart() == this
 		|| (IsFree() && Who->GetPullingCart() == nullptr);
 }
@@ -59,8 +60,8 @@ void ACL9Cart::Interact(ACL9Character* Who)
 		return;
 	}
 
-	// Hitching never moves the cart — it stays put and starts trailing the
-	// puller from wherever it stands (2026-09-02 피드백).
+	// 수레를 매다는 동작 자체는 수레를 움직이지 않는다 — 제자리에 그대로 있다가
+	// 견인자가 움직이면 서 있던 자리부터 뒤따르기 시작한다 (2026-09-02 피드백).
 	HoldState = ECL9ItemHoldState::Pulled;
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = true;
@@ -76,7 +77,7 @@ void ACL9Cart::StopPull(ACL9Character* Who)
 		return;
 	}
 
-	// Let go in place — Free again so throws can bump it, sim settles it.
+	// 그 자리에서 손을 놓는다 — 다시 Free 상태가 되어 던지기로 밀 수도 있고, 시뮬레이션이 정착시킨다.
 	HoldState = ECL9ItemHoldState::Free;
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = false;
@@ -89,9 +90,8 @@ void ACL9Cart::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// Towing, host only: the cart trails at hitch distance — it moves only by
-	// the amount the puller stretches past that distance, so turning in place
-	// never swings it around.
+	// 견인, 호스트 전용: 수레는 연결 거리를 유지하며 뒤따른다 — 견인자가 그 거리를
+	// 넘어 벌어진 만큼만 움직이므로, 제자리에서 회전해도 수레가 휘둘리지 않는다.
 	if (!HasAuthority() || Puller == nullptr || GetItemDef() == nullptr)
 	{
 		return;
@@ -146,12 +146,27 @@ void ACL9Cart::ReturnAllLoaded(ACL9GameState* GameState)
 		return;
 	}
 
+	TArray<ACL9Item*> Taken;
+	TakeAllLoaded(Taken);
+	for (ACL9Item* Item : Taken)
+	{
+		GameState->RecordReturn(Item->GetAlias(), Item->GetSubAlias());
+		Item->Destroy();
+	}
+}
+
+void ACL9Cart::TakeAllLoaded(TArray<ACL9Item*>& OutItems)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	for (ACL9Item* Item : LoadedItems)
 	{
 		if (Item != nullptr)
 		{
-			GameState->RecordReturn(Item->GetAlias(), Item->GetSubAlias());
-			Item->Destroy();
+			OutItems.Add(Item);
 		}
 	}
 	LoadedItems.Reset();
@@ -159,7 +174,7 @@ void ACL9Cart::ReturnAllLoaded(ACL9GameState* GameState)
 
 FVector ACL9Cart::GetLoadSlotLocation(int32 Index, float ItemRadius) const
 {
-	// Two loose columns marching backward along the bed — presentation only.
+	// 짐칸을 따라 뒤로 나아가는 느슨한 두 줄 — 순전히 표현용이다.
 	const float BedTop = GetItemDef() ? GetItemDef()->Radius : 60.f;
 	const float Side = (Index % 2 == 0) ? -26.f : 26.f;
 	const float Back = (Index / 2) * 46.f - 23.f;

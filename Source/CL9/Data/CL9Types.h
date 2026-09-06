@@ -5,44 +5,44 @@
 #include "CoreMinimal.h"
 #include "CL9Types.generated.h"
 
-/** How an item can be carried (docs/plan/data/item/common.md 운반) */
+/** 아이템을 어떻게 들고 다닐 수 있는지 (docs/plan/data/item/common.md 운반) */
 UENUM(BlueprintType)
 enum class ECL9CarrySlot : uint8
 {
-	/** Hand only — never fits in the pocket */
+	/** 손으로만 — 주머니에는 절대 들어가지 않는다 */
 	Hand,
-	/** Fits in the pocket (loses light there, stays detectable) */
+	/** 주머니에 들어간다 (거기서는 빛을 잃지만 여전히 탐지된다) */
 	Pocketable,
-	/** Cart only — cannot be hand-carried at all */
+	/** 카트로만 — 손으로는 전혀 들 수 없다 */
 	CartOnly,
-	/** Worn on the head — picking it up puts it on, the hands stay free (headlamp, 2026-09-05) */
+	/** 머리에 착용 — 주우면 바로 착용되고, 손은 계속 자유롭다 (헤드램프, 2026-09-05) */
 	Head
 };
 
-/** How a light-emitting item lights (docs/systems/light.md 광원 목록) */
+/** 발광 아이템이 빛나는 방식 (docs/systems/light.md 광원 목록) */
 UENUM(BlueprintType)
 enum class ECL9ItemLight : uint8
 {
-	/** Omni glow while carried — egg. Stays lit through the blackout */
+	/** 들고 있는 동안 전방향으로 발광 — 달걀. 정전 중에도 계속 켜져 있다 */
 	Glow,
-	/** Forward spot, toggled with IA_Flashlight. Forced off by the blackout */
+	/** 전방 스팟 조명, IA_Flashlight로 켜고 끈다. 정전이 오면 강제로 꺼진다 */
 	Flashlight
 };
 
-/** Item kind — only Dish items are edible, no separate flag (docs/plan/data/item/common.md 타입과 먹기) */
+/** 아이템 종류 — Dish 아이템만 먹을 수 있고, 별도 플래그는 없다 (docs/plan/data/item/common.md 타입과 먹기) */
 UENUM(BlueprintType)
 enum class ECL9ItemType : uint8
 {
 	Ingredient,
 	Dish,
-	/** Usable things that are neither ingredient nor dish (cart, flashlight) */
+	/** 재료도 요리도 아닌, 사용 가능한 것들 (카트, 손전등) */
 	Tool
 };
 
 /**
- * Stats an eat effect can move (docs/plan/data/character.md 스탯 enum).
- * Capsule/eye height stay out (geometry premises), HP stays out (the truck
- * pad is the only heal channel).
+ * 먹기 효과가 변화시킬 수 있는 스탯 목록 (docs/plan/data/character.md 스탯 enum).
+ * 캡슐/눈 높이는 제외한다 (기하학적 전제 조건이므로), HP도 제외한다
+ * (푸드트럭 패드만이 유일한 회복 수단이다).
  */
 UENUM(BlueprintType)
 enum class ECL9Stat : uint8
@@ -59,42 +59,54 @@ enum class ECL9Stat : uint8
 };
 
 /**
- * Night lifecycle phase (docs/systems/session.md · docs/plan/loop.md). The host
- * game mode rules every transition; clients derive presentation from the
- * replicated value. Loading joins with seamless travel later.
+ * 밤의 수명주기 단계 (docs/systems/session.md · docs/plan/loop.md). 모든 전환은
+ * 호스트 게임 모드가 결정하며, 클라이언트는 리플리케이트된 값으로부터 표현만
+ * 파생시킨다. 로딩 단계는 나중에 seamless travel과 함께 합류한다.
  */
 UENUM(BlueprintType)
 enum class ECL9NightPhase : uint8
 {
-	/** Waiting at the truck between nights — the stop that becomes the lobby */
+	/** 밤과 밤 사이 트럭에서 대기 — 로비가 되는 정거장 */
 	Lobby,
-	/** The raid — the night clock runs, expiry is a dawn failure */
+	/** 습격 — 밤 시계가 돌아가고, 시간이 다 되면 새벽 실패가 된다 */
 	Night,
-	/** Dawn screen between night end and the next lobby */
+	/** 밤이 끝나고 다음 로비 사이의 새벽 화면 */
 	Dawn
 };
 
-/** Which map generator a site uses — one destination is one generator (docs/plan/data/site.md ★) */
+/** 사이트가 사용하는 맵 생성기 — 목적지 하나에 생성기 하나 (docs/plan/data/site.md ★) */
 UENUM(BlueprintType)
 enum class ECL9Generator : uint8
 {
-	/** No generated map — the bare flat level */
+	/** 생성된 맵 없음 — 아무것도 없는 평지 레벨 */
 	None,
-	/** Aisle × column grid with cage rows, a basement and a one-way flap (docs/systems/map.md 양계장 구조) */
+	/** 우리 행이 있는 통로 × 열 격자, 지하실과 일방향 플랩 (docs/systems/map.md 양계장 구조) */
 	Henhouse
 };
 
-/** Points at an item row and state — the cook chain and carry mirrors use it (docs/data/schema.md) */
+/**
+ * 월드 액터의 종류 — 각 액터 클래스의 생성자가 정하고(ACL9ActorBase::Kind), "무엇을 보여줄지"를
+ * 표로 고르는 곳(스캔의 ScanKinds 등)이 읽는다 (2026-09-06 사용자).
+ */
+UENUM(BlueprintType)
+enum class ECL9ActorKind : uint8
+{
+	None,
+	Item,
+	Monster
+};
+
+/** 아이템 행과 상태를 가리킨다 — 요리 체인과 소지품 미러가 이를 사용한다 (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9ItemRef
 {
 	GENERATED_BODY()
 
-	/** Must exist in the item table — the load check verifies it */
+	/** 아이템 테이블에 반드시 존재해야 한다 — 로드 체크가 이를 검증한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName ItemAlias;
 
-	/** State variant (e.g. cooked) — None is the base state */
+	/** 상태 변형 (예: 조리됨) — None이 기본 상태다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName ItemSubAlias;
 
@@ -104,14 +116,28 @@ struct FCL9ItemRef
 	}
 };
 
-/** One carried thing in the hand or pocket mirror (docs/systems/inventory.md 상태 모델) */
+/** 손이나 주머니 미러에 있는 소지품 하나 (docs/systems/inventory.md 상태 모델) */
 USTRUCT(BlueprintType)
 struct FCL9CarriedItem : public FCL9ItemRef
 {
 	GENERATED_BODY()
 };
 
-/** Item reference plus a count — order ingredients and drops share it (docs/data/schema.md) */
+/**
+ * 납품 창구에 올려둔 물건 하나 — 개체별로 굴린 값을 그대로 들고 있어야
+ * 창구에 놓아두는 사이에 판매가가 다시 굴려지지 않는다 (docs/systems/economy.md 가격식).
+ */
+USTRUCT(BlueprintType)
+struct FCL9CounterItem : public FCL9ItemRef
+{
+	GENERATED_BODY()
+
+	/** 올릴 때의 굴림값(에테르) — 배율은 판매 시점에 곱한다 */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Value = 0;
+};
+
+/** 아이템 참조에 개수를 더한 것 — 주문 재료와 드롭이 이를 공유한다 (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9ItemCount : public FCL9ItemRef
 {
@@ -121,7 +147,7 @@ struct FCL9ItemCount : public FCL9ItemRef
 	int32 Count = 1;
 };
 
-/** One monster drop entry — quantity rolls Min..Max, the base Count is unused here */
+/** 몬스터 드롭 항목 하나 — 수량은 Min..Max 사이에서 굴리고, 기본 Count는 여기서 쓰이지 않는다 */
 USTRUCT(BlueprintType)
 struct FDropItem : public FCL9ItemCount
 {
@@ -138,7 +164,7 @@ struct FDropItem : public FCL9ItemCount
 	int32 MaxQuantity = 1;
 };
 
-/** One eat effect row — target, amount and duration all come from the table */
+/** 먹기 효과 행 하나 — 대상, 양, 지속시간이 모두 테이블에서 온다 */
 USTRUCT(BlueprintType)
 struct FCL9StatEffect
 {
@@ -150,30 +176,30 @@ struct FCL9StatEffect
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float Amount = 0.f;
 
-	/** 0 applies once immediately; anything larger lasts that long in seconds */
+	/** 0이면 즉시 한 번 적용되고, 그보다 크면 그 초만큼 지속된다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DurationSec = 0.f;
 };
 
-/** One spawn baseline row — a site's animals or ingredients; the day curve scales the roll (docs/data/schema.md) */
+/** 스폰 기준값 행 하나 — 사이트의 동물이나 재료이며, 일자 커브가 굴림값을 조정한다 (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9SpawnEntry
 {
 	GENERATED_BODY()
 
-	/** Monster or item alias */
+	/** 몬스터 또는 아이템 별칭 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName Alias;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MinCount = 0;
 
-	/** The day curve multiplies the roll between Min and Max (docs/plan/data/progression.md) */
+	/** 일자 커브가 Min과 Max 사이 굴림값에 곱해진다 (docs/plan/data/progression.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxCount = 0;
 };
 
-/** Hand-set exceptions for one day — a 0 multiplier means "use the curve" (docs/plan/data/progression.md 특정 일자 덮어쓰기) */
+/** 특정 하루에 대해 손으로 지정하는 예외값 — 배율 0은 "커브를 사용하라"는 뜻이다 (docs/plan/data/progression.md 특정 일자 덮어쓰기) */
 USTRUCT(BlueprintType)
 struct FCL9DayOverride
 {
@@ -182,20 +208,20 @@ struct FCL9DayOverride
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 Day = 1;
 
-	/** Replaces MonsterCountCurve for this day when > 0 */
+	/** 0보다 크면 이 날의 MonsterCountCurve를 대체한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MonsterCountMult = 0.f;
 
-	/** Replaces DangerCurve for this day when > 0 */
+	/** 0보다 크면 이 날의 DangerCurve를 대체한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float DangerMult = 0.f;
 
-	/** No blackout this night (the tutorial day) */
+	/** 이 밤에는 정전이 없다 (튜토리얼 날) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bNoBlackout = false;
 };
 
-/** One accepted order on the run — replicated progress, saved with the run (docs/systems/order.md 주문 흐름) */
+/** 진행 중인 런에서 수락된 주문 하나 — 진행 상황이 리플리케이트되고 런과 함께 저장된다 (docs/systems/order.md 주문 흐름) */
 USTRUCT(BlueprintType)
 struct FCL9AcceptedOrder
 {
@@ -207,14 +233,22 @@ struct FCL9AcceptedOrder
 	UPROPERTY(BlueprintReadOnly)
 	int32 AcceptedDay = 0;
 
-	/** Last day it can still be delivered — AcceptedDay + DeadlineDays − 1 */
+	/** 아직 납품 가능한 마지막 날 — AcceptedDay + DeadlineDays − 1 */
 	UPROPERTY(BlueprintReadOnly)
 	int32 DeadlineDay = 0;
+
+	/**
+	 * 수락할 때 [RewardMin, RewardMax]에서 굴린 이 주문의 확정 보상(에테르).
+	 * 카드가 범위 대신 실제로 받을 값을 보여주고, 마감을 놓쳤을 때의 위약금도
+	 * 이 값에서 나온다 (docs/systems/order.md 주문 흐름).
+	 */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Reward = 0;
 };
 
 namespace CL9
 {
-	/** Impact state chain — 성함 → 금감 → 깨짐 swaps the SubAlias (docs/systems/item.md 상태 = SubAlias) */
+	/** 충격 상태 체인 — 성함 → 금감 → 깨짐 순으로 SubAlias를 바꾼다 (docs/systems/item.md 상태 = SubAlias) */
 	inline const FName SubAliasCracked = FName("cracked");
 	inline const FName SubAliasBroken = FName("broken");
 }

@@ -42,6 +42,11 @@ float UCL9ProgressionDef::NightLengthAt(int32 Day) const
 	return Eval(NightLengthCurve, Day);
 }
 
+float UCL9ProgressionDef::ValueAt(int32 Day) const
+{
+	return Eval(ValueCurve, Day);
+}
+
 bool UCL9ProgressionDef::IsBlackoutDisabled(int32 Day) const
 {
 	const FCL9DayOverride* Override = FindOverride(Day);
@@ -58,8 +63,8 @@ const FCL9DayOverride* UCL9ProgressionDef::FindOverride(int32 Day) const
 
 float UCL9ProgressionDef::Eval(const FRuntimeFloatCurve& Curve, int32 Day)
 {
-	// An empty curve is "no scaling"; past the last key FRichCurve holds the
-	// last value, which is the intended cap (docs/plan/data/progression.md).
+	// 빈 커브는 "배율 없음"을 뜻한다. 마지막 키 이후로는 FRichCurve가 마지막
+	// 값을 그대로 유지하는데, 이것이 의도된 상한이다 (docs/plan/data/progression.md).
 	const FRichCurve* Rich = Curve.GetRichCurveConst();
 	if (Rich == nullptr || Rich->GetNumKeys() == 0)
 	{

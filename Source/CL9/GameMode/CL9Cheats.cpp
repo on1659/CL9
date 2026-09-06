@@ -1,9 +1,9 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-// cl9.* console command registry (docs/systems/cheats.md). Dotted names cannot
-// be exec functions, so each command registers here and forwards into the
-// cheat manager — locally for read-only commands, via the player controller's
-// Server RPC when a client console asks for a host-side ruling.
+// cl9.* 콘솔 명령 등록부 (docs/systems/cheats.md). 점(.)이 들어간 이름은
+// exec 함수로 만들 수 없어서, 각 명령은 여기서 등록된 뒤 치트 매니저로
+// 전달된다 — 읽기 전용 명령은 로컬에서 바로, 클라이언트 콘솔이 호스트
+// 판정을 요청하는 경우는 플레이어 컨트롤러의 Server RPC를 거쳐서 처리한다.
 
 #include "CoreMinimal.h"
 #include "Engine/World.h"
@@ -23,9 +23,9 @@ namespace
 {
 #if WITH_EDITOR
 	/**
-	 * The 5a map tool without a window: in the editor (no PIE) cl9.seed lays the
-	 * site into the level as transient, editor-only actors — the same generator
-	 * the night runs, so what you inspect is what players get (build-order 5a).
+	 * 창 없이 쓰는 5a 맵 도구: 에디터에서 (PIE 없이) cl9.seed를 실행하면 사이트를
+	 * 레벨에 임시(에디터 전용) 액터로 배치한다 — 밤이 실제로 돌리는 것과 동일한
+	 * 생성기이므로, 여기서 살펴보는 것이 곧 플레이어가 받게 될 결과다 (build-order 5a).
 	 */
 	void LayEditorSiteMap(const TArray<FString>& Args, UWorld* World)
 	{
@@ -171,6 +171,30 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatPick(
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		RouteCL9Cheat(TEXT("pick"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatMoney(
+	TEXT("cl9.money"),
+	TEXT("cl9.money [amount] — prints the run's ether; with an amount, pays it in (positive) or takes it out (negative) (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("money"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSave(
+	TEXT("cl9.save"),
+	TEXT("cl9.save [slot] — writes the run (day, ether, orders in progress) to the slot now (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("save"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatLoad(
+	TEXT("cl9.load"),
+	TEXT("cl9.load [slot] — restores the run from the slot; lobby only (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("load"), Args, World, false);
 	}));
 
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSeed(

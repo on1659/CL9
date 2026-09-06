@@ -8,11 +8,11 @@
 #include "CL9SiteDef.generated.h"
 
 /**
- * One destination row (docs/plan/data/site.md). A site gives the baselines —
- * which animals and ingredients live there and how many — and the day curve
- * (UCL9ProgressionDef) multiplies them at night start. The grid columns for
- * the map generator join with build-order ⑤; until then the flat test level
- * scatters the rolls around the truck.
+ * 목적지 행 하나 (docs/plan/data/site.md). 사이트는 기준값을 준다 — 어떤
+ * 동물과 재료가 몇 마리/몇 개 있는지 — 그리고 일자 커브(UCL9ProgressionDef)가
+ * 밤이 시작될 때 그 값에 곱해진다. 맵 생성기를 위한 격자 컬럼들은
+ * build-order ⑤에서 합류하며, 그 전까지는 평지 테스트 레벨이 트럭 주변에
+ * 굴림값을 흩뿌린다.
  */
 UCLASS()
 class UCL9SiteDef : public UCL9DefBase
@@ -22,34 +22,41 @@ class UCL9SiteDef : public UCL9DefBase
 public:
 	virtual void Validate(TArray<FString>& OutErrors) const override;
 
-	/** Animals living here — baseline counts, MonsterCountCurve scales the roll (site.md 서식 동물) */
+	/** 여기 사는 동물들 — 기준 마리수이며, MonsterCountCurve가 굴림값을 조정한다 (site.md 서식 동물) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawns")
 	TArray<FCL9SpawnEntry> MonsterSpawns;
 
-	/** Ingredients lying around — baseline counts, ItemCountCurve scales the roll (site.md 산출 재료) */
+	/** 주변에 널려 있는 재료 — 기준 개수이며, ItemCountCurve가 굴림값을 조정한다 (site.md 산출 재료) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawns")
 	TArray<FCL9SpawnEntry> ItemSpawns;
 
-	/** Danger baseline the day curve multiplies — pressure per animal, not the count */
+	/** 일자 커브가 곱하는 위험도 기준값 — 마리수가 아니라 개체당 압박감이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Progress")
 	float BaseDanger = 1.f;
 
-	/** First day this site can be chosen */
+	/** 이 사이트를 선택할 수 있게 되는 첫 날 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Progress")
 	int32 UnlockDay = 1;
 
-	// -- Map generation (site.md 맵 생성). The grid is fixed per site; the seed
-	//    only shapes the maze inside it — cages, plugs, jars, the flap.
+	/**
+	 * 여기서 가져온 물건의 판매가에 곱해지는 목적지 배율 (docs/plan/economy.md 가격식).
+	 * 먼 곳일수록 값이 나가게 만드는 손잡이다 — 일자 배율과 동시에 만지지 않는다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Progress")
+	float ValueRate = 1.f;
 
-	/** Which generator lays the site — None leaves the flat level bare */
+	// -- 맵 생성 (site.md 맵 생성). 격자는 사이트마다 고정돼 있고, 시드는
+	//    그 안의 미로 — 우리, 플러그, 항아리, 플랩 — 모양만 정한다.
+
+	/** 이 사이트를 어떤 생성기로 배치할지 — None이면 평지 레벨을 그대로 둔다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	ECL9Generator Generator = ECL9Generator::None;
 
-	/** 1F aisles (corridors along the barn) */
+	/** 1층 통로 수 (축사를 따라 나 있는 복도) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 AisleCount = 8;
 
-	/** 1F columns (cells along each aisle) */
+	/** 1층 열 수 (각 통로를 따라 있는 칸) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 ColCount = 6;
 
@@ -59,34 +66,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 ColCountB1 = 4;
 
-	/** Corridor width (cm) — the door and the stair corridor share it */
+	/** 통로 폭 (cm) — 문과 계단 복도가 이 값을 공유한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float AisleWidth = 255.f;
 
-	/** Cell length along the aisle (cm) */
+	/** 통로를 따라 있는 칸의 길이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float ColWidth = 900.f;
 
-	/** Cage row depth between two aisles (cm) */
+	/** 두 통로 사이 우리 행의 깊이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float RowDepth = 120.f;
 
-	/** Opening cut through a cage row (cm) */
+	/** 우리 행을 가로질러 뚫는 개구부 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float OpenWidth = 360.f;
 
-	/** Plug across an aisle (cm, along the aisle) */
+	/** 통로를 가로막는 플러그 (cm, 통로 방향으로) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float PlugWidth = 180.f;
 
-	/** ★ Difficulty knob — passable edges on 1F; fewer means more dead ends (site.md 개구부) */
+	/** ★ 난이도 손잡이 — 1층에서 통과 가능한 간선 수, 적을수록 막다른 길이 많아진다 (site.md 개구부) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 TargetOpen1F = 50;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 TargetOpenB1 = 25;
 
-	/** Return jars per floor, spread so every cell has one nearby */
+	/** 층마다 있는 반납 항아리 수, 모든 칸 근처에 하나씩 있도록 분산시킨다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 JarCount1F = 4;
 

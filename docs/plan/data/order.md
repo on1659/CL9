@@ -19,7 +19,7 @@
 | `DisplayName` | `FText` | 주문서에 뜨는 이름 |
 | `Icon` | 소프트 참조 | 주문서 아이콘 |
 | `Ingredients` | `TArray<FCL9ItemCount>` | `{ ItemAlias, ItemSubAlias, Count }` — **필요한 완성물** (`egg`+`cooked` 지정에 SubAlias 필요) |
-| `RewardMin` / `RewardMax` | int | 보상 (이더) |
+| `RewardMin` / `RewardMax` | int | 보상 (이더) — **수락하는 순간 한 번 굴려 확정한다** (2026-09-06) |
 | `DeadlineDays` | int | 며칠 안에 (1 = 오늘) |
 | `FailPenaltyRate` | float | 마감을 놓치면 보상의 몇 배를 위약금으로 빼나 (초안 0.3) |
 | `MinDay` / `MaxDay` | int | 등장 일차 범위 |
@@ -59,7 +59,7 @@
 
 `DeadlineDays`가 1이면 오늘 안에 내야 한다. 2 이상이면 며칠에 걸친 주문이 된다.
 
-**마감을 놓치면 보상의 `FailPenaltyRate`만큼 누적 이더에서 뺀다.** 벌지 못한 만큼은 정산
+**마감을 놓치면 확정된 보상의 `FailPenaltyRate`만큼 누적 이더에서 뺀다.** 벌지 못한 만큼은 정산
 압박이 이미 벌한다 — 위약금은 그 위에 얹히는 대가다.
 
 **여러 날에 걸친 시간 압박은 납품 마감이다.** 밤 안의 압박은 밤·정전 시계가 담당한다.

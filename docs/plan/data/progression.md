@@ -123,8 +123,9 @@ FCL9DayOverride
 `NightLengthCurve` + `DayOverrides{Day, MonsterCountMult, DangerMult, bNoBlackout}`. 곡선은
 `FRuntimeFloatCurve`다 — 에셋 디테일에서 **그래프로 끌거나** 외부 `UCurveFloat`를 가리킬 수 있다.
 빈 곡선은 1.0, 마지막 키 뒤는 마지막 값 유지(위 "10일 이후" 규칙). 주문서 N/M(`OrdersOfferedPerDay` 3
-· `OrdersRequiredPerDay` 2)은 4c에서 들어갔다. `ValueCurve`·`QuotaCurve`·`OrdersOfferedCurve`·
-`ForcedSite/ForcedOrders/QuotaOverride`·`FinalDay`·`SettlementIntervalDays`는 각 소비처(4e·4g)가 생길 때
+· `OrdersRequiredPerDay` 2)은 4c에서, `ValueCurve`(+ `ValueAt(일자)`)는 4e에서 들어갔다 — 판매가의 일자
+배율이며 `ACL9GameMode::ComputeSellPrice`가 읽는다. `QuotaCurve`·`OrdersOfferedCurve`·
+`ForcedSite/ForcedOrders/QuotaOverride`·`FinalDay`·`SettlementIntervalDays`는 각 소비처(⑥·4g)가 생길 때
 넣는다.
 
 적용 지점 — 밤 시작(`ACL9GameMode::StartNight`, 호스트): 목적지 `MonsterSpawns/ItemSpawns` ×

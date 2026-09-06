@@ -71,6 +71,18 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		Pick(Tokens);
 	}
+	else if (Command == TEXT("money"))
+	{
+		Money(Tokens);
+	}
+	else if (Command == TEXT("save"))
+	{
+		SaveRun(Tokens);
+	}
+	else if (Command == TEXT("load"))
+	{
+		LoadRun(Tokens);
+	}
 	else if (Command == TEXT("seed"))
 	{
 		Seed(Tokens);
@@ -109,8 +121,8 @@ void UCL9CheatManager::AddItem(const TArray<FString>& Args)
 	const int32 Count = Args.IsValidIndex(1) ? FMath::Clamp(FCString::Atoi(*Args[1]), 1, 50) : 1;
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		// 200cm ahead just above the feet — dropping from the pawn's center
-		// would exceed fragile items' CrackSpeed on landing
+		// 발 바로 위, 앞쪽 200cm 지점에 놓는다 — 폰 중심에서 떨어뜨리면
+		// 깨지기 쉬운 아이템의 착지 시 CrackSpeed를 초과해버린다
 		const FVector Forward = Pawn->GetActorForwardVector();
 		const FVector Side = Pawn->GetActorRightVector() * (Index - (Count - 1) * 0.5f) * Def->Radius * 3.f;
 		const float FloorZ = Pawn->GetActorLocation().Z - Pawn->GetSimpleCollisionHalfHeight();
@@ -324,8 +336,9 @@ void UCL9CheatManager::Blackout(const TArray<FString>& Args)
 
 void UCL9CheatManager::Damage(const TArray<FString>& Args)
 {
-	// Optional second arg picks another player by join order, so the listen host
-	// can down a client's character for spectate checks without that console.
+	// 두 번째 인자(선택)로 참가 순서 기준의 다른 플레이어를 고를 수 있다 —
+	// 리슨 호스트가 클라이언트 콘솔 없이도 그 클라이언트의 캐릭터를 쓰러뜨려
+	// 관전 흐름을 점검할 수 있게 하기 위함이다.
 	APlayerController* Controller = GetOuterAPlayerController();
 	APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
 	if (Args.IsValidIndex(1))
@@ -343,7 +356,7 @@ void UCL9CheatManager::Damage(const TArray<FString>& Args)
 		return;
 	}
 
-	// Same host entry a catch uses — knockdown, spill, death all follow (docs/systems/character.md)
+	// 캐치가 사용하는 것과 동일한 호스트 진입점이다 — 쓰러짐, 흘림, 사망이 모두 뒤따른다 (docs/systems/character.md)
 	const int32 Amount = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
 	Character->OnDamage(Amount, nullptr);
 	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s'."), Amount, *GetNameSafe(Character));
@@ -373,9 +386,11 @@ void UCL9CheatManager::Day(const TArray<FString>& Args)
 	CL9GameState->SetDay(NewDay);
 	UE_LOG(LogCL9, Log, TEXT("cl9.day: lobby moved to day %d — cl9.night rolls that day's curves."), NewDay);
 
-	// The offer depends on the day (MinDay/MaxDay) — redraw for the new one
 	if (ACL9GameMode* GameMode = World->GetAuthGameMode<ACL9GameMode>())
 	{
+		// 건너뛴 날에 걸려 있던 마감도 함께 지난다 — 로비가 날을 넘길 때와 같은 순서다
+		GameMode->ExpireOrders();
+		// 제안 목록은 일차(MinDay/MaxDay)에 따라 달라지므로 — 새 일차 기준으로 다시 뽑는다
 		GameMode->OfferOrders();
 	}
 }
@@ -419,8 +434,65 @@ void UCL9CheatManager::Orders(const TArray<FString>& Args)
 	UE_LOG(LogCL9, Log, TEXT("Accepted (%d):"), CL9GameState->AcceptedOrders.Num());
 	for (const FCL9AcceptedOrder& Accepted : CL9GameState->AcceptedOrders)
 	{
-		UE_LOG(LogCL9, Log, TEXT("  %s — accepted day %d, deliver by day %d"), *Accepted.OrderAlias.ToString(), Accepted.AcceptedDay, Accepted.DeadlineDay);
+		UE_LOG(LogCL9, Log, TEXT("  %s — %d ether, accepted day %d, deliver by day %d"),
+			*Accepted.OrderAlias.ToString(), Accepted.Reward, Accepted.AcceptedDay, Accepted.DeadlineDay);
 	}
+
+	UE_LOG(LogCL9, Log, TEXT("Money: %d ether (period income %d)."), CL9GameState->GetSharedMoney(), CL9GameState->GetPeriodIncome());
+}
+
+void UCL9CheatManager::SaveRun(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	if (GameMode == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.save: host only."));
+		return;
+	}
+
+	const int32 Slot = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) : 1;
+	GameMode->SaveRun(FMath::Max(1, Slot));
+}
+
+void UCL9CheatManager::LoadRun(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	if (GameMode == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.load: host only."));
+		return;
+	}
+
+	const int32 Slot = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) : 1;
+	GameMode->LoadRun(FMath::Max(1, Slot));
+}
+
+void UCL9CheatManager::Money(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	if (CL9GameState == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.money: no game state."));
+		return;
+	}
+
+	if (Args.Num() > 0)
+	{
+		const int32 Delta = FCString::Atoi(*Args[0]);
+		if (Delta >= 0)
+		{
+			CL9GameState->AddIncome(Delta);
+		}
+		else
+		{
+			CL9GameState->Deduct(-Delta);
+		}
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Money: %d ether (period income %d)."), CL9GameState->GetSharedMoney(), CL9GameState->GetPeriodIncome());
 }
 
 void UCL9CheatManager::Pick(const TArray<FString>& Args)

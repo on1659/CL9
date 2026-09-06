@@ -19,7 +19,7 @@
 | 컬럼 | 뜻 |
 |---|---|
 | `Ingredients` | `TArray<FCL9ItemCount>` `{ ItemAlias, ItemSubAlias, Count }` — 필요한 완성물 |
-| `RewardMin` / `RewardMax` | 보상 (이더, int) — 납품 시 굴림 |
+| `RewardMin` / `RewardMax` | 보상 (이더, int) — **수락할 때** 굴려 확정한다 |
 | `DeadlineDays` | 며칠 안에 (1 = 오늘) |
 | `FailPenaltyRate` | 마감을 놓치면 보상의 몇 배를 위약금으로 (초안 0.3) |
 | `MinDay` / `MaxDay` / `Weight` | 등장 일차 범위 · 뽑힐 가중치 |
@@ -33,12 +33,12 @@
 정차(로비): 후보 추첨 — MinDay/MaxDay 필터 → Weight 가중 추첨 → N개 제시
   ↓
 플레이어가 M개 선택 (호스트가 확정, 전원에게 표시)
-  ↓
+  ↓ 수락하는 순간 RewardMin~RewardMax를 굴려 확정한다 (2026-09-06 결정)
 원정 → 요리 → 납품: 완성물을 창구에 올리면 주문과 대조
   ↓
-충족: RewardMin~RewardMax 굴림 → GameState.SharedMoney·PeriodIncome에 가산
+충족: 확정 보상을 GameState.SharedMoney·PeriodIncome에 가산
   ↓
-마감(DeadlineDays) 경과: 미납 주문은 보상 × FailPenaltyRate를 누적 이더에서 차감
+마감(DeadlineDays) 경과: 미납 주문은 확정 보상 × FailPenaltyRate를 누적 이더에서 차감
 ```
 
 - **추첨·납품·위약금 판정은 GameMode(호스트) 전용이다.**
@@ -53,7 +53,7 @@ if (!HasAuthority()) return;
 for (const FCL9ItemCount& Need : Order->Ingredients) {
   // 창구의 아이템 중 Alias+SubAlias가 일치하고 깨지지/타지 않은 것을 센다
 }
-// 전부 충족 → 보상 굴림 → 지급, Multicast로 표현
+// 전부 충족 → 수락 때 굴려둔 확정 보상을 지급, Multicast로 표현
 ```
 
 같은 완성물을 여러 주문에 이중으로 세지 않는다.
@@ -65,7 +65,7 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
 - 진행 중 주문: HUD에 남은 재료·마감 일수 표시 ([ui.md](ui.md))
 - 납품 결과: 창구 연출 + 이더 증가 표시
 
-## 구현 상태 (4c, 2026-09-05)
+## 구현 상태 (4c 2026-09-05 · 4e 2026-09-06)
 
 - **데이터**: `UCL9OrderDef`(Source/CL9/Data) — Ingredients·RewardMin/Max·DeadlineDays·FailPenaltyRate·
   MinDay/MaxDay/Weight (Gimmicks는 베이스). 에셋 `DA_OrderTable`(Content/Data) 행 omelette·fried_egg·
@@ -78,9 +78,20 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
   컨트롤러만 확정한다(클라 요청은 거부·로그). `ACL9GameMode::AcceptOrders`가 로비에서만, 정확히 M개
   서로 다른 인덱스일 때 받아 `GameState.AcceptedOrders{OrderAlias, AcceptedDay, DeadlineDay = 받은 날 +
   DeadlineDays − 1}`에 누적하고 제시를 비운다. 변경은 `OnOrdersChanged`(BlueprintAssignable)로 알린다.
-- **미구현**: 납품 판정·보상·위약금(4e), 주문 선택 화면·HUD 진행 중 주문(UI 세션), 세이브.
-  주문을 안 골라도 밤은 시작된다(선택 화면 전까지 개발 편의 — 4e에서 재검토).
-- 치트: `cl9.orders`(제시·수락 목록), `cl9.pick <n> [m]`(번호로 확정).
+- **보상 확정(4e)**: `AcceptOrders`가 수락하는 순간 `[RewardMin, RewardMax]`를 굴려
+  `FCL9AcceptedOrder.Reward`에 넣는다 — 카드와 HUD가 범위 대신 이 값을 보여주고, 위약금도 여기서 나온다.
+- **창구(4e)**: `ACL9Counter`(Source/CL9/Items, BP `Content/Items/BP_CL9Counter`) — 손에 든 것과
+  끄는 수레의 짐을 받아 보관한다(실물은 파괴하고 alias+sub+굴림값만 복제해 들고 있는다). 임시 부엌 옆에
+  놓인 상자이며 4f의 정식 주방·트럭이 이 자리를 대체한다.
+- **납품 판정(4e)**: `ACL9GameMode::SettleOrdersAt` — 호스트 전용. 마감이 급한 주문부터 창구 보관분과
+  대조하고, 재료가 전부 있을 때만 그 자리에서 빼내며(반쯤 낸 주문 없음, 이중 계산 없음) 확정 보상을
+  `GameState.AddIncome`으로 지급한다.
+- **위약금(4e)**: `ACL9GameMode::ExpireOrders` — 로비에서 날짜가 오른 직후, `DeadlineDay < CurrentDay`인
+  주문을 지우고 `Reward × FailPenaltyRate`를 `GameState.Deduct`로 뺀다(잔액 하한 0 — 채무 없음).
+- **미구현**: 주문 선택 화면·HUD 진행 중 주문(UI 세션), 세이브.
+  주문을 안 골라도 밤은 시작된다(선택 화면 전까지 개발 편의).
+- 치트: `cl9.orders`(제시·수락 목록 + 확정 보상 + 자금), `cl9.pick <n> [m]`(번호로 확정),
+  `cl9.money [양]`(자금 확인·지급·차감).
 
 ## 참고
 
