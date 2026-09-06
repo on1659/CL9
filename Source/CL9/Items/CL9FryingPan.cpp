@@ -3,6 +3,7 @@
 #include "Items/CL9FryingPan.h"
 #include "CL9.h"
 #include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Data/CL9ItemDef.h"
 #include "Engine/CollisionProfile.h"
@@ -11,10 +12,10 @@
 
 namespace
 {
-	/** A pan is a flattened cylinder — the row's unit mesh squashed to this of its height */
+	/** 팬은 납작해진 원통이다 — 행의 단위 메시를 이 비율만큼 높이 방향으로 눌러 놓는다 */
 	constexpr float PanFlatten = 0.25f;
 
-	/** How high above the bed an item still counts as on the heat (cm) */
+	/** 상판 위 이 높이까지는 여전히 열을 받는 중으로 친다 (cm) */
 	constexpr float HeatReach = 60.f;
 }
 
@@ -42,11 +43,18 @@ void ACL9FryingPan::LoadData()
 		return;
 	}
 
-	// The base fits the mesh to the ruling sphere uniformly; a pan is flat
+	// 베이스 클래스는 메시를 판정용 구체에 균일하게 맞추지만, 팬은 납작해야 한다
 	const FVector Scale = Mesh->GetRelativeScale3D();
 	Mesh->SetRelativeScale3D(FVector(Scale.X, Scale.Y, Scale.X * PanFlatten));
 	Mesh->UpdateBounds();
 	const float Top = Mesh->Bounds.BoxExtent.Z;
+
+	// 공통 충돌체는 판정 반지름의 구(球)라 납작한 팬 위에 보이지 않는 둥근 껍질이 생기고,
+	// 그 위에 얹힌 재료가 굴러 떨어진다 — 구를 팬 두께로 줄이고 상판(Bed)이 받치게 한다
+	if (USphereComponent* Sphere = FindComponentByClass<USphereComponent>())
+	{
+		Sphere->SetSphereRadius(FMath::Max(Top, 6.f));
+	}
 
 	const float Half = Def->Radius * 0.7f;
 	Bed->SetBoxExtent(FVector(Half, Half, 4.f));
@@ -59,7 +67,7 @@ void ACL9FryingPan::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// The ruling is the host's, and a pan in someone's hands cooks nothing
+	// 판정은 호스트가 내리며, 누군가의 손에 들린 팬은 아무것도 익히지 않는다
 	if (HasAuthority() && IsFree())
 	{
 		TickCooking(DeltaSeconds);
@@ -74,8 +82,8 @@ void ACL9FryingPan::TickCooking(float DeltaSeconds)
 		return;
 	}
 
-	// Whatever item lies in the zone right now — queried, not event-driven, so a
-	// thing that rolled in without an overlap event still counts
+	// 지금 이 구역에 놓여 있는 아이템이면 무엇이든 — 이벤트 기반이 아니라 쿼리 기반이라,
+	// 오버랩 이벤트 없이 굴러 들어온 것도 여전히 포함된다
 	TArray<FOverlapResult> Overlaps;
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
@@ -94,7 +102,7 @@ void ACL9FryingPan::TickCooking(float DeltaSeconds)
 		}
 	}
 
-	// Off the heat, the clock resets — nothing half-cooks in your hand
+	// 열원을 벗어나면 시계가 초기화된다 — 손에 들고 있는 동안 반쯤 익는 일은 없다
 	for (auto It = HeatSeconds.CreateIterator(); It; ++It)
 	{
 		if (!It.Key().IsValid() || !OnHeat.Contains(It.Key().Get()))
@@ -111,7 +119,7 @@ void ACL9FryingPan::TickCooking(float DeltaSeconds)
 		{
 			continue;
 		}
-		// Raw rows cook, cooked rows burn, burnt rows (and tools) just sit there
+		// 생것 행은 익고, 조리된 행은 타고, 탄 행(및 도구)은 그냥 그대로 있는다
 		const bool bCooks = Def->CookResult.IsSet();
 		const bool bBurns = Def->BurnResult.IsSet();
 		if (!bCooks && !bBurns)
@@ -124,7 +132,7 @@ void ACL9FryingPan::TickCooking(float DeltaSeconds)
 		float& Seconds = HeatSeconds.FindOrAdd(Item);
 		Seconds += DeltaSeconds;
 
-		// Smoke lead-in before burning — presentation only, the ruling ignores it (cooking.md)
+		// 타기 직전의 연기 전조 — 순전히 표현용이며 판정에는 영향을 주지 않는다 (cooking.md)
 		if (!bCooks && !SmokeWarned.Contains(Item) && Seconds >= Needed - Def->BurnWarnTime)
 		{
 			SmokeWarned.Add(Item);
