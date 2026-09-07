@@ -22,9 +22,12 @@ UCL9UIManager (GameInstanceSubsystem — 싱글턴 접근 Get())
 UCL9Widget : UUserWidget          ← 모든 CL9 위젯의 베이스 (UIName + CloseSelf)
 ```
 
-- 전면 화면(로비 · 새벽/정산 · 관전 · 트럭 패널 · 일시정지)은 전부 Screen 레이어 행이다.
+- 전면 화면(로비 · 새벽/정산 · 관전 · 트럭 패널 · 메뉴)은 전부 Screen 레이어 행이다.
 - **새 UI는 표에 행으로만 추가한다.** 뷰포트에 직접 붙이는 위젯을 늘리지 않고, `WBP_Main`도
   다시 열지 않는다 — 독립 WBP를 만들고 `DA_UITable`에 행을 넣으면 끝이다.
+- **크기는 전역 배율로 잡는다** — 프로젝트 설정 UI `ApplicationScale` 1.4(2026-09-05 사용자 "UI 좀 크게").
+  위젯은 1080p·배율 1.0 기준으로 디자인하고(글자 기본 24pt) 전체 크기 조정은 이 값 하나로 한다.
+  DPI 곡선(1080p=1.0, 720p=0.666)은 기본값 그대로 — 작은 PIE 창에서 작게 보이는 것은 곡선 때문이다.
 
 ## 코드 구조
 
@@ -43,7 +46,13 @@ public:
 
 - **Screen 레이어는 배타다**: `OpenWidget`이 Screen 행이면 열려 있던 Screen 위젯을 먼저
   닫는다. "전면 화면은 동시에 하나"라는 기획(ui.md)이 레이어 정책으로 지켜진다.
-- 위젯은 **열 때 생성하고 닫으면 파괴한다.** C++에서 열어야 하는 잘 알려진 이름(일시정지 등)은
+- **상태에서 파생되는 화면은 사람이 연 화면에 양보한다** (2026-09-07). 배타 규칙 때문에
+  파생 화면이 아무 때나 열리면 방금 열린 화면을 밀어낸다 — 실제로 새벽 결과 화면이 로비 진입과
+  같은 순간에 열리는 주문 선택 화면에 즉시 밀려서, 플레이어가 결과를 읽을 새가 없었다.
+  그래서 `DeriveOrderScreen`은 **다른 Screen이 열려 있으면 열지 않고**, 그 화면이 닫히면
+  다시 연다(닫힘 이벤트가 없어서 HUD 틱에서 다시 파생한다). 게임 진행(주문 추첨)은 그대로 두고
+  화면 순서만 UI가 정하는 방식이다 — 반대로 게임이 UI를 기다리게 하면 진행이 화면에 묶인다.
+- 위젯은 **열 때 생성하고 닫으면 파괴한다.** C++에서 열어야 하는 잘 알려진 이름(메뉴 등)은
   `CL9UINames` 상수로 둔다 — 문자열 오타를 컴파일 타임에 잡지는 못하므로 상수만 쓴다.
 - `WBP_Main`은 로컬 PlayerController의 BeginPlay에서 한 번 생성해 `AddToViewport()` 한 번만
   부른다. UI 표·메인 위젯 클래스는 에셋이 가진다 — C++에 경로가 없다 (conventions § 5).
@@ -64,9 +73,19 @@ public:
   비면 숨긴다. 액터 변경이 아니라 문구 변경 기준인 이유: 수레처럼 같은 액터라도 상태에 따라
   문구가 바뀐다 ("[E] 수레 끌기" → "[E] 수레 놓기"). 문구 자체(줍기·놓기·GetPrompt 위임)는
   캐릭터가 Server_PickPlace의 분기 순서대로 조립한다 — HUD는 문구를 만들지 않는다.
+- **주문 선택 화면은 HUD가 상태에서 파생해 연다** — `GameState.OnOrdersChanged` → `OfferedOrders`가 있으면
+  `OpenWidget(OrderSelect)`, 비면 `CloseWidget`. 관전 화면을 PlayerController의 `bSpectating` OnRep이 여는
+  것과 같은 원칙(열려 있어야 할 Screen = 상태의 함수)이고, HUD는 항상 떠 있어 GameState 델리게이트를
+  이미 받고 있어서 거기 둔다. 화면 자신은 열고 닫지 않는다.
+- **스캔은 로컬 표현이고 Popup 레이어의 첫 사용자다** — `ACL9PlayerController::ScanInput`(IA_Scan)이
+  `OpenWidget(Scan)`을 부르면 UI 표의 Popup 행 `Scan`(`WBP_Scan`, `UCL9ScanWidget`)이 하나 열린다. 그 위젯이
+  열리는 순간 화면에 보이는 액터 중 `ScanKinds`(`ECL9ActorKind` 목록, 기본 아이템만)에 든 종류를 모으고, 파동 링을 키우며 자기 `LabelLayer`에 `WBP_ScanLabel`을 개별로
+  붙인다(개수 제한 없음). 파동과 라벨이 다 끝나면 `CloseSelf()`로 닫히고 라벨도 함께 사라진다. 우클릭을
+  다시 누르면 열린 것을 닫고 새로 연다. 서버·RPC 없음, 판정 없음. 스캔 라벨과 포커스 라벨은
+  `UCL9ScanLabelWidget::MakeNameText/MakePriceText` 한 곳의 문구를 쓴다. Popup은 입력 모드를 바꾸지 않는다.
 - **아이템 라벨의 위치는 표시 문제라 매 프레임 재투영한다** — 캐릭터 `GetFocusedActor()`(아웃라인과 같은
   대상)가 아이템이면 `ProjectWorldLocationToWidgetPosition`으로 머리 위 좌표를 구해 HUD 캔버스 슬롯을
-  옮긴다. 라벨 **내용**은 대상이 바뀔 때만 채운다(아이템 표 `DisplayName`·`ValueMin/Max`·`Weight`·
+  옮긴다. 라벨 **내용**은 대상이 바뀔 때만 채운다(아이템 표 `DisplayName`·`Weight`·개체의 `GetValue()`·
   `CarrySlot`·`bFragile`). 값 폴링이 아니라 좌표 추적이므로 위의 폴링 예외와는 별개다. 액터에
   WidgetComponent를 붙이지 않는다 — 위젯은 WBP_HUD 하나에 있다.
 - 서버가 화면 전환을 지시할 때는 Multicast RPC → 로컬에서 `OpenWidget` 호출

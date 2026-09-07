@@ -8,7 +8,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
-#include "InputMappingContext.h"
+#include "InputMappingContext.h"		
 #include "CL9.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9PlayerController.h"
@@ -30,7 +30,7 @@ void UCL9UIManager::InitForPlayer(APlayerController* PlayerController)
 		return;
 	}
 
-	// After travel the old world's widgets are garbage — bootstrap again
+	// 트래블 후에는 이전 월드의 위젯들이 가비지이므로 — 다시 부트스트랩한다
 	if (!IsValid(MainWidget))
 	{
 		MainWidget = nullptr;
@@ -76,7 +76,7 @@ UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
 		return nullptr;
 	}
 
-	// Full screens stay exclusive — the plan wants one at a time (docs/systems/ui.md)
+	// 전체 화면은 배타적으로 유지된다 — 기획상 한 번에 하나만 떠 있어야 한다(docs/systems/ui.md)
 	if (Row->Layer == ECL9UILayer::Screen && !OpenScreenName.IsNone())
 	{
 		CloseWidget(OpenScreenName);
@@ -110,7 +110,9 @@ void UCL9UIManager::CloseWidget(FName UIName)
 
 	if (IsValid(Widget))
 	{
-		Widget->RemoveFromParent();
+		// 상태(열린 목록·화면 이름)에서는 지금 빠지고, 화면에서는 페이드가 끝난 뒤 스스로 떨어진다 —
+		// 닫힘 판정이 애니메이션을 기다리게 만들면 여닫기 토글이 어긋난다(docs/systems/ui.md UI 애니메이션)
+		Widget->PlayOutro();
 	}
 	if (OpenScreenName == UIName)
 	{
@@ -133,8 +135,8 @@ void UCL9UIManager::UpdateInputMode()
 		return;
 	}
 
-	// Multiplayer never pauses the game, so GameAndUI rather than UIOnly —
-	// input actions keep firing and Esc in IMC_UI can close the screen
+	// 멀티플레이어에서는 게임이 절대 일시정지되지 않으므로 UIOnly가 아니라 GameAndUI를 쓴다 —
+	// 입력 액션이 계속 발동해야 IMC_UI의 Esc로 화면을 닫을 수 있다
 	const bool bScreenOpen = !OpenScreenName.IsNone();
 	if (bScreenOpen)
 	{
@@ -149,7 +151,7 @@ void UCL9UIManager::UpdateInputMode()
 		PlayerController->SetShowMouseCursor(false);
 	}
 
-	// IMC swaps live here with the screen state so the two never diverge (docs/systems/input.md)
+	// IMC 전환 로직을 화면 상태와 같은 곳에 둬서 둘이 어긋나지 않게 한다(docs/systems/input.md)
 	if (ACL9PlayerController* CL9PlayerController = Cast<ACL9PlayerController>(PlayerController))
 	{
 		CL9PlayerController->SetGameplayInputEnabled(!bScreenOpen);

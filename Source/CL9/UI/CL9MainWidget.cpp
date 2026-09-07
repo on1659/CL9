@@ -15,7 +15,7 @@ void UCL9MainWidget::AddWidget(ECL9UILayer Layer, UCL9Widget* Widget)
 
 	Panel->AddChild(Widget);
 
-	// Later children draw on top, so stacking order is add order — no z bookkeeping
+	// 나중에 추가된 자식이 위에 그려지므로, 쌓이는 순서는 곧 추가한 순서다 — z값 관리 불필요
 	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(Widget->Slot))
 	{
 		CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));

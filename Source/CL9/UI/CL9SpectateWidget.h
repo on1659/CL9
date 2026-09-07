@@ -10,11 +10,11 @@ class UButton;
 class UTextBlock;
 
 /**
- * The spectate screen (docs/systems/ui.md 관전): the UI table row "Spectate"
- * opens it when ACL9PlayerController::bSpectating turns on and closes it when
- * the flag clears. Shows whose eyes we borrow and offers the next-teammate
- * switch — the button lands on the same SpectateNext() as IA_SpectateNext.
- * No revive UI: recovery is the truck pad at the next lobby (rules.md 죽음과 회복).
+ * 관전 화면(docs/systems/ui.md 관전): UI 테이블의 "Spectate" 행이
+ * ACL9PlayerController::bSpectating이 켜지면 이 위젯을 열고, 플래그가 꺼지면 닫는다.
+ * 지금 누구의 시점을 빌리고 있는지 보여주고 다음 동료로 전환하는 버튼을 제공하는데,
+ * 이 버튼은 IA_SpectateNext와 같은 SpectateNext()로 연결된다.
+ * 부활 UI는 없다 — 회복은 다음 로비의 트럭 패드에서 이루어진다(rules.md 죽음과 회복).
  */
 UCLASS(Abstract)
 class UCL9SpectateWidget : public UCL9Widget
@@ -25,11 +25,11 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
-	/** "관전 중 · <동료 이름>" — the view target pawn's PlayerState name */
+	/** "관전 중 · <동료 이름>" — 뷰 타겟 폰의 PlayerState 이름을 표시한다 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> TargetNameText;
 
-	/** Switches to the next living teammate — same host ruling as the key */
+	/** 살아있는 다음 동료로 전환한다 — 키 입력과 동일하게 호스트가 판정한다 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> NextButton;
 
@@ -37,7 +37,7 @@ private:
 	UFUNCTION()
 	void HandleNextClicked();
 
-	/** The view target arrives by ClientSetViewTarget with no local event, so the name re-reads on a short timer */
+	/** 뷰 타겟은 ClientSetViewTarget으로 도착할 뿐 로컬 이벤트가 없으므로, 짧은 타이머로 이름을 다시 읽어온다 */
 	void RefreshTarget();
 
 	FTimerHandle RefreshTimer;

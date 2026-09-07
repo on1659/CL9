@@ -15,7 +15,13 @@
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
 #include "GameMode/CL9PlayerState.h"
+#include "Items/CL9Counter.h"
 #include "Items/CL9Item.h"
+#include "Data/CL9OrderDef.h"
+#include "Data/CL9ProgressionDef.h"
+#include "UI/CL9ScanLabelWidget.h"
+#include "UI/CL9UIManager.h"
+#include "UI/CL9UITable.h"
 
 void UCL9HUDWidget::NativeConstruct()
 {
@@ -31,6 +37,11 @@ void UCL9HUDWidget::NativeDestruct()
 		Character->OnFocusPromptChanged.RemoveDynamic(this, &UCL9HUDWidget::HandleFocusPromptChanged);
 	}
 	WiredCharacter.Reset();
+	if (ACL9GameState* GameState = GetCL9GameState())
+	{
+		GameState->OnOrdersChanged.RemoveDynamic(this, &UCL9HUDWidget::HandleOrdersChanged);
+		GameState->OnMoneyChanged.RemoveDynamic(this, &UCL9HUDWidget::HandleMoneyChanged);
+	}
 
 	if (UWorld* World = GetWorld())
 	{
@@ -49,6 +60,9 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshStamina();
 	RefreshCharge();
 	RefreshItemLabel();
+	RefreshCounter();
+	// 양보했던 선택 화면을 다시 열 때가 됐는지 본다 — 화면이 닫혔다는 이벤트가 없어서 틱에서 본다
+	DeriveOrderScreen();
 }
 
 void UCL9HUDWidget::TryWire()
@@ -65,12 +79,19 @@ void UCL9HUDWidget::TryWire()
 	PlayerState->OnHpChanged.AddDynamic(this, &UCL9HUDWidget::HandleHpChanged);
 	PlayerState->OnCarryChanged.AddDynamic(this, &UCL9HUDWidget::HandleCarryChanged);
 	GameState->OnNightPhaseChanged.AddDynamic(this, &UCL9HUDWidget::HandlePhaseChanged);
+	GameState->OnOrdersChanged.AddDynamic(this, &UCL9HUDWidget::HandleOrdersChanged);
+	GameState->OnMoneyChanged.AddDynamic(this, &UCL9HUDWidget::HandleMoneyChanged);
 
 	GetWorld()->GetTimerManager().SetTimer(ClockTimer, this, &UCL9HUDWidget::RefreshClock, 0.25f, true);
 
 	RefreshHp();
 	RefreshCarry();
+	RefreshHead();
 	RefreshClock();
+	RefreshOrders();
+	RefreshMoney();
+	RefreshPeriod();
+	DeriveOrderScreen();
 }
 
 void UCL9HUDWidget::WireCharacter()
@@ -103,16 +124,30 @@ void UCL9HUDWidget::HandleHpChanged()
 void UCL9HUDWidget::HandleCarryChanged()
 {
 	RefreshCarry();
+	RefreshHead();
 }
 
 void UCL9HUDWidget::HandlePhaseChanged(ECL9NightPhase NewPhase)
 {
 	RefreshClock();
+	RefreshPeriod();   // 날이 넘어가면 목표액과 남은 날이 함께 바뀐다
 }
 
 void UCL9HUDWidget::HandleFocusPromptChanged()
 {
 	RefreshPrompt();
+}
+
+void UCL9HUDWidget::HandleOrdersChanged()
+{
+	RefreshOrders();
+	DeriveOrderScreen();
+}
+
+void UCL9HUDWidget::HandleMoneyChanged()
+{
+	RefreshMoney();
+	RefreshPeriod();   // 판 자금이 움직였다는 건 기간 수입도 움직였다는 뜻이다
 }
 
 void UCL9HUDWidget::RefreshHp()
@@ -231,8 +266,8 @@ void UCL9HUDWidget::RefreshCharge()
 		return;
 	}
 
-	// Negative = not charging. The host clocks the real charge; this mirrors the
-	// local press so the gauge never waits on a round trip (input.md 던지기 차징).
+	// 음수면 차징 중이 아니라는 뜻. 실제 차징 시간은 호스트가 재는데, 이 값은 로컬
+	// 입력을 그대로 반영해서 게이지가 왕복 지연을 기다리지 않게 한다(input.md 던지기 차징).
 	const ACL9Character* Character = WiredCharacter.Get();
 	const float Alpha = (Character != nullptr) ? Character->GetThrowChargeAlpha() : -1.f;
 	if (Alpha < 0.f)
@@ -252,14 +287,17 @@ void UCL9HUDWidget::RefreshItemLabel()
 		return;
 	}
 
-	// Same target the character outlines, so label and highlight never disagree.
-	// Text refreshes only when the target changes; the screen position is
-	// presentation and re-projects every frame (docs/systems/ui_system.md 데이터 연결).
+	// 캐릭터가 윤곽선을 그리는 대상과 같아서, 라벨과 하이라이트가 서로 어긋날 일이 없다.
+	// 텍스트는 대상이 바뀔 때만 갱신되고, 화면 위치는 표시 값이라 매 프레임 다시
+	// 투영한다(docs/systems/ui_system.md 데이터 연결).
 	const ACL9Character* Character = WiredCharacter.Get();
 	ACL9Item* Item = (Character != nullptr) ? Cast<ACL9Item>(Character->GetFocusedActor()) : nullptr;
-	if (Item != LabeledItem.Get())
+	// 요리는 같은 액터 위에서 행을 바꿔치기하므로(docs/systems/cooking.md), 행도 정체성의 일부다
+	const UCL9ItemDef* CurrentDef = (Item != nullptr) ? Item->GetItemDef() : nullptr;
+	if (Item != LabeledItem.Get() || CurrentDef != LabeledDef.Get())
 	{
 		LabeledItem = Item;
+		LabeledDef = CurrentDef;
 		if (Item != nullptr)
 		{
 			FillItemLabel(*Item);
@@ -277,7 +315,7 @@ void UCL9HUDWidget::RefreshItemLabel()
 	FVector2D ScreenPos;
 	if (!UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(GetOwningPlayer(), Anchor, ScreenPos, false))
 	{
-		ItemLabelBox->SetVisibility(ESlateVisibility::Collapsed);   // behind the camera
+		ItemLabelBox->SetVisibility(ESlateVisibility::Collapsed);   // 카메라 뒤쪽에 있음
 		return;
 	}
 
@@ -286,31 +324,43 @@ void UCL9HUDWidget::RefreshItemLabel()
 		CanvasSlot->SetPosition(ScreenPos);
 	}
 	ItemLabelBox->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	RefreshCookBar(*Item);
+}
+
+void UCL9HUDWidget::RefreshCookBar(const ACL9Item& Item)
+{
+	if (CookBar == nullptr)
+	{
+		return;
+	}
+
+	// 조리대가 열원이고 진행도는 재료가 들고 있다(docs/systems/cooking.md) — 이름이 바뀌기 전에
+	// 얼마나 남았는지 보여주지 않으면 태우지 않을 방법이 없다. 라벨 값과 달리 매 프레임 갱신한다.
+	if (!Item.IsOnHeat())
+	{
+		CookBar->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	CookBar->SetVisibility(ESlateVisibility::HitTestInvisible);
+	CookBar->SetPercent(Item.GetCookProgress());
+	CookBar->SetFillColorAndOpacity(Item.IsNextBurnt() ? BurnColor : CookColor);
 }
 
 void UCL9HUDWidget::FillItemLabel(const ACL9Item& Item)
 {
 	const UCL9ItemDef* Def = Item.GetItemDef();
 
+	// 스캔 라벨과 같은 텍스트를 쓰므로, 둘이 서로 어긋날 일이 없다
 	if (ItemNameText != nullptr)
 	{
-		ItemNameText->SetText((Def != nullptr && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : FText::FromString(Item.GetName()));
+		ItemNameText->SetText(UCL9ScanLabelWidget::MakeNameText(Item));
 	}
 
 	if (ItemPriceText != nullptr)
 	{
-		if (Def == nullptr || Def->ValueMax <= 0)
-		{
-			ItemPriceText->SetText(NSLOCTEXT("CL9", "HudItemNoValue", "값 없음"));
-		}
-		else if (Def->ValueMin == Def->ValueMax)
-		{
-			ItemPriceText->SetText(FText::Format(NSLOCTEXT("CL9", "HudItemValue", "{0} 이더"), Def->ValueMin));
-		}
-		else
-		{
-			ItemPriceText->SetText(FText::Format(NSLOCTEXT("CL9", "HudItemValueRange", "{0}~{1} 이더"), Def->ValueMin, Def->ValueMax));
-		}
+		ItemPriceText->SetText(UCL9ScanLabelWidget::MakePriceText(Item));
 	}
 
 	if (ItemInfoText != nullptr)
@@ -338,6 +388,97 @@ void UCL9HUDWidget::FillItemLabel(const ACL9Item& Item)
 	}
 }
 
+void UCL9HUDWidget::RefreshHead()
+{
+	const ACL9PlayerState* PlayerState = GetOwnPlayerState();
+	if (HeadText == nullptr || PlayerState == nullptr)
+	{
+		return;
+	}
+
+	HeadText->SetText(PlayerState->HeadItem.IsSet()
+		? FText::Format(NSLOCTEXT("CL9", "HudHead", "머리: {0}"), ItemLabel(PlayerState->HeadItem))
+		: NSLOCTEXT("CL9", "HudHeadEmpty", "머리: -"));
+}
+
+void UCL9HUDWidget::RefreshOrders()
+{
+	const ACL9GameState* GameState = GetCL9GameState();
+	if (OrdersText == nullptr || GameState == nullptr)
+	{
+		return;
+	}
+
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+
+	TArray<FText> Lines;
+	for (const FCL9AcceptedOrder& Accepted : GameState->AcceptedOrders)
+	{
+		const UCL9OrderDef* Order = (Registry != nullptr) ? Registry->FindOrder(Accepted.OrderAlias) : nullptr;
+		const FText Name = (Order != nullptr && !Order->DisplayName.IsEmpty()) ? Order->DisplayName : FText::FromName(Accepted.OrderAlias);
+		TArray<FText> Parts;
+		if (Order != nullptr)
+		{
+			for (const FCL9ItemCount& Ingredient : Order->Ingredients)
+			{
+				const UCL9ItemDef* ItemDef = Registry->FindItem(Ingredient.ItemAlias, Ingredient.ItemSubAlias);
+				const FText ItemName = (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : FText::FromName(Ingredient.ItemAlias);
+				Parts.Add(FText::Format(NSLOCTEXT("CL9", "HudOrderIngredient", "{0}×{1}"), ItemName, Ingredient.Count));
+			}
+		}
+		// 보상은 수락할 때 굴려 확정된 값이다(2026-09-06 결정) — 카드의 범위가 아니라 실제로 받을 액수를 보여준다
+		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudOrderLine", "{0} · {1} · {2}일차까지 · {3} 이더"),
+			Name, FText::Join(NSLOCTEXT("CL9", "HudOrderSep", ", "), Parts), Accepted.DeadlineDay, Accepted.Reward));
+	}
+
+	OrdersText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
+	OrdersText->SetVisibility(Lines.Num() > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+}
+
+void UCL9HUDWidget::RefreshMoney()
+{
+	const ACL9GameState* GameState = GetCL9GameState();
+	if (MoneyText == nullptr || GameState == nullptr)
+	{
+		return;
+	}
+
+	// 판 전체가 지갑 하나를 쓴다 — 호스트가 지급·차감하면 OnMoneyChanged가 모든 머신에서 발동한다
+	MoneyText->SetText(FText::Format(NSLOCTEXT("CL9", "HudMoney", "{0} 이더"), GameState->GetSharedMoney()));
+}
+
+void UCL9HUDWidget::DeriveOrderScreen()
+{
+	const ACL9GameState* GameState = GetCL9GameState();
+	UCL9UIManager* UIManager = UCL9UIManager::Get(this);
+	if (GameState == nullptr || UIManager == nullptr)
+	{
+		return;
+	}
+
+	// "지금 열려 있어야 할 Screen"은 상태에서 파생한다 (docs/systems/ui_system.md 데이터 연결):
+	// 테이블에 offer가 있으면 선택 화면, offer가 비워지면 화면 없음.
+	const bool bOffered = GameState->OfferedOrders.Num() > 0;
+
+	// **다른 전면 화면이 떠 있으면 끼어들지 않는다.** Screen 레이어는 배타적이라 여기서 열면
+	// 방금 열린 화면(새벽 결과·트럭 패널·메뉴)을 밀어낸다 — 새벽 결과는 로비 진입과 같은
+	// 순간에 열리므로 이 규칙이 없으면 플레이어가 결과를 읽을 새가 없다(2026-09-07 실측).
+	// 상태에서 파생되는 화면은 사람이 연 화면에 양보하고, 그 화면이 닫히면 틱이 다시 파생한다.
+	const FName OpenScreen = UIManager->GetOpenScreen();
+	const bool bOtherScreenOpen = !OpenScreen.IsNone() && OpenScreen != CL9UINames::OrderSelect;
+
+	if (bOffered && !bOtherScreenOpen && !UIManager->IsOpen(CL9UINames::OrderSelect))
+	{
+		UIManager->OpenWidget(CL9UINames::OrderSelect);
+	}
+	else if (!bOffered && UIManager->IsOpen(CL9UINames::OrderSelect))
+	{
+		UIManager->CloseWidget(CL9UINames::OrderSelect);
+	}
+}
+
 FText UCL9HUDWidget::ItemLabel(const FCL9CarriedItem& Item) const
 {
 	const UWorld* World = GetWorld();
@@ -362,4 +503,124 @@ ACL9GameState* UCL9HUDWidget::GetCL9GameState() const
 ACL9Character* UCL9HUDWidget::GetOwnCharacter() const
 {
 	return Cast<ACL9Character>(GetOwningPlayerPawn());
+}
+
+void UCL9HUDWidget::RefreshPeriod()
+{
+	const ACL9GameState* GameState = GetCL9GameState();
+	if (PeriodText == nullptr || GameState == nullptr)
+	{
+		return;
+	}
+
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9ProgressionDef* Progression = (Registry != nullptr) ? Registry->GetProgression() : nullptr;
+	if (Progression == nullptr)
+	{
+		PeriodText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	const int32 Day = GameState->GetCurrentDay();
+	// 정산이 언제인지는 진행 표가 정한다 — 화면은 그 판정을 앞으로 훑어 "며칠 남았는지"만 센다
+	int32 SettlementDay = INDEX_NONE;
+	for (int32 Ahead = 0; Ahead <= PeriodLookahead; ++Ahead)
+	{
+		if (Progression->IsSettlementDay(Day + Ahead))
+		{
+			SettlementDay = Day + Ahead;
+			break;
+		}
+	}
+	if (SettlementDay == INDEX_NONE)
+	{
+		PeriodText->SetVisibility(ESlateVisibility::Collapsed);   // 정산이 없는 판이다
+		return;
+	}
+
+	const int32 Quota = Progression->QuotaAt(SettlementDay);
+	if (Quota <= 0)
+	{
+		PeriodText->SetVisibility(ESlateVisibility::Collapsed);   // 목표 없음 — 빈 커브는 0을 뜻한다
+		return;
+	}
+
+	const int32 Earned = GameState->GetPeriodIncome();
+	const int32 Left = SettlementDay - Day;
+	PeriodText->SetVisibility(ESlateVisibility::HitTestInvisible);
+	PeriodText->SetText(Left == 0
+		? FText::Format(NSLOCTEXT("CL9", "HudPeriodToday", "이번 기간 {0} / 목표 {1} · 오늘 정산"), Earned, Quota)
+		: FText::Format(NSLOCTEXT("CL9", "HudPeriod", "이번 기간 {0} / 목표 {1} · 정산까지 {2}일"), Earned, Quota, Left));
+	PeriodText->SetColorAndOpacity(FSlateColor(Earned >= Quota ? PeriodMetColor : PeriodShortColor));
+}
+
+void UCL9HUDWidget::RefreshCounter()
+{
+	if (CounterText == nullptr)
+	{
+		return;
+	}
+
+	const ACL9Character* Character = WiredCharacter.Get();
+	const ACL9Counter* Counter = (Character != nullptr) ? Cast<ACL9Counter>(Character->GetFocusedActor()) : nullptr;
+	if (Counter == nullptr)
+	{
+		CounterText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	const TArray<FCL9CounterItem>& Stock = Counter->GetStock();
+	if (Stock.Num() == 0)
+	{
+		CounterText->SetText(NSLOCTEXT("CL9", "HudCounterEmpty", "창구가 비어 있다"));
+		CounterText->SetVisibility(ESlateVisibility::HitTestInvisible);
+		return;
+	}
+
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+
+	// 같은 물건은 한 줄로 묶는다 — 계란 다섯 개가 다섯 줄이 되면 읽을 수 없다
+	struct FLine
+	{
+		FName Alias;
+		FName SubAlias;
+		int32 Count = 0;
+		int32 Value = 0;
+	};
+	TArray<FLine> Grouped;
+	int32 Total = 0;
+	for (const FCL9CounterItem& Entry : Stock)
+	{
+		Total += Entry.Value;
+		FLine* Found = Grouped.FindByPredicate([&Entry](const FLine& Line)
+		{
+			return Line.Alias == Entry.ItemAlias && Line.SubAlias == Entry.ItemSubAlias;
+		});
+		if (Found == nullptr)
+		{
+			Found = &Grouped.AddDefaulted_GetRef();
+			Found->Alias = Entry.ItemAlias;
+			Found->SubAlias = Entry.ItemSubAlias;
+		}
+		++Found->Count;
+		Found->Value += Entry.Value;
+	}
+
+	TArray<FText> Lines;
+	Lines.Add(NSLOCTEXT("CL9", "HudCounterTitle", "창구에 올린 것"));
+	for (const FLine& Line : Grouped)
+	{
+		const UCL9ItemDef* ItemDef = (Registry != nullptr) ? Registry->FindItem(Line.Alias, Line.SubAlias) : nullptr;
+		const FText Name = (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : FText::FromName(Line.Alias);
+		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudCounterLine", "{0} ×{1} · {2} 이더"), Name, Line.Count, Line.Value));
+	}
+	// 합계는 올릴 때 굴린 값의 합이다 — 실제로 받는 돈은 팔 때 목적지·일자 배율이 곱해진다(economy.md 가격식)
+	Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudCounterTotal", "합 {0} 이더"), Total));
+
+	CounterText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
+	CounterText->SetVisibility(ESlateVisibility::HitTestInvisible);
 }

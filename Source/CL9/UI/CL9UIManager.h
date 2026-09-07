@@ -12,10 +12,10 @@ class UCL9UITable;
 class UCL9Widget;
 
 /**
- * Local-only UI manager (docs/systems/ui_system.md, 2026-09-05 결정): reads the
- * UI table and opens widgets into WBP_Main's layers by name. Adding a UI never
- * touches C++ — make a WBP, add a table row. A GameInstanceSubsystem so Get()
- * is a singleton with an owned lifetime (no AddToRoot).
+ * 로컬 전용 UI 매니저(docs/systems/ui_system.md, 2026-09-05 결정): UI 테이블을 읽어서
+ * 이름으로 WBP_Main의 레이어에 위젯을 연다. UI를 추가할 때 C++을 건드릴 일은 없다 —
+ * WBP를 만들고 테이블 행을 추가하면 된다. GameInstanceSubsystem이라서 Get()은
+ * 자체 수명주기를 가진 싱글턴이다(AddToRoot 불필요).
  */
 UCLASS()
 class UCL9UIManager : public UGameInstanceSubsystem
@@ -23,13 +23,13 @@ class UCL9UIManager : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	/** Singleton access from any world object */
+	/** 어떤 월드 오브젝트에서든 싱글턴에 접근한다 */
 	static UCL9UIManager* Get(const UObject* WorldContextObject);
 
-	/** Local PlayerController calls this once from BeginPlay — creates WBP_Main */
+	/** 로컬 PlayerController가 BeginPlay에서 한 번 호출한다 — WBP_Main을 생성한다 */
 	void InitForPlayer(APlayerController* PlayerController);
 
-	/** Opens the table row's widget (already open returns the instance). Screen rows close the previous screen */
+	/** 테이블 행의 위젯을 연다(이미 열려 있으면 그 인스턴스를 반환한다). Screen 행은 이전 화면을 닫는다 */
 	UFUNCTION(BlueprintCallable, Category="CL9|UI")
 	UCL9Widget* OpenWidget(FName UIName);
 
@@ -42,7 +42,7 @@ public:
 		return OpenWidgets.Contains(UIName);
 	}
 
-	/** The open Screen-layer row, or None — 중간 참가 복원이 페이즈 파생값과 대조한다 */
+	/** 현재 열려 있는 Screen 레이어 행, 없으면 None — 중간 참가 복원이 페이즈 파생값과 대조한다 */
 	UFUNCTION(BlueprintPure, Category="CL9|UI")
 	FName GetOpenScreen() const
 	{
@@ -52,10 +52,10 @@ public:
 private:
 	const UCL9UITable* GetTable() const;
 
-	/** Input mode, cursor, IMC_UI and gameplay IMCs all follow "is a Screen open" */
+	/** 입력 모드, 커서, IMC_UI와 게임플레이 IMC 모두 "Screen이 열려 있는가"를 따라간다 */
 	void UpdateInputMode();
 
-	/** Created once per local player; dies with its world (outer = PlayerController) */
+	/** 로컬 플레이어마다 한 번 생성되며, 자신의 월드와 함께 소멸한다(outer = PlayerController) */
 	UPROPERTY(Transient)
 	TObjectPtr<UCL9MainWidget> MainWidget;
 

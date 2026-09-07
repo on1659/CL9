@@ -38,14 +38,16 @@
 | `IA_Flashlight` | Pressed | 빛 켜기/끄기 — **쓴 헤드램프가 먼저**, 없으면 **들고 있는 손전등** ([light.md](light.md) · [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md) · [../plan/data/item/flashlight.md](../plan/data/item/flashlight.md)) | Server RPC (아이템 상태 Replicated) |
 | `IA_Interact` | Pressed | 컨텍스트 상호작용 — 반납·트럭 패널·창구 | Server RPC |
 | `IA_Skip` | Pressed | 시퀀스 로컬 스킵 (`bSkippable`) | 로컬 |
-| `IA_Pause` | Pressed | 일시정지 화면 (멀티에선 게임 안 멈춤) | 로컬 |
+| `IA_Pause` | Pressed | 메뉴 화면 (게임은 멈추지 않는다 — 온라인이라 멈춤 자체가 없다) | 로컬 |
+| `IA_Eat` | Pressed | 손에 든 요리를 먹는다 — 먹을 수 있는 것은 `Dish` 타입뿐이고, 효과는 행의 `EatEffects`가 정한다 ([cooking.md](cooking.md)) | Server RPC |
 | `IA_SpectateNext` | Pressed | 관전 대상 전환 — `ACL9PlayerController.SpectateNextAction` → `SpectateNext()` (관전 화면 버튼도 같은 함수) | Server RPC (호스트가 다음 생존자로 뷰 타깃 교체) |
+| `IA_Scan` | Pressed | 우클릭 스캔 — 시야 안 아이템에 이름·가격 라벨을 잠깐 띄우는 표현 (`ACL9PlayerController.ScanAction` → `OnScanRequested` → HUD, [ui.md](ui.md) 스캔) | 로컬 (판정 없음) |
 
 **키 배치 초안** (전부 리바인딩 가능 — 미결, 플레이해보고 확정):
 WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호작용/줍기·놓기** ·
-**마우스좌 던지기 차징** · R 품 교체 · F 손전등 · **M 일시정지 열기·닫기** ·
-**Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate)
-(2026-09-05: 일시정지를 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
+**마우스좌 던지기 차징** · **마우스우 스캔**(시야 안 아이템 라벨) · R 품 교체 · F 손전등 ·
+**G 먹기** · **M 메뉴 열기·닫기** · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate)
+(2026-09-05: 이 화면을 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
 PIE 정지 키와 겹쳐 에디터가 꺼진다. IMC_Gameplay·IMC_UI 모두 M→IA_Pause 한 행, Esc 행 없음).
 
 ## 던지기 차징 — 시간 판정은 호스트가
@@ -101,7 +103,7 @@ class ICL9Interactable {
 |---|---|
 | 이동·달리기·점프 | 커스텀 CMC + `FSavedMove` 예측 (1d 스텝) |
 | 줍기·놓기·던지기·교체·손전등·상호작용 | **캐릭터(소유 액터)의 Server RPC** → 호스트 판정 → 대상 액터 함수 호출 → Replicated 결과 |
-| 시점·스킵·일시정지·UI | 로컬 전용 |
+| 시점·스킵·메뉴·UI | 로컬 전용 |
 
 ## 참고
 

@@ -55,7 +55,7 @@ void UCL9SpectateWidget::RefreshTarget()
 	const APawn* TargetPawn = (PlayerController != nullptr) ? Cast<APawn>(PlayerController->GetViewTarget()) : nullptr;
 	const APlayerState* TargetState = (TargetPawn != nullptr) ? TargetPawn->GetPlayerState() : nullptr;
 
-	// Our own (dead) pawn as view target means the host's switch has not landed yet.
+	// 뷰 타겟이 자신의 (죽은) 폰이라는 것은 호스트의 전환이 아직 도착하지 않았다는 뜻이다.
 	if (TargetState == nullptr || TargetPawn == PlayerController->GetPawn())
 	{
 		TargetNameText->SetText(NSLOCTEXT("CL9", "SpectateSearching", "관전 중 · 동료를 찾는 중…"));
