@@ -109,6 +109,14 @@ public:
 	float GetStatBonus(ECL9Stat Stat) const;
 
 	/**
+	 * 이 스탯에 걸린 효과 중 가장 늦게 끝나는 것까지 남은 초, 걸린 게 없으면 0.
+	 * 만료 판정은 `GetStatBonus`와 같은 시각·같은 조건을 쓴다 — 둘이 어긋나면
+	 * "+40인데 남은 시간 0초" 같은 표시가 난다. HUD의 버프 줄이 이 값을 읽는다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetStatBonusRemaining(ECL9Stat Stat) const;
+
+	/**
 	 * 호스트 전용: 손에 든 것을 먹는다 — `Dish` 타입만 먹을 수 있고(별도 플래그를 두지 않는다),
 	 * 행의 `EatEffects`가 그대로 걸린다. 먹은 물건은 사라진다. HP는 효과 대상이 아니다 —
 	 * 회복 채널은 트럭 패드다 (docs/plan/data/rules.md).

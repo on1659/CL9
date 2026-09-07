@@ -15,6 +15,7 @@ class ACL9PlayerState;
 class UBorder;
 class UCL9ItemDef;
 class UCL9ScanLabelWidget;
+class UHorizontalBox;
 class UProgressBar;
 class UTextBlock;
 
@@ -41,9 +42,30 @@ protected:
 	 */
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	/** HP 1당 ♥ 하나(초안 — ui.md의 "HP 표시 방식 미정" 자리), 10 초과는 숫자 */
+	/**
+	 * 하트 칸들이 나란히 담긴 상자 — **자식 하나가 HP 하나다.** 남은 HP만큼 앞에서부터
+	 * 보이고 나머지는 접힌다. 칸의 생김새는 여기서 정하지 않는다: WBP_HUD에서 칸마다
+	 * 오버레이를 두고 그 안에 글자든 이미지든 넣으면 되고, 표현을 바꿔도 C++은 그대로다
+	 * (2026-09-08 사용자 — "나중에 오버레이 밑에 하트 이미지든 텍스트블록이든 붙이면 된다").
+	 * 칸이 아예 없으면 아래 HpText의 숫자 표시로 넘어간다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UHorizontalBox> HpBox;
+
+	/** 칸 수보다 HP가 많을 때(또는 칸이 없을 때) 대신 쓰는 숫자 — "HP 12" */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> HpText;
+
+	/** 지금 걸려 있는 먹기 효과 — "달리기 +40 (12초)" 한 줄씩, 없으면 접힌다 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UTextBlock> BuffText;
+
+	/**
+	 * 밤이 끝나기 직전에만 번쩍이는 경고(docs/systems/ui.md "중요 알림 번쩍임은 밤 만료
+	 * 임박에만 제한적으로"). 만료는 새벽 실패라서, 시계를 안 보고 있어도 눈에 들어와야 한다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UTextBlock> NightWarnText;
 
 	/** 손에 든 것 — PlayerState.HandItem을 그대로 반영 */
 	UPROPERTY(meta=(BindWidget))
@@ -140,6 +162,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category="HUD")
 	int32 PeriodLookahead = 30;
 
+	/** 밤이 이만큼 남은 순간부터 경고가 번쩍인다, 초 (밤 길이는 245초 — rules.md) */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float NightWarnTime = 30.f;
+
+	/** 경고가 밝아졌다 어두워졌다 하는 한 주기의 길이, 초 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float NightWarnFlashTime = 0.6f;
+
+	/** 번쩍임이 가장 어두울 때의 불투명도 — 0으로 두면 완전히 사라졌다 돌아온다 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float NightWarnDimOpacity = 0.25f;
+
 private:
 	UFUNCTION()
 	void HandleHpChanged();
@@ -185,6 +219,12 @@ private:
 	void RefreshOrders();
 	void RefreshMoney();
 
+	/** 먹기 효과는 시각으로 만료되므로 변경 이벤트가 없다 — 스태미나와 같은 이유로 매 프레임 본다 */
+	void RefreshBuffs();
+
+	/** 남은 밤이 문턱 아래로 내려간 동안에만 경고를 켜고 불투명도를 흔든다 */
+	void RefreshNightWarn(float InDeltaTime);
+
 	/** 이번 기간 수입 · 목표 · 정산까지 남은 날 */
 	void RefreshPeriod();
 
@@ -209,6 +249,9 @@ private:
 
 	/** …또는 그 아래 행이 바뀔 때도(요리는 같은 액터 위에서 행을 바꿔치기한다) */
 	TWeakObjectPtr<const UCL9ItemDef> LabeledDef;
+
+	/** 번쩍임의 위상 — 경고가 꺼져 있는 동안 0으로 돌아가 항상 밝은 지점에서 시작한다 */
+	float NightWarnPhase = 0.f;
 
 	FTimerHandle WireTimer;
 

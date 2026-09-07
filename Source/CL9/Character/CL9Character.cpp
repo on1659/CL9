@@ -628,6 +628,22 @@ float ACL9Character::GetStatBonus(ECL9Stat Stat) const
 	return Bonus;
 }
 
+float ACL9Character::GetStatBonusRemaining(ECL9Stat Stat) const
+{
+	// 만료 조건은 GetStatBonus와 글자 그대로 같아야 한다 — 같은 순회에서 가장 늦게
+	// 끝나는 시각을 잡는다. 겹쳐 먹으면 합계가 그때까지 유지되기 때문이다.
+	const float Now = GetServerTime();
+	float LatestEnd = 0.f;
+	for (const FCL9ActiveEffect& Effect : ActiveEffects)
+	{
+		if (Effect.Stat == Stat && Now < Effect.EndServerTime)
+		{
+			LatestEnd = FMath::Max(LatestEnd, Effect.EndServerTime);
+		}
+	}
+	return LatestEnd > 0.f ? LatestEnd - Now : 0.f;
+}
+
 void ACL9Character::EatInput()
 {
 	Server_Eat();

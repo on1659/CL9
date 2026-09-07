@@ -4,6 +4,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBox.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/World.h"
@@ -22,6 +23,70 @@
 #include "UI/CL9ScanLabelWidget.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
+
+namespace
+{
+	/** 버프 줄에 훑을 스탯 9종 — 표시 순서이자 전체 목록이다 (docs/plan/data/character.md 스탯 enum) */
+	const ECL9Stat AllStats[] = {
+		ECL9Stat::WalkSpeed,
+		ECL9Stat::RunSpeed,
+		ECL9Stat::CarryMult,
+		ECL9Stat::CartMult,
+		ECL9Stat::JumpVelocity,
+		ECL9Stat::JumpGravity,
+		ECL9Stat::StaminaDrainTime,
+		ECL9Stat::StaminaRegenTime,
+		ECL9Stat::StaminaMinResume
+	};
+
+	/** 스탯 이름 — docs/plan/data/character.md 표의 표기를 그대로 쓴다 */
+	FText StatLabel(ECL9Stat Stat)
+	{
+		switch (Stat)
+		{
+		case ECL9Stat::WalkSpeed:         return NSLOCTEXT("CL9", "StatWalkSpeed", "걷기");
+		case ECL9Stat::RunSpeed:          return NSLOCTEXT("CL9", "StatRunSpeed", "달리기");
+		case ECL9Stat::CarryMult:         return NSLOCTEXT("CL9", "StatCarryMult", "짐 무게");
+		case ECL9Stat::CartMult:          return NSLOCTEXT("CL9", "StatCartMult", "수레 속도");
+		case ECL9Stat::JumpVelocity:      return NSLOCTEXT("CL9", "StatJumpVelocity", "점프");
+		case ECL9Stat::JumpGravity:       return NSLOCTEXT("CL9", "StatJumpGravity", "점프 중력");
+		case ECL9Stat::StaminaDrainTime:  return NSLOCTEXT("CL9", "StatStaminaDrain", "스태미나 지속");
+		case ECL9Stat::StaminaRegenTime:  return NSLOCTEXT("CL9", "StatStaminaRegen", "스태미나 회복");
+		case ECL9Stat::StaminaMinResume:  return NSLOCTEXT("CL9", "StatStaminaResume", "탈진 회복 문턱");
+		}
+		return FText::GetEmpty();
+	}
+
+	/**
+	 * 보정값의 표기 — 스탯마다 단위가 달라서 자릿수도 다르다. 속도·점프는 cm/s라 정수로
+	 * 충분하고, 배율과 문턱은 0.05 같은 값이 오므로 소수 둘째 자리까지 본다.
+	 * 더하는 값이라 양수에는 부호를 붙인다(음수는 숫자가 부호를 달고 온다).
+	 */
+	FText StatAmountText(ECL9Stat Stat, float Value)
+	{
+		FNumberFormattingOptions Options;
+		switch (Stat)
+		{
+		case ECL9Stat::CarryMult:
+		case ECL9Stat::CartMult:
+		case ECL9Stat::StaminaMinResume:
+			Options.MinimumFractionalDigits = 2;
+			Options.MaximumFractionalDigits = 2;
+			break;
+		case ECL9Stat::StaminaDrainTime:
+		case ECL9Stat::StaminaRegenTime:
+			Options.MinimumFractionalDigits = 1;
+			Options.MaximumFractionalDigits = 1;
+			break;
+		default:
+			Options.MaximumFractionalDigits = 0;
+			break;
+		}
+
+		const FText Number = FText::AsNumber(Value, &Options);
+		return Value > 0.f ? FText::Format(NSLOCTEXT("CL9", "StatAmountPlus", "+{0}"), Number) : Number;
+	}
+}
 
 void UCL9HUDWidget::NativeConstruct()
 {
@@ -61,6 +126,8 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshCharge();
 	RefreshItemLabel();
 	RefreshCounter();
+	RefreshBuffs();
+	RefreshNightWarn(InDeltaTime);
 	// 양보했던 선택 화면을 다시 열 때가 됐는지 본다 — 화면이 닫혔다는 이벤트가 없어서 틱에서 본다
 	DeriveOrderScreen();
 }
@@ -159,19 +226,31 @@ void UCL9HUDWidget::RefreshHp()
 	}
 
 	const int32 Hp = PlayerState->Hp;
-	if (Hp <= 10)
+	const int32 Slots = (HpBox != nullptr) ? HpBox->GetChildrenCount() : 0;
+
+	// 칸이 HP를 다 담을 수 있으면 칸으로 보여준다 — 앞에서부터 남은 만큼만 켠다.
+	// 칸 안에 무엇이 들어 있는지는 여기서 알 필요가 없다(글자든 이미지든 WBP가 정한다).
+	if (Slots >= Hp && Slots > 0)
 	{
-		FString Hearts;
-		for (int32 Index = 0; Index < Hp; ++Index)
+		for (int32 Index = 0; Index < Slots; ++Index)
 		{
-			Hearts += TEXT("♥");
+			if (UWidget* Heart = HpBox->GetChildAt(Index))
+			{
+				Heart->SetVisibility(Index < Hp ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+			}
 		}
-		HpText->SetText(FText::FromString(Hearts));
+		HpBox->SetVisibility(ESlateVisibility::HitTestInvisible);
+		HpText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
 	}
-	else
+
+	// 칸이 모자라거나 아예 없으면 숫자로 물러선다 — 칸을 늘리는 것보다 이쪽이 안전하다
+	if (HpBox != nullptr)
 	{
-		HpText->SetText(FText::Format(NSLOCTEXT("CL9", "HudHp", "HP {0}"), Hp));
+		HpBox->SetVisibility(ESlateVisibility::Collapsed);
 	}
+	HpText->SetVisibility(ESlateVisibility::HitTestInvisible);
+	HpText->SetText(FText::Format(NSLOCTEXT("CL9", "HudHp", "HP {0}"), Hp));
 }
 
 void UCL9HUDWidget::RefreshCarry()
@@ -623,4 +702,78 @@ void UCL9HUDWidget::RefreshCounter()
 
 	CounterText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
 	CounterText->SetVisibility(ESlateVisibility::HitTestInvisible);
+}
+
+void UCL9HUDWidget::RefreshBuffs()
+{
+	if (BuffText == nullptr)
+	{
+		return;
+	}
+
+	const ACL9Character* Character = GetOwnCharacter();
+	if (Character == nullptr)
+	{
+		BuffText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	TArray<FText> Lines;
+	for (const ECL9Stat Stat : AllStats)
+	{
+		const float Amount = Character->GetStatBonus(Stat);
+		const int32 Seconds = FMath::CeilToInt(Character->GetStatBonusRemaining(Stat));
+		// 값이 0이면 서로 상쇄된 것이고, 남은 시간이 0이면 이미 끝난 것이다 — 둘 다 보여줄 게 없다
+		if (FMath::IsNearlyZero(Amount) || Seconds <= 0)
+		{
+			continue;
+		}
+		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffLine", "{0} {1} ({2}초)"),
+			StatLabel(Stat), StatAmountText(Stat, Amount), Seconds));
+	}
+
+	if (Lines.Num() == 0)
+	{
+		BuffText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	BuffText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
+	BuffText->SetVisibility(ESlateVisibility::HitTestInvisible);
+}
+
+void UCL9HUDWidget::RefreshNightWarn(float InDeltaTime)
+{
+	if (NightWarnText == nullptr)
+	{
+		return;
+	}
+
+	const ACL9GameState* GameState = GetCL9GameState();
+	const float Remaining = (GameState != nullptr && GameState->GetPhase() == ECL9NightPhase::Night)
+		? GameState->GetNightRemaining()
+		: 0.f;
+
+	if (Remaining <= 0.f || Remaining > NightWarnTime)
+	{
+		// 꺼져 있는 동안 위상을 되돌린다 — 다음에 켜질 때 항상 가장 밝은 지점에서 시작한다
+		NightWarnPhase = 0.f;
+		NightWarnText->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+
+	NightWarnText->SetText(FText::Format(NSLOCTEXT("CL9", "HudNightWarn", "밤이 끝난다 · {0}초"),
+		FMath::CeilToInt(Remaining)));
+	NightWarnText->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	if (NightWarnFlashTime > 0.f)
+	{
+		NightWarnPhase = FMath::Fmod(NightWarnPhase + InDeltaTime, NightWarnFlashTime);
+		const float Wave = 0.5f * (1.f + FMath::Cos(2.f * PI * NightWarnPhase / NightWarnFlashTime));
+		NightWarnText->SetRenderOpacity(FMath::Lerp(NightWarnDimOpacity, 1.f, Wave));
+	}
+	else
+	{
+		NightWarnText->SetRenderOpacity(1.f);
+	}
 }
