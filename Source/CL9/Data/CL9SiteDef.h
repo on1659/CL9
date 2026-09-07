@@ -70,13 +70,13 @@ public:
 
 	/** 1층 열 수 (각 통로를 따라 있는 칸) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCount = 8;
+	int32 ColCount = 16;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	int32 AisleCountB1 = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCountB1 = 6;
+	int32 ColCountB1 = 12;
 
 	/** 통로 폭 (cm) — 문과 계단 복도가 이 값을 공유한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
@@ -84,7 +84,7 @@ public:
 
 	/** 통로를 따라 있는 칸의 길이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float ColWidth = 1000.f;
+	float ColWidth = 500.f;
 
 	/** 두 통로 사이 우리 행의 깊이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
@@ -92,7 +92,7 @@ public:
 
 	/** 우리 행을 가로질러 뚫는 개구부 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float OpenWidth = 360.f;
+	float OpenWidth = 200.f;
 
 	/** 통로를 가로막는 플러그 (cm, 통로 방향으로) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
@@ -100,10 +100,10 @@ public:
 
 	/** ★ 난이도 손잡이 — 1층에서 통과 가능한 간선 수, 적을수록 막다른 길이 많아진다 (site.md 개구부) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpen1F = 87;
+	int32 TargetOpen1F = 175;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpenB1 = 54;
+	int32 TargetOpenB1 = 105;
 
 	/** 층마다 있는 반납 항아리 수, 모든 칸 근처에 하나씩 있도록 분산시킨다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")

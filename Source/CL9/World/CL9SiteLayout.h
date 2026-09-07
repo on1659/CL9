@@ -19,16 +19,16 @@
 struct FCL9HenhouseParams
 {
 	int32 AisleCount1F = 10;
-	int32 ColCount1F = 8;
+	int32 ColCount1F = 16;
 	int32 AisleCountB1 = 8;
-	int32 ColCountB1 = 6;
+	int32 ColCountB1 = 12;
 	float AisleWidth = 250.f;
-	float ColWidth = 1000.f;
+	float ColWidth = 500.f;
 	float RowDepth = 120.f;
-	float OpenWidth = 360.f;
+	float OpenWidth = 200.f;
 	float PlugWidth = 180.f;
-	int32 TargetOpen1F = 87;
-	int32 TargetOpenB1 = 54;
+	int32 TargetOpen1F = 175;
+	int32 TargetOpenB1 = 105;
 	int32 JarCount1F = 7;
 	int32 JarCountB1 = 6;
 
