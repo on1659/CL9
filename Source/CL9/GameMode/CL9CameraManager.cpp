@@ -4,7 +4,7 @@
 
 ACL9CameraManager::ACL9CameraManager()
 {
-	// set the min/max pitch
+	// 최소/최대 피치 설정
 	ViewPitchMin = -70.0f;
 	ViewPitchMax = 80.0f;
 }

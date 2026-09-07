@@ -33,8 +33,8 @@ void ACL9ActorBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Level-placed actors carry the same values on every machine, so no OnRep
-	// ever fires for them — BeginPlay owns the initial load.
+	// 레벨에 배치된 액터는 모든 머신에서 같은 값을 가지므로 이들에 대해서는
+	// OnRep이 결코 발동하지 않는다 — 초기 로드는 BeginPlay가 담당한다.
 	if (!Alias.IsNone())
 	{
 		LoadData();

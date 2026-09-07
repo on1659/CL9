@@ -23,32 +23,32 @@
 
 namespace
 {
-	/** A waypoint counts as reached inside this distance, in cm */
+	/** 이 거리 이내면 경유점에 도달한 것으로 친다, cm 단위 */
 	constexpr float WaypointTolerance = 25.f;
 
-	/** Idle dwell between wander legs, in seconds */
+	/** 배회 구간 사이의 대기 시간, 초 단위 */
 	constexpr float WanderDwellMin = 1.f;
 	constexpr float WanderDwellMax = 3.f;
 
-	/** Client mesh smoothing speed against 20Hz root snaps */
+	/** 20Hz 루트 스냅에 대한 클라이언트 메시 보간 속도 */
 	constexpr float SmoothingInterpSpeed = 12.f;
 
-	/** How often a chase re-paths to the moving target, in seconds */
+	/** 추격 중 움직이는 대상으로 경로를 다시 잡는 주기, 초 단위 */
 	constexpr float ChaseRepathInterval = 0.5f;
 
-	/** Investigate hop spread around the last sensed spot, in cm */
+	/** 마지막 감지 지점 주변에서 조사 이동이 흩어지는 범위, cm 단위 */
 	constexpr float SearchHopRadius = 300.f;
 
-	/** Navmesh projection extent — bodies float Radius above the floor */
+	/** navmesh 투영 범위 — 몸체는 바닥 위로 Radius만큼 떠 있다 */
 	const FVector NavProjectExtent(500.f, 500.f, 500.f);
 
-	/** Attack pause after landing a catch, in seconds — presentation constant like the dwell above */
+	/** 잡기 성공 뒤의 공격 휴지기, 초 단위 — 위의 대기 시간과 같은 연출용 상수다 */
 	constexpr float CatchPauseSeconds = 0.8f;
 
-	/** A gaze counts as aimed at the sleeper above this view dot (docs WakeSightRadius 기상 보류) */
+	/** 이 시선 내적값 이상이면 잠든 대상을 조준한 것으로 친다 (docs WakeSightRadius 기상 보류) */
 	constexpr float GazeMinAimDot = 0.75f;
 
-	/** Walking counts as movement above this speed, in cm/s (goose WakeRadius trigger) */
+	/** 이 속도 이상이면 걷는 것으로 쳐서 움직임으로 판정한다, cm/s 단위 (거위 WakeRadius 트리거) */
 	constexpr float WakeMoveMinSpeed = 10.f;
 }
 
@@ -56,9 +56,10 @@ ACL9Monster::ACL9Monster()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	SetReplicateMovement(true);
+	Kind = ECL9ActorKind::Monster;
 
-	// Walls (WorldStatic) block; pawns, items and other monsters only overlap —
-	// the corridor threat is detection, never body blocking (2026-09-03 결정).
+	// 벽(WorldStatic)은 막지만, 폰·아이템·다른 몬스터는 서로 겹쳐 지나간다 —
+	// 복도의 위협은 몸으로 막는 게 아니라 발각이다 (2026-09-03 결정).
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
@@ -108,7 +109,7 @@ void ACL9Monster::LoadData()
 
 	SphereComponent->SetSphereRadius(Def->Radius);
 	MeshComponent->SetRelativeLocation(FVector(0.f, 0.f, -Def->Radius));
-	// Face the actor forward — the pack's model axis is corrected from the row
+	// 액터가 정면을 보게 한다 — 팩의 모델 축은 행 값으로 보정된다
 	MeshComponent->SetRelativeRotation(FRotator(0.f, Def->MeshYawOffset, 0.f));
 
 	if (USkeletalMesh* Mesh = Def->SkeletalMesh.LoadSynchronous())
@@ -128,12 +129,12 @@ void ACL9Monster::LoadData()
 		}
 	}
 
-	// The individual's HP rolls once, on the host (conventions § 4)
+	// 개체별 HP는 호스트에서 한 번만 굴린다 (conventions § 4)
 	if (HasAuthority() && Hp == 0)
 	{
 		Hp = FMath::RandRange(Def->HpMin, Def->HpMax);
 
-		// Sleepy species (goose) start asleep — the map spawner may override later (⑤)
+		// 잠 많은 종(거위)은 잠든 채로 시작한다 — 맵 스포너가 나중에(⑤) 이를 덮어쓸 수 있다
 		if (Def->SleepTime > 0.f)
 		{
 			EnterState(ECL9MonsterState::Asleep);
@@ -153,8 +154,9 @@ void ACL9Monster::Tick(float DeltaSeconds)
 		return;
 	}
 
-	// Plain actors snap on 20Hz movement replication — the visual mesh chases
-	// the root instead so clients see smooth motion (docs/systems/monster.md 3c).
+	// 일반 액터는 20Hz 이동 복제로 인해 위치가 툭툭 튄다 — 대신 시각 메시가
+	// 루트를 뒤쫓아가게 해서 클라이언트에게 매끄러운 움직임으로 보이게 한다
+	// (docs/systems/monster.md 3c).
 	if (!bSmoothingInitialized)
 	{
 		SmoothedLocation = GetActorLocation();
@@ -182,15 +184,15 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	CatchCooldownRemaining = FMath::Max(CatchCooldownRemaining - DeltaSeconds, 0.f);
 	AlertCooldownRemaining = FMath::Max(AlertCooldownRemaining - DeltaSeconds, 0.f);
 
-	// Rage pins the gauge for its whole run — hunt mode after a death scream
-	// bypasses ChaseCooldown and never calms down early (docs/systems/monster.md 경보).
+	// 분노는 지속되는 동안 게이지를 고정한다 — 죽음의 비명 이후의 사냥 모드는
+	// ChaseCooldown을 우회하며 일찍 가라앉는 법이 없다 (docs/systems/monster.md 경보).
 	if (RageRemaining > 0.f)
 	{
 		RageRemaining -= DeltaSeconds;
 		DetectGauge = 1.f;
 	}
 
-	// Sleep, the wake telegraph and stun have no working senses
+	// 수면, 기상 예고, 스턴 상태에서는 감각이 작동하지 않는다
 	const bool bSensesAwake = State != ECL9MonsterState::Asleep
 		&& State != ECL9MonsterState::WakeTelegraph
 		&& State != ECL9MonsterState::Stun;
@@ -205,8 +207,8 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	{
 	case ECL9MonsterState::Asleep:
 	{
-		// Wake triggers: walking inside WakeRadius (the walking-is-silent
-		// exception), running inside HearRunRadius, or a pending alarm spot.
+		// 기상 트리거: WakeRadius 안에서 걷는 것(걷기는 조용하다는 예외 규칙),
+		// HearRunRadius 안에서 달리는 것, 혹은 대기 중인 경보 지점.
 		bool bTriggered = PendingInvestigateSpot.IsSet();
 		for (TActorIterator<ACL9Character> It(GetWorld()); !bTriggered && It; ++It)
 		{
@@ -233,7 +235,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 
 	case ECL9MonsterState::WakeTelegraph:
 	{
-		// Every player sees the flap-and-cry before the monster is live
+		// 몬스터가 실제로 움직이기 전, 모든 플레이어가 날개짓과 울음소리를 본다
 		WakeTelegraphRemaining -= DeltaSeconds;
 		if (WakeTelegraphRemaining <= 0.f)
 		{
@@ -255,7 +257,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	case ECL9MonsterState::Patrol:
 	case ECL9MonsterState::Return:
 	{
-		// Sleepy species drift back to sleep after SleepTime calm seconds
+		// 잠 많은 종은 평온한 시간이 SleepTime만큼 지나면 다시 잠으로 빠져든다
 		if (State == ECL9MonsterState::Wander && MonsterDef->SleepTime > 0.f && DetectGauge <= 0.f)
 		{
 			CalmSeconds += DeltaSeconds;
@@ -270,8 +272,8 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			CalmSeconds = 0.f;
 		}
 
-		// A full gauge alerts — straight to the chase when the target is in
-		// sight, to the last sensed spot otherwise (docs/systems/monster.md).
+		// 게이지가 가득 차면 경계 태세로 들어간다 — 대상이 시야 안에 있으면
+		// 곧장 추격, 아니면 마지막 감지 지점으로 향한다 (docs/systems/monster.md).
 		if (DetectGauge >= 1.f && bAlertGateOpen)
 		{
 			EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
@@ -356,7 +358,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		const bool bSeesTarget = Target != nullptr && bHadSight;
 		ChaseLoseRemaining = bSeesTarget ? MonsterDef->ChaseLoseTime : ChaseLoseRemaining - DeltaSeconds;
 
-		// Dropping everything releases the chase past DeaggroRadius
+		// 뭐든 다 내려놓으면 DeaggroRadius를 넘어가는 순간 추격에서 풀려난다
 		const float TargetDistance = Target ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
 		const bool bDeaggro = Target != nullptr
 			&& MonsterDef->DeaggroRadius > 0.f
@@ -370,7 +372,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			break;
 		}
 
-		// The alarmist stands and cries before the alarm lands (goose AlertWindup)
+		// 경보를 울리는 개체는 경보가 발동하기 전 멈춰 서서 운다 (거위 AlertWindup)
 		if (AlertWindupRemaining > 0.f)
 		{
 			AlertWindupRemaining -= DeltaSeconds;
@@ -383,7 +385,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			break;
 		}
 
-		// The catch: inside CatchRadius with the KillCooldown reloaded
+		// 잡기: CatchRadius 안에 있고 KillCooldown이 다 재충전됐을 때
 		if (MonsterDef->CatchRadius > 0.f && TargetDistance <= MonsterDef->CatchRadius && CatchCooldownRemaining <= 0.f)
 		{
 			HostCatch(*Target);
@@ -405,8 +407,8 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		CatchPauseRemaining -= DeltaSeconds;
 		if (CatchPauseRemaining <= 0.f)
 		{
-			// Straight back to the chase without EnterState — the budget and
-			// lose timers keep running, a catch never refills them.
+			// EnterState를 거치지 않고 곧장 추격으로 돌아간다 — 예산과 놓침
+			// 타이머는 계속 흘러가며, 잡기는 이 값들을 다시 채워 주지 않는다.
 			State = ECL9MonsterState::Chase;
 			ChaseRepathRemaining = 0.f;
 			ApplyState();
@@ -416,7 +418,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 
 	case ECL9MonsterState::Stun:
 	{
-		// A shove flings it back over the stun; walls stop the slide
+		// 떠밀리면 스턴이 지속되는 동안 뒤로 튕겨나간다 — 벽에 닿으면 미끄러짐이 멈춘다
 		if (KnockbackRemaining > 0.f)
 		{
 			const float StepDist = FMath::Min(KnockbackSpeed * DeltaSeconds, KnockbackRemaining);
@@ -427,7 +429,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		StunRemaining -= DeltaSeconds;
 		if (StunRemaining <= 0.f)
 		{
-			// A hit is a provocation — the attacker gets chased, cooldown or not
+			// 얻어맞으면 그 자체가 도발이다 — 쿨다운과 무관하게 공격자를 추격한다
 			if (SensedCharacter.IsValid() && !SensedCharacter->IsDead())
 			{
 				EnterState(ECL9MonsterState::Chase);
@@ -451,15 +453,15 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	}
 
 	default:
-		// Dead is guarded at the top; nothing else remains
+		// Dead는 함수 맨 위에서 걸러지므로, 남는 경우가 없다
 		break;
 	}
 }
 
 void ACL9Monster::SenseTick(float DeltaSeconds)
 {
-	// Three inputs, one gauge (docs/systems/monster.md 감각 파이프라인):
-	// sight with hysteresis, run noise from the action table, and proximity.
+	// 입력 세 가지, 게이지 하나 (docs/systems/monster.md 감각 파이프라인):
+	// 히스테리시스가 있는 시야, 행동 테이블의 달리기 소음, 근접도.
 	ACL9Character* Best = nullptr;
 	float BestDistance = TNumericLimits<float>::Max();
 	bool bBestBySight = false;
@@ -480,7 +482,7 @@ void ACL9Monster::SenseTick(float DeltaSeconds)
 		if (const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>())
 		{
 			const UCL9RulesDef* Rules = GameInstance->GetDefRegistry() ? GameInstance->GetDefRegistry()->GetRules() : nullptr;
-			// 걷기는 어그로 0 — only running carries (docs/plan/data/rules.md 소리)
+			// 걷기는 어그로 0 — 소리는 달릴 때만 실린다 (docs/plan/data/rules.md 소리)
 			bHeard = Rules != nullptr
 				&& Distance <= Rules->RunNoiseRadius
 				&& Candidate->GetCL9CharacterMovement()->IsRunning();
@@ -530,12 +532,12 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 	switch (NewState)
 	{
 	case ECL9MonsterState::Chase:
-		// The day curve stretches the budget — same flock, longer chases (docs/systems/monster.md 일자 스케일링)
+		// 일자 곡선이 예산을 늘린다 — 같은 무리라도 밤이 깊을수록 추격이 길어진다 (docs/systems/monster.md 일자 스케일링)
 		ChaseBudgetRemaining = MonsterDef->ChaseBudget * GetDangerScale();
 		ChaseLoseRemaining = MonsterDef->ChaseLoseTime;
 		ChaseRepathRemaining = 0.f;
-		// The first alert of an episode wakes the pack — the alarmist (goose)
-		// cries after a wind-up, everyone else alerts silently right away
+		// 한 에피소드의 첫 경보가 팩 전체를 깨운다 — 경보를 울리는 개체(거위)는
+		// 준비 동작 뒤에 울고, 나머지는 그 즉시 소리 없이 경계 태세로 들어간다
 		// (docs/systems/monster.md 경보).
 		if (!bPackAlarmFired && MonsterDef->PackAlarmRadius > 0.f)
 		{
@@ -626,8 +628,8 @@ bool ACL9Monster::StartPathTo(const FVector& WorldLocation)
 		return false;
 	}
 
-	// The body sphere floats Radius above the floor, so raw locations miss the
-	// navmesh — project both ends before pathing.
+	// 몸통 구체는 바닥 위로 Radius만큼 떠 있어서, 원본 위치 그대로는 navmesh를
+	// 벗어난다 — 경로를 잡기 전에 양 끝 지점을 먼저 투영한다.
 	FNavLocation StartOnNav;
 	FNavLocation TargetOnNav;
 	if (!NavSystem->ProjectPointToNavigation(GetActorLocation(), StartOnNav, NavProjectExtent)
@@ -662,8 +664,8 @@ bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
 		return !PathPoints.IsValidIndex(PathIndex);
 	}
 
-	// Turn model: the heading chases the target under TurnRate, and the wider
-	// the remaining turn, the slower the run (TurnDrag) — corners buy time.
+	// 회전 모델: 진행 방향이 TurnRate 아래에서 목표를 뒤쫓아가고, 남은 회전각이
+	// 클수록 더 느려진다(TurnDrag) — 코너가 시간을 벌어주는 이유다.
 	const float DesiredYaw = ToTarget.Rotation().Yaw;
 	HeadingYaw = FMath::FixedTurn(HeadingYaw, DesiredYaw, MonsterDef->TurnRate * DeltaSeconds);
 	const float RemainingTurn = FMath::Abs(FMath::FindDeltaAngleDegrees(HeadingYaw, DesiredYaw));
@@ -676,7 +678,7 @@ bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
 
 	if (Hit.bBlockingHit)
 	{
-		// Wedged against something the path missed — replan next tick
+		// 경로가 놓친 무언가에 끼여 버렸다 — 다음 틱에 다시 경로를 짠다
 		PathPoints.Reset();
 		return true;
 	}
@@ -685,8 +687,8 @@ bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
 
 void ACL9Monster::HostCatch(ACL9Character& Target)
 {
-	// One catch, then the KillCooldown reload — three quick hits must be
-	// impossible (docs/systems/monster.md 잡기 = 공격).
+	// 한 번 잡으면 KillCooldown이 재충전돼야 한다 — 연속 세 번 타격은
+	// 불가능해야 한다 (docs/systems/monster.md 잡기 = 공격).
 	Target.OnDamage(MonsterDef->CatchDamage, this);
 	CatchCooldownRemaining = MonsterDef->KillCooldown;
 	EnterState(ECL9MonsterState::Catch);
@@ -706,7 +708,7 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 		return;
 	}
 
-	// A non-lethal hit staggers, then the attacker gets hunted
+	// 즉사가 아닌 타격은 경직시키고, 이후 공격자가 사냥당한다
 	if (ACL9Character* Attacker = Cast<ACL9Character>(Source))
 	{
 		SensedCharacter = Attacker;
@@ -726,7 +728,7 @@ void ACL9Monster::OnShove(AActor* Shover)
 		return;
 	}
 
-	// Knockback away from the shover, spread across the stun (common.md 반격).
+	// 떠민 쪽 반대 방향으로 넉백하며, 그 이동은 스턴 시간에 걸쳐 나뉜다 (common.md 반격).
 	FVector Away = GetActorLocation() - Shover->GetActorLocation();
 	Away.Z = 0.f;
 	KnockbackDir = Away.GetSafeNormal();
@@ -737,7 +739,7 @@ void ACL9Monster::OnShove(AActor* Shover)
 	KnockbackRemaining = MonsterDef->PushKnockback;
 	KnockbackSpeed = MonsterDef->PushKnockback / FMath::Max(MonsterDef->PushStun, UE_KINDA_SMALL_NUMBER);
 
-	// A shove provokes — after the stun it chases the culprit
+	// 떠밀림도 도발이다 — 스턴이 끝나면 범인을 쫓아간다
 	if (ACL9Character* Attacker = Cast<ACL9Character>(Shover))
 	{
 		SensedCharacter = Attacker;
@@ -754,7 +756,7 @@ void ACL9Monster::Die(AActor* Source)
 	EnterState(ECL9MonsterState::Dead);
 	DetectGauge = 0.f;
 
-	// The hunting reward drops as items, never direct ether (docs/plan/data/monster/common.md)
+	// 사냥 보상은 아이템으로 떨어질 뿐, 직접 에테르로 주어지는 법은 없다 (docs/plan/data/monster/common.md)
 	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
 	{
 		const float FloorZ = GetActorLocation().Z - MonsterDef->Radius;
@@ -774,9 +776,9 @@ void ACL9Monster::Die(AActor* Source)
 		}
 	}
 
-	// The death scream: direct hearers rage for their RageTime, and the rage
-	// spreads once more through RevengeRadius/RevengeTime. Zone checks arrive
-	// with the map's zones (⑤) — the flat map is one zone.
+	// 죽음의 비명: 직접 들은 개체는 자신의 RageTime만큼 분노하고, 그 분노는
+	// RevengeRadius/RevengeTime을 통해 한 번 더 퍼져 나간다. 구역 판정은 맵에
+	// 구역이 생기면(⑤) 함께 들어온다 — 지금의 평지 맵은 구역이 하나뿐이다.
 	TArray<ACL9Monster*> Hearers;
 	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
 	{
@@ -847,7 +849,7 @@ void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
 	case ECL9MonsterState::Wander:
 	case ECL9MonsterState::Patrol:
 	case ECL9MonsterState::Return:
-		// 경보는 새 경계 — ChaseCooldown still gates it (docs/systems/monster.md)
+		// 경보는 새 경계 — ChaseCooldown이 여전히 이를 막는 문턱으로 작동한다 (docs/systems/monster.md)
 		if (ChaseCooldownRemaining <= 0.f)
 		{
 			LastSensedLocation = AlarmLocation;
@@ -880,7 +882,7 @@ void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSecon
 	case ECL9MonsterState::Return:
 	case ECL9MonsterState::Break:
 	case ECL9MonsterState::Investigate:
-		// Rage ignores ChaseCooldown by design (경보 문서: 쿨다운은 만능 방패가 아니다)
+		// 분노는 설계상 ChaseCooldown을 무시한다 (경보 문서: 쿨다운은 만능 방패가 아니다)
 		EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
 		break;
 	default:
@@ -890,8 +892,8 @@ void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSecon
 
 void ACL9Monster::TryWake()
 {
-	// A watched sleeper stays down — no waking inside a player's gaze
-	// (WakeSightRadius, retried every WakeRetryTime).
+	// 누군가 지켜보고 있는 잠든 개체는 계속 잠들어 있는다 — 플레이어의 시선
+	// 안에서는 깨어나지 않는다 (WakeSightRadius, WakeRetryTime마다 재시도).
 	if (IsHeldByGaze())
 	{
 		WakeRetryRemaining = MonsterDef->WakeRetryTime;
@@ -935,9 +937,9 @@ void ACL9Monster::OnRep_State()
 
 void ACL9Monster::ApplyState()
 {
-	// The AnimBP now switches locomotion/hurt/attack/death by the replicated
-	// state (docs/systems/animation.md); presentation here only keeps the mesh
-	// facing corrected per the row.
+	// 이제 AnimBP가 복제된 상태에 따라 이동/피격/공격/사망 애니메이션을 전환한다
+	// (docs/systems/animation.md); 여기서의 표현 처리는 행 값에 따른 메시 방향
+	// 보정만 담당한다.
 	if (MeshComponent != nullptr)
 	{
 		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
@@ -947,7 +949,7 @@ void ACL9Monster::ApplyState()
 
 float ACL9Monster::GetDangerScale() const
 {
-	// Derived runtime value on the game state (site BaseDanger × DangerCurve, 1 in the lobby)
+	// 게임 상태에서 파생되는 런타임 값 (부지 BaseDanger × DangerCurve, 로비에서는 1)
 	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
 	return CL9GameState != nullptr ? CL9GameState->GetDangerScale() : 1.f;
 }

@@ -7,9 +7,9 @@
 #include "CL9RulesDef.generated.h"
 
 /**
- * The one global rules asset — values no character can differ on: noise,
- * death, the night clock, carry friction (docs/plan/data/rules.md). Defaults
- * mirror the documented table; 미정 columns stay 0 until decided.
+ * 유일한 전역 규칙 애셋 — 어떤 캐릭터도 다르게 가질 수 없는 값들이다: 소음,
+ * 죽음, 밤 시계, 소지 마찰 (docs/plan/data/rules.md). 기본값은 문서화된 표를
+ * 그대로 반영하며, 미정 컬럼은 결정되기 전까지 0으로 둔다.
  */
 UCLASS()
 class UCL9RulesDef : public UCL9DefBase
@@ -19,103 +19,103 @@ class UCL9RulesDef : public UCL9DefBase
 public:
 	virtual void Validate(TArray<FString>& OutErrors) const override;
 
-	// -- Sound (monsters hear inside these radii — consumed from build-order ③) --
+	// -- 소리 (몬스터가 이 반경 안에서 듣는다 — build-order ③에서 사용) --
 
-	/** Noise radius while running, in cm */
+	/** 달릴 때의 소음 반경, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float RunNoiseRadius = 390.f;
 
-	/** Picking up while walking, in cm */
+	/** 걷는 중에 줍는 소음 반경, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float PickupQuietRadius = 150.f;
 
-	/** Picking up right after running, in cm */
+	/** 달린 직후에 줍는 소음 반경, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float PickupLoudRadius = 390.f;
 
-	/** Shoving, in cm */
+	/** 밀치기, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float PushNoiseRadius = 255.f;
 
-	/** Decoy, in cm */
+	/** 미끼, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float DecoyRadius = 330.f;
 
-	/** A pickup counts as loud when the carrier ran within this window, in seconds */
+	/** 이 시간 안에 달린 적이 있으면 줍기가 시끄러운 것으로 간주된다, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Sound")
 	float RecentRunTime = 1.f;
 
-	// -- Death and recovery --
+	// -- 죽음과 회복 --
 
-	/** Seconds from death to spectating a teammate — 초안 3, tuned by playing (docs/plan/data/rules.md) */
+	/** 죽은 뒤 팀원 관전으로 전환되기까지의 시간, 초 단위 — 초안 3, 플레이하며 조정 (docs/plan/data/rules.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
 	float SpectateDelay = 3.f;
 
-	/** Seconds standing on the truck pad before HP refills — 초안 5, tuned by playing */
+	/** 트럭 패드에 서서 HP가 다시 차기까지의 시간, 초 단위 — 초안 5, 플레이하며 조정 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
 	float TruckPadHealTime = 5.f;
 
-	/** Seconds a leaver's pawn lingers */
+	/** 이탈자의 폰이 남아있는 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
 	float LeaverGraceTime = 3.f;
 
-	/** Threats never wake or spawn inside this radius, in cm */
+	/** 이 반경 안에서는 위협이 절대 깨어나거나 스폰되지 않는다, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
 	float ThreatActMinRadius = 420.f;
 
-	// -- Night clock --
+	// -- 밤 시계 --
 
-	/** Night length in seconds — expiry is a dawn failure */
+	/** 밤 길이, 초 단위 — 시간이 다 되면 새벽 실패가 된다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float NightLength = 245.f;
 
-	/** Base seconds until the blackout */
+	/** 정전까지 걸리는 기본 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float DarkBase = 185.f;
 
-	/** Seconds one jar return pulls the blackout forward */
+	/** 항아리 반납 한 번이 정전 시각을 앞당기는 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float DarkAccel = 4.f;
 
-	/** Earliest possible blackout time in seconds */
+	/** 가능한 가장 이른 정전 시각, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float DarkMin = 125.f;
 
-	/** Dawn screen length in seconds — 미정 */
+	/** 새벽 화면 길이, 초 단위 — 미정 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float DawnLength = 0.f;
 
-	// -- Throwing and carrying --
+	// -- 던지기와 소지 --
 
-	/** Hand↔pocket swap lock in seconds — deliberate carry friction */
+	/** 손↔주머니 전환 잠금 시간, 초 단위 — 의도적인 소지 마찰이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float SwapTime = 1.2f;
 
-	/** Seconds of carrying-while-running until the shake gauge fills */
+	/** 달리며 소지하는 상태가 지속되어 흔들림 게이지가 가득 차기까지의 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ShakeFullTime = 3.f;
 
-	/** Shake gauge recovery time in seconds */
+	/** 흔들림 게이지 회복 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ShakeDrainTime = 1.5f;
 
-	/** Throw speed at zero charge, in cm/s */
+	/** 충전 0일 때의 투척 속도, cm/s 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ThrowMinSpeed = 600.f;
 
-	/** Throw speed at full charge, in cm/s */
+	/** 완전 충전 시의 투척 속도, cm/s 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ThrowMaxSpeed = 1680.f;
 
-	/** Seconds to full charge */
+	/** 완전 충전까지 걸리는 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ThrowChargeTime = 0.85f;
 
-	/** Hand height above the floor in cm — where carried items sit */
+	/** 바닥 위 손 높이, cm 단위 — 소지 아이템이 위치하는 곳 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float CarryHeight = 120.f;
 
-	/** Pickup reach in cm */
+	/** 줍기 사거리, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float PickRadius = 120.f;
 };

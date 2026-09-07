@@ -26,9 +26,9 @@ void ACL9NightLighting::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Pin auto-exposure (min=max) so the dark scene can't adapt itself bright.
-	// Set at runtime, not in the constructor, so a serialized map value can't
-	// override it (docs/systems/light.md 렌더 세팅).
+	// 자동 노출을 고정한다(min=max) — 어두운 씬이 스스로 밝게 적응해버리지 못하게 막는다.
+	// 생성자가 아니라 런타임에 설정해서, 맵에 직렬화된 값이 이를 덮어쓰지 못하게 한다
+	// (docs/systems/light.md 렌더 세팅).
 	if (ExposureControl != nullptr)
 	{
 		ExposureControl->Settings.bOverride_AutoExposureMinBrightness = true;
@@ -39,7 +39,7 @@ void ACL9NightLighting::BeginPlay()
 
 	ResolveLights();
 
-	// The game state may not be replicated in yet — retry until it is.
+	// 게임 스테이트가 아직 복제되지 않았을 수 있다 — 될 때까지 재시도한다.
 	if (!TryBindGameState())
 	{
 		FTimerHandle RetryHandle;
@@ -110,7 +110,7 @@ bool ACL9NightLighting::TryBindGameState()
 	BoundGameState = CL9GameState;
 	CL9GameState->OnNightPhaseChanged.AddDynamic(this, &ACL9NightLighting::OnNightPhaseChanged);
 
-	// Snap to the current phase so a mid-join looks right immediately.
+	// 현재 단계로 즉시 맞춰서 중간 참가자에게도 곧바로 올바르게 보이도록 한다.
 	float Sun_ = 0.f, SkyV = 0.f;
 	FLinearColor Color = BaselineSunColor;
 	SelectTarget(CL9GameState->GetPhase(), CL9GameState->IsBlackout(), Sun_, SkyV, Color);
@@ -123,7 +123,7 @@ bool ACL9NightLighting::TryBindGameState()
 
 void ACL9NightLighting::OnNightPhaseChanged(ECL9NightPhase /*NewPhase*/)
 {
-	// Tick reads the phase directly; this only guarantees an immediate reaction.
+	// Tick이 단계를 직접 읽어가므로, 이 함수는 그저 즉각적인 반응을 보장할 뿐이다.
 }
 
 void ACL9NightLighting::SelectTarget(ECL9NightPhase Phase, bool bBlackout, float& OutSun, float& OutSky, FLinearColor& OutColor) const

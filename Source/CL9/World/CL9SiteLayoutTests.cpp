@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-// The generator is the one piece every machine must agree on byte for byte —
-// these guard determinism, connectivity and the openings knob (docs/systems/map.md).
+// 생성기는 모든 머신이 바이트 단위로 완전히 일치해야 하는 유일한 부분이다 —
+// 아래 테스트들은 결정성, 연결성, 개구부 조절값을 검증한다(docs/systems/map.md).
 
 #include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
@@ -96,7 +96,7 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("cages placed"), Count(Night, CL9SegKind::Cage()) > 0);
 	TestTrue(TEXT("plugs placed"), Count(Night, CL9SegKind::Plug()) > 0);
 
-	// Every footprint must have positive area and sit inside the boundary
+	// 모든 바닥 면적은 양수여야 하고 경계 안쪽에 있어야 한다
 	for (const FCL9SiteSeg& Seg : Night)
 	{
 		const FVector2D Size = Seg.Rect.GetSize();
@@ -112,7 +112,7 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 		}
 	}
 
-	// The spine cell of 1F faces the door: Y = 0
+	// 1층 중심 통로 셀은 문을 향한다: Y = 0
 	const FVector2D Spine = CL9SiteLayout::CellCenter(Params, Frame, 0, Frame.Spine[0], 0);
 	TestTrue(TEXT("spine aisle centred on the door"), FMath::IsNearlyZero(Spine.Y, 0.01f));
 	return true;

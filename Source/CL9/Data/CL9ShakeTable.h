@@ -9,29 +9,30 @@
 
 class UCameraShakeBase;
 
-/** One shake row: which asset, and the gauge value it starts at */
+/** 흔들림 행 하나: 어떤 애셋을 쓸지, 그리고 그것이 시작되는 게이지 값 */
 USTRUCT()
 struct FCL9ShakeInfo
 {
 	GENERATED_BODY()
 
-	/** Amplitude, frequency and blend times live in this asset — never as columns here */
+	/** 진폭, 주파수, 블렌드 시간은 모두 이 애셋 안에 있다 — 여기 컬럼으로는 절대 두지 않는다 */
 	UPROPERTY(EditAnywhere, Category="Shake")
 	TSoftClassPtr<UCameraShakeBase> Shake;
 
 	/**
-	 * Plays once the driving gauge (normalized 0..1) drops below this; the scale
-	 * ramps to full at 0. Stamina reads it as "tired enough to show".
+	 * 구동 게이지(정규화된 0..1 값)가 이 값 아래로 떨어지면 재생되며, 세기는
+	 * 0에서 최대치까지 올라간다. 스태미나는 이를 "티가 날 만큼 지쳤다"로 읽는다.
 	 */
 	UPROPERTY(EditAnywhere, Category="Shake")
 	float StartAt = 0.5f;
 };
 
 /**
- * Camera shake table (2026-09-05 결정, docs/systems/character.md 흔들림): adding a
- * shake is making the shake asset and adding a row here — the rules asset never
- * grows a column per shake. Same shape as UCL9UITable, and assigned in
- * BP_CL9GameInstance so C++ holds zero asset paths (conventions § 5).
+ * 카메라 흔들림 테이블 (2026-09-05 결정, docs/systems/character.md 흔들림): 흔들림을
+ * 추가한다는 것은 흔들림 애셋을 만들고 여기에 행을 추가하는 것이다 — rules
+ * 애셋에 흔들림마다 컬럼이 늘어나는 일은 없다. UCL9UITable과 같은 구조이며,
+ * BP_CL9GameInstance에서 할당되므로 C++는 애셋 경로를 전혀 갖지 않는다
+ * (conventions § 5).
  */
 UCLASS()
 class UCL9ShakeTable : public UDataAsset
@@ -39,14 +40,14 @@ class UCL9ShakeTable : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	/** Name → shake. The key is what the presentation code looks up */
+	/** 이름 → 흔들림. 표현 코드가 조회하는 키다 */
 	UPROPERTY(EditAnywhere, Category="Shake")
 	TMap<FName, FCL9ShakeInfo> Rows;
 };
 
-/** Row names C++ looks up — everything else stays data-only */
+/** C++가 조회하는 행 이름들 — 그 외에는 전부 데이터 전용으로 남는다 */
 namespace CL9ShakeNames
 {
-	/** Tired breathing, driven by normalized stamina */
+	/** 지친 숨소리, 정규화된 스태미나로 구동된다 */
 	inline const FName Stamina(TEXT("Stamina"));
 }

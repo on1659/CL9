@@ -19,7 +19,7 @@ ACL9TruckPad::ACL9TruckPad()
 
 	HealZone = CreateDefaultSubobject<UBoxComponent>(TEXT("HealZone"));
 	HealZone->SetupAttachment(MeshComponent);
-	// The BP child scales the pad mesh flat and wide — the zone keeps its own size
+	// BP 자식 클래스가 패드 메시를 넓적하게 스케일하므로, 존은 자기 크기를 그대로 유지한다
 	HealZone->SetUsingAbsoluteScale(true);
 	HealZone->SetBoxExtent(FVector(200.f, 200.f, 120.f));
 	HealZone->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
@@ -34,7 +34,7 @@ void ACL9TruckPad::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// The ruling is the host's — clients only see the HP arrive
+	// 판정은 호스트의 몫이다 — 클라이언트는 체력값이 도착하는 것만 본다
 	SetActorTickEnabled(HasAuthority());
 }
 
@@ -60,7 +60,7 @@ void ACL9TruckPad::Tick(float DeltaSeconds)
 		const ACL9PlayerState* PlayerState = Character ? Character->GetPlayerState<ACL9PlayerState>() : nullptr;
 		if (PlayerState == nullptr || PlayerState->IsDead() || PlayerState->Hp >= PlayerState->MaxHp)
 		{
-			continue;   // dead, unhurt or not rolled yet — nothing to heal
+			continue;   // 죽었거나, 다치지 않았거나, 아직 롤되지 않았거나 — 회복할 게 없다
 		}
 
 		Present.Add(Character);
@@ -74,7 +74,7 @@ void ACL9TruckPad::Tick(float DeltaSeconds)
 		}
 	}
 
-	// Stepping off forgets the count — the stay has to be continuous
+	// 밖으로 나가면 카운트를 잊는다 — 머무름은 끊기지 않고 이어져야 한다
 	for (auto It = TimeOnPad.CreateIterator(); It; ++It)
 	{
 		if (!Present.Contains(It.Key().Get()))

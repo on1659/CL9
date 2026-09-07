@@ -48,7 +48,7 @@ void ACL9Jar::Interact(ACL9Character* Who)
 		Who->HostConsumeHeldItem();
 	}
 
-	// 수레째 반납 (2026-09-02 적재 규칙): a pulled cart empties its whole bed.
+	// 수레째 반납 (2026-09-02 적재 규칙): 끌고 있는 수레는 짐칸 전체를 비운다.
 	if (ACL9Cart* Cart = Who->GetPullingCart())
 	{
 		Cart->ReturnAllLoaded(GameState);

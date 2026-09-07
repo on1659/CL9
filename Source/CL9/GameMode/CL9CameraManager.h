@@ -7,16 +7,16 @@
 #include "CL9CameraManager.generated.h"
 
 /**
- *  Basic First Person camera manager.
- *  Limits min/max look pitch.
+ *  기본 1인칭 카메라 매니저.
+ *  최소/최대 시야각(피치)을 제한한다.
  */
 UCLASS()
 class ACL9CameraManager : public APlayerCameraManager
 {
 	GENERATED_BODY()
-	
+
 public:
 
-	/** Constructor */
+	/** 생성자 */
 	ACL9CameraManager();
 };

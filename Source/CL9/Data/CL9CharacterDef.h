@@ -11,10 +11,10 @@ class USkeletalMesh;
 class USkeleton;
 
 /**
- * One playable character row (docs/plan/data/character.md). Body numbers and
- * stamina are ruling values every machine reads from its local registry;
- * meshes and colors are presentation. Defaults below mirror the documented
- * table defaults — the saved asset is what the game actually reads.
+ * 플레이 가능한 캐릭터 한 행 (docs/plan/data/character.md). 신체 수치와
+ * 스태미나는 모든 머신이 자신의 로컬 레지스트리에서 읽는 판정 값이고,
+ * 메시와 색상은 연출용이다. 아래 기본값은 문서화된 테이블 기본값을
+ * 그대로 반영한 것이며, 실제로 게임이 읽는 것은 저장된 애셋이다.
  */
 UCLASS()
 class UCL9CharacterDef : public UCL9DefBase
@@ -24,99 +24,99 @@ class UCL9CharacterDef : public UCL9DefBase
 public:
 	virtual void Validate(TArray<FString>& OutErrors) const override;
 
-	// -- Appearance (presentation only) --
+	// -- 외형 (연출 전용) --
 
-	/** Full body mesh other players see; the base Mesh column is the item StaticMesh, hence a separate field */
+	/** 다른 플레이어에게 보이는 전신 메시. 베이스의 Mesh 컬럼은 아이템용 StaticMesh라서 별도 필드로 둔다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
 
-	/** Skeleton the body mesh and its animations share */
+	/** 전신 메시와 애니메이션이 공유하는 스켈레톤 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftObjectPtr<USkeleton> Skeleton;
 
-	/** Full body animation blueprint */
+	/** 전신 애니메이션 블루프린트 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftClassPtr<UAnimInstance> AnimBP;
 
-	/** First person view mesh — only the owner sees it (docs/systems/animation.md 1인칭 팔) */
+	/** 1인칭 시점 메시 — 소유자에게만 보인다 (docs/systems/animation.md 1인칭 팔) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftObjectPtr<USkeletalMesh> ArmsMesh;
 
-	/** First person view animation blueprint */
+	/** 1인칭 시점 애니메이션 블루프린트 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	TSoftClassPtr<UAnimInstance> ArmsAnimBP;
 
-	/** Slot color — the only way to tell players apart in the dark, so keep it saturated */
+	/** 슬롯 색상 — 어둠 속에서 플레이어를 구분할 유일한 수단이므로 채도를 높게 유지한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Appearance")
 	FLinearColor TintColor = FLinearColor::White;
 
-	// -- Body (ruling values) --
+	// -- 신체 (판정 값) --
 
-	/** Walk speed in cm/s */
+	/** 걷기 속도 (cm/s) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float WalkSpeed = 396.f;
 
-	/** Run speed in cm/s */
+	/** 달리기 속도 (cm/s) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float RunSpeed = 654.f;
 
-	/** Multiplier on carried weight — below 1 carries lighter */
+	/** 소지 무게에 곱하는 배율 — 1보다 작으면 더 가볍게 든다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float CarryMult = 1.f;
 
-	/** Multiplier while pulling the cart */
+	/** 카트를 끄는 동안의 배율 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float CartMult = 0.75f;
 
-	/** Capsule radius in cm — corridor width 255cm is built on this, meshes fit the capsule and never the reverse */
+	/** 캡슐 반지름 (cm) — 복도 폭 255cm가 이 값을 기준으로 정해졌다. 메시가 캡슐에 맞춰야지 그 반대는 안 된다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float CapsuleRadius = 39.f;
 
-	/** Capsule half height in cm */
+	/** 캡슐 절반 높이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float CapsuleHalfHeight = 90.f;
 
-	/** First person camera height above the floor in cm */
+	/** 바닥 기준 1인칭 카메라 높이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float EyeHeight = 156.f;
 
-	/** Jump initial speed in cm/s — apex 156cm with the default gravity below */
+	/** 점프 초기 속도 (cm/s) — 아래 기본 중력값 기준으로 정점 높이는 156cm */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float JumpVelocity = 780.f;
 
-	/** Gravity while airborne in cm/s² */
+	/** 공중에 떠 있는 동안의 중력 (cm/s²) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Body")
 	float JumpGravity = 1950.f;
 
-	// -- Health --
+	// -- 체력 --
 
-	/** Minimum hit points */
+	/** 최소 체력 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
 	int32 HpMin = 3;
 
-	/** Maximum hit points */
+	/** 최대 체력 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
 	int32 HpMax = 3;
 
-	/** Stagger after a cushioned hit, in seconds */
+	/** 완충된 피격 후 경직 시간 (초) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
 	float HurtStun = 0.35f;
 
-	/** Seconds a catch keeps the character down and unable to move (초안 — docs/plan/data/character.md) */
+	/** 붙잡혔을 때 쓰러진 채 움직이지 못하는 시간 (초) (초안 — docs/plan/data/character.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Health")
 	float KnockdownTime = 1.5f;
 
-	// -- Stamina (0..1 normalized; the three clauses in docs/systems/character.md all hang on these) --
+	// -- 스태미나 (0..1로 정규화됨. docs/systems/character.md의 세 조항 모두 이 값들에 달려 있다) --
 
-	/** Seconds from full to empty while running */
+	/** 달리는 동안 가득 찬 상태에서 0이 될 때까지 걸리는 시간 (초) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
 	float StaminaDrainTime = 6.f;
 
-	/** Seconds from empty to full while not running */
+	/** 달리지 않는 동안 0에서 가득 찰 때까지 걸리는 시간 (초) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
 	float StaminaRegenTime = 8.f;
 
-	/** Exhaustion clears only once stamina recovers past this (hysteresis against edge flicker) */
+	/** 탈진 상태는 스태미나가 이 값을 넘어 회복해야만 풀린다 (경계값에서 깜빡이지 않도록 하는 히스테리시스) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
 	float StaminaMinResume = 0.25f;
 };

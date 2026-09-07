@@ -9,8 +9,8 @@
 
 UCL9DefRegistry* UCL9GameInstance::CreateStandaloneRegistry(UObject* Outer)
 {
-	// The project's game instance class from the engine config — read directly so
-	// the module needs no EngineSettings dependency for one editor tool
+	// 엔진 설정에서 프로젝트의 게임 인스턴스 클래스를 가져온다 — 에디터 도구 하나
+	// 때문에 이 모듈이 EngineSettings에 의존하지 않도록 직접 읽는다
 	FString ClassPath;
 	GConfig->GetString(TEXT("/Script/EngineSettings.GameMapsSettings"), TEXT("GameInstanceClass"), ClassPath, GEngineIni);
 	const UClass* Class = FSoftClassPath(ClassPath).TryLoadClass<UGameInstance>();

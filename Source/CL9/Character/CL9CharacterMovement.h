@@ -9,11 +9,11 @@
 class UCL9CharacterDef;
 
 /**
- * Predicted movement. The run flag and stamina live here — not in PlayerState —
- * so the server and the autonomous proxy derive the same speed from the same
- * compressed input flag and never rubber-band (docs/systems/character.md,
- * conventions § 4 예외). Speeds and stamina timings are read live from the
- * character table row, never stored in code.
+ * 예측 무브먼트. 달리기 플래그와 스태미나는 PlayerState가 아니라 여기에 있다 —
+ * 그래야 서버와 자율 프록시가 같은 압축 입력 플래그에서 같은 속도를 도출해서
+ * 러버밴딩이 생기지 않는다 (docs/systems/character.md,
+ * conventions § 4 예외). 속도와 스태미나 타이밍은 코드에 저장하지 않고
+ * 캐릭터 테이블 행에서 실시간으로 읽는다.
  */
 UCLASS()
 class UCL9CharacterMovement : public UCharacterMovementComponent
@@ -24,24 +24,24 @@ public:
 	virtual float GetMaxSpeed() const override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 
-	/** Called when the character's table row is applied; the row outlives the pawn (registry-owned) */
+	/** 캐릭터의 테이블 행이 적용될 때 호출된다; 이 행은 폰보다 오래 산다 (레지스트리 소유) */
 	void SetCharacterDef(const UCL9CharacterDef* InCharacterDef);
 
-	/** Local input only — the flag reaches the server inside the compressed move flags, never as a direct speed change */
+	/** 로컬 입력 전용 — 이 플래그는 직접적인 속도 변경이 아니라 압축된 무브 플래그 안에 실려 서버로 간다 */
 	void SetWantsToRun(bool bNewWantsToRun);
 
-	/** True while the run speed is in effect and the character actually moves (anim blueprints read this) */
+	/** 달리기 속도가 적용되어 캐릭터가 실제로 움직이는 동안 true (애님 블루프린트가 이 값을 읽는다) */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	bool IsRunning() const;
 
-	/** Normalized 0..1 (docs/plan/data/character.md 스태미나) */
+	/** 0..1로 정규화된 값 (docs/plan/data/character.md 스태미나) */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetStamina() const
 	{
 		return Stamina;
 	}
 
-	/** Exhaustion latch — running stays impossible until stamina passes StaminaMinResume */
+	/** 탈진 래치 — 스태미나가 StaminaMinResume을 넘기 전까지는 달리기가 불가능하다 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	bool IsExhausted() const
 	{
@@ -53,14 +53,14 @@ protected:
 	virtual void UpdateCharacterStateBeforeMovement(float DeltaSeconds) override;
 
 private:
-	/** The local table row — same asset on every machine (conventions § 5) */
+	/** 로컬 테이블 행 — 모든 머신에서 같은 에셋이다 (conventions § 5) */
 	UPROPERTY()
 	TObjectPtr<const UCL9CharacterDef> CharacterDef;
 
-	/** Run input state, carried per move by FSavedMove_CL9 */
+	/** 달리기 입력 상태, FSavedMove_CL9가 무브마다 실어 나른다 */
 	bool bWantsToRun = false;
 
-	/** 0..1 — simulated inside the move path so server corrections replay it deterministically */
+	/** 0..1 — 무브 경로 안에서 시뮬레이션되므로 서버 보정이 이걸 결정론적으로 재생할 수 있다 */
 	float Stamina = 1.f;
 
 	/** 탈진 래치 (docs/systems/character.md 스태미나 세 조항) */
@@ -69,7 +69,7 @@ private:
 	friend class FSavedMove_CL9;
 };
 
-/** Saved move carrying the run flag plus a stamina snapshot so replays restart from the right state */
+/** 달리기 플래그와 스태미나 스냅샷을 함께 실어 나르는 저장된 무브 — 리플레이가 올바른 상태에서 다시 시작하도록 한다 */
 class FSavedMove_CL9 : public FSavedMove_Character
 {
 public:
@@ -88,7 +88,7 @@ public:
 	virtual void PrepMoveFor(ACharacter* Character) override;
 };
 
-/** Allocates FSavedMove_CL9 for the autonomous proxy */
+/** 자율 프록시를 위해 FSavedMove_CL9를 할당한다 */
 class FNetworkPredictionData_Client_CL9 : public FNetworkPredictionData_Client_Character
 {
 public:

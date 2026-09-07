@@ -1,8 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-// Structural check, not a snapshot test (build-order ⑥ 예외): adding a
-// Replicated field without registering it in GetLifetimeReplicatedProps breaks
-// synchronization silently — this catches it for every CL9 actor class.
+// 스냅샷 테스트가 아니라 구조 검사다 (build-order ⑥ 예외): Replicated 필드를
+// 추가하면서 GetLifetimeReplicatedProps에 등록하지 않으면 동기화가 조용히
+// 깨지는데, 이 테스트가 모든 CL9 액터 클래스에 대해 그것을 잡아낸다.
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"

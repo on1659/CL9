@@ -9,9 +9,9 @@
 class UTexture2D;
 
 /**
- * Presentation-only special behavior attached to a table row via the Instanced
- * Gimmicks column (docs/plan/build-order.md 원칙 4). Gimmicks that affect
- * rulings are expressed as table values instead, read by host ruling code.
+ * Instanced Gimmicks 컬럼을 통해 테이블 행에 붙는, 연출 전용 특수 동작이다
+ * (docs/plan/build-order.md 원칙 4). 판정에 영향을 주는 기믹은 대신 테이블
+ * 값으로 표현하고 호스트의 판정 코드가 그 값을 읽는다.
  */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced)
 class UCL9Gimmick : public UObject
@@ -20,9 +20,9 @@ class UCL9Gimmick : public UObject
 
 public:
 	/**
-	 * Presentation hook, called on every machine after the actor loads its row
-	 * (and again on state swaps — implementations must tolerate re-entry).
-	 * Never touch ruling state here: hosts rule through table values only.
+	 * 연출용 훅. 액터가 자신의 행을 로드한 뒤 모든 머신에서 호출되며(상태가
+	 * 바뀔 때도 다시 호출되므로 구현은 재진입을 견뎌야 한다), 판정 상태는
+	 * 절대 여기서 건드리지 않는다 — 호스트는 오직 테이블 값으로만 판정한다.
 	 */
 	virtual void OnActorLoaded(AActor* Actor)
 	{
@@ -30,11 +30,12 @@ public:
 };
 
 /**
- * Parent of every game data table row (docs/data/schema.md). The lookup key is
- * Alias + SubAlias, never the file name. A UObject (not a DataTable row
- * struct) because Instanced gimmicks need a UObject owner. Rows normally live
- * inline inside a UCL9DefTable — one table asset per kind, Excel-style
- * (2026-09-02 결정) — but a standalone asset per row still loads.
+ * 모든 게임 데이터 테이블 행의 부모 클래스다 (docs/data/schema.md). 조회 키는
+ * 파일 이름이 아니라 항상 Alias + SubAlias다. Instanced 기믹이 UObject
+ * 소유자를 필요로 하기 때문에 (DataTable 행 구조체가 아니라) UObject로
+ * 만들었다. 행은 보통 UCL9DefTable 안에 인라인으로 산다 — 종류마다 테이블
+ * 애셋 하나씩, 엑셀 방식이다 (2026-09-02 결정) — 하지만 행 하나짜리 독립
+ * 애셋도 여전히 로드된다.
  */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced)
 class UCL9DefBase : public UPrimaryDataAsset
@@ -43,41 +44,42 @@ class UCL9DefBase : public UPrimaryDataAsset
 
 public:
 	/**
-	 * Appends one message per broken required field. Rows with errors stay out
-	 * of the registry so they never mix into gameplay (schema.md EDefStatus).
-	 * The required set differs per subclass — the base only demands Alias.
+	 * 필수 필드가 비어 있을 때마다 메시지를 하나씩 추가한다. 에러가 있는 행은
+	 * 레지스트리에 들어가지 않아서 게임플레이에 섞이지 않는다 (schema.md의
+	 * EDefStatus). 필수 필드 목록은 서브클래스마다 다르다 — 베이스 클래스는
+	 * Alias만 요구한다.
 	 */
 	virtual void Validate(TArray<FString>& OutErrors) const;
 
-	/** Identifier and lookup key, e.g. egg / chicken / farmer_a */
+	/** 식별자이자 조회 키. 예: egg / chicken / farmer_a */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FName Alias;
 
-	/** Optional sub-classification, e.g. cooked / burnt — None means the base state */
+	/** 선택적 하위 분류. 예: cooked / burnt — None이면 기본 상태를 뜻한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FName SubAlias;
 
-	/** Localized display name */
+	/** 현지화된 표시 이름 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FText DisplayName;
 
-	/** Optional localized description */
+	/** 선택적인 현지화 설명 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FText Description;
 
-	/** UI icon — soft so opening a table does not load every texture */
+	/** UI 아이콘 — 테이블을 열 때 모든 텍스처가 로드되지 않도록 소프트 참조로 둔다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	TSoftObjectPtr<UTexture2D> Icon;
 
-	/** World mesh for item-like rows; characters/monsters use their own skeletal mesh columns */
+	/** 아이템류 행의 월드 메시. 캐릭터/몬스터는 자신의 스켈레탈 메시 컬럼을 따로 쓴다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	TSoftObjectPtr<UStaticMesh> Mesh;
 
-	/** Dedicated BP for this row. Empty means the shared per-kind BP, which is the default */
+	/** 이 행 전용 BP. 비워두면 기본값인 종류별 공용 BP를 쓴다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	TSoftClassPtr<AActor> ActorClass;
 
-	/** Presentation-only special behaviors, added per row in the editor */
+	/** 연출 전용 특수 동작들. 에디터에서 행마다 추가한다 */
 	UPROPERTY(EditAnywhere, Instanced, Category="Data")
 	TArray<TObjectPtr<UCL9Gimmick>> Gimmicks;
 };
