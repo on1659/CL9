@@ -73,11 +73,15 @@
   `Slot`(Kitchen/Carryable) · `bUsableAsTool` · `ItemDef`(실물이 될 아이템 행). 이름·아이콘·전용 BP는 베이스 컬럼을
   쓴다. 로드 검사가 `ItemDef`가 실제 아이템 행인지 확인한다 — 끊어져 있으면 사도 실물이 안 나온다.
   에셋은 `DA_EquipmentTable`(Content/Data).
-- **판정(호스트)**: `ACL9GameMode::CanBuy(alias)` → `ECL9BuyResult`(Ok/NoRow/**NotInLobby**/Locked/MaxOwned/
-  NotEnoughMoney). `BuyEquipment(alias)`가 그 판정을 다시 돌린 뒤 `GameState.Deduct(Price)`하고
-  `SpawnEquipmentAtTruck`으로 트럭 옆에 실물을 스폰한다. **스폰이 실패하면 이더를 빼지 않는다.**
-- **보유 수**: `GetOwnedCount(alias)` — 월드에 나와 있는 실물을 센다. 세어 둔 숫자를 들고 있지 않는 이유는
-  장비를 두고 오면 잃기 때문이다.
+- **판정**: `ACL9GameState::CanBuy(alias)` → `ECL9BuyResult`(Ok/NoRow/**NotInLobby**/Locked/MaxOwned/
+  NotEnoughMoney). **GameMode가 아니라 GameState에 둔다** (2026-09-07) — 클라이언트에는 GameMode가
+  없어서, 거기 두면 클라의 구매 화면이 버튼을 끄지도 이유를 적지도 못한다. 호스트의 실제 구매
+  (`ACL9GameMode::BuyEquipment`)도 같은 함수를 부른 뒤 `GameState.Deduct(Price)`하고
+  `SpawnEquipmentAtTruck`으로 트럭 옆에 실물을 스폰한다 — 규칙은 한 곳에만 있다.
+  **스폰이 실패하면 이더를 빼지 않는다.**
+- **보유 수**: `ACL9GameState::GetOwnedCount(alias)` — 월드에 나와 있는 실물을 센다(클라에서도 복제된
+  실물을 센다 — 스폰 복제가 늦으면 잠깐 어긋날 수 있는 표시용 값이다). 세어 둔 숫자를 들고 있지 않는
+  이유는 장비를 두고 오면 잃기 때문이다.
 - **네트워크**: `ACL9PlayerController::BuyEquipment`(BlueprintCallable → Server RPC) — **클라이언트도 살 수 있다.**
   자금이 판 공유라 누가 눌러도 같은 지갑에서 나가고 산 물건은 전원에게 실물로 보인다(주문 확정이 호스트 전용인
   것과 다르다). 거절은 `Client_BuyRejected` → `OnBuyRejected`로 **누른 사람에게만** 간다. 성공은 `OnMoneyChanged`로 안다.
@@ -87,7 +91,9 @@
   밖에 있는 장비를 파괴한다. 손에 들거나 수레에 싣고 돌아온 것은 사람과 함께 트럭 곁에 있으므로 거리가 알아서 걸러낸다.
 - **세이브**: `UCL9SaveGame.OwnedEquipment`(alias 배열, 버전 2) — 새벽에 살아남은 것만 적히고, 불러오면 트럭 옆에
   다시 스폰된다. 표에서 사라진 alias는 로그를 남기고 버린다.
-- **미구현**: 상점 화면(`WBP_Shop` — UI 세션), 구매 연출(Multicast·소리), `Slot=Kitchen` 장비(주방 고정물),
+- **화면**: `WBP_Shop`(UCL9ShopWidget, UI 표 `Shop` 행) — 품목 카드에 `가격 · N/M 보유 · 사유`를 적고,
+  `CanBuy`가 Ok가 아니면 버튼을 끈다. 화면은 판정을 만들지 않는다([ui.md](ui.md) 트럭 패널).
+- **미구현**: 구매 연출(Multicast·소리), `Slot=Kitchen` 장비(주방 고정물),
   `bUsableAsTool`을 읽는 곳(밀치기는 지금 맨손이어도 된다).
 - 치트: `cl9.buy`(인자 없으면 목록·가격·보유·구매 가능 여부 출력), `cl9.buy <alias|번호>`(구매).
 
