@@ -21,10 +21,10 @@
 내부(케이지·마개·주방·둥지·개구멍)뿐이다.
 
 ```
-1층: 통로 10 × 열 8 (통로 폭 250cm · 열 폭 1000cm) — 축사 내부 8000 × 3580cm
-지하: 통로 8 × 열 6 — flapIn(일방향 개구멍) · stair로 연결
-개구부 목표: 1층 87 · 지하 54  ← 난이도 손잡이 (줄이면 막다른 길이 는다)
-항아리: 1층 7 · 지하 6         ← 어느 셀에서든 1500u 안에 있게 배치
+1층: 통로 10 × 열 16 (통로 폭 250cm · 열 폭 500cm) — 축사 내부 8000 × 3580cm
+지하: 통로 8 × 열 12 — flapIn(일방향 개구멍) · stair로 연결
+개구부 목표: 1층 175 · 지하 105  ← 난이도 손잡이 (줄이면 막다른 길이 늘고 도주로가 준다)
+항아리: 1층 7 · 지하 6           ← 어느 셀에서든 1500u 안에 있게 배치
 ```
 
 맵 조각 11종(`truck` · `stair` · `flapIn` 등)은 [../plan/data/segkind.md](../plan/data/segkind.md).
@@ -72,6 +72,7 @@ cl9.showjars           // 항아리 배치·1500u 커버리지 확인
 
 - 격자 컬럼·개구부 값: [../plan/data/site.md](../plan/data/site.md)
 - 조각 표·테마·팩 교체 절차: [asset-swap.md](asset-swap.md)
+- 리썰컴퍼니 던전 생성 분석(참고): [../plan/reference-lethal-company.md](../plan/reference-lethal-company.md)
 - 스폰 개수·시간 규칙: [raiding.md](raiding.md) · [balance.md](balance.md)
 - 개발용 테스트 맵 관리 주의(.umap 비대): [../plan/build-order.md](../plan/build-order.md) "아직 모르는 것"
 
