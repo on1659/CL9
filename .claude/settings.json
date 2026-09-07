@@ -10,7 +10,8 @@
       "PowerShell(git diff:*)",
       "PowerShell(git log:*)",
       "PowerShell(git show:*)",
-      "PowerShell(git branch:*)"
+      "PowerShell(git branch:*)",
+      "mcp__unreal-mcp"
     ]
   }
 }
