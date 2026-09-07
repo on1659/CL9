@@ -6,9 +6,9 @@ void UCL9SegKindDef::Validate(TArray<FString>& OutErrors) const
 {
 	Super::Validate(OutErrors);
 
-	if (Mesh.IsNull())
+	if (Piece.IsNone())
 	{
-		OutErrors.Add(TEXT("Mesh is empty — nothing to stand on the footprint."));
+		OutErrors.Add(TEXT("Piece is empty — nothing to stand on the footprint (see the piece table)."));
 	}
 	if (Height <= 0.f)
 	{

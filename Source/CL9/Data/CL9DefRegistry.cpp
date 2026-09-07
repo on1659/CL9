@@ -3,11 +3,13 @@
 #include "Data/CL9DefRegistry.h"
 #include "CL9.h"
 #include "Data/CL9CharacterDef.h"
+#include "Data/CL9EquipmentDef.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9PieceDef.h"
 #include "Data/CL9SegKindDef.h"
 #include "Data/CL9SiteDef.h"
 #include "World/CL9SiteLayout.h"
@@ -20,8 +22,8 @@
 
 void UCL9DefList::RefreshFromFolder()
 {
-	// The scan root is wherever this asset lives — no path in code. Rows
-	// register by existing under the list's folder.
+	// 스캔 루트는 이 애셋이 있는 위치 그대로다 — 코드에 경로를 적지 않는다.
+	// 행은 이 목록의 폴더 밑에 존재하기만 하면 등록된다.
 	const FString RootPath = FPackageName::GetLongPackagePath(GetPackage()->GetName());
 
 	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
@@ -35,7 +37,7 @@ void UCL9DefList::RefreshFromFolder()
 	TArray<FAssetData> Assets;
 	AssetRegistry.GetAssets(Filter, Assets);
 
-	// Deterministic order keeps cl9.list numbering stable between rescans
+	// 순서를 결정적으로 유지해야 재스캔 사이에도 cl9.list 번호가 안정적으로 유지된다
 	Assets.Sort([](const FAssetData& A, const FAssetData& B)
 	{
 		return A.GetSoftObjectPath().ToString() < B.GetSoftObjectPath().ToString();
@@ -52,8 +54,8 @@ void UCL9DefList::RefreshFromFolder()
 
 void UCL9DefList::PreSave(FObjectPreSaveContext SaveContext)
 {
-	// Every editor save rescans, so the list never goes stale; cooking keeps
-	// the content that was saved.
+	// 에디터에서 저장할 때마다 다시 스캔하므로 목록이 낡은 채로 남지 않는다.
+	// 쿠킹 시에는 저장된 내용을 그대로 유지한다.
 	if (!SaveContext.IsCooking())
 	{
 		RefreshFromFolder();
@@ -105,9 +107,10 @@ void UCL9DefRegistry::Init(const UCL9DefList* DefList)
 	CheckItemReferences();
 	CheckSiteReferences();
 	CheckOrderReferences();
+	CheckEquipmentReferences();
 
-	// Relation checks need the whole registry, so they run after every table
-	// loaded — A1/A2 compare character rows against monster rows.
+	// 관계 검사는 레지스트리 전체가 필요하므로 모든 테이블이 로드된 뒤에
+	// 실행한다 — A1/A2는 캐릭터 행을 몬스터 행과 비교한다.
 	for (const UCL9CharacterDef* Character : OrderedCharacters)
 	{
 		CheckCharacterRelations(*Character);
@@ -208,6 +211,16 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		Orders.Add(Def->Alias, OrderDef);
 		OrderedOrders.Add(OrderDef);
 	}
+	else if (const UCL9EquipmentDef* EquipmentDef = Cast<UCL9EquipmentDef>(Def))
+	{
+		if (Equipment.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate equipment key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		Equipment.Add(Def->Alias, EquipmentDef);
+		OrderedEquipment.Add(EquipmentDef);
+	}
 	else if (const UCL9SegKindDef* SegKindDef = Cast<UCL9SegKindDef>(Def))
 	{
 		if (SegKinds.Contains(Def->Alias))
@@ -218,6 +231,35 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		SegKinds.Add(Def->Alias, SegKindDef);
 		OrderedSegKinds.Add(SegKindDef);
 	}
+	else if (const UCL9PieceDef* PieceDef = Cast<UCL9PieceDef>(Def))
+	{
+		if (Pieces.Contains(Key))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate piece key '%s'/'%s' — the first row stays."),
+				*Def->GetName(), *Def->Alias.ToString(), *Def->SubAlias.ToString());
+			return;
+		}
+		Pieces.Add(Key, PieceDef);
+		OrderedPieces.Add(PieceDef);
+	}
+}
+
+const UCL9PieceDef* UCL9DefRegistry::FindPiece(FName Role, FName Theme) const
+{
+	if (const UCL9PieceDef* const* Found = Pieces.Find(TPair<FName, FName>(Role, Theme)))
+	{
+		return *Found;
+	}
+	// 테마가 그 역할을 갖추지 않았으면 테마 칸이 빈 공용 행으로 떨어진다 —
+	// 회색 상자처럼 테마를 타지 않는 조각이 여기 산다.
+	if (!Theme.IsNone())
+	{
+		if (const UCL9PieceDef* const* Shared = Pieces.Find(TPair<FName, FName>(Role, NAME_None)))
+		{
+			return *Shared;
+		}
+	}
+	return nullptr;
 }
 
 const UCL9SegKindDef* UCL9DefRegistry::FindSegKind(FName Alias) const
@@ -243,6 +285,25 @@ void UCL9DefRegistry::CheckOrderReferences() const
 				UE_LOG(LogCL9, Error, TEXT("%s: Ingredients names '%s'/'%s' which is missing or broken — nobody can fill this order."),
 					*Order->GetName(), *Need.ItemAlias.ToString(), *Need.ItemSubAlias.ToString());
 			}
+		}
+	}
+}
+
+const UCL9EquipmentDef* UCL9DefRegistry::FindEquipment(FName Alias) const
+{
+	const UCL9EquipmentDef* const* Found = Equipment.Find(Alias);
+	return Found ? *Found : nullptr;
+}
+
+void UCL9DefRegistry::CheckEquipmentReferences() const
+{
+	for (const UCL9EquipmentDef* Equip : OrderedEquipment)
+	{
+		// 장비를 아이템 시스템에 연결하는 유일한 끈이다 — 끊어져 있으면 사도 실물이 안 나온다
+		if (FindItem(Equip->ItemDef.ItemAlias, Equip->ItemDef.ItemSubAlias) == nullptr)
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: ItemDef names '%s'/'%s' which is missing or broken — buying it would spawn nothing."),
+				*Equip->GetName(), *Equip->ItemDef.ItemAlias.ToString(), *Equip->ItemDef.ItemSubAlias.ToString());
 		}
 	}
 }
@@ -274,15 +335,24 @@ void UCL9DefRegistry::CheckSiteReferences() const
 			}
 		}
 
-		// The generator names its pieces by kind — a missing row leaves holes in the map
+		// 생성기는 조각들을 종류로 지칭한다 — 행이 없으면 맵에 구멍이 생긴다
 		if (Site->Generator == ECL9Generator::Henhouse)
 		{
 			for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::Cage(), CL9SegKind::Plug(), CL9SegKind::Stair(), CL9SegKind::FlapIn(), CL9SegKind::Floor(), CL9SegKind::Ceiling()})
 			{
-				if (FindSegKind(Kind) == nullptr)
+				const UCL9SegKindDef* SegKind = FindSegKind(Kind);
+				if (SegKind == nullptr)
 				{
 					UE_LOG(LogCL9, Error, TEXT("%s: the henhouse generator needs seg kind '%s' which is missing or broken — those boxes are skipped."),
 						*Site->GetName(), *Kind.ToString());
+					continue;
+				}
+				// 테마를 절반만 채워 두면 맵이 까맣게 나오고 원인을 찾기 어렵다 —
+				// 여기서 미리 잡는다 (docs/systems/asset-swap.md 테마 완결성).
+				if (FindPiece(SegKind->Piece, Site->Theme) == nullptr)
+				{
+					UE_LOG(LogCL9, Error, TEXT("%s: theme '%s' has no piece for role '%s' (needed by seg kind '%s') — those boxes are skipped."),
+						*Site->GetName(), *Site->Theme.ToString(), *SegKind->Piece.ToString(), *Kind.ToString());
 				}
 			}
 		}
@@ -309,9 +379,9 @@ const UCL9ItemDef* UCL9DefRegistry::FindItem(FName Alias, FName SubAlias) const
 
 void UCL9DefRegistry::CheckCharacterRelations(const UCL9CharacterDef& Row) const
 {
-	// Derived values from docs/plan/economy.md — checked per character row
-	// against every catch-capable monster row. A silent break here means a
-	// player who cannot escape even after dropping everything.
+	// docs/plan/economy.md에서 유도한 값들 — 캐릭터 행마다 붙잡기가 가능한
+	// 모든 몬스터 행을 상대로 검사한다. 여기서 조용히 깨지면 모든 걸
+	// 내려놔도 도망칠 수 없는 플레이어가 생긴다는 뜻이다.
 	const float CycleTime = Row.StaminaDrainTime + Row.StaminaRegenTime;
 	const float SustainedTiredSpeed = (Row.RunSpeed * Row.StaminaDrainTime + Row.WalkSpeed * Row.StaminaRegenTime) / FMath::Max(CycleTime, UE_KINDA_SMALL_NUMBER);
 	const float SprintBudget = Row.RunSpeed * Row.StaminaDrainTime;
@@ -333,13 +403,13 @@ void UCL9DefRegistry::CheckCharacterRelations(const UCL9CharacterDef& Row) const
 				*Row.Alias.ToString(), SprintBudget, *Monster->Alias.ToString(), Monster->SightIn);
 		}
 	}
-	// A4 (운반 질주 vs 추격) waits on the weight→slowdown formula (economy.md 미결)
+	// A4 (운반 질주 vs 추격)는 무게→감속 공식이 정해져야 검사할 수 있다 (economy.md 미결)
 }
 
 void UCL9DefRegistry::CheckItemReferences() const
 {
-	// Reference integrity (docs/data/schema.md 로드 검사): cook chains and
-	// drops must point at rows that actually loaded.
+	// 참조 무결성 검사 (docs/data/schema.md 로드 검사): 요리 사슬과 드롭은
+	// 실제로 로드된 행을 가리켜야 한다.
 	for (const UCL9ItemDef* Item : OrderedItems)
 	{
 		const FCL9ItemRef* Refs[] = { &Item->CookResult, &Item->BurnResult };

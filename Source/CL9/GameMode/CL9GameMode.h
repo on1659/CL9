@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Data/CL9Types.h"
 #include "CL9GameMode.generated.h"
 
 class ACL9Character;
@@ -12,6 +13,7 @@ class ACL9Item;
 class ACL9Jar;
 class ACL9Monster;
 class ACL9PlayerController;
+class UCL9EquipmentDef;
 class UCL9ProgressionDef;
 class UCL9RulesDef;
 class UCL9SiteDef;
@@ -96,6 +98,33 @@ public:
 	 */
 	void ExpireOrders();
 
+	/**
+	 * 호스트 전용: 장비 하나를 산다 — 판정을 통과하면 이더를 빼고 트럭 옆에 **실물을 스폰한다**.
+	 * "인벤토리에 추가"가 아니다(docs/systems/shop.md 구매 흐름). 거절 사유를 그대로 반환한다.
+	 */
+	ECL9BuyResult BuyEquipment(FName EquipAlias);
+
+	/**
+	 * 호스트 전용, 새벽: 트럭에서 멀리 두고 온 장비를 잃는다 —
+	 * "원정에 들고 갈 수 있고, 두고 오면 잃는다. 다시 사는 값이 그 대가다"
+	 * (docs/plan/data/equipment.md 원정과 분실). 잃은 개수를 반환한다.
+	 */
+	int32 LoseEquipmentLeftBehind();
+
+	/** 지금 월드에 남아 있는 장비의 alias 목록 — 세이브가 이걸 적는다(같은 것이 둘이면 둘 다) */
+	void ListOwnedEquipment(TArray<FName>& OutAliases) const;
+
+	/**
+	 * 호스트 전용, 새벽: 정산일이면 이번 기간 수입을 목표(`QuotaCurve`)와 견준다
+	 * (docs/systems/balance.md 실패 판정). **판정 대상은 보유 잔액이 아니라 기간 수입이다** —
+	 * 장비를 사도 정산이 불리해지지 않는다. 미달이면 그날로 판이 끝나고 새 판이 열린다(유예 없음).
+	 * 정산이 실제로 일어났으면 true.
+	 */
+	bool Settle();
+
+	/** 호스트 전용: 판이 끝났다 — 기록을 남기고 1일차부터 다시 시작한다 (docs/systems/session.md) */
+	void StartNewRun();
+
 	/** 개체의 굴림값에 목적지·일자 배율을 곱한 최종 가격(에테르) */
 	int32 ComputeSellPrice(int32 RolledValue) const;
 
@@ -143,6 +172,29 @@ protected:
 
 	/** 어떤 플레이어의 ThreatActMinRadius 안쪽이면 true — 그 안에서는 아무것도 깨어나거나 스폰되지 않는다(docs/plan/data/rules.md) */
 	bool IsInsideCalmRadius(const FVector& Location) const;
+
+	/** 최장 생존 일차를 기록 파일에 남긴다 — 판과 수명이 다르므로 슬롯과 무관한 별도 파일이다 */
+	void RecordBestDay(int32 Day);
+
+	/** 호스트 전용: 장비 하나의 실물을 트럭 옆에 내려놓는다 — 구매와 세이브 복원이 함께 쓴다 */
+	ACL9Item* SpawnEquipmentAtTruck(const UCL9EquipmentDef& Equip);
+
+	/**
+	 * 새벽 결과 화면의 UI 표 행 이름 — C++ 상수로 박지 않는다(트럭 패널과 같은 이유).
+	 * 비워 두면 새벽 화면을 열지 않는다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	FName DawnUIRow = FName("Dawn");
+
+	/** 호스트 전용: 새벽 화면을 전원의 화면에 연다 — 판정은 호스트가, 화면은 각자의 것이다 */
+	void OpenDawnScreen();
+
+	/**
+	 * 새벽에 이 거리 밖에 있는 장비는 잃는다 (cm, 트럭 패드 기준). 밤을 무사히 마치고
+	 * 트럭 곁에 세워 둔 것만 다음 날로 넘어간다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category="Shop")
+	float EquipmentKeepRadius = 1200.f;
 
 	/** 다음 밤을 위해 cl9.seed로 고정된 시드; 0 = 새로 굴린다 */
 	uint32 ForcedMapSeed = 0;

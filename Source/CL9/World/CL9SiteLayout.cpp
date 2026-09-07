@@ -5,16 +5,16 @@
 
 namespace
 {
-	/** The barn's west interior face, east of the truck pad — the yard lies between */
+	/** 축사 서쪽 내부면 — 트럭 패드에서 동쪽으로 떨어져 있고, 그 사이는 마당이다 */
 	constexpr float BarnOffsetX = 1400.f;
 
-	/** Boundary wall west of the pad */
+	/** 패드 서쪽의 경계 벽 */
 	constexpr float YardWest = 900.f;
 
-	/** Free ground between the barns and the boundary walls */
+	/** 축사와 경계 벽 사이의 빈 땅 */
 	constexpr float Margin = 600.f;
 
-	/** 1F ceiling above its floor — the barn's inner height (구 CCL8 BarnHeightU 210u); equals the wall Height by coincidence */
+	/** 1층 바닥 위 천장 높이 — 축사 내부 높이(구 CCL8 BarnHeightU 210u)로, 우연히 벽 Height 값과 일치한다 */
 	constexpr float BarnCeiling = 630.f;
 
 	void InitFloor(FCL9FloorLayout& Floor, int32 Aisles, int32 Cols)
@@ -29,8 +29,8 @@ namespace
 	struct FEdge
 	{
 		bool bHorizontal;
-		int32 A;   // aisle (H) or cage row (V)
-		int32 C;   // column
+		int32 A;   // 통로 번호(H) 또는 케이지 열 번호(V)
+		int32 C;   // 열
 	};
 
 	int32 FindRoot(TArray<int32>& Parent, int32 Cell)
@@ -53,8 +53,9 @@ namespace
 	}
 
 	/**
-	 * Spanning tree first (every cell reachable), then extra openings until the
-	 * target — the openings count is the difficulty knob (site.md 개구부).
+	 * 먼저 신장 트리(spanning tree)를 만들어 모든 셀에 도달 가능하게 한 뒤, 목표
+	 * 개수에 도달할 때까지 추가로 통로를 연다 — 이 개구부 개수가 난이도 조절값이다
+	 * (site.md 개구부).
 	 */
 	void CarveFloor(FCL9FloorLayout& Floor, int32 TargetOpen, int32 JarCount, const FCL9HenhouseParams& Params, FRandomStream& Rng)
 	{
@@ -110,7 +111,7 @@ namespace
 			Open(Edge);
 		}
 
-		// Closed is already in shuffled order — open from the front until the target
+		// Closed는 이미 무작위로 섞인 순서다 — 앞에서부터 목표치에 도달할 때까지 연다
 		int32 OpenCount = Floor.CountOpen();
 		for (const FEdge& Edge : Closed)
 		{
@@ -122,7 +123,7 @@ namespace
 			++OpenCount;
 		}
 
-		// Jars: farthest-first from a random cell, in aisle-pitch metric
+		// 항아리: 임의의 셀에서 시작해 통로 간격(pitch) 기준 거리로 가장 먼 곳부터 배치한다
 		const float Pitch = Params.AisleWidth + Params.RowDepth;
 		auto Distance = [&](const FIntPoint& Lhs, const FIntPoint& Rhs)
 		{
@@ -171,7 +172,7 @@ namespace
 		Out.Add(Seg);
 	}
 
-	/** A wall along Y with gaps cut out — gaps are (Y0, Y1) pairs, any order */
+	/** Y축을 따라 뻗은 벽에 틈을 뚫는다 — 틈은 (Y0, Y1) 쌍이며 순서는 상관없다 */
 	void AddWallWithGaps(TArray<FCL9SiteSeg>& Out, const FName& Kind, int32 Floor, float X0, float X1, float Y0, float Y1, TArray<FVector2D> Gaps)
 	{
 		Gaps.Sort([](const FVector2D& Lhs, const FVector2D& Rhs) { return Lhs.X < Rhs.X; });
@@ -217,6 +218,7 @@ int32 FCL9FloorLayout::CountOpen() const
 FCL9SiteFrame CL9SiteLayout::ComputeFrame(const FCL9HenhouseParams& P)
 {
 	FCL9SiteFrame F;
+	F.Wall = P.WallThickness;
 	const float Pitch = P.AisleWidth + P.RowDepth;
 
 	auto GridDepth = [&P, Pitch](int32 Aisles)
@@ -224,13 +226,13 @@ FCL9SiteFrame CL9SiteLayout::ComputeFrame(const FCL9HenhouseParams& P)
 		return Aisles * P.AisleWidth + (Aisles - 1) * P.RowDepth;
 	};
 
-	// 1F: the spine aisle's centre sits on Y = 0 so the door faces the truck
+	// 1층: 중심 통로(spine)의 중앙이 Y = 0에 오도록 해서 문이 트럭을 향하게 한다
 	F.Spine[0] = (P.AisleCount1F - 1) / 2;
 	const float X0 = BarnOffsetX;
 	const float Y0 = -(F.Spine[0] * Pitch + P.AisleWidth * 0.5f);
 	F.Barn[0] = FBox2D(FVector2D(X0, Y0), FVector2D(X0 + P.ColCount1F * P.ColWidth, Y0 + GridDepth(P.AisleCount1F)));
 
-	// Stair corridor east of 1F, then B1 with its own spine on Y = 0
+	// 1층 동쪽에 계단 통로를 두고, 그다음 지하 1층도 자기 중심 통로를 Y = 0에 둔다
 	F.StairX0 = F.Barn[0].Max.X + F.Wall;
 	F.StairX1 = F.StairX0 + F.Landing + F.Ramp + F.Landing;
 	F.Spine[1] = (P.AisleCountB1 - 1) / 2;
@@ -260,7 +262,7 @@ FCL9SiteLayout CL9SiteLayout::Generate(const FCL9HenhouseParams& P, uint32 Seed)
 	CarveFloor(L.Floors[0], P.TargetOpen1F, P.JarCount1F, P, Rng);
 	CarveFloor(L.Floors[1], P.TargetOpenB1, P.JarCountB1, P, Rng);
 
-	// The flap leaves from any 1F aisle but the spine (that one holds the stairs)
+	// 여닫이문은 중심 통로(계단이 차지하고 있다)를 제외한 1층의 아무 통로에나 낸다
 	const int32 Spine = (P.AisleCount1F - 1) / 2;
 	int32 Hole = Rng.RandRange(0, FMath::Max(P.AisleCount1F - 2, 0));
 	if (Hole >= Spine)
@@ -279,8 +281,8 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 	const FBox2D& B1 = F.Barn[1];
 	const FBox2D& World = F.World;
 
-	// ---- Ground. Level 0 covers the yard, 1F and the top landing; the corridor
-	//      and B1 sit in a pit whose level-0 rim is filled with strips.
+	// ---- 바닥. 레벨 0은 마당, 1층, 위쪽 계단참을 덮는다. 계단 통로와
+	//      지하 1층은 구덩이 안에 있고, 레벨 0의 그 가장자리는 띠 모양으로 채워진다.
 	const float PitX0 = F.StairX0 + F.Landing;
 	const float CorrY0 = -HalfA - W;
 	const float CorrY1 = HalfA + W;
@@ -292,14 +294,14 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 	AddBox(Out, CL9SegKind::Floor(), 1, PitX0, B1.Min.Y - W, B1.Max.X + W, B1.Max.Y + W);
 	AddBox(Out, CL9SegKind::Floor(), 1, PitX0, -HalfA, PitX0 + F.Ramp, HalfA, /*bRamp*/ true);
 
-	// ---- Boundary (wall kind — the yard fence height)
+	// ---- 경계(wall 종류 — 마당 울타리 높이)
 	AddBox(Out, CL9SegKind::Wall(), 0, World.Min.X - W, World.Min.Y - W, World.Max.X + W, World.Min.Y);
 	AddBox(Out, CL9SegKind::Wall(), 0, World.Min.X - W, World.Max.Y, World.Max.X + W, World.Max.Y + W);
 	AddBox(Out, CL9SegKind::Wall(), 0, World.Min.X - W, World.Min.Y, World.Min.X, World.Max.Y);
 	AddBox(Out, CL9SegKind::Wall(), 0, World.Max.X, World.Min.Y, World.Max.X + W, World.Max.Y);
 
-	// ---- Barn shells. West walls open at the spine (1F door, B1 stair mouth);
-	//      the 1F east wall opens for the stairs and, with a maze, the flap.
+	// ---- 축사 외곽. 서쪽 벽은 중심 통로 위치에서 열린다(1층은 문, 지하 1층은 계단 입구).
+	//      1층 동쪽 벽은 계단을 위해 열리고, 미로가 있다면 여닫이문을 위해서도 열린다.
 	for (int32 Floor = 0; Floor < 2; ++Floor)
 	{
 		const FBox2D& B = F.Barn[Floor];
@@ -325,13 +327,13 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 		}
 	}
 
-	// ---- Stair corridor walls, from the 1F east wall to the B1 west wall
+	// ---- 계단 통로 벽 — 1층 동쪽 벽부터 지하 1층 서쪽 벽까지
 	AddBox(Out, CL9SegKind::Stair(), 1, B0.Max.X, CorrY0, B1.Min.X, -HalfA);
 	AddBox(Out, CL9SegKind::Stair(), 1, B0.Max.X, HalfA, B1.Min.X, CorrY1);
 
-	// ---- Ceilings: the barns and the corridor are roofed so the inside is dark
-	//      (2026-09-06 사용자 결정 — 건물 안에 들어가는 느낌). B1's roof sits at ground level;
-	//      the corridor's roof runs at the 1F height, so the B1 mouth is walled above its roof.
+	// ---- 천장: 축사와 통로에 지붕을 씌워 내부를 어둡게 만든다
+	//      (2026-09-06 사용자 결정 — 건물 안에 들어가는 느낌). 지하 1층 지붕은 지면 높이에 있고,
+	//      통로 지붕은 1층 높이로 지나가서 지하 1층 입구는 그 지붕 위쪽으로 벽이 막는다.
 	AddBox(Out, CL9SegKind::Ceiling(), 0, B0.Min.X - W, B0.Min.Y - W, B0.Max.X + W, B0.Max.Y + W);
 	AddBox(Out, CL9SegKind::Ceiling(), 0, B0.Max.X, CorrY0, B1.Min.X, CorrY1);
 	AddBox(Out, CL9SegKind::Ceiling(), 1, B1.Min.X - W, B1.Min.Y - W, B1.Max.X + W, B1.Max.Y + W);
@@ -342,7 +344,7 @@ void CL9SiteLayout::BuildSegments(const FCL9HenhouseParams& P, const FCL9SiteFra
 		return;
 	}
 
-	// ---- Maze: cage rows between aisles with openings, plugs across aisles
+	// ---- 미로: 통로 사이에 개구부가 있는 케이지 열, 통로를 가로지르는 플러그
 	const float Pitch = P.AisleWidth + P.RowDepth;
 	for (int32 Floor = 0; Floor < 2; ++Floor)
 	{

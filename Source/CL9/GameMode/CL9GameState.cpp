@@ -4,9 +4,13 @@
 #include "Net/UnrealNetwork.h"
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
+#include "Data/CL9EquipmentDef.h"
+#include "Data/CL9ItemDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9SiteDef.h"
 #include "GameMode/CL9GameInstance.h"
+#include "EngineUtils.h"
+#include "Items/CL9Item.h"
 #include "World/CL9SiteMap.h"
 
 void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -27,6 +31,7 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, AcceptedOrders);
 	DOREPLIFETIME(ACL9GameState, SharedMoney);
 	DOREPLIFETIME(ACL9GameState, PeriodIncome);
+	DOREPLIFETIME(ACL9GameState, LastSettlement);
 }
 
 void ACL9GameState::AddIncome(int32 Amount)
@@ -69,6 +74,93 @@ void ACL9GameState::RestoreRun(int32 Day, int32 Money, int32 Income, const TArra
 	AcceptedOrders = Orders;
 	OnRep_Money();
 	OnRep_Orders();
+}
+
+void ACL9GameState::ResetPeriodIncome()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	PeriodIncome = 0;
+	OnRep_Money();
+}
+
+void ACL9GameState::Multicast_Settled_Implementation(int32 Day, int32 Earned, int32 Target, bool bPassed)
+{
+	// 호스트에서는 복제본을 여기서 채운다 — 클라이언트는 복제로 같은 값을 따로 받는다
+	if (HasAuthority())
+	{
+		LastSettlement.Day = Day;
+		LastSettlement.Earned = Earned;
+		LastSettlement.Target = Target;
+		LastSettlement.bPassed = bPassed;
+	}
+	OnSettled.Broadcast(Day, Earned, Target, bPassed);
+}
+
+void ACL9GameState::ClearLastSettlement()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	LastSettlement = FCL9SettlementResult();
+}
+
+ECL9BuyResult ACL9GameState::CanBuy(FName EquipAlias) const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9EquipmentDef* Equip = Registry ? Registry->FindEquipment(EquipAlias) : nullptr;
+	if (Equip == nullptr)
+	{
+		return ECL9BuyResult::NoRow;
+	}
+
+	// 트럭 패널은 정차 중에만 열린다 — 밤중에 장비를 불러낼 수는 없다
+	if (Phase != ECL9NightPhase::Lobby)
+	{
+		return ECL9BuyResult::NotInLobby;
+	}
+	if (!Equip->IsUnlockedOn(CurrentDay))
+	{
+		return ECL9BuyResult::Locked;
+	}
+	if (Equip->MaxOwned > 0 && GetOwnedCount(EquipAlias) >= Equip->MaxOwned)
+	{
+		return ECL9BuyResult::MaxOwned;
+	}
+	if (SharedMoney < Equip->Price)
+	{
+		return ECL9BuyResult::NotEnoughMoney;
+	}
+	return ECL9BuyResult::Ok;
+}
+
+int32 ACL9GameState::GetOwnedCount(FName EquipAlias) const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9EquipmentDef* Equip = Registry ? Registry->FindEquipment(EquipAlias) : nullptr;
+	if (Equip == nullptr)
+	{
+		return 0;
+	}
+
+	// 보유 = 월드에 나와 있는 실물이다 — 장비는 두고 오면 잃으므로 세어 둔 숫자를 믿지 않는다.
+	// 클라이언트에서는 복제된 실물을 세므로 스폰 복제가 늦으면 잠깐 어긋날 수 있다(표시 전용).
+	int32 Count = 0;
+	for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+	{
+		if (It->GetAlias() == Equip->ItemDef.ItemAlias && It->GetSubAlias() == Equip->ItemDef.ItemSubAlias)
+		{
+			++Count;
+		}
+	}
+	return Count;
 }
 
 void ACL9GameState::OnRep_Money()

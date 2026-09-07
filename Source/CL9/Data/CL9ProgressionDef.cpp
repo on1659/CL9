@@ -47,6 +47,22 @@ float UCL9ProgressionDef::ValueAt(int32 Day) const
 	return Eval(ValueCurve, Day);
 }
 
+int32 UCL9ProgressionDef::QuotaAt(int32 Day) const
+{
+	// 목표액은 배율이 아니다 — 빈 커브를 1.0으로 읽으면 "1이더만 벌면 통과"가 되어 뜻이 흐려진다
+	const FRichCurve* Rich = QuotaCurve.GetRichCurveConst();
+	if (Rich == nullptr || Rich->GetNumKeys() == 0)
+	{
+		return 0;
+	}
+	return FMath::RoundToInt(Rich->Eval(static_cast<float>(Day)));
+}
+
+bool UCL9ProgressionDef::IsSettlementDay(int32 Day) const
+{
+	return SettlementIntervalDays > 0 && Day > 0 && (Day % SettlementIntervalDays) == 0;
+}
+
 bool UCL9ProgressionDef::IsBlackoutDisabled(int32 Day) const
 {
 	const FCL9DayOverride* Override = FindOverride(Day);

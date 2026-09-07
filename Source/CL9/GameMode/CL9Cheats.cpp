@@ -181,6 +181,30 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatMoney(
 		RouteCL9Cheat(TEXT("money"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatBuy(
+	TEXT("cl9.buy"),
+	TEXT("cl9.buy [alias|number] — buys equipment (truck panel stand-in, host ruling); with no argument it lists the shop."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("buy"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatEat(
+	TEXT("cl9.eat"),
+	TEXT("cl9.eat — eats the dish in hand (stands in for IA_Eat; host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("eat"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSettle(
+	TEXT("cl9.settle"),
+	TEXT("cl9.settle [force] — prints the settlement state and runs the judgement; 'force' ends the run now (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("settle"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSave(
 	TEXT("cl9.save"),
 	TEXT("cl9.save [slot] — writes the run (day, ether, orders in progress) to the slot now (host ruling)."),

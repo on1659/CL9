@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Core/CL9ActorBase.h"
+#include "Data/CL9Types.h"
 #include "CL9Item.generated.h"
 
 class ACL9Character;
@@ -59,6 +60,40 @@ public:
 	int32 GetValue() const
 	{
 		return Value;
+	}
+
+	/**
+	 * 호스트 전용: 조리대가 매 틱 이 아이템의 조리 상태를 실어 준다 (docs/systems/cooking.md).
+	 * 판정은 조리대가 하고 여기 담기는 것은 표현용 사본이다 — 게이지를 그릴 수 있게 복제된다.
+	 * Alpha는 0~1이며, 열원을 벗어나면 조리대가 None으로 지운다.
+	 */
+	void SetCookState(ECL9CookPhase Phase, float Alpha);
+
+	/** 지금 상태에서 다음 상태(익음 또는 탐)까지의 진행도 0~1 — 열원 위가 아니면 0 */
+	UFUNCTION(BlueprintPure, Category="Item")
+	float GetCookProgress() const
+	{
+		return CookAlpha / 255.f;
+	}
+
+	/** 열원 위에서 무언가로 변해 가는 중이면 true — 게이지를 띄울지 판단한다 */
+	UFUNCTION(BlueprintPure, Category="Item")
+	bool IsOnHeat() const
+	{
+		return CookPhase != ECL9CookPhase::None;
+	}
+
+	/** 다음 전이가 "탐"이면 true — 표현이 경고로 바뀌는 지점이다 */
+	UFUNCTION(BlueprintPure, Category="Item")
+	bool IsNextBurnt() const
+	{
+		return CookPhase == ECL9CookPhase::Burning;
+	}
+
+	UFUNCTION(BlueprintPure, Category="Item")
+	ECL9CookPhase GetCookPhase() const
+	{
+		return CookPhase;
 	}
 
 	/** 자유 상태이고, 사용 가능하며, 수레 전용이 아닌지 (docs/plan/data/item/common.md 운반) */
@@ -169,6 +204,14 @@ private:
 	/** 개체별로 굴린 판매가 — 호스트가 정하고 복제한다 */
 	UPROPERTY(Replicated)
 	int32 Value = 0;
+
+	/** 조리 진행도를 0~255로 눌러 담은 값 — 표현 전용이라 이 정밀도면 충분하다 */
+	UPROPERTY(Replicated)
+	uint8 CookAlpha = 0;
+
+	/** 지금 열원 위에서 무엇이 되는 중인지 — 열 밖이면 None */
+	UPROPERTY(Replicated)
+	ECL9CookPhase CookPhase = ECL9CookPhase::None;
 
 	/** 물리 경로용 행별 마찰/반발 계수 — 로드 시 테이블로부터 만들어진다 */
 	UPROPERTY()

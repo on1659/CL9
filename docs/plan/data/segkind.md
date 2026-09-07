@@ -11,7 +11,8 @@
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
 | `Alias` | `FName` | `wall` · `barn` · `cage` … |
-| `Mesh` | 소프트 참조 | 세울 메시 |
+| `Piece` | `FName` | **세울 조각의 역할 이름** — 실제 메시는 조각 표가 갖는다 |
+| `Placement` | enum `ECL9SegPlacement` | `Stretch` 늘리기 / `Tile` 자연 크기로 깔기 |
 | `ActorClass` | 소프트 참조 | 전용 BP (비우면 공용) |
 | `Height` | float | 실제 3D 높이 (cm) |
 | `BaseZMode` | enum | `LocalFloor` 바닥 기준 / `WorldTop` 절대 상단 |
@@ -102,9 +103,19 @@
 
 ---
 
+## 메시를 직접 가리키지 않는다
+
+이 표의 행은 **역할 이름**만 말하고, 그 역할이 어느 메시인지는 조각 표(`UCL9PieceDef`,
+`DA_PieceTable`)가 테마별로 갖는다. 그래서 에셋 팩을 갈아 끼울 때 이 표는 손대지 않는다 —
+전문은 [../../systems/asset-swap.md](../../systems/asset-swap.md).
+
+조각의 치수도 컬럼이 아니다. `ACL9SiteMap`이 메시 바운드에서 직접 읽는다 — 손으로 옮겨 적은
+숫자는 팩이 바뀌는 순간 조용히 틀린 값이 된다.
+
+---
+
 ## 미결
 
-- 메시가 아직 없다 — ⑤에서 회색 상자로 세운 뒤 진짜 메시로 교체한다
 - `MinimapColor` 값이 아직 안 정해졌다
 - 스텝 높이(`MaxStepHeight`)의 정확한 값 — 점프 통과 셋을 걸어서 못 넘는지 실측 확인 필요
 
@@ -112,10 +123,18 @@
 
 ## 구현 상태 (2026-09-06, ⑤ 5a 선행)
 
-`UCL9SegKindDef`(Source/CL9/Data) — 고유 컬럼은 `Height`·`BaseZMode`·`bBlocksSight`, `Mesh`·`ActorClass`는
+`UCL9SegKindDef`(Source/CL9/Data) — 고유 컬럼은 `Piece`·`Placement`·`Height`·`BaseZMode`·`bBlocksSight`, `ActorClass`는
 공통 베이스(`UCL9DefBase`) 컬럼을 그대로 쓴다 (`CollisionProfile`·`MinimapColor`는 첫 소비처와 함께). 에셋 `DA_SegKindTable`(Content/Data).
-메시는 **100cm 단위 큐브를 발자국×Height로 스케일**하는 규약이라 지금은 전 행이 엔진 기본 큐브(회색 상자)다 —
-5b에서 행마다 진짜 조각으로 바꾼다.
+
+**2026-09-07 (5b): 메시를 직접 가리키던 `Mesh` 컬럼을 역할 이름 `Piece`로 바꿨다.** 실제 메시는 조각
+표(`UCL9PieceDef` / `DA_PieceTable`)가 역할×테마로 갖는다 — 전문은
+[../../systems/asset-swap.md](../../systems/asset-swap.md). 상속받은 `Mesh` 컬럼은 이제 이 표에서 안 쓰므로
+전 행에서 비워 뒀다(아이템 행은 계속 쓴다).
+
+현재 배정: `barn`·`stair` → `wall`(Tile) · `plug` → `wallHalf`(Tile) · `wall` → `fence`(Tile) ·
+`flapIn` → `door` · 나머지(`cage`·`floor`·`ceiling`·`truck`·`hay`·`trough`·`crate`·`brooder`) → `box`(Stretch, 회색 상자).
+**`cage`가 아직 회색 상자인 건 보유 팩에 케이지 조각이 없어서다** — 사면 조각 표에 `cage` 역할을 만들고
+이 표의 `Piece`를 바꾸면 끝이다.
 
 - **12번째 행 `floor`**(높이 30, 시야 차단): 마당·1층·지하·경사로의 지면 슬래브. 위 11종은 벽·소품이라
   바닥이 없어서 추가했다. 슬래브는 자기 층 바닥면 아래로 매달린다.

@@ -52,27 +52,39 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	ECL9Generator Generator = ECL9Generator::None;
 
+	/**
+	 * 이 사이트를 어느 조각 묶음으로 지을지 — 조각 표(UCL9PieceDef)의 SubAlias를
+	 * 가리킨다 (docs/systems/asset-swap.md). 테마에 없는 역할은 테마 칸이 빈 공용
+	 * 행으로 떨어진다. 비워 두면 공용 행만 쓴다.
+	 *
+	 * 격자 치수는 조각 모듈에 맞춰야 예쁘게 떨어지므로, 실질적으로 테마와 아래
+	 * 격자 컬럼들은 한 벌로 움직인다 — 같은 배치를 다른 테마로 내려면 이 행을
+	 * 복제해서 Theme만 바꾼다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
+	FName Theme;
+
 	/** 1층 통로 수 (축사를 따라 나 있는 복도) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 AisleCount = 8;
+	int32 AisleCount = 10;
 
 	/** 1층 열 수 (각 통로를 따라 있는 칸) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCount = 6;
+	int32 ColCount = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 AisleCountB1 = 6;
+	int32 AisleCountB1 = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCountB1 = 4;
+	int32 ColCountB1 = 6;
 
 	/** 통로 폭 (cm) — 문과 계단 복도가 이 값을 공유한다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float AisleWidth = 255.f;
+	float AisleWidth = 250.f;
 
 	/** 통로를 따라 있는 칸의 길이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float ColWidth = 900.f;
+	float ColWidth = 1000.f;
 
 	/** 두 통로 사이 우리 행의 깊이 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
@@ -88,15 +100,15 @@ public:
 
 	/** ★ 난이도 손잡이 — 1층에서 통과 가능한 간선 수, 적을수록 막다른 길이 많아진다 (site.md 개구부) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpen1F = 50;
+	int32 TargetOpen1F = 87;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpenB1 = 25;
+	int32 TargetOpenB1 = 54;
 
 	/** 층마다 있는 반납 항아리 수, 모든 칸 근처에 하나씩 있도록 분산시킨다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 JarCount1F = 4;
+	int32 JarCount1F = 7;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 JarCountB1 = 3;
+	int32 JarCountB1 = 6;
 };

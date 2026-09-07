@@ -10,6 +10,7 @@
 #include "Character/CL9Character.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9DefRegistry.h"
+#include "Data/CL9EquipmentDef.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
@@ -74,6 +75,18 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("money"))
 	{
 		Money(Tokens);
+	}
+	else if (Command == TEXT("buy"))
+	{
+		Buy(Tokens);
+	}
+	else if (Command == TEXT("eat"))
+	{
+		Eat(Tokens);
+	}
+	else if (Command == TEXT("settle"))
+	{
+		Settle(Tokens);
 	}
 	else if (Command == TEXT("save"))
 	{
@@ -439,6 +452,85 @@ void UCL9CheatManager::Orders(const TArray<FString>& Args)
 	}
 
 	UE_LOG(LogCL9, Log, TEXT("Money: %d ether (period income %d)."), CL9GameState->GetSharedMoney(), CL9GameState->GetPeriodIncome());
+}
+
+void UCL9CheatManager::Buy(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	const ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	const UCL9DefRegistry* Registry = GetRegistry();
+	if (GameMode == nullptr || CL9GameState == nullptr || Registry == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.buy: host only."));
+		return;
+	}
+
+	const TArray<TObjectPtr<const UCL9EquipmentDef>>& Rows = Registry->GetEquipment();
+	if (Args.Num() == 0)
+	{
+		// 인자가 없으면 상점 목록 그대로 — 번호로 살 수 있게 매긴다
+		UE_LOG(LogCL9, Log, TEXT("Equipment (%d):"), Rows.Num());
+		for (int32 Index = 0; Index < Rows.Num(); ++Index)
+		{
+			const UCL9EquipmentDef* Row = Rows[Index];
+			UE_LOG(LogCL9, Log, TEXT("  %d: %s — %d ether, day %d+, owned %d/%d, canbuy %d"),
+				Index + 1, *Row->Alias.ToString(), Row->Price, Row->UnlockDay,
+				CL9GameState->GetOwnedCount(Row->Alias), Row->MaxOwned,
+				static_cast<int32>(CL9GameState->CanBuy(Row->Alias)));
+		}
+		return;
+	}
+
+	FName Alias(*Args[0]);
+	const int32 Number = FCString::Atoi(*Args[0]);
+	if (Number >= 1 && Number <= Rows.Num())
+	{
+		Alias = Rows[Number - 1]->Alias;
+	}
+
+	const ECL9BuyResult Verdict = GameMode->BuyEquipment(Alias);
+	UE_LOG(LogCL9, Log, TEXT("cl9.buy '%s': result %d (0 = bought)."), *Alias.ToString(), static_cast<int32>(Verdict));
+}
+
+void UCL9CheatManager::Eat(const TArray<FString>& Args)
+{
+	APlayerController* Controller = GetOuterAPlayerController();
+	ACL9Character* Character = Controller ? Cast<ACL9Character>(Controller->GetPawn()) : nullptr;
+	if (Character == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.eat: needs a pawn."));
+		return;
+	}
+
+	Character->HostEat();
+}
+
+void UCL9CheatManager::Settle(const TArray<FString>& Args)
+{
+	UWorld* World = GetWorld();
+	ACL9GameMode* GameMode = World ? World->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	if (GameMode == nullptr || CL9GameState == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.settle: host only."));
+		return;
+	}
+
+	const int32 Day = CL9GameState->GetCurrentDay();
+	UE_LOG(LogCL9, Log, TEXT("Settlement: day %d, period income %d, money %d."),
+		Day, CL9GameState->GetPeriodIncome(), CL9GameState->GetSharedMoney());
+
+	if (Args.IsValidIndex(0) && Args[0].Equals(TEXT("force"), ESearchCase::IgnoreCase))
+	{
+		// 정산일까지 기다리지 않고 지금 판정한다 — 미달이면 판이 그 자리에서 끝난다
+		GameMode->StartNewRun();
+		return;
+	}
+	if (!GameMode->Settle())
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.settle: day %d is not a settlement day (use 'cl9.settle force' to end the run now)."), Day);
+	}
 }
 
 void UCL9CheatManager::SaveRun(const TArray<FString>& Args)

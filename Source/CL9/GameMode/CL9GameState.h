@@ -18,6 +18,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9OrdersChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9MoneyChanged);
 
 /**
+ * 정산이 끝났다 — **통과든 미달이든** 모든 머신에서 발동한다 (docs/systems/balance.md).
+ * 새벽 화면이 읽는 유일한 신호다. **상태를 되돌리기 전에** 보낸다: 통과하면 기간 수입이
+ * 0으로 리셋되고 미달하면 1일차로 돌아가므로, 발동 뒤에는 이 숫자들을 어디서도 구할 수 없다.
+ * `bPassed`가 false면 그 판은 그 자리에서 끝났다는 뜻이다.
+ */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FCL9Settled, int32, Day, int32, Earned, int32, Target, bool, bPassed);
+
+/**
  * 모든 머신이 어느 사이트 맵 위에 서 있는지를 나타낸다(docs/systems/map.md 생성 흐름). 전달되는
  * 것은 시드뿐이며, Build는 설정할 때마다 증가시켜 같은 시드가 두 번 깔릴 때도
  * 알림이 발동하게 한다(처음 합류할 때는 시드 0이 기본값과 같다).
@@ -121,6 +129,36 @@ public:
 	 */
 	int32 Deduct(int32 Amount);
 
+	/** 호스트 전용: 정산이 끝나 다음 기간이 시작된다 — 누적 자금은 그대로 두고 기간 수입만 0으로 */
+	void ResetPeriodIncome();
+
+	/**
+	 * 호스트 전용: 지난 정산 결과를 지운다 — **밤이 시작될 때** 부른다.
+	 * 그래야 `LastSettlement.Day != 0`이 "이번 새벽에 정산이 있었다"와 정확히 같은 뜻이 된다.
+	 * 날짜로 대조하면 미달 직후 새 판이 1일차로 되돌아가 결과를 잃는다.
+	 */
+	void ClearLastSettlement();
+
+	/** 호스트 전용: 정산 결과를 전원에게 알린다 — 상태를 바꾸지는 않고 신호만 보낸다 */
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Settled(int32 Day, int32 Earned, int32 Target, bool bPassed);
+
+	/** 로컬 표현용 훅 — 새벽 화면이 구독한다(모든 머신에서 발동) */
+	UPROPERTY(BlueprintAssignable, Category="Economy")
+	FCL9Settled OnSettled;
+
+	/**
+	 * 마지막 정산 결과 — 신호와 같은 값을 복제로도 들고 있다. **새벽 화면이 신호를 놓쳐도
+	 * 여기서 읽으면 된다**(클라이언트에서 화면 열기 RPC와 정산 멀티캐스트의 도착 순서는 보장되지 않는다).
+	 * **`Day != 0`은 "이번 새벽에 정산이 있었다"는 뜻이다** — 밤이 시작될 때 지워지므로 날짜를
+	 * 대조할 필요가 없다(미달 직후에는 판이 1일차로 되돌아가 날짜 대조가 어긋난다).
+	 */
+	UFUNCTION(BlueprintPure, Category="Economy")
+	const FCL9SettlementResult& GetLastSettlement() const
+	{
+		return LastSettlement;
+	}
+
 	/** 판이 지금까지 모은 이더 — 플레이어별 지갑이 아니라 판 하나의 자금이다 */
 	UFUNCTION(BlueprintPure, Category="Economy")
 	int32 GetSharedMoney() const { return SharedMoney; }
@@ -132,6 +170,19 @@ public:
 	/** 로컬 표현용 훅 — HUD의 이더 표시가 구독한다(모든 머신에서 발동) */
 	UPROPERTY(BlueprintAssignable, Category="Economy")
 	FCL9MoneyChanged OnMoneyChanged;
+
+	/**
+	 * 지금 이 장비를 살 수 있는지, 못 산다면 왜인지 (docs/systems/shop.md).
+	 * **판정이 여기 있는 이유는 게임 모드가 클라이언트에 없기 때문이다** — 구매 화면은
+	 * 모든 머신에서 뜨므로, 호스트의 판정과 화면의 판정이 같은 함수 하나를 읽어야
+	 * 갈라지지 않는다. 호스트의 실제 구매도 이 함수를 다시 돌린 뒤에 값을 치른다.
+	 */
+	UFUNCTION(BlueprintPure, Category="Shop")
+	ECL9BuyResult CanBuy(FName EquipAlias) const;
+
+	/** 월드에 나와 있는 이 장비의 실물 수 — 클라이언트에서도 복제된 실물을 센다 */
+	UFUNCTION(BlueprintPure, Category="Shop")
+	int32 GetOwnedCount(FName EquipAlias) const;
 
 	/**
 	 * 호스트 전용: 저장본에서 판을 되돌린다 — 날짜·자금·진행 중 주문을 한 번에 얹는다
@@ -198,6 +249,10 @@ protected:
 	/** 이번 정산 기간의 수입 — 정산 판정 대상이며, 누적 자금과 따로 센다 */
 	UPROPERTY(ReplicatedUsing=OnRep_Money, BlueprintReadOnly, Category="Economy")
 	int32 PeriodIncome = 0;
+
+	/** 마지막 정산 결과 — 새벽 화면이 신호를 놓쳤을 때의 근거 */
+	UPROPERTY(Replicated, BlueprintReadOnly, Category="Economy")
+	FCL9SettlementResult LastSettlement;
 
 	/** 호스트 런의 날짜 — 1부터 시작한다(docs/systems/session.md) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")

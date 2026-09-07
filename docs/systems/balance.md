@@ -119,3 +119,29 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
 - 요리: `cooking.md`
 - 판매·주문: `economy.md` · `order.md`
 - 세이브·로비: `session.md`
+
+## 구현 상태 (정산 — 2026-09-07)
+
+- **곡선·주기**: `UCL9ProgressionDef`에 `QuotaCurve`(정산일 목표 이더)와 `SettlementIntervalDays`(초안 2).
+  `QuotaAt(일차)`는 **빈 커브를 0으로 읽는다** — 다른 커브와 달리 배율이 아니라 목표액이라, 곡선을 안 그린
+  상태에서 판이 갑자기 실패하지 않게 했다(다른 커브의 "빈 값 = 1.0"과 일부러 다르다).
+  `IsSettlementDay(일차)`는 `일차 % 주기 == 0`이며, 주기가 0 이하면 정산이 없다.
+- **판정**: `ACL9GameMode::Settle()` — 새벽(로비 진입, 페이즈를 로비로 돌린 직후)에 실행된다.
+  정산일이면 `PeriodIncome`을 `QuotaAt(일차)`와 견주고, **미달이면 그 자리에서 판이 끝난다**(유예 없음).
+  통과하면 `GameState.ResetPeriodIncome()`으로 다음 기간이 시작된다. **보유 잔액(`SharedMoney`)은 보지 않는다** —
+  장비를 사도 정산이 불리해지지 않는다.
+- **판 실패**: `StartNewRun()` — 기록을 먼저 남기고(아래), 월드의 장비 실물을 전부 없앤 뒤
+  `GameState.RestoreRun(1, 0, 0, {})`로 1일차 빈손 상태를 연다. 그 상태가 그대로 새벽 저장에 덮어써진다.
+- **신호**: `ACL9GameState::OnSettled(Day, Earned, Target, bPassed)` — 통과·미달 **둘 다** 발동하고,
+  **상태를 되돌리기 전에** 보낸다. 통과하면 기간 수입이 0이 되고 미달하면 1일차로 돌아가므로 그 뒤에는
+  새벽 화면이 보여줄 숫자가 남지 않기 때문이다. `bPassed=false`는 그 판이 끝났다는 뜻이다 —
+  판 종료 전용 신호를 따로 두지 않는다(지금 판이 끝나는 경로는 정산 미달 하나뿐이다).
+  같은 값이 `GameState.LastSettlement`로 **복제도** 된다 — 클라이언트에서는 화면 열기 RPC와 정산 멀티캐스트가
+  서로 다른 채널이라 도착 순서가 보장되지 않아, 늦게 열린 화면이 신호를 놓칠 수 있기 때문이다.
+  **`LastSettlement.Day != 0`이 곧 "이번 새벽에 정산이 있었다"**이다 — 밤이 시작될 때 `ClearLastSettlement()`로
+  지우므로 날짜를 대조하지 않아도 된다. 날짜로 대조하면 미달 직후 판이 1일차로 되돌아가 결과를 잃는다.
+- **기록**: `UCL9RecordSave`(파일 `CL9Records`, 슬롯·판과 무관) — `BestDay`. 새벽마다,
+  그리고 판이 끝날 때 갱신한다. "클리어는 없고 며칠까지 버텼는지가 기록이다".
+- **미구현**: 새벽 화면·정산 결과 표시(UI), `FinalDay`(0=무한이라 소비처가 없다),
+  `QuotaOverride`·`OrdersOfferedCurve` 같은 나머지 progression 컬럼.
+- 치트: `cl9.settle`(목표·기간 수입 출력 + 정산일이면 판정), `cl9.settle force`(정산일이 아니어도 판을 지금 끝낸다).

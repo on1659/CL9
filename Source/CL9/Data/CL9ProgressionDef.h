@@ -40,6 +40,16 @@ public:
 	/** 그 날 판매가·납품 정산에 곱해질 인플레이션 배율 (docs/plan/economy.md 가격식) */
 	float ValueAt(int32 Day) const;
 
+	/**
+	 * 그 정산일에 벌어야 하는 이더 (docs/systems/balance.md 실패 판정).
+	 * **빈 커브는 0을 뜻한다** — 다른 커브와 달리 배율이 아니라 목표액이라, 비어 있으면
+	 * "목표 없음"이지 "1이더"가 아니다. 곡선을 안 그린 채로 판이 갑자기 실패하지 않게 한다.
+	 */
+	int32 QuotaAt(int32 Day) const;
+
+	/** 그 날이 정산일이면 true — SettlementIntervalDays가 0 이하면 정산이 없다 */
+	bool IsSettlementDay(int32 Day) const;
+
 	/** DayOverride가 그 날의 정전을 끄면 true */
 	bool IsBlackoutDisabled(int32 Day) const;
 
@@ -74,6 +84,14 @@ public:
 	/** 반드시 수락해야 하는 주문 수, M */
 	UPROPERTY(EditAnywhere, Category="Orders")
 	int32 OrdersRequiredPerDay = 2;
+
+	/** 정산일의 목표 이더 — 첫 정산(2일차) 800에서 시작해 10일 이후에도 계속 오른다 (초안) */
+	UPROPERTY(EditAnywhere, Category="Settlement")
+	FRuntimeFloatCurve QuotaCurve;
+
+	/** 며칠에 한 번 정산하나 (초안 2) — 0 이하면 정산하지 않는다 */
+	UPROPERTY(EditAnywhere, Category="Settlement")
+	int32 SettlementIntervalDays = 2;
 
 private:
 	const FCL9DayOverride* FindOverride(int32 Day) const;

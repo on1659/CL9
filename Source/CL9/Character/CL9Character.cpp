@@ -36,7 +36,7 @@
 
 namespace
 {
-	/** Focus candidates must be at least this far into the view (dot against the aim) */
+	/** focus 후보가 되려면 최소한 이만큼은 시야 안(조준 방향과의 내적)에 들어와 있어야 한다 */
 	constexpr float FocusMinAimDot = 0.3f;
 }
 
@@ -45,7 +45,7 @@ ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 {
 	GetCapsuleComponent()->InitCapsuleSize(CL9::CapsuleRadius, CL9::CapsuleHalfHeight);
 
-	// Camera sits at eye height; only the owner sees the first person mesh
+	// 카메라는 눈높이에 위치하며, 1인칭 메시는 소유자에게만 보인다
 	// (docs/systems/character.md "시점 — 1인칭").
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
@@ -56,8 +56,8 @@ ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	FirstPersonCameraComponent->FirstPersonFieldOfView = 70.f;
 	FirstPersonCameraComponent->FirstPersonScale = 0.6f;
 
-	// Full body mesh is what other players see; its own transform is the
-	// standard mannequin fit (feet at capsule bottom, facing +X).
+	// 다른 플레이어에게 보이는 것은 전신 메시다. 이것 자체의 트랜스폼은
+	// 표준 마네킹 규격을 따른다 (발이 캡슐 바닥에, +X 방향을 바라봄).
 	GetMesh()->SetOwnerNoSee(true);
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -CL9::CapsuleHalfHeight), FRotator(0.f, -90.f, 0.f));
@@ -81,8 +81,8 @@ void ACL9Character::SetCharacterAlias(FName NewAlias)
 	CharacterAlias = NewAlias;
 	ApplyCharacterDef();
 
-	// The individual's HP rolls once, on the host (docs/systems/character.md —
-	// HP lives on the PlayerState, never the character).
+	// 개인의 HP는 호스트에서 한 번만 굴려진다 (docs/systems/character.md —
+	// HP는 항상 PlayerState에 있고 캐릭터에는 없다).
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
 	if (CL9PlayerState != nullptr && CL9PlayerState->MaxHp == 0 && CharacterDef != nullptr)
 	{
@@ -106,6 +106,7 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, PullingCart);
 	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
 	DOREPLIFETIME(ACL9Character, WornItem);
+	DOREPLIFETIME(ACL9Character, ActiveEffects);
 }
 
 void ACL9Character::OnRep_CharacterAlias()
@@ -127,8 +128,8 @@ void ACL9Character::ApplyCharacterDef()
 	}
 	CharacterDef = Def;
 
-	// Ruling values — every machine applies the same local table row, so the
-	// autonomous proxy predicts with the numbers the host rules with
+	// 판정용 수치 — 모든 머신이 동일한 로컬 테이블 행을 적용하므로
+	// 자율 프록시는 호스트가 판정할 때 쓰는 것과 같은 수치로 예측한다
 	// (conventions § 5).
 	GetCapsuleComponent()->SetCapsuleSize(Def->CapsuleRadius, Def->CapsuleHalfHeight);
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, Def->EyeHeight - Def->CapsuleHalfHeight));
@@ -139,7 +140,7 @@ void ACL9Character::ApplyCharacterDef()
 	Movement->JumpZVelocity = Def->JumpVelocity;
 	Movement->GravityScale = Def->JumpGravity / CL9::DefaultGravityZ;
 
-	// Presentation — meshes come from the row so bought assets swap without C++.
+	// 표시용 — 메시는 행에서 가져오므로 구매한 에셋을 C++ 없이 교체할 수 있다.
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -Def->CapsuleHalfHeight));
 	if (USkeletalMesh* BodyMesh = Def->SkeletalMesh.LoadSynchronous())
 	{
@@ -174,6 +175,7 @@ void ACL9Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ACL9Character::ThrowEndInput);
 		EnhancedInput->BindAction(SwapAction, ETriggerEvent::Started, this, &ACL9Character::SwapInput);
 		EnhancedInput->BindAction(FlashlightAction, ETriggerEvent::Started, this, &ACL9Character::FlashlightInput);
+		EnhancedInput->BindAction(EatAction, ETriggerEvent::Started, this, &ACL9Character::EatInput);
 	}
 	else
 	{
@@ -220,8 +222,8 @@ void ACL9Character::PickPlaceInput()
 
 void ACL9Character::ThrowStartInput()
 {
-	// Empty hands shove (frying pan stand-in until ④ equipment); a full hand
-	// charges a throw (docs/systems/input.md · monster.md 반격).
+	// 빈손이면 밀친다 (④ 장비가 들어오기 전까지 프라이팬 대역); 손에 뭔가 있으면
+	// 던지기를 차징한다 (docs/systems/input.md · monster.md 반격).
 	if (GetHeldItem() != nullptr)
 	{
 		LocalThrowChargeStartTime = GetWorld()->GetTimeSeconds();
@@ -251,7 +253,7 @@ float ACL9Character::GetThrowChargeAlpha() const
 
 FText ACL9Character::GetFocusPrompt() const
 {
-	// Same order as Server_PickPlace: wearable > pickable item > interactable > place/release
+	// Server_PickPlace와 같은 순서: 착용 가능 > 주울 수 있는 아이템 > 상호작용 대상 > 놓기/해제
 	AActor* Focus = FocusedActor.Get();
 	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
 		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
@@ -291,8 +293,8 @@ void ACL9Character::FlashlightInput()
 
 void ACL9Character::Server_Flashlight_Implementation()
 {
-	// The worn headlamp takes F first; otherwise a held flashlight. The item
-	// itself refuses to light a hand flashlight past the blackout (docs/systems/light.md).
+	// 착용한 헤드램프가 F를 우선 받고, 없으면 손에 든 손전등이다. 정전 이후에는
+	// 손전등 자체가 켜지길 거부한다 (docs/systems/light.md).
 	ACL9Item* Lamp = (WornItem != nullptr && WornItem->IsFlashlight()) ? WornItem.Get()
 		: (HeldItem != nullptr && HeldItem->IsFlashlight()) ? HeldItem.Get()
 		: nullptr;
@@ -328,7 +330,7 @@ AActor* ACL9Character::ResolveFocus() const
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		AActor* Actor = Overlap.GetActor();
-		// The pulled cart stays a valid target — aiming it releases or loads.
+		// 끌고 있는 카트도 유효한 대상이다 — 그것을 조준하면 놓거나 싣는다.
 		if (Actor == nullptr || Actor == HeldItem)
 		{
 			continue;
@@ -341,7 +343,7 @@ AActor* ACL9Character::ResolveFocus() const
 
 		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp())
 		{
-			// A Head-slot item goes on the head, so busy hands don't matter — a bare head does
+			// Head 슬롯 아이템은 머리에 착용하므로 손이 막혀 있어도 상관없다 — 대신 머리가 비어 있어야 한다
 			const bool bWearable = Item->GetItemDef()->CarrySlot == ECL9CarrySlot::Head;
 			const bool bCanTake = bWearable ? (WornItem == nullptr) : !bHandsBusy;
 			if (bCanTake && AimDot > BestItemDot)
@@ -349,8 +351,8 @@ AActor* ACL9Character::ResolveFocus() const
 				BestItem = Actor;
 				BestItemDot = AimDot;
 			}
-			// An item never doubles as an interactable candidate unless it
-			// implements the interface (the cart does).
+			// 아이템은 인터페이스를 구현한 경우(카트가 그렇다)가 아니면
+			// 상호작용 후보를 겸하지 않는다.
 			if (Cast<ICL9Interactable>(Actor) == nullptr)
 			{
 				continue;
@@ -373,16 +375,16 @@ void ACL9Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// Aim highlight is purely local presentation — the same resolver runs on
-	// the host when the key lands, so the outline shows exactly what E will do.
+	// 조준 하이라이트는 순전히 로컬 표시용이다 — 키가 눌렸을 때 호스트에서도
+	// 같은 resolver가 실행되므로, 윤곽선은 E가 실제로 할 일을 그대로 보여준다.
 	if (!IsLocallyControlled())
 	{
 		return;
 	}
 
-	// First person means a catch has to read as the view dropping to the floor —
-	// the owner never sees their own body, so knockdown/death sinks the camera
-	// instead of a body anim (docs/systems/character.md 피격·넘어짐).
+	// 1인칭이므로 붙잡힘은 시점이 바닥으로 가라앉는 것으로 표현해야 한다 —
+	// 소유자는 자기 몸을 볼 수 없으므로, 넘어짐·죽음은 바디 애니메이션 대신
+	// 카메라를 가라앉힌다 (docs/systems/character.md 피격·넘어짐).
 	const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float EyeZ = CharacterDef ? CharacterDef->EyeHeight - HalfHeight : FirstPersonCameraComponent->GetRelativeLocation().Z;
 	const float DownedZ = -HalfHeight + 30.f;
@@ -405,8 +407,8 @@ void ACL9Character::Tick(float DeltaSeconds)
 		FocusedActor = NewFocus;
 	}
 
-	// The prompt can change without the target changing (cart: 끌기 → 놓기), so
-	// compare the text itself and notify the HUD only on a difference.
+	// 대상이 바뀌지 않아도 프롬프트는 바뀔 수 있으므로(카트: 끌기 → 놓기)
+	// 텍스트 자체를 비교해서 달라졌을 때만 HUD에 알린다.
 	const FText Prompt = GetFocusPrompt();
 	if (!Prompt.EqualTo(LastFocusPrompt))
 	{
@@ -419,9 +421,9 @@ void ACL9Character::Tick(float DeltaSeconds)
 
 void ACL9Character::UpdateStaminaShake()
 {
-	// Stamina has no bar — the screen shakes as it empties (docs/plan/data/rules.md).
-	// Owning client only; display-only, never a ruling. The shake and its threshold
-	// come from the shake table (a row, not a rules column — new shakes add rows).
+	// 스태미나는 게이지가 없다 — 비어갈수록 화면이 흔들린다 (docs/plan/data/rules.md).
+	// 소유 클라이언트 전용이며 표시 전용이지 판정이 아니다. 흔들림과 그 임계값은
+	// shake 테이블에서 나온다 (rules 컬럼이 아니라 행이므로 새 흔들림은 행 추가로 처리한다).
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	APlayerCameraManager* CameraManager = PC ? PC->PlayerCameraManager : nullptr;
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
@@ -479,11 +481,11 @@ void ACL9Character::Server_PickPlace_Implementation()
 		return;
 	}
 
-	// One key, one target: whatever the aim resolves to — the host re-runs
-	// the same resolver and never trusts the client (docs/systems/input.md).
+	// 키 하나에 대상 하나: 조준이 가리키는 게 무엇이든 — 호스트는 같은
+	// resolver를 다시 실행할 뿐 클라이언트를 신뢰하지 않는다 (docs/systems/input.md).
 	AActor* Focus = ResolveFocus();
 
-	// A Head-slot item is worn, not held — the same press, hands untouched
+	// Head 슬롯 아이템은 드는 게 아니라 착용한다 — 같은 키 입력이지만 손은 그대로 둔다
 	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
 		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
 	{
@@ -499,7 +501,7 @@ void ACL9Character::Server_PickPlace_Implementation()
 		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
 		&& HeldItem == nullptr && PullingCart == nullptr)
 	{
-		// Taking an item off a cart bed is the same press as off the ground.
+		// 카트 짐칸에서 아이템을 꺼내는 것도 바닥에서 줍는 것과 같은 키 입력이다.
 		if (ACL9Cart* BedCart = Cast<ACL9Cart>(Item->GetAttachParentActor()))
 		{
 			BedCart->RemoveLoadedItem(Item);
@@ -513,8 +515,8 @@ void ACL9Character::Server_PickPlace_Implementation()
 		return;
 	}
 
-	// Nothing aimed: a full hand sets its item down, a bare hand lets go of
-	// the cart (aiming the trailing cart releases it too).
+	// 아무것도 조준하지 않음: 손에 뭔가 있으면 내려놓고, 빈손이면 끌던
+	// 카트를 놓는다 (뒤따르는 카트를 조준해도 마찬가지로 놓는다).
 	if (HeldItem != nullptr)
 	{
 		HostPlaceHeld(Rules);
@@ -544,8 +546,8 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 		return;
 	}
 
-	// The host measures the charge on its own clock — client-sent charge
-	// amounts never enter the ruling (docs/systems/input.md 던지기 차징).
+	// 호스트는 자신의 시계로 차징을 측정한다 — 클라이언트가 보낸 차징
+	// 값은 판정에 절대 들어가지 않는다 (docs/systems/input.md 던지기 차징).
 	const float Charge = FMath::Clamp((GetServerTime() - ThrowChargeStartTime) / Rules->ThrowChargeTime, 0.f, 1.f);
 	ThrowChargeStartTime = -1.f;
 	const float Speed = FMath::Lerp(Rules->ThrowMinSpeed, Rules->ThrowMaxSpeed, Charge);
@@ -565,8 +567,8 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 
 void ACL9Character::Server_Shove_Implementation()
 {
-	// Reach and recovery are pan-feel constants until ④ turns this into real
-	// equipment; the stun/knockback amounts still come from the monster row.
+	// 사거리와 회복 시간은 ④에서 실제 장비가 되기 전까지의 '프라이팬 느낌' 상수이며,
+	// 기절/넉백 수치는 여전히 몬스터 행에서 가져온다.
 	constexpr float ShoveReach = 200.f;
 	constexpr float ShoveHalfAngleDot = 0.3f;
 	constexpr float ShoveRecovery = 0.6f;
@@ -578,7 +580,7 @@ void ACL9Character::Server_Shove_Implementation()
 	}
 	ShoveReadyTime = Now + ShoveRecovery;
 
-	// Nearest monster ahead within reach (bodies overlap, so a sphere query)
+	// 사거리 안 정면에서 가장 가까운 몬스터 (몸체끼리 겹치므로 구체 쿼리를 쓴다)
 	const FVector Origin = GetActorLocation();
 	const FVector Forward = GetControlRotation().Vector();
 	TArray<FOverlapResult> Overlaps;
@@ -610,6 +612,81 @@ void ACL9Character::Server_Shove_Implementation()
 	}
 }
 
+float ACL9Character::GetStatBonus(ECL9Stat Stat) const
+{
+	// 만료된 것은 세지 않는다 — 목록에서 지우는 일은 호스트가 하지만, 판단은 시각으로 한다.
+	// 그래야 복제가 늦게 도착해도 양쪽이 같은 값을 도출한다.
+	const float Now = GetServerTime();
+	float Bonus = 0.f;
+	for (const FCL9ActiveEffect& Effect : ActiveEffects)
+	{
+		if (Effect.Stat == Stat && Now < Effect.EndServerTime)
+		{
+			Bonus += Effect.Amount;
+		}
+	}
+	return Bonus;
+}
+
+void ACL9Character::EatInput()
+{
+	Server_Eat();
+}
+
+void ACL9Character::Server_Eat_Implementation()
+{
+	HostEat();
+}
+
+void ACL9Character::HostEat()
+{
+	if (!HasAuthority() || HeldItem == nullptr || IsKnockedDown())
+	{
+		return;
+	}
+
+	const UCL9ItemDef* Def = HeldItem->GetItemDef();
+	if (Def == nullptr)
+	{
+		return;
+	}
+	// 먹을 수 있는 것은 Dish뿐이다 — "먹을 수 있나" 플래그를 따로 두지 않고 타입이 가른다
+	if (Def->ItemType != ECL9ItemType::Dish)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Eat refused: '%s'/'%s' is not a dish."),
+			*HeldItem->GetAlias().ToString(), *HeldItem->GetSubAlias().ToString());
+		return;
+	}
+
+	const float Now = GetServerTime();
+	// 지나간 효과는 여기서 청소한다 — 목록이 무한정 자라지 않게
+	ActiveEffects.RemoveAll([Now](const FCL9ActiveEffect& Effect)
+	{
+		return Now >= Effect.EndServerTime;
+	});
+
+	for (const FCL9StatEffect& Wanted : Def->EatEffects)
+	{
+		if (Wanted.DurationSec <= 0.f)
+		{
+			// 즉시형은 지속 효과로 만들 수 없다 — 지금 범위에 즉시 스탯 변화가 없어 로그만 남긴다
+			UE_LOG(LogCL9, Warning, TEXT("Eat: '%s' has an instant effect on stat %d — instant stat changes are not implemented."),
+				*Def->Alias.ToString(), static_cast<int32>(Wanted.Stat));
+			continue;
+		}
+		FCL9ActiveEffect& Effect = ActiveEffects.AddDefaulted_GetRef();
+		Effect.Stat = Wanted.Stat;
+		Effect.Amount = Wanted.Amount;
+		Effect.EndServerTime = Now + Wanted.DurationSec;
+		UE_LOG(LogCL9, Log, TEXT("Ate '%s'/'%s': stat %d %+.1f for %.0fs."),
+			*HeldItem->GetAlias().ToString(), *HeldItem->GetSubAlias().ToString(),
+			static_cast<int32>(Wanted.Stat), Wanted.Amount, Wanted.DurationSec);
+	}
+
+	// 먹은 것은 사라진다
+	HostConsumeHeldItem();
+}
+
 void ACL9Character::Server_Swap_Implementation()
 {
 	const UCL9RulesDef* Rules = GetRules();
@@ -624,8 +701,8 @@ void ACL9Character::Server_Swap_Implementation()
 		return;
 	}
 
-	// Hands are exclusive: pulling a cart occupies them, so no pocket juggling
-	// mid-pull (2026-09-02 상호작용 통합).
+	// 손은 배타적이다: 카트를 끌고 있으면 손이 그걸로 차 있으므로 끄는 도중에는
+	// 주머니를 뒤적일 수 없다 (2026-09-02 상호작용 통합).
 	if (PullingCart != nullptr)
 	{
 		return;
@@ -654,8 +731,8 @@ void ACL9Character::Server_Swap_Implementation()
 
 	if (bHandFull)
 	{
-		// Pocketed items exist only as data — the actor dies here and respawns
-		// on the way out (docs/systems/inventory.md, 2026-09-01 확정).
+		// 주머니에 넣은 아이템은 데이터로만 존재한다 — 액터는 여기서 사라지고
+		// 다시 꺼낼 때 리스폰된다 (docs/systems/inventory.md, 2026-09-01 확정).
 		FCL9CarriedItem& Pocketed = CL9PlayerState->PocketItems.AddDefaulted_GetRef();
 		Pocketed.ItemAlias = HeldItem->GetAlias();
 		Pocketed.ItemSubAlias = HeldItem->GetSubAlias();
@@ -677,8 +754,8 @@ void ACL9Character::Server_Swap_Implementation()
 	}
 
 	CL9PlayerState->SwapLockUntil = Now + Rules->SwapTime;
-	// Covers the pocket-in path's hand/pocket writes; the take-out path also
-	// fires through HostPickUp, a harmless double refresh.
+	// 주머니에 넣는 경로의 손/주머니 갱신을 커버한다; 꺼내는 경로도 HostPickUp을
+	// 통해 다시 호출되지만 무해한 중복 갱신일 뿐이다.
 	CL9PlayerState->NotifyCarryChanged();
 }
 
@@ -709,7 +786,7 @@ void ACL9Character::HostWear(ACL9Item* Item)
 		return;
 	}
 
-	// Mirror for UI, actor for the world (docs/systems/inventory.md 상태 모델)
+	// UI를 위한 미러, 월드를 위한 액터 (docs/systems/inventory.md 상태 모델)
 	CL9PlayerState->HeadItem.ItemAlias = Item->GetAlias();
 	CL9PlayerState->HeadItem.ItemSubAlias = Item->GetSubAlias();
 	CL9PlayerState->NotifyCarryChanged();
@@ -804,7 +881,7 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 	CL9PlayerState->NotifyHpChanged();
 	HostDropEverything();
 
-	// Down and unable to move; HP 0 stays down until the next lobby revives
+	// 쓰러져서 움직일 수 없다; HP 0이면 다음 로비가 되살릴 때까지 쓰러진 채로 있는다
 	// (docs/systems/character.md 피격·넘어짐·죽음 — 부활은 없다).
 	const float Duration = CL9PlayerState->Hp > 0
 		? (CharacterDef ? CharacterDef->KnockdownTime : 1.5f)
@@ -815,7 +892,7 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 		*GetNameSafe(this), *GetNameSafe(Source), Amount, CL9PlayerState->Hp,
 		CL9PlayerState->Hp <= 0 ? TEXT(" (dead — down for the night)") : TEXT(""));
 
-	// The flow ruling (wipe, spectate) is the game mode's — host only, so it exists here
+	// 흐름 판정(전멸, 관전)은 게임 모드의 몫이다 — 호스트에서만 존재하므로 여기서 호출한다
 	if (CL9PlayerState->Hp <= 0)
 	{
 		if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
@@ -856,7 +933,7 @@ bool ACL9Character::IsKnockedDown() const
 
 bool ACL9Character::IsDead() const
 {
-	// MaxHp is 0 until the alias applies and rolls it — only a rolled 0 is death
+	// alias가 적용되어 굴려지기 전까지 MaxHp는 0이다 — 실제로 굴려진 0만 죽음으로 친다
 	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
 	return CL9PlayerState != nullptr && CL9PlayerState->IsDead();
 }
@@ -875,9 +952,9 @@ void ACL9Character::HostDropEverything()
 		PullingCart->StopPull(this);
 	}
 
-	// Spill at ankle height with a small sideways shove — real physics takes it
-	// from there, and the low origin keeps fragile items under CrackSpeed so a
-	// catch scatters the load instead of smashing all of it.
+	// 발목 높이에서 옆으로 살짝 밀쳐서 흘린다 — 그다음부터는 실제 물리가 알아서
+	// 처리하고, 낮은 원점 덕분에 깨지기 쉬운 아이템도 CrackSpeed 아래에 머물러서
+	// 붙잡히면 짐이 다 박살나는 대신 흩어지기만 한다.
 	ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>();
 	const float FloorZ = GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 

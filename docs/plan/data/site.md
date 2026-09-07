@@ -12,19 +12,33 @@
 | 컬럼 | 타입 | 뜻 | 양계장 |
 |---|---|---|---|
 | `Generator` | enum `ECL9Generator` | **어떤 생성기를 쓰나** | `Henhouse` |
-| `AisleCount` | int | 통로 수 (1F) | 8 |
-| `ColCount` | int | 열 수 (1F) | 6 |
-| `AisleCountB1` / `ColCountB1` | int | 지하 격자 | 6 / 4 |
-| `AisleWidth` | float | 통로 폭 (cm) | 255 |
-| `ColWidth` | float | 열 폭 (cm) | 900 |
+| `Theme` | `FName` | **어느 조각 묶음으로 짓나** (asset-swap.md) | `henhouse` |
+| `AisleCount` | int | 통로 수 (1F) | 10 |
+| `ColCount` | int | 열 수 (1F) | 8 |
+| `AisleCountB1` / `ColCountB1` | int | 지하 격자 | 8 / 6 |
+| `AisleWidth` | float | 통로 폭 (cm) | 250 |
+| `ColWidth` | float | 열 폭 (cm) | 1000 |
 | `RowDepth` | float | 케이지 열 깊이 (cm) | 120 |
 | `OpenWidth` | float | 케이지 열 관통 개구 (cm) | 360 |
 | `PlugWidth` | float | 통로 마개 폭 (cm) | 180 |
-| `TargetOpen1F` | int | **1층 개구부 목표 수** | 50 |
-| `TargetOpenB1` | int | 지하 개구부 목표 수 | 25 |
-| `JarCount1F` / `JarCountB1` | int | 항아리 수 | 4 / 3 |
+| `TargetOpen1F` | int | **1층 개구부 목표 수** | 87 |
+| `TargetOpenB1` | int | 지하 개구부 목표 수 | 54 |
+| `JarCount1F` / `JarCountB1` | int | 항아리 수 | 7 / 6 |
 
 **개구부 수가 난이도 손잡이다** — 줄이면 막다른 길이 늘고 도망칠 곳이 준다.
+
+**2026-09-07 격자 확대** (사용자 결정 "맵이 작아서 금방 다 돈다"): 1층 8×6 = 48칸 → **10×8 = 80칸**
+(1.67배), 지하 6×4 = 24칸 → 8×6 = 48칸. 개구부 수는 개방률(1층 61% · 지하 66%)을 유지하도록
+간선 총수에 맞춰 올렸고(1층 82→142칸, 지하 38→82칸), 항아리는 칸 수에 비례해 늘렸다.
+동시에 **통로 폭 255→250 · 열 폭 900→1000**으로 바꿔 조각 모듈(500cm)의 배수에 맞췄다 —
+치수와 테마는 한 벌로 움직인다([../../systems/asset-swap.md](../../systems/asset-swap.md)).
+
+축사 내부가 5400×2880 → **8000×3580cm**가 됐다. 달리기(654cm/s)로 장축 직선 주파가 8.3초에서
+12.2초가 되므로 245초 밤이 빡빡해질 수 있다 — **밤 길이는 아직 안 건드렸다.** 실제로 뛰어 본 뒤
+따로 판단한다(두 변수를 동시에 흔들지 않는다).
+
+**벽 두께는 컬럼이 아니다.** `barn` 종류가 쓰는 조각의 실측 두께를 `ACL9SiteMap`이 읽어
+`FCL9SiteFrame::Wall`에 넣는다 — 팩이 바뀌면 통로 폭이 그대로 따라 맞는다.
 
 **격자 치수는 시드와 무관하게 고정이다.** 시드가 바꾸는 건 미로 내부(케이지·마개·주방·둥지·
 개구멍)뿐이고 마당·트럭·계단·축사 외곽은 손으로 짓는다 — 아티스트가 만질 수 있는 영역과

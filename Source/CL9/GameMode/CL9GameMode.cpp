@@ -4,6 +4,7 @@
 #include "CL9.h"
 #include "Character/CL9Character.h"
 #include "Data/CL9DefRegistry.h"
+#include "Data/CL9EquipmentDef.h"
 #include "Data/CL9ItemDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
@@ -164,6 +165,9 @@ void ACL9GameMode::StartNight()
 		return;
 	}
 
+	// 새벽이 끝났다 — 지난 정산 결과는 이 밤부터 유효하지 않다(새벽 화면이 그것으로 판단한다)
+	CL9GameState->ClearLastSettlement();
+
 	const UCL9RulesDef* Rules = GetRules();
 	if (Rules == nullptr)
 	{
@@ -249,6 +253,8 @@ void ACL9GameMode::EnterLobby()
 	CL9GameState->AdvanceDay();
 	// 날이 바뀌었으니 어제까지였던 주문은 여기서 끝난다 — 위약금이 먼저, 새 offer가 나중
 	ExpireOrders();
+	// 두고 온 장비는 부지와 함께 사라진다 — 맵을 새로 깔기 전에 판정한다
+	LoseEquipmentLeftBehind();
 	ClearNightPopulation();
 	CL9GameState->SetSiteAndDanger(CL9GameState->GetCurrentSiteAlias(), 1.f);
 	// 새로운 밤, 새로운 미로 — 로비에서부터 세워둬서 정차 지점이 오늘 밤 갈 곳을 보여준다
@@ -256,6 +262,12 @@ void ACL9GameMode::EnterLobby()
 	ReviveDead();
 	CL9GameState->SetPhase(ECL9NightPhase::Lobby);
 	UE_LOG(LogCL9, Log, TEXT("Lobby — day %d."), CL9GameState->GetCurrentDay());
+	// 새벽 화면을 **정산보다 먼저** 연다 — 화면이 먼저 서 있어야 OnSettled를 놓치지 않는다
+	// (놓쳐도 GameState.GetLastSettlement()로 읽을 수 있게 해 뒀지만, 순서가 맞으면 그럴 일이 없다)
+	OpenDawnScreen();
+	// 새벽 처리: 정산이 먼저다 — 판이 끝나면 새 판 상태를 저장해야 하기 때문이다
+	Settle();
+	RecordBestDay(CL9GameState->GetCurrentDay());
 	// 새벽마다 한 번 — 밤을 통째로 치른 뒤에 저장한다(docs/systems/save.md 저장 시점)
 	SaveRun();
 	OfferOrders();
@@ -738,6 +750,7 @@ bool ACL9GameMode::SaveRun(int32 Slot)
 	Save->SharedMoney = CL9GameState->GetSharedMoney();
 	Save->PeriodIncome = CL9GameState->GetPeriodIncome();
 	Save->ActiveOrders = CL9GameState->AcceptedOrders;
+	ListOwnedEquipment(Save->OwnedEquipment);
 
 	const FString SlotName = UCL9SaveGame::SlotName(Slot);
 	if (!UGameplayStatics::SaveGameToSlot(Save, SlotName, 0))
@@ -746,8 +759,8 @@ bool ACL9GameMode::SaveRun(int32 Slot)
 		return false;
 	}
 
-	UE_LOG(LogCL9, Log, TEXT("Saved '%s' — day %d, %d ether, %d order(s) in progress."),
-		*SlotName, Save->CurrentDay, Save->SharedMoney, Save->ActiveOrders.Num());
+	UE_LOG(LogCL9, Log, TEXT("Saved '%s' — day %d, %d ether, %d order(s) in progress, %d equipment."),
+		*SlotName, Save->CurrentDay, Save->SharedMoney, Save->ActiveOrders.Num(), Save->OwnedEquipment.Num());
 	return true;
 }
 
@@ -794,6 +807,23 @@ bool ACL9GameMode::LoadRun(int32 Slot)
 	}
 
 	CL9GameState->RestoreRun(Save->CurrentDay, Save->SharedMoney, Save->PeriodIncome, Restored);
+
+	// 장비는 실물이다 — 저장된 alias만큼 트럭 옆에 다시 세운다
+	int32 Respawned = 0;
+	for (const FName& EquipAlias : Save->OwnedEquipment)
+	{
+		const UCL9EquipmentDef* Equip = Registry ? Registry->FindEquipment(EquipAlias) : nullptr;
+		if (Equip == nullptr)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("Load: equipment '%s' has no row any more — dropped."), *EquipAlias.ToString());
+			continue;
+		}
+		if (SpawnEquipmentAtTruck(*Equip) != nullptr)
+		{
+			++Respawned;
+		}
+	}
+	UE_LOG(LogCL9, Log, TEXT("Load: %d equipment respawned by the truck."), Respawned);
 	UE_LOG(LogCL9, Log, TEXT("Loaded '%s' — day %d, %d ether, %d order(s) in progress."),
 		*SlotName, CL9GameState->GetCurrentDay(), CL9GameState->GetSharedMoney(), Restored.Num());
 
@@ -958,6 +988,239 @@ void ACL9GameMode::ExpireOrders()
 		const int32 Taken = CL9GameState->Deduct(Penalty);
 		UE_LOG(LogCL9, Log, TEXT("Penalties: %d ether due, %d taken. Money %d."), Penalty, Taken, CL9GameState->GetSharedMoney());
 	}
+}
+
+ACL9Item* ACL9GameMode::SpawnEquipmentAtTruck(const UCL9EquipmentDef& Equip)
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	if (Registry == nullptr)
+	{
+		return nullptr;
+	}
+
+	// 트럭 옆에 내려놓는다 — 산 물건은 인벤토리가 아니라 세상에 나온다 (docs/systems/shop.md)
+	FVector Where = FVector::ZeroVector;
+	for (TActorIterator<ACL9TruckPad> It(GetWorld()); It; ++It)
+	{
+		Where = It->GetActorLocation();
+		break;
+	}
+	const UCL9ItemDef* ItemRow = Registry->FindItem(Equip.ItemDef.ItemAlias, Equip.ItemDef.ItemSubAlias);
+	const float Radius = ItemRow ? ItemRow->Radius : 20.f;
+	// 여러 개가 같은 자리에 겹치지 않게 트럭 주위로 흩는다
+	const float Bearing = FMath::FRandRange(0.f, 2.f * UE_PI);
+	Where += FVector(FMath::Cos(Bearing), FMath::Sin(Bearing), 0.f) * 200.f;
+	Where.Z += Radius + 5.f;
+
+	return SpawnItem(Equip.ItemDef.ItemAlias, Equip.ItemDef.ItemSubAlias, FTransform(Where));
+}
+
+void ACL9GameMode::ListOwnedEquipment(TArray<FName>& OutAliases) const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	if (Registry == nullptr)
+	{
+		return;
+	}
+
+	for (const UCL9EquipmentDef* Equip : Registry->GetEquipment())
+	{
+		for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+		{
+			if (It->GetAlias() == Equip->ItemDef.ItemAlias && It->GetSubAlias() == Equip->ItemDef.ItemSubAlias)
+			{
+				OutAliases.Add(Equip->Alias);
+			}
+		}
+	}
+}
+
+int32 ACL9GameMode::LoseEquipmentLeftBehind()
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	if (!HasAuthority() || Registry == nullptr)
+	{
+		return 0;
+	}
+
+	FVector Truck = FVector::ZeroVector;
+	bool bFoundTruck = false;
+	for (TActorIterator<ACL9TruckPad> It(GetWorld()); It; ++It)
+	{
+		Truck = It->GetActorLocation();
+		bFoundTruck = true;
+		break;
+	}
+	if (!bFoundTruck)
+	{
+		// 트럭이 없으면 무엇을 두고 왔는지 판정할 기준이 없다 — 아무것도 잃지 않는다
+		return 0;
+	}
+
+	int32 Lost = 0;
+	for (const UCL9EquipmentDef* Equip : Registry->GetEquipment())
+	{
+		for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+		{
+			ACL9Item* Item = *It;
+			if (Item->GetAlias() != Equip->ItemDef.ItemAlias || Item->GetSubAlias() != Equip->ItemDef.ItemSubAlias)
+			{
+				continue;
+			}
+			// 손에 들거나 수레에 실어 온 것은 그 사람과 함께 트럭 곁에 있다 — 거리가 알아서 걸러낸다
+			if (FVector::Dist2D(Item->GetActorLocation(), Truck) > EquipmentKeepRadius)
+			{
+				UE_LOG(LogCL9, Log, TEXT("Equipment left behind: '%s' — lost with the site."), *Equip->Alias.ToString());
+				Item->Destroy();
+				++Lost;
+			}
+		}
+	}
+	return Lost;
+}
+
+void ACL9GameMode::OpenDawnScreen()
+{
+	if (!HasAuthority() || DawnUIRow.IsNone())
+	{
+		return;
+	}
+
+	// 화면은 각자의 것이다 — 호스트가 모든 컨트롤러에 각각 보낸다 (docs/systems/ui_system.md)
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ACL9PlayerController* Controller = Cast<ACL9PlayerController>(It->Get()))
+		{
+			Controller->Client_OpenScreen(DawnUIRow);
+		}
+	}
+}
+
+bool ACL9GameMode::Settle()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9ProgressionDef* Progression = GetProgression();
+	if (!HasAuthority() || CL9GameState == nullptr || Progression == nullptr)
+	{
+		return false;
+	}
+
+	const int32 Day = CL9GameState->GetCurrentDay();
+	if (!Progression->IsSettlementDay(Day))
+	{
+		return false;
+	}
+
+	// 판정 대상은 보유 잔액이 아니라 이번 기간에 번 것이다 (docs/plan/data/progression.md 종료 조건)
+	const int32 Target = Progression->QuotaAt(Day);
+	const int32 Earned = CL9GameState->GetPeriodIncome();
+	const bool bPassed = Earned >= Target;
+
+	// **상태를 되돌리기 전에** 알린다 — 통과하면 기간 수입이 0이 되고 미달하면 1일차로 돌아가므로,
+	// 이 뒤에는 새벽 화면이 보여줄 숫자를 어디서도 구할 수 없다
+	CL9GameState->Multicast_Settled(Day, Earned, Target, bPassed);
+
+	if (!bPassed)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Settlement failed on day %d: earned %d < %d — the run ends here."), Day, Earned, Target);
+		StartNewRun();
+		return true;
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Settlement passed on day %d: earned %d >= %d. Next period starts."), Day, Earned, Target);
+	CL9GameState->ResetPeriodIncome();
+	return true;
+}
+
+void ACL9GameMode::StartNewRun()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return;
+	}
+
+	// 판이 죽어도 기록은 남는다 — 덮어쓰기 전에 먼저 적는다 (docs/systems/save.md 기록)
+	RecordBestDay(CL9GameState->GetCurrentDay());
+
+	// 새 판은 빈손으로 연다 — 산 장비도 이전 판의 것이다
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	if (Registry != nullptr)
+	{
+		for (const UCL9EquipmentDef* Equip : Registry->GetEquipment())
+		{
+			for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+			{
+				if (It->GetAlias() == Equip->ItemDef.ItemAlias && It->GetSubAlias() == Equip->ItemDef.ItemSubAlias)
+				{
+					It->Destroy();
+				}
+			}
+		}
+	}
+
+	CL9GameState->RestoreRun(1, 0, 0, TArray<FCL9AcceptedOrder>());
+	UE_LOG(LogCL9, Log, TEXT("A new run opens at day 1 — nothing carries over."));
+}
+
+void ACL9GameMode::RecordBestDay(int32 Day)
+{
+	const FString SlotName = UCL9RecordSave::SlotName();
+	UCL9RecordSave* Record = Cast<UCL9RecordSave>(UGameplayStatics::LoadGameFromSlot(SlotName, 0));
+	if (Record == nullptr)
+	{
+		Record = Cast<UCL9RecordSave>(UGameplayStatics::CreateSaveGameObject(UCL9RecordSave::StaticClass()));
+	}
+	if (Record == nullptr || Day <= Record->BestDay)
+	{
+		return;
+	}
+
+	Record->BestDay = Day;
+	if (UGameplayStatics::SaveGameToSlot(Record, SlotName, 0))
+	{
+		UE_LOG(LogCL9, Log, TEXT("Record: best day is now %d."), Day);
+	}
+}
+
+ECL9BuyResult ACL9GameMode::BuyEquipment(FName EquipAlias)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return ECL9BuyResult::NoRow;
+	}
+
+	const ECL9BuyResult Verdict = CL9GameState->CanBuy(EquipAlias);
+	if (Verdict != ECL9BuyResult::Ok)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Buy refused: '%s' — reason %d."), *EquipAlias.ToString(), static_cast<int32>(Verdict));
+		return Verdict;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9EquipmentDef* Equip = Registry ? Registry->FindEquipment(EquipAlias) : nullptr;
+	if (Equip == nullptr)
+	{
+		return ECL9BuyResult::NoRow;
+	}
+
+	ACL9Item* Bought = SpawnEquipmentAtTruck(*Equip);
+	if (Bought == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("Buy failed: '%s' spawned nothing — no ether was taken."), *EquipAlias.ToString());
+		return ECL9BuyResult::NoRow;
+	}
+
+	const int32 Paid = CL9GameState->Deduct(Equip->Price);
+	UE_LOG(LogCL9, Log, TEXT("Bought '%s' for %d ether (owned %d). Money %d."),
+		*EquipAlias.ToString(), Paid, CL9GameState->GetOwnedCount(EquipAlias), CL9GameState->GetSharedMoney());
+	return ECL9BuyResult::Ok;
 }
 
 int32 ACL9GameMode::ComputeSellPrice(int32 RolledValue) const

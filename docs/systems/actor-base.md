@@ -29,6 +29,9 @@ public:
 
   UPROPERTY(ReplicatedUsing=OnRep_AliasPair, EditAnywhere, BlueprintReadOnly)
   FName SubAlias;  // 상태 변형 (egg+cooked 등 — 요리·깨짐이 이걸 교체한다)
+
+  // === 종류 ===
+  ECL9ActorKind GetKind() const;   // Item/Monster — 자식 클래스 생성자가 Kind를 정한다 (클래스마다 고정이라 복제 안 함)
   
   // === 사운드 ===
   UPROPERTY(EditAnywhere, BlueprintReadWrite)

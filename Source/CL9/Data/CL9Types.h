@@ -96,6 +96,64 @@ enum class ECL9ActorKind : uint8
 	Monster
 };
 
+/**
+ * 마지막 정산의 결과 (docs/systems/balance.md). 신호(`OnSettled`)와 **같은 값을 복제로도** 들고 있는다 —
+ * 새벽 화면이 신호보다 늦게 열려도(클라이언트에서는 화면 열기 RPC와 정산 멀티캐스트의 도착 순서가
+ * 보장되지 않는다) 보여줄 숫자를 잃지 않게 하려는 것이다. Day가 0이면 아직 정산한 적이 없다.
+ */
+USTRUCT(BlueprintType)
+struct FCL9SettlementResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Day = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Earned = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Target = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bPassed = false;
+};
+
+/**
+ * 장비를 살 수 있는지, 못 산다면 왜인지 (docs/systems/shop.md 구매 흐름).
+ * 화면이 버튼을 끄고 이유를 적을 때 읽는다 — 문구는 표현 계층에서 만든다.
+ */
+UENUM(BlueprintType)
+enum class ECL9BuyResult : uint8
+{
+	Ok,
+	/** 표에 없거나 깨진 행이다 */
+	NoRow,
+	/** 트럭 패널은 정차(로비) 중에만 연다 */
+	NotInLobby,
+	/** 아직 그 일차가 아니다 (UnlockDay) */
+	Locked,
+	/** 이미 MaxOwned만큼 갖고 있다 */
+	MaxOwned,
+	/** 잔액이 모자란다 — 채무는 없다 */
+	NotEnoughMoney
+};
+
+/**
+ * 아이템이 열원 위에서 어느 쪽으로 가는 중인지 (docs/systems/cooking.md). 열원은 조리대이며,
+ * 표현(진행도 게이지)이 읽을 수 있게 아이템에 실려 복제된다 — 판정 자체는 호스트의 조리대가 한다.
+ */
+UENUM(BlueprintType)
+enum class ECL9CookPhase : uint8
+{
+	/** 열원 위가 아니다 */
+	None,
+	/** 다음 전이가 "익음"이다 */
+	Cooking,
+	/** 이미 익었고 다음 전이는 "탐"이다 — 표현은 여기서 경고로 바뀐다 */
+	Burning
+};
+
 /** 아이템 행과 상태를 가리킨다 — 요리 체인과 소지품 미러가 이를 사용한다 (docs/data/schema.md) */
 USTRUCT(BlueprintType)
 struct FCL9ItemRef
@@ -162,6 +220,28 @@ struct FDropItem : public FCL9ItemCount
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int32 MaxQuantity = 1;
+};
+
+/**
+ * 지금 캐릭터에 걸려 있는 먹기 효과 하나 (docs/plan/data/item/common.md 타입과 먹기).
+ * **끝나는 시각을 서버 시각으로 들고 복제한다** — 넘어짐과 같은 방식이다. 그래야 서버와
+ * 자율 프록시가 같은 보정값을 도출해 이동 예측이 어긋나지 않는다(docs/systems/character.md).
+ */
+USTRUCT()
+struct FCL9ActiveEffect
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	ECL9Stat Stat = ECL9Stat::WalkSpeed;
+
+	/** 스탯에 **더하는** 값 — 배율이 아니다. 크기는 표가 정한다 */
+	UPROPERTY()
+	float Amount = 0.f;
+
+	/** 이 시각(서버 시각)이 지나면 사라진다 */
+	UPROPERTY()
+	float EndServerTime = 0.f;
 };
 
 /** 먹기 효과 행 하나 — 대상, 양, 지속시간이 모두 테이블에서 온다 */

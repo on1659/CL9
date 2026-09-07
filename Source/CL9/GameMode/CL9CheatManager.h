@@ -59,6 +59,15 @@ public:
 	/** cl9.money [양] — 판의 자금을 출력하고, 양이 붙으면 그만큼 넣거나(양수) 뺀다(음수) — 4f 구매 검증 대역 */
 	void Money(const TArray<FString>& Args);
 
+	/** cl9.buy <alias|번호> — 장비를 산다 (트럭 패널 대역, 호스트 판정). 인자가 없으면 목록과 살 수 있는지를 출력한다 */
+	void Buy(const TArray<FString>& Args);
+
+	/** cl9.eat — 손에 든 요리를 먹는다 (IA_Eat이 붙기 전까지의 대역) */
+	void Eat(const TArray<FString>& Args);
+
+	/** cl9.settle — 지금 정산 상태(목표·기간 수입)를 출력하고, force를 붙이면 정산일이 아니어도 판정을 돌린다 */
+	void Settle(const TArray<FString>& Args);
+
 	/** cl9.save [슬롯] / cl9.load [슬롯] — 판을 지금 저장하거나 되돌린다 (로비 [이어하기] UI 대역) */
 	void SaveRun(const TArray<FString>& Args);
 	void LoadRun(const TArray<FString>& Args);

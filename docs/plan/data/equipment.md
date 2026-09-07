@@ -44,7 +44,7 @@
 
 | Alias | Price | Slot | 도구? | 비고 |
 |---|---|---|---|---|
-| `frying_pan` | 200 (초안) | `Carryable` | ✔ | 요리에 필요하고 닭도 밀친다. **4d(2026-09-06)**: 아이템 표 `frying_pan` 행 + `ACL9FryingPan` 실물 — 4f 전엔 `cl9.additem frying_pan`으로 꺼낸다 ([../../systems/cooking.md](../../systems/cooking.md) 구현 상태) |
+| `frying_pan` | 200 (초안) | `Carryable` | ✔ | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대다). 들고 다니는 물건이고 팔 수도 있다. 아이템 표 `frying_pan` 행만 있고 전용 클래스는 없다 — 4f 전엔 `cl9.additem frying_pan`으로 꺼낸다 |
 | `cart` | 미정 | `Carryable` | ✕ | `CartOnly` 아이템 운반을 연다. 끌면 `CartMult` 0.75 — 물건 정의는 [item/cart.md](item/cart.md) |
 | `pot` | 미정 | `Carryable` | 미정 | 두 번째 조리 용기 — 동시에 두 요리 |
 | `standing_lamp` | 미정 | `Carryable` | ✕ | 놓으면 주변을 밝힌다. 조명 세팅([../../systems/light.md](../../systems/light.md)) 검토 후 값을 정한다 |

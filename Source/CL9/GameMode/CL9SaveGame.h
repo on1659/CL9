@@ -28,7 +28,7 @@ public:
 	}
 
 	/** 필드를 더할 때마다 올린다 — 낮은 버전은 기본값으로 채워 읽는다 */
-	static constexpr int32 CurrentVersion = 1;
+	static constexpr int32 CurrentVersion = 2;
 
 	UPROPERTY()
 	int32 SaveVersion = CurrentVersion;
@@ -45,4 +45,38 @@ public:
 	/** 아직 납품하지 못한 주문들 — 마감일은 절대 일차이며 CurrentDay와 함께 읽는다 */
 	UPROPERTY()
 	TArray<FCL9AcceptedOrder> ActiveOrders;
+
+	/**
+	 * 보유 장비의 alias — 실물은 불러올 때 트럭 옆에 다시 스폰된다. 같은 것을 둘 갖고
+	 * 있으면 항목이 둘이다. **새벽에 트럭 곁에 있던 것만 여기 적힌다**
+	 * (docs/plan/data/equipment.md 원정과 분실). 버전 1 세이브에는 없어 비어 있다.
+	 */
+	UPROPERTY()
+	TArray<FName> OwnedEquipment;
+};
+
+/**
+ * 판과 수명이 다른 기록 (docs/systems/save.md 기록). 판이 죽어도 남아야 하므로 슬롯과
+ * 무관한 별도 파일에 둔다 — "클리어는 없고, 며칠까지 버텼는지가 기록이다".
+ */
+UCLASS()
+class UCL9RecordSave : public USaveGame
+{
+	GENERATED_BODY()
+
+public:
+	/** 슬롯·판과 무관한 단일 파일 */
+	static FString SlotName()
+	{
+		return TEXT("CL9Records");
+	}
+
+	static constexpr int32 CurrentVersion = 1;
+
+	UPROPERTY()
+	int32 RecordVersion = CurrentVersion;
+
+	/** 최장 생존 일차 */
+	UPROPERTY()
+	int32 BestDay = 0;
 };

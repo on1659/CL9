@@ -28,6 +28,7 @@ ACL9Item::ACL9Item()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	SetReplicateMovement(true);
+	Kind = ECL9ActorKind::Item;
 
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -51,6 +52,19 @@ void ACL9Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ACL9Item, HoldState);
 	DOREPLIFETIME(ACL9Item, bLightOn);
 	DOREPLIFETIME(ACL9Item, Value);
+	DOREPLIFETIME(ACL9Item, CookAlpha);
+	DOREPLIFETIME(ACL9Item, CookPhase);
+}
+
+void ACL9Item::SetCookState(ECL9CookPhase Phase, float Alpha)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	CookPhase = Phase;
+	CookAlpha = (Phase == ECL9CookPhase::None) ? 0 : static_cast<uint8>(FMath::Clamp(Alpha, 0.f, 1.f) * 255.f);
 }
 
 void ACL9Item::LoadData()
