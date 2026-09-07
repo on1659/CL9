@@ -55,6 +55,11 @@ void UCL9UIManager::InitForPlayer(APlayerController* PlayerController)
 	{
 		MainWidget->AddToViewport();
 	}
+
+	// 시작 시점의 입력 모드를 여기서 정한다. 이게 없으면 화면을 한 번 열었다 닫기 전까지
+	// 아무도 모드를 잡지 않아, 마우스가 캡처되지 않은 채 게임이 시작된다 — 커서가 화면
+	// 끝에 닿는 순간 시점 회전이 멈춘다 (2026-09-07 사용자 신고).
+	UpdateInputMode();
 }
 
 UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
@@ -135,8 +140,8 @@ void UCL9UIManager::UpdateInputMode()
 		return;
 	}
 
-	// 멀티플레이어에서는 게임이 절대 일시정지되지 않으므로 UIOnly가 아니라 GameAndUI를 쓴다 —
-	// 입력 액션이 계속 발동해야 IMC_UI의 Esc로 화면을 닫을 수 있다
+	// 온라인이라 게임이 멈추는 일이 없으므로 UIOnly가 아니라 GameAndUI를 쓴다 —
+	// 입력 액션이 계속 발동해야 IMC_UI의 M으로 화면을 닫을 수 있다
 	const bool bScreenOpen = !OpenScreenName.IsNone();
 	if (bScreenOpen)
 	{
