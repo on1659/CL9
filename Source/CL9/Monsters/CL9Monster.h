@@ -56,6 +56,7 @@ public:
 	ACL9Monster();
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual FText GetDisplayName() const override;
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

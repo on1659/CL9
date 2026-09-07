@@ -3,12 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "World/CL9Fixture.h"
 #include "Core/CL9Interactable.h"
 #include "Data/CL9Types.h"
 #include "CL9Counter.generated.h"
 
-class UStaticMeshComponent;
 
 /**
  * 납품 창구(docs/systems/order.md 납품 판정). 손에 든 것과 끌고 온 수레의 짐을
@@ -20,7 +19,7 @@ class UStaticMeshComponent;
  * 아니다. 4f의 정식 주방·트럭이 들어오기 전까지 임시 부엌 옆에 놓는 상자다.
  */
 UCLASS(abstract)
-class ACL9Counter : public AActor, public ICL9Interactable
+class ACL9Counter : public ACL9Fixture, public ICL9Interactable
 {
 	GENERATED_BODY()
 
@@ -49,10 +48,6 @@ public:
 	void TakeAllStock(TArray<FCL9CounterItem>& OutItems);
 
 private:
-	/** 창구 몸체 — 이동을 막으며, 메시는 BP 자식에서 지정된다 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<UStaticMeshComponent> MeshComponent;
-
 	/**
 	 * 올려둔 물건들, 올린 순서대로. 액터가 아니라 값으로 들고 있는다 — 창구에
 	 * 올린 물건은 다시 집어갈 수 없으므로 실물을 남겨둘 이유가 없고, 프롬프트가

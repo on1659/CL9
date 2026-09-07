@@ -39,7 +39,15 @@ public:
 		return SubAlias;
 	}
 
-	/** 아이템인지 몬스터인지 — 자식 클래스 생성자가 정한다. 스캔처럼 종류를 표로 고르는 곳이 읽는다 */
+	/**
+	 * 화면에 뜰 이름 — 스캔 라벨이 읽는다. 기본은 액터 이름이고, 표가 있는 액터(아이템·몬스터)는
+	 * 행의 `DisplayName`을, 시설물은 자기 프로퍼티를 준다. **UI가 하위 클래스를 캐스팅해
+	 * 갈래를 타지 않게** 하려고 여기에 둔다 — 새 종류가 생겨도 화면 코드는 그대로다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	virtual FText GetDisplayName() const;
+
+	/** 어떤 종류인지 — 자식 클래스 생성자가 정한다. 스캔처럼 종류를 표로 고르는 곳이 읽는다 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	ECL9ActorKind GetKind() const
 	{

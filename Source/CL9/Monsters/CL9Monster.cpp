@@ -142,6 +142,11 @@ void ACL9Monster::LoadData()
 	}
 }
 
+FText ACL9Monster::GetDisplayName() const
+{
+	return (MonsterDef != nullptr && !MonsterDef->DisplayName.IsEmpty()) ? MonsterDef->DisplayName : Super::GetDisplayName();
+}
+
 void ACL9Monster::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

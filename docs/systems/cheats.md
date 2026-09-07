@@ -85,8 +85,8 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.settle [force]` | 호스트 판정 | 정산 상태(일차·목표·기간 수입) 출력 + 정산일이면 판정 실행; `force`면 정산일이 아니어도 판을 지금 끝낸다 (정산) |
 | `cl9.money [양]` | 호스트 판정 | 판 공유 자금(GameState.SharedMoney) 출력; 양이 붙으면 지급(양수)하거나 차감(음수) — 4f 구매 검증 대역 (4e 구현) |
 | `cl9.seed <N>` | 0 = 외곽만 | 지금 그 시드로 맵을 다시 깔고 다음 밤도 그 시드로 고정 (호스트). **PIE 없이 에디터 콘솔에서 치면** 같은 생성기로 레벨에 트랜지언트 액터를 깐다 — 5a 맵 배치 툴의 창 없는 판 (`cl9.seed clear`로 제거, 두 번째 인자로 목적지 alias) |
-| `cl9.shownav` | | 몬스터 이동·경로 시각화 (구 bp_show_cells) |
-| `cl9.showjars` | | 항아리 배치·1500u 커버리지 확인 (구 bp_show_jars) |
+| `cl9.shownav` | **미구현** | 몬스터 이동·경로 시각화 (구 bp_show_cells) |
+| `cl9.showjars` | **미구현** | 항아리 배치·1500u 커버리지 확인 (구 bp_show_jars) — 2026-09-07 확인: 소스 어디에도 없다 |
 | `cl9.playseq <alias\|번호>` | | 시퀀스 로컬 재생 테스트 ([sequence.md](sequence.md)) — RPC 안 탐 |
 | `cl9.testwake` / `cl9.testvoice` | | 기상 예고·반응 음성 연출 테스트 (구 bp_warning_test_*) |
 | `cl9.fxoff` | | 경고 연출 비활성화 (구 bp_warning_disable_all) |

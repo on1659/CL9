@@ -6,9 +6,7 @@
 #include "HAL/PlatformTime.h"
 #include "Core/CL9ActorBase.h"
 #include "Data/CL9ItemDef.h"
-#include "Data/CL9MonsterDef.h"
 #include "Items/CL9Item.h"
-#include "Monsters/CL9Monster.h"
 
 UCL9ScanLabelWidget::UCL9ScanLabelWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -113,14 +111,7 @@ FText UCL9ScanLabelWidget::MakePriceText(const ACL9Item& Item)
 
 FText UCL9ScanLabelWidget::MakeNameText(const ACL9ActorBase& Target)
 {
-	const UCL9DefBase* Def = nullptr;
-	if (const ACL9Item* Item = Cast<ACL9Item>(&Target))
-	{
-		Def = Item->GetItemDef();
-	}
-	else if (const ACL9Monster* Monster = Cast<ACL9Monster>(&Target))
-	{
-		Def = Monster->GetMonsterDef();
-	}
-	return (Def != nullptr && !Def->DisplayName.IsEmpty()) ? Def->DisplayName : FText::FromString(Target.GetName());
+	// 이름은 액터가 스스로 안다(ACL9ActorBase::GetDisplayName) — 아이템은 행 이름, 몬스터는 행 이름,
+	// 시설물은 자기 프로퍼티. 화면이 하위 클래스를 알아보려 들면 종류가 늘 때마다 갈래가 늘어난다.
+	return Target.GetDisplayName();
 }

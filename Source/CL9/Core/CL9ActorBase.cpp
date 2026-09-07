@@ -17,6 +17,12 @@ void ACL9ActorBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9ActorBase, SubAlias);
 }
 
+FText ACL9ActorBase::GetDisplayName() const
+{
+	// 표도 이름도 없는 액터는 자기 이름이라도 보여준다 — 라벨이 비는 것보다 낫다
+	return FText::FromString(GetName());
+}
+
 void ACL9ActorBase::SetAlias(FName InAlias, FName InSubAlias)
 {
 	if (!HasAuthority())

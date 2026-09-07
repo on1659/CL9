@@ -56,6 +56,11 @@ void ACL9Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ACL9Item, CookPhase);
 }
 
+FText ACL9Item::GetDisplayName() const
+{
+	return (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : Super::GetDisplayName();
+}
+
 void ACL9Item::SetCookState(ECL9CookPhase Phase, float Alpha)
 {
 	if (!HasAuthority())

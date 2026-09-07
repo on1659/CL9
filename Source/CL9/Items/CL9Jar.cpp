@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9Jar.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Character/CL9Character.h"
 #include "GameMode/CL9GameState.h"
@@ -10,8 +9,6 @@
 
 ACL9Jar::ACL9Jar()
 {
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(MeshComponent);
 }
 
 FText ACL9Jar::GetPrompt(const ACL9Character* Who) const

@@ -44,6 +44,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual FText GetDisplayName() const override;
 
 	/** 이 아이템이 지금 표시하는 행 — 별칭이 로드되기 전에는 null */
 	const UCL9ItemDef* GetItemDef() const

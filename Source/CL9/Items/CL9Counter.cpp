@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9Counter.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/CL9Character.h"
@@ -11,9 +10,8 @@
 
 ACL9Counter::ACL9Counter()
 {
-	bReplicates = true;
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(MeshComponent);
+	// 재고는 복제된다 — 프롬프트가 모든 머신에서 옳으려면 클라도 창구가 비었는지 알아야 한다
+	// (복제 자체는 ACL9ActorBase가 이미 켜 둔다)
 }
 
 void ACL9Counter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

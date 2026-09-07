@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9TruckPanel.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Character/CL9Character.h"
 #include "GameMode/CL9GameState.h"
@@ -9,8 +8,6 @@
 
 ACL9TruckPanel::ACL9TruckPanel()
 {
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(MeshComponent);
 }
 
 FText ACL9TruckPanel::GetPrompt(const ACL9Character* Who) const

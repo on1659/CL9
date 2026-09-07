@@ -3,12 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "World/CL9Fixture.h"
 #include "CL9Kitchen.generated.h"
 
 class ACL9Item;
 class UBoxComponent;
-class UStaticMeshComponent;
 
 /**
  * 조리대 — 이 게임의 열원이다(docs/systems/cooking.md). 상판에 재료를 올려두면
@@ -25,7 +24,7 @@ class UStaticMeshComponent;
  * 지금은 레벨에 손으로 놓는다. 나중에는 던전 안에 맵 생성기가 배치한다.
  */
 UCLASS(abstract)
-class ACL9Kitchen : public AActor
+class ACL9Kitchen : public ACL9Fixture
 {
 	GENERATED_BODY()
 
@@ -47,9 +46,6 @@ protected:
 	/** 열 구역 안에 놓여 있고(Free) 상태가 변할 수 있는 아이템들, 가까운 순 */
 	void GatherOnHeat(TArray<ACL9Item*>& OutItems) const;
 
-	/** 조리대 몸체 — 재료가 얹히는 상판이자 이동을 막는 벽이며, 메시는 BP 자식에서 지정된다 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
-	TObjectPtr<UStaticMeshComponent> MeshComponent;
 
 	/** 상판 위 열이 닿는 구역 — 이 안에 놓인 것만 익는다 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")

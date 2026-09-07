@@ -14,8 +14,6 @@ ACL9Kitchen::ACL9Kitchen()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(MeshComponent);
 
 	HeatZone = CreateDefaultSubobject<UBoxComponent>(TEXT("HeatZone"));
 	HeatZone->SetupAttachment(MeshComponent);

@@ -3,11 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "World/CL9Fixture.h"
 #include "Core/CL9Interactable.h"
 #include "CL9Jar.generated.h"
 
-class UStaticMeshComponent;
 
 /**
  * 반납 항아리(docs/systems/raiding.md 항아리 반납). 손에 든 아이템을 받아 게임
@@ -16,7 +15,7 @@ class UStaticMeshComponent;
  * 복제도 없으며, 메시는 BP 자식 쪽에 있다.
  */
 UCLASS(abstract)
-class ACL9Jar : public AActor, public ICL9Interactable
+class ACL9Jar : public ACL9Fixture, public ICL9Interactable
 {
 	GENERATED_BODY()
 
@@ -26,9 +25,4 @@ public:
 	virtual FText GetPrompt(const ACL9Character* Who) const override;
 	virtual bool CanInteract(const ACL9Character* Who) const override;
 	virtual void Interact(ACL9Character* Who) override;
-
-private:
-	/** 항아리 몸체 — 이동을 막으며, 메시는 BP 자식에서 지정된다 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<UStaticMeshComponent> MeshComponent;
 };
