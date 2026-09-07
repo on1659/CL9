@@ -214,3 +214,17 @@ void ACL9GameMode::InitializeNight(int32 Day) {
 - 모든 사운드 로직은 베이스에서 처리 — 사운드 상세는 `sound.md` 참고
 - 네트워크 테스트: 호스트 + 클라 1명 이상
 - 데이터 구조 정의는 `../data/schema.md` 참고
+
+## 액터 종류와 시설물 (2026-09-07)
+
+`ECL9ActorKind`는 `None / Item / Monster / Facility` 넷이다. **값은 뒤에만 붙인다** — 앞을 밀면 이미
+저장된 표 값(`WBP_Scan.ScanKinds` 등)이 다른 뜻이 된다.
+
+- **`ACL9Fixture`**(Source/CL9/World) — 레벨에 붙박이로 서 있는 것들의 공통 베이스: 조리대·납품 창구·
+  트럭 패널·반납 항아리. `ACL9ActorBase`를 상속하는 이유는 **스캔이 이들을 보게 하려는 것**이다
+  (스캔은 `ACL9ActorBase`를 훑고 `Kind`로 고른다 — 2026-09-07 사용자 요청). 넷이 각자 들고 있던
+  `MeshComponent`도 여기로 합쳤다. `Alias` 칸이 함께 딸려 오지만 지금은 비워 둔다 — 시설물 표가
+  생기면 그 자리에 그대로 쓴다.
+- **`GetDisplayName()`(virtual)** — 화면에 뜰 이름을 액터가 스스로 답한다. 아이템·몬스터는 행의
+  `DisplayName`, 시설물은 자기 프로퍼티, 그 외에는 액터 이름. **UI가 하위 클래스를 캐스팅해 갈래를
+  타지 않게** 하려는 것이다 — 종류가 늘어도 화면 코드는 그대로다(스캔 라벨이 이걸 쓴다).
