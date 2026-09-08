@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일해 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../loop.md](../loop.md) · [../economy.md](../economy.md) ·
-> [../data/progression.md](../data/progression.md) · [../data/rules.md](../data/rules.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../loop.md](../../plan/loop.md) · [../economy.md](../../plan/economy.md) ·
+> [../data/progression.md](../../plan/data/progression.md) · [../data/rules.md](../../plan/data/rules.md)다.
 
 디컴파일된 C# 소스를 읽고 정리한 초안이다. Lethal Company의 한 판은 "궤도의 우주선에서 레버를 당겨
 달에 착륙 → 시간이 흐르는 동안 스크랩을 모음 → 레버를 당기거나 자정이 되어 이륙 → 하루 결산 →

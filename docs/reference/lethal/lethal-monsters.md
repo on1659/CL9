@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일하고 에셋 값을 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../data/monster/common.md](../data/monster/common.md) ·
-> [../data/progression.md](../data/progression.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../data/monster/common.md](../../plan/data/monster/common.md) ·
+> [../data/progression.md](../../plan/data/progression.md)다.
 
 Lethal Company의 몬스터는 `EnemyAI`라는 하나의 추상 클래스를 전부 상속하고, 개별 몬스터는
 이 클래스가 제공하는 **상태 번호(`currentBehaviourStateIndex`)·주기적 판단(`DoAIInterval`)·

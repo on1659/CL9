@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일해 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../loop.md](../loop.md) · [../data/progression.md](../data/progression.md) ·
-> [../data/rules.md](../data/rules.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../loop.md](../../plan/loop.md) · [../data/progression.md](../../plan/data/progression.md) ·
+> [../data/rules.md](../../plan/data/rules.md)다.
 
 R.E.P.O.의 한 판(런)은 "트럭 로비 → 레벨 → 추출 완료 → 상점 → 트럭 로비 → 다음 레벨"을 반복하는
 씬 전환 루프이며, 이 전환을 전부 `RunManager.ChangeLevel()` 한 메서드가 결정한다. 진행도는

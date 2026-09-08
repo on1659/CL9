@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일해 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../data/item/common.md](../data/item/common.md) ·
-> [../data/item/egg.md](../data/item/egg.md) · [../data/item/cart.md](../data/item/cart.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../data/item/common.md](../../plan/data/item/common.md) ·
+> [../data/item/egg.md](../../plan/data/item/egg.md) · [../data/item/cart.md](../../plan/data/item/cart.md)다.
 
 R.E.P.O.의 귀중품(Valuable) 시스템은 "종류당 ScriptableObject 프리셋(가치 범위, 파손 내구도, 물리 속성) + 런타임 컴포넌트(`ValuableObject`)"로 데이터와 로직을 분리한 구조다. 가치는 레벨 생성 시점에 종류별 min~max 범위에서 랜덤으로 굴려 100달러 단위로 반올림하며, 레벨 전체의 스폰 개수·가치 총량은 난이도 곡선(`AnimationCurve`)으로 정해지는 상한을 향해 소진형으로 채워진다. 손상은 충돌 충격량을 세 등급(Light/Medium/Heavy)으로 나눠 원가 대비 최대 10배까지 벌어지는 손실 비율을 적용하고, 가치가 원가의 15% 밑으로 떨어지면 자동 소멸한다. 잡기·운반은 손이 잡은 지점에 스프링-댐퍼 힘을 거는 방식이라 여러 명이 잡으면 물리 엔진이 자연스럽게 힘을 합성하고, 무거울수록 가속도가 줄어드는 구조로 "혼자 못 든다"를 구현한다. 네트워크는 전 구간에서 Photon 마스터 클라이언트(호스트) 권위이며, 물리 오브젝트의 소유권은 잡는 사람에게 넘어가지 않고 항상 마스터가 들고 있다. 추출 지점은 런 전체 목표액을 지점 수로 균등 분배하고, 초과분(잉여)은 물리적인 돈 오브젝트로 스폰돼 다음 지점 목표에 자동 합산된다.
 

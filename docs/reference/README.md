@@ -6,7 +6,16 @@
 
 > **에셋을 가져오지 않는다.** 구조와 수치만 참고한다. 이 폴더의 어떤 문서도 상대 게임의
 > 코드·메시·텍스처를 옮겨 적지 않는다. CL9의 결정은 이 폴더가 아니라
-> [../data/](../data/)와 [../../decisions.md](../../decisions.md)에 있다.
+> [../plan/data/](../plan/data/)와 [../decisions.md](../decisions.md)에 있다.
+
+```
+docs/reference/
+  README.md      이 문서
+  takeaways.md   CL9에 무엇을 가져올 것인가 — 두 게임 종합
+  repo/          R.E.P.O. 영역별 분석 5개
+  lethal/        Lethal Company 영역별 분석 4개
+  image/         참고 이미지 (게임 분석과 별개)
+```
 
 ---
 
@@ -14,11 +23,11 @@
 
 | 알고 싶은 것 | R.E.P.O. | Lethal Company |
 |---|---|---|
-| 맵이 어떻게 만들어지나 | [repo-map.md](repo-map.md) | [lethal-map.md](lethal-map.md) |
-| 아이템·장비·상점 | [repo-items.md](repo-items.md) | [lethal-items.md](lethal-items.md) |
-| 훔쳐 나르는 물건과 운반 물리 | [repo-valuables.md](repo-valuables.md) | (lethal-items.md 안) |
-| 몬스터와 함정 | [repo-monsters.md](repo-monsters.md) | [lethal-monsters.md](lethal-monsters.md) |
-| 스테이지 루프·쿼터·저장·멀티 | [repo-run.md](repo-run.md) | [lethal-run.md](lethal-run.md) |
+| 맵이 어떻게 만들어지나 | [repo/repo-map.md](repo/repo-map.md) | [lethal/lethal-map.md](lethal/lethal-map.md) |
+| 아이템·장비·상점 | [repo/repo-items.md](repo/repo-items.md) | [lethal/lethal-items.md](lethal/lethal-items.md) |
+| 훔쳐 나르는 물건과 운반 물리 | [repo/repo-valuables.md](repo/repo-valuables.md) | (lethal-items.md 안) |
+| 몬스터와 함정 | [repo/repo-monsters.md](repo/repo-monsters.md) | [lethal/lethal-monsters.md](lethal/lethal-monsters.md) |
+| 스테이지 루프·쿼터·저장·멀티 | [repo/repo-run.md](repo/repo-run.md) | [lethal/lethal-run.md](lethal/lethal-run.md) |
 | **CL9에 무엇을 가져올 것인가** | [takeaways.md](takeaways.md) (두 게임 종합) | |
 
 CL9 쪽 대응 문서로 건너뛰려면 [takeaways.md](takeaways.md)가 빠르다. 주제별로

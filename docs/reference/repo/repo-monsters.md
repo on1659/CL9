@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일해 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../data/monster/common.md](../data/monster/common.md) ·
-> [../data/progression.md](../data/progression.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../data/monster/common.md](../../plan/data/monster/common.md) ·
+> [../data/progression.md](../../plan/data/progression.md)다.
 
 R.E.P.O.의 몬스터는 개체마다 완전히 다른 AI를 짜는 대신, `Enemy`라는 공통 허브에 상태 컴포넌트(`EnemyState*`)와 감각 컴포넌트(`EnemyVision`, `EnemyPlayerDistance`, `EnemyOnScreen`, `EnemyPlayerRoom`)를 붙여 조립하는 구조를 쓴다. 판정은 전부 마스터 클라이언트가 하고, 다른 클라이언트는 위치와 상태를 받아 보간만 한다. 몬스터는 항상 맵에 살아 있지 않고, `EnemyParent`가 스폰/디스폰 타이머를 돌려 주기적으로 사라졌다가 플레이어에게서 먼 `LevelPoint`에 다시 나타난다. 레벨마다 몇 마리를 어느 난이도로 뽑을지는 `EnemyDirector`가 클리어한 레벨 수를 0~1로 정규화한 값을 AnimationCurve에 넣어 결정한다.
 

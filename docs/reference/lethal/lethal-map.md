@@ -2,11 +2,11 @@
 
 > 2026-09-07 시작, 2026-09-08 디컴파일과 에셋 덤프로 전면 보강.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 결정은 [../data/module.md](../data/module.md) · [../data/site.md](../data/site.md) ·
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 결정은 [../data/module.md](../../plan/data/module.md) · [../data/site.md](../../plan/data/site.md) ·
 > [../../systems/map.md](../../systems/map.md)에 있다.
 
-**CL9은 이쪽이 아니라 R.E.P.O. 방식을 주 모델로 골랐다**([repo-map.md](repo-map.md)).
+**CL9은 이쪽이 아니라 R.E.P.O. 방식을 주 모델로 골랐다**([repo-map.md](../repo/repo-map.md)).
 자유 타일 그래프는 우리가 이미 가진 격자와 맞지 않아 이식이 어렵기 때문이다. 이 문서는
 "헤매는 느낌"과 "달마다 다른 값"이 어떻게 만들어지는지를 보려고 남긴다.
 

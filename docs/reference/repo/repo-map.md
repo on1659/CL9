@@ -2,8 +2,8 @@
 
 > 2026-09-08, 사용자 요청("리포랑 리썰 참고해서 조사해 줘")으로 설치본을 분석한 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md), CL9의 결정은
-> [../data/module.md](../data/module.md)에 있다.
+> 분석 방법과 다른 영역은 [README.md](../README.md), CL9의 결정은
+> [../data/module.md](../../plan/data/module.md)에 있다.
 
 **CL9이 따라가기로 한 모델이 이것이다.** 리썰컴퍼니보다 우리 구조에 가깝다 — 격자 기반이기 때문이다.
 `DunGen` 같은 기성품이 없고 `Assembly-CSharp.dll`의 자체 `LevelGenerator`다.

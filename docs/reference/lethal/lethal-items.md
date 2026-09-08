@@ -2,9 +2,9 @@
 
 > 2026-09-08, 설치본의 `Assembly-CSharp.dll`을 디컴파일하고 에셋 값을 읽은 기록.
 > **에셋을 가져오지 않는다** — 구조와 수치만 참고한다.
-> 분석 방법과 다른 영역은 [README.md](README.md).
-> CL9의 대응 문서는 [../data/item/common.md](../data/item/common.md) ·
-> [../data/equipment.md](../data/equipment.md) · [../economy.md](../economy.md)다.
+> 분석 방법과 다른 영역은 [README.md](../README.md).
+> CL9의 대응 문서는 [../data/item/common.md](../../plan/data/item/common.md) ·
+> [../data/equipment.md](../../plan/data/equipment.md) · [../economy.md](../../plan/economy.md)다.
 
 Lethal Company의 아이템 계층은 매우 얇다. 종류마다 `Item`이라는 ScriptableObject 하나가
 "이 물건이 무엇인가"를 전부 기술하고, 씬에 놓이는 실체는 `GrabbableObject`를 상속한
