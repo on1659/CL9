@@ -11,6 +11,7 @@
 #include "TimerManager.h"
 #include "Character/CL9Character.h"
 #include "Character/CL9CharacterMovement.h"
+#include "Data/CL9BuffDef.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
 #include "GameMode/CL9GameInstance.h"
@@ -718,18 +719,57 @@ void UCL9HUDWidget::RefreshBuffs()
 		return;
 	}
 
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+
+	// 버프 단위로 한 줄씩 — 스탯이 아니라 이름으로 읽히는 것이 버프 표를 만든 이유다
 	TArray<FText> Lines;
-	for (const ECL9Stat Stat : AllStats)
+	for (const FName BuffAlias : Character->GetActiveBuffs())
 	{
-		const float Amount = Character->GetStatBonus(Stat);
-		const int32 Seconds = FMath::CeilToInt(Character->GetStatBonusRemaining(Stat));
-		// 값이 0이면 서로 상쇄된 것이고, 남은 시간이 0이면 이미 끝난 것이다 — 둘 다 보여줄 게 없다
-		if (FMath::IsNearlyZero(Amount) || Seconds <= 0)
+		const int32 Seconds = FMath::CeilToInt(Character->GetBuffRemaining(BuffAlias));
+		if (Seconds <= 0)
 		{
 			continue;
 		}
-		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffLine", "{0} {1} ({2}초)"),
-			StatLabel(Stat), StatAmountText(Stat, Amount), Seconds));
+
+		// 행을 못 찾거나 이름이 비어 있으면 별칭을 그대로 보여준다 — 표의 구멍이
+		// 화면에 드러나야 고치게 된다. 빈 줄로 삼키면 "먹었는데 아무 일도 없다"가 된다.
+		const UCL9BuffDef* Buff = (Registry != nullptr) ? Registry->FindBuff(BuffAlias) : nullptr;
+		const FText Name = (Buff != nullptr && !Buff->DisplayName.IsEmpty())
+			? Buff->DisplayName
+			: FText::FromName(BuffAlias);
+
+		// 스탯 하나짜리는 크기까지 붙인다("다리에 힘 +60"). 여럿을 묶은 양날 버프는
+		// 한 줄에 늘어놓으면 읽히지 않으므로 이름만 보여준다.
+		if (Buff != nullptr && Buff->Effects.Num() == 1)
+		{
+			const ECL9Stat Stat = Buff->Effects[0].Stat;
+			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffNamedOne", "{0} {1} ({2}초)"),
+				Name, StatAmountText(Stat, Character->GetStatBonus(Stat)), Seconds));
+		}
+		else
+		{
+			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffNamed", "{0} ({1}초)"), Name, Seconds));
+		}
+	}
+
+	// 별칭 없이 걸린 효과는 위 목록에 잡히지 않는다(버프 표로 옮기기 전의 아이템 행).
+	// 그때만 예전처럼 스탯 단위로 보여준다 — 표가 덜 채워져도 화면이 비지 않게.
+	if (Lines.Num() == 0)
+	{
+		for (const ECL9Stat Stat : AllStats)
+		{
+			const float Amount = Character->GetStatBonus(Stat);
+			const int32 Seconds = FMath::CeilToInt(Character->GetStatBonusRemaining(Stat));
+			// 값이 0이면 서로 상쇄된 것이고, 남은 시간이 0이면 이미 끝난 것이다 — 둘 다 보여줄 게 없다
+			if (FMath::IsNearlyZero(Amount) || Seconds <= 0)
+			{
+				continue;
+			}
+			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffLine", "{0} {1} ({2}초)"),
+				StatLabel(Stat), StatAmountText(Stat, Amount), Seconds));
+		}
 	}
 
 	if (Lines.Num() == 0)

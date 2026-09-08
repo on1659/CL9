@@ -40,7 +40,7 @@
 | 밤 시계 | `NightLength` 잔여 — 만료가 실패라 보여야 한다 | rules.md |
 | 스태미나 | 정규화 0~1 바. 탈진 래치 중에는 색이 바뀐다. CMC에 변경 이벤트가 없어 **폴링**한다 (차징 게이지와 함께 유일한 예외 — ui_system.md) | character.md |
 | 밤 만료 경고 | 남은 밤이 `NightWarnTime`(30초) 아래로 내려가면 시계 밑 화면 중앙에 "밤이 끝난다 · 28초"가 뜨고 `NightWarnFlashTime`(0.6초) 주기로 불투명도가 오르내린다(가장 어두운 지점은 `NightWarnDimOpacity` 0.25). 밤이 아니거나 문턱 위면 접힌다. 만료가 새벽 실패이므로 시계를 안 보고 있어도 눈에 들어와야 한다 — **번쩍임이 허용되는 유일한 자리다**(아래 "UI 애니메이션") | rules.md |
-| 먹기 버프 | 지금 걸린 먹기 효과를 좌상단에 한 줄씩: "달리기 +40 (12초)". 값은 `ACL9Character::GetStatBonus`, 남은 시간은 `GetStatBonusRemaining`이 준다 — 둘이 같은 시각·같은 만료 조건을 쓰므로 "+40인데 0초" 같은 어긋남이 없다. 효과는 서버 시각으로 만료되고 변경 이벤트가 없어서 스태미나처럼 **폴링**한다. 스탯 이름과 자릿수는 표시 쪽이 정한다(속도는 정수, 배율·문턱은 소수 둘째 자리) | character.md · item/common.md |
+| 먹기 버프 | 지금 걸린 버프를 좌상단에 **버프 하나당 한 줄**: "다리에 힘 +60 (12초)". 목록은 `ACL9Character::GetActiveBuffs`, 남은 시간은 `GetBuffRemaining`, 이름은 `FindBuff(별칭)`의 `DisplayName`이다. **스탯이 하나뿐인 버프만 크기를 붙인다** — 여러 스탯을 묶은 양날 버프는 한 줄에 늘어놓으면 안 읽히므로 이름만 보여준다. **행을 못 찾거나 이름이 비면 별칭을 그대로 띄운다**: 표의 구멍이 화면에 드러나야 고치게 되고, 빈 줄로 삼키면 "먹었는데 아무 일도 없다"가 된다. 별칭 없이 걸린 효과는 예전처럼 스탯 단위로 물러선다. 효과는 서버 시각으로 만료되고 변경 이벤트가 없어서 스태미나처럼 **폴링**한다 | buff.md · character.md |
 | 이더 | `GameState.SharedMoney` (판 공유) — 좌상단 스태미나 바 아래 `MoneyText`에 "N 이더". `GetSharedMoney()`를 읽고 `OnMoneyChanged`로 갱신한다(지급·차감 양쪽에서 발동, 클라도 복제로 같은 값을 본다) | economy.md |
 | 짐 슬롯 | 손에 든 것 + 품(Pocketable) + 머리(HeadItem — 헤드램프) | inventory.md |
 | 주문 | 수락한 주문을 좌하단에 한 줄씩: 이름 · 재료×n · 마감 N일차까지 · **확정 보상 이더** (`GameState.AcceptedOrders`, `OnOrdersChanged`로 갱신). 보상은 카드의 범위가 아니라 수락할 때 굴려 확정된 `Reward`다 — 실제로 받을 액수를 보여준다(2026-09-06). 남은 재료 진행도는 아직 없다 | order.md |
