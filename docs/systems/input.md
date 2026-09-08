@@ -39,7 +39,7 @@
 | `IA_Interact` | Pressed | 컨텍스트 상호작용 — 반납·트럭 패널·창구 | Server RPC |
 | `IA_Skip` | Pressed | 시퀀스 로컬 스킵 (`bSkippable`) | 로컬 |
 | `IA_Pause` | Pressed | 메뉴 화면 (게임은 멈추지 않는다 — 온라인이라 멈춤 자체가 없다) | 로컬 |
-| `IA_Eat` | Pressed | 손에 든 요리를 먹는다 — 먹을 수 있는 것은 `Dish` 타입뿐이고, 효과는 행의 `EatEffects`가 정한다 ([cooking.md](cooking.md)) | Server RPC |
+| `IA_Eat` | Pressed | 손에 든 요리를 먹는다 — 먹을 수 있는 것은 `Dish` 타입뿐이고, 효과는 행의 `EatBuffs`가 가리키는 버프 표가 정한다 ([cooking.md](cooking.md)) | Server RPC |
 | `IA_SpectateNext` | Pressed | 관전 대상 전환 — `ACL9PlayerController.SpectateNextAction` → `SpectateNext()` (관전 화면 버튼도 같은 함수) | Server RPC (호스트가 다음 생존자로 뷰 타깃 교체) |
 | `IA_Scan` | Pressed | 우클릭 스캔 — 시야 안 아이템에 이름·가격 라벨을 잠깐 띄우는 표현 (`ACL9PlayerController.ScanAction` → `OnScanRequested` → HUD, [ui.md](ui.md) 스캔) | 로컬 (판정 없음) |
 

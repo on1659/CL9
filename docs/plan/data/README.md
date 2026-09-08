@@ -12,8 +12,10 @@
 | [order.md](order.md) | 주문서 (레시피 쿼터) |
 | [equipment.md](equipment.md) | 살 수 있는 장비 |
 | [progression.md](progression.md) | 일자 진행 곡선 |
+| [buff.md](buff.md) | 먹어서 걸리는 상태 변화 — 아이템 행이 별칭으로 가리킨다 |
 | [segkind.md](segkind.md) | 맵 조각 11종 |
-| [sequence.md](sequence.md) | 연출 시퀀스 — 전이 지점(밤 시작·정전·전멸·새벽) |
+| [module.md](module.md) | 맵 모듈 — 생성기가 조립하는 단위 |
+| [sequence.md](sequence.md) | 연출 시퀀스 — 전이 지점(밤 시작·정전·전멸·새벽). **표는 아직 없다** |
 
 ---
 

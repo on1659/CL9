@@ -6,6 +6,11 @@
 공통 컬럼은 [../README.md](../README.md) 참조. 몬스터는 `SkeletalMesh`·`Skeleton`·`AnimBP`를
 추가로 갖는다 (베이스 `Mesh`는 아이템용 StaticMesh라 별도 필드 — character.md와 동일).
 
+여기에 `MeshYawOffset`(float, 도)이 하나 더 붙는다. **동물 팩마다 메시가 내보내는 정면 축이
+달라서**, 코드로 종을 특판하지 않고 데이터로 보정한다 ([../../../systems/animation.md](../../../systems/animation.md)
+원칙 1). 값이 틀리면 몬스터가 이동 방향을 보지 않고 옆으로 미끄러지듯 걷는다. 같은 팩에서 온
+종은 같은 값을 쓴다 — 돼지·양이 둘 다 −90이다.
+
 ---
 
 ## 체력

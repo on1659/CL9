@@ -186,9 +186,10 @@ class ICL9Damageable {
 ## 먹기 효과 (④ 4i — 2026-09-07)
 
 `ACL9Character::HostEat()` — 손에 든 것이 `Dish` 타입일 때만 먹힌다("먹을 수 있나" 플래그를 따로 두지 않고
-아이템 표의 타입이 가른다). 행의 `EatEffects`(스탯·양·지속초)가 그대로 걸리고 먹은 물건은 사라진다.
+아이템 표의 타입이 가른다). 행의 `EatBuffs`가 가리키는 버프 행들의 효과(스탯·양·지속초)가 걸리고
+먹은 물건은 사라진다 — 값은 아이템 행이 아니라 버프 표가 갖는다 ([../plan/data/buff.md](../plan/data/buff.md), 2026-09-08).
 
-- **효과는 복제되고 서버 시각으로 만료된다**(`FCL9ActiveEffect{Stat, Amount, EndServerTime}`) — 넘어짐의
+- **효과는 복제되고 서버 시각으로 만료된다**(`FCL9ActiveEffect{Stat, Amount, EndServerTime, BuffAlias}`) — 넘어짐의
   `KnockdownEndServerTime`과 같은 이유다. CMC가 이동 공식에서 읽으므로 **서버와 자율 프록시가 같은 값을
   도출해야 예측이 어긋나지 않는다.** 호스트에서만 적용하면 클라 캐릭터가 튄다.
 - `GetStatBonus(ECL9Stat)`(BlueprintPure)이 만료되지 않은 효과의 합을 준다. **양은 배율이 아니라 더하는 값이다.**

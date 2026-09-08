@@ -211,7 +211,7 @@ float NightStart/End/BlackoutServerTime  // 밤 시계 — 클라가 서버시�
 ## 중간 참가 (밤 진행 중 접속)
 
 - 허용 여부 자체가 **미결** — 허용한다면: 스폰은 트럭 존, 게임 상태는 GameState 복제로 자동
-  복원, 화면 상태(`ECL9Screen`)는 Multicast를 놓치므로 **GameState의 현재 페이즈에서 파생**해
+  복원, 화면 상태(`UCL9UIManager::OpenScreenName`, `FName`)는 Multicast를 놓치므로 **GameState의 현재 페이즈에서 파생**해
   로컬로 맞춘다 (ui_system.md).
 - 연출(시퀀스)은 재생하지 않는다 — 트리거가 Multicast라 놓친 신호는 오지 않는 게 정상이다
   (sequence.md).

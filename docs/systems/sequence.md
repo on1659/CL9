@@ -2,6 +2,9 @@
 
 > 전이 연출을 어떻게 재생하는가. **기획(어느 전이에서 무엇을 트나)과 표 컬럼은
 > [../plan/data/sequence.md](../plan/data/sequence.md)가 정본이다.**
+>
+> **현재는 구현하지 않음 — 문서만 사전 작성.** `UCL9SequenceSubsystem`도
+> `UCL9SequenceDef`도 아직 소스에 없다 (2026-09-09 확인).
 
 ## 개요
 
