@@ -6,16 +6,6 @@
 #include "Data/CL9DefBase.h"
 #include "CL9SegKindDef.generated.h"
 
-/** 세그먼트 박스가 서는 기준점 (docs/plan/data/segkind.md BaseZMode) */
-UENUM(BlueprintType)
-enum class ECL9SegBaseZ : uint8
-{
-	/** 자신이 속한 레벨의 바닥 위에 선다 */
-	LocalFloor,
-	/** 계단 벽: 바닥 기준은 아래층, 꼭대기는 위층 기준으로 잰다 — 램프 꼭대기에서 던지면 넘어갈 수 없다 */
-	WorldTop
-};
-
 /** 조각을 발자국에 어떻게 앉히는지 (docs/systems/asset-swap.md 배치 모드) */
 UENUM(BlueprintType)
 enum class ECL9SegPlacement : uint8
@@ -61,9 +51,6 @@ public:
 	/** 박스 높이, cm 단위 — 천장이 아니라 투척 차단 높이다 (segkind.md 높이 210은 천장이 아니다) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Segment")
 	float Height = 100.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Segment")
-	ECL9SegBaseZ BaseZMode = ECL9SegBaseZ::LocalFloor;
 
 	/**
 	 * ★ 시야, 소리, 카메라 가림을 한 플래그로 처리한다 (segkind.md). false인

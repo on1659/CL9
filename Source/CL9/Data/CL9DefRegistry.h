@@ -6,10 +6,12 @@
 #include "Engine/DataAsset.h"
 #include "CL9DefRegistry.generated.h"
 
+class UCL9BuffDef;
 class UCL9CharacterDef;
 class UCL9DefBase;
 class UCL9EquipmentDef;
 class UCL9ItemDef;
+class UCL9ModuleDef;
 class UCL9MonsterDef;
 class UCL9OrderDef;
 class UCL9PieceDef;
@@ -143,6 +145,19 @@ public:
 		return OrderedPieces;
 	}
 
+	/** 키에 해당하는 사용 가능한 맵 모듈 행을 반환한다. 없거나 깨졌으면 null (docs/plan/data/module.md) */
+	const UCL9ModuleDef* FindModule(FName Alias, FName Stage = NAME_None) const;
+
+	/** 별칭에 해당하는 사용 가능한 버프 행을 반환한다. 없거나 깨졌으면 null (docs/plan/data/buff.md) */
+	const UCL9BuffDef* FindBuff(FName Alias) const;
+
+	/**
+	 * 한 스테이지가 쓸 모듈 행들을 목록 순서대로 모은다 (module.md). 스테이지는 모듈
+	 * 행의 SubAlias이며 사이트의 Theme와 같은 이름을 쓴다 — 조각 표와 같은 규약이다.
+	 * 배치기가 이 배열을 그대로 받으므로 순서가 곧 결정성의 일부다.
+	 */
+	void GatherModules(FName Stage, TArray<const UCL9ModuleDef*>& OutModules) const;
+
 	/** 목록 순서대로 정렬된, 사용 가능한 맵 조각 행들 */
 	const TArray<TObjectPtr<const UCL9SegKindDef>>& GetSegKinds() const
 	{
@@ -238,5 +253,15 @@ private:
 	TArray<TObjectPtr<const UCL9PieceDef>> OrderedPieces;
 
 	TMap<TPair<FName, FName>, const UCL9PieceDef*> Pieces;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9ModuleDef>> OrderedModules;
+
+	TMap<TPair<FName, FName>, const UCL9ModuleDef*> Modules;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9BuffDef>> OrderedBuffs;
+
+	TMap<FName, const UCL9BuffDef*> Buffs;
 	TArray<FString> BrokenRows;
 };

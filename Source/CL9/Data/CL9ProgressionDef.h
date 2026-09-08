@@ -37,6 +37,9 @@ public:
 	/** 그 날 rules의 NightLength에 곱해질 배율 */
 	float NightLengthAt(int32 Day) const;
 
+	/** 그 날 사이트의 BaseModuleCount에 곱해질 배율 (docs/plan/data/module.md 결정 5) */
+	float SiteSizeAt(int32 Day) const;
+
 	/** 그 날 판매가·납품 정산에 곱해질 인플레이션 배율 (docs/plan/economy.md 가격식) */
 	float ValueAt(int32 Day) const;
 
@@ -68,6 +71,14 @@ public:
 	/** 평평하게 1.0 (초안) */
 	UPROPERTY(EditAnywhere, Category="Curves")
 	FRuntimeFloatCurve NightLengthCurve;
+
+	/**
+	 * 한 판의 모듈 수 배율 — 1일차 0.85 → 5일차 1.0 → 10일차 1.25 (module.md 결정 5).
+	 * 사이트의 BaseModuleCount 24에 곱하면 20 · 24 · 30이 나온다. 다른 커브와 달리
+	 * 이건 맵 자체의 크기라, 값을 키우면 생성 시간과 인스턴스 수가 함께 늘어난다.
+	 */
+	UPROPERTY(EditAnywhere, Category="Curves")
+	FRuntimeFloatCurve SiteSizeCurve;
 
 	/** 가격 인플레이션 — 목표액과 짝을 이뤄 오른다 (초안 1일차 1.0 → 10일차 1.4) */
 	UPROPERTY(EditAnywhere, Category="Curves")

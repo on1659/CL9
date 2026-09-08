@@ -21,6 +21,7 @@
 #include "Net/UnrealNetwork.h"
 #include "CL9.h"
 #include "Core/CL9Interactable.h"
+#include "Data/CL9BuffDef.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9Constants.h"
 #include "Data/CL9DefRegistry.h"
@@ -644,6 +645,37 @@ float ACL9Character::GetStatBonusRemaining(ECL9Stat Stat) const
 	return LatestEnd > 0.f ? LatestEnd - Now : 0.f;
 }
 
+TArray<FName> ACL9Character::GetActiveBuffs() const
+{
+	// 만료 조건은 GetStatBonus와 글자 그대로 같다 — 다르면 "이름은 떠 있는데 0초"가 난다.
+	// 한 버프가 스탯 여럿을 걸면 항목도 여럿이므로 별칭은 한 번만 담는다.
+	const float Now = GetServerTime();
+	TArray<FName> Aliases;
+	for (const FCL9ActiveEffect& Effect : ActiveEffects)
+	{
+		if (Now < Effect.EndServerTime && !Effect.BuffAlias.IsNone())
+		{
+			Aliases.AddUnique(Effect.BuffAlias);
+		}
+	}
+	return Aliases;
+}
+
+float ACL9Character::GetBuffRemaining(FName BuffAlias) const
+{
+	// GetStatBonusRemaining과 같은 꼴이다 — 묻는 기준만 스탯에서 버프로 바뀐다.
+	const float Now = GetServerTime();
+	float LatestEnd = 0.f;
+	for (const FCL9ActiveEffect& Effect : ActiveEffects)
+	{
+		if (Effect.BuffAlias == BuffAlias && Now < Effect.EndServerTime)
+		{
+			LatestEnd = FMath::Max(LatestEnd, Effect.EndServerTime);
+		}
+	}
+	return LatestEnd > 0.f ? LatestEnd - Now : 0.f;
+}
+
 void ACL9Character::EatInput()
 {
 	Server_Eat();
@@ -681,22 +713,39 @@ void ACL9Character::HostEat()
 		return Now >= Effect.EndServerTime;
 	});
 
-	for (const FCL9StatEffect& Wanted : Def->EatEffects)
+	// 효과 값은 아이템 행이 아니라 버프 표가 갖는다 — 아이템은 별칭으로 가리키기만
+	// 한다 (docs/plan/data/buff.md). 없는 별칭은 로드 검사가 이미 깨진 행으로 잡았지만,
+	// 그 행은 Find*로 나오지 않으므로 여기서 다시 걸러 준다.
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	for (const FName& BuffAlias : Def->EatBuffs)
 	{
-		if (Wanted.DurationSec <= 0.f)
+		const UCL9BuffDef* Buff = Registry ? Registry->FindBuff(BuffAlias) : nullptr;
+		if (Buff == nullptr)
 		{
-			// 즉시형은 지속 효과로 만들 수 없다 — 지금 범위에 즉시 스탯 변화가 없어 로그만 남긴다
-			UE_LOG(LogCL9, Warning, TEXT("Eat: '%s' has an instant effect on stat %d — instant stat changes are not implemented."),
-				*Def->Alias.ToString(), static_cast<int32>(Wanted.Stat));
+			UE_LOG(LogCL9, Error, TEXT("Eat: '%s' names buff '%s' which is missing or broken — nothing applied."),
+				*Def->Alias.ToString(), *BuffAlias.ToString());
 			continue;
 		}
-		FCL9ActiveEffect& Effect = ActiveEffects.AddDefaulted_GetRef();
-		Effect.Stat = Wanted.Stat;
-		Effect.Amount = Wanted.Amount;
-		Effect.EndServerTime = Now + Wanted.DurationSec;
-		UE_LOG(LogCL9, Log, TEXT("Ate '%s'/'%s': stat %d %+.1f for %.0fs."),
-			*HeldItem->GetAlias().ToString(), *HeldItem->GetSubAlias().ToString(),
-			static_cast<int32>(Wanted.Stat), Wanted.Amount, Wanted.DurationSec);
+
+		for (const FCL9StatEffect& Wanted : Buff->Effects)
+		{
+			if (Wanted.DurationSec <= 0.f)
+			{
+				// 즉시형은 지속 효과로 만들 수 없다 — 지금 범위에 즉시 스탯 변화가 없어 로그만 남긴다
+				UE_LOG(LogCL9, Warning, TEXT("Eat: buff '%s' has an instant effect on stat %d — instant stat changes are not implemented."),
+					*BuffAlias.ToString(), static_cast<int32>(Wanted.Stat));
+				continue;
+			}
+			FCL9ActiveEffect& Effect = ActiveEffects.AddDefaulted_GetRef();
+			Effect.Stat = Wanted.Stat;
+			Effect.Amount = Wanted.Amount;
+			Effect.EndServerTime = Now + Wanted.DurationSec;
+			Effect.BuffAlias = BuffAlias;
+			UE_LOG(LogCL9, Log, TEXT("Ate '%s'/'%s': buff '%s' gives stat %d %+.1f for %.0fs."),
+				*HeldItem->GetAlias().ToString(), *HeldItem->GetSubAlias().ToString(),
+				*BuffAlias.ToString(), static_cast<int32>(Wanted.Stat), Wanted.Amount, Wanted.DurationSec);
+		}
 	}
 
 	// 먹은 것은 사라진다

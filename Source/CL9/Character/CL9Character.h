@@ -117,8 +117,19 @@ public:
 	float GetStatBonusRemaining(ECL9Stat Stat) const;
 
 	/**
+	 * 지금 걸려 있는 버프들의 별칭, 중복 없이 — 만료된 것은 빼고 건 순서대로.
+	 * 화면이 효과를 스탯이 아니라 **버프 단위로** 묶어 보여줄 때 쓴다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	TArray<FName> GetActiveBuffs() const;
+
+	/** 그 버프가 끝날 때까지 남은 초 — 같은 별칭의 효과 중 가장 늦게 끝나는 것 기준, 없으면 0 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetBuffRemaining(FName BuffAlias) const;
+
+	/**
 	 * 호스트 전용: 손에 든 것을 먹는다 — `Dish` 타입만 먹을 수 있고(별도 플래그를 두지 않는다),
-	 * 행의 `EatEffects`가 그대로 걸린다. 먹은 물건은 사라진다. HP는 효과 대상이 아니다 —
+	 * 행의 `EatBuffs`가 가리키는 버프들이 걸린다. 먹은 물건은 사라진다. HP는 효과 대상이 아니다 —
 	 * 회복 채널은 트럭 패드다 (docs/plan/data/rules.md).
 	 */
 	void HostEat();

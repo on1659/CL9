@@ -146,7 +146,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Type")
 	ECL9ItemType ItemType = ECL9ItemType::Ingredient;
 
-	/** 먹을 때 적용된다 — Dish 종류만 먹을 수 있다 (종류가 이를 제한한다) */
+	/**
+	 * 먹을 때 걸리는 버프들의 별칭 — Dish 종류만 먹을 수 있다 (종류가 이를 제한한다).
+	 * 효과 값은 여기 적지 않고 버프 표가 갖는다 (docs/plan/data/buff.md). 여기 적힌
+	 * 별칭이 버프 표에 없으면 로드 검사가 깨진 행으로 잡는다.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Type")
-	TArray<FCL9StatEffect> EatEffects;
+	TArray<FName> EatBuffs;
 };

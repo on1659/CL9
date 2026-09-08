@@ -30,25 +30,22 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 
 	if (Generator != ECL9Generator::None)
 	{
-		if (AisleCount < 1 || ColCount < 1 || AisleCountB1 < 1 || ColCountB1 < 1)
+		if (Theme.IsNone())
 		{
-			OutErrors.Add(TEXT("Grid counts must be at least 1 on both floors."));
+			// 테마가 비면 모듈 표에서 한 행도 못 고른다 — 생성기가 아무것도 못 짓는다.
+			OutErrors.Add(TEXT("Theme is empty — the generator has no module set to build from."));
 		}
-		if (AisleWidth <= 0.f || ColWidth <= 0.f || RowDepth <= 0.f)
+		if (CellSize <= 0.f)
 		{
-			OutErrors.Add(TEXT("AisleWidth, ColWidth and RowDepth must be positive."));
+			OutErrors.Add(TEXT("CellSize must be positive."));
 		}
-		if (OpenWidth <= 0.f || OpenWidth >= ColWidth)
+		if (BaseModuleCount < 2)
 		{
-			OutErrors.Add(TEXT("OpenWidth must be positive and narrower than ColWidth."));
+			OutErrors.Add(TEXT("BaseModuleCount must be at least 2 — one start module plus somewhere to go."));
 		}
-		if (PlugWidth <= 0.f || PlugWidth >= ColWidth)
+		if (EntryOffset < 0.f)
 		{
-			OutErrors.Add(TEXT("PlugWidth must be positive and narrower than ColWidth."));
-		}
-		if (TargetOpen1F < 0 || TargetOpenB1 < 0 || JarCount1F < 0 || JarCountB1 < 0)
-		{
-			OutErrors.Add(TEXT("TargetOpen and JarCount cannot be negative."));
+			OutErrors.Add(TEXT("EntryOffset cannot be negative — the truck pad sits outside the grid."));
 		}
 	}
 }

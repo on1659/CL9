@@ -42,6 +42,11 @@ float UCL9ProgressionDef::NightLengthAt(int32 Day) const
 	return Eval(NightLengthCurve, Day);
 }
 
+float UCL9ProgressionDef::SiteSizeAt(int32 Day) const
+{
+	return Eval(SiteSizeCurve, Day);
+}
+
 float UCL9ProgressionDef::ValueAt(int32 Day) const
 {
 	return Eval(ValueCurve, Day);

@@ -1,5 +1,16 @@
 # 맵 생성 시스템
 
+> ## 2026-09-08: 격자 미로를 버리고 **모듈 조립**으로 갈아엎었다
+> 사용자 확인 — "미로 형식이라는 게 진짜 미로를 만들라는 게 아니라, **미로처럼 매번 맵이
+> 달라지는 걸** 만들어 달란 거야. 가구도 배치하고." CCL8에서 넘어온 통로·케이지 열·플러그
+> 격자 미로(Kruskal·`OpenH`/`OpenV`)와 층 구조(1층/지하 + 경사로)를 **지웠고**, R.E.P.O.
+> 방식의 모듈 조립 생성기가 그 자리에 들어갔다.
+> **설계 정본: [../plan/data/module.md](../plan/data/module.md)** ·
+> 참고 분석 [../reference/repo/repo-map.md](../reference/repo/repo-map.md) ·
+> [../reference/lethal/lethal-map.md](../reference/lethal/lethal-map.md)
+>
+> 살아남은 것: 시드 복제 구조 · 조각 표(`UCL9PieceDef`) · `ACL9SiteMap`의 타일링 배치.
+
 > 밤마다 시드에서 만들어지는 원정지. **설계 정본은 plan이다** —
 > [../plan/data/site.md](../plan/data/site.md) · [../plan/data/segkind.md](../plan/data/segkind.md) ·
 > [../plan/build-order.md](../plan/build-order.md) 5a.
@@ -9,35 +20,44 @@
 - **밤은 시드에서 만들어진다.** 레이아웃을 복제하지 않고 **시드만 보내서 각자 만든다** —
   호스트가 시드를 Replicated로 공유하면 모든 클라가 같은 맵을 로컬에서 생성한다.
 - **트럭은 같은 맵 안에 있다.** 대기소 ↔ 원정지 별도 레벨·로딩·순간이동이 없다.
-  마당·트럭·계단·축사 외곽은 손으로 짓고, 시드는 미로 내부만 바꾼다.
+  트럭은 격자 **밖**에 서고, 시작 모듈의 서쪽 문으로 걸어 들어간다 (R.E.P.O.도 리썰도 밖이다).
+- **손으로 짓는 기하가 없다.** 마당까지 전부 모듈 격자다 — 시드가 바꾸는 것이 곧 맵 전체다.
 - **목적지마다 생성기가 다르다.** `UCL9SiteDef.Generator`가 어떤 생성기를 쓸지 가리킨다 —
   목적지 하나 추가 = 맵 생성기 하나.
 - **지금 목적지는 `henhouse`(양계장) 하나뿐이다.** 산림·생수처 같은 목록은 없다 — 다음은
   벌집 후보 (재료 목록부터 정해야 한다).
 
-## 양계장 구조 (격자 생성기)
-
-격자 치수는 site.md의 컬럼이 정한다 — 시드와 무관하게 고정이고, 시드가 바꾸는 건 미로
-내부(케이지·마개·주방·둥지·개구멍)뿐이다.
+## 양계장 구조 (모듈 조립 생성기)
 
 ```
-1층: 통로 10 × 열 16 (통로 폭 250cm · 열 폭 500cm) — 축사 내부 8000 × 3580cm
-지하: 통로 8 × 열 12 — flapIn(일방향 개구멍) · stair로 연결
-개구부 목표: 1층 175 · 지하 105  ← 난이도 손잡이 (줄이면 막다른 길이 늘고 도주로가 준다)
-항아리: 1층 7 · 지하 6           ← 어느 셀에서든 1500u 안에 있게 배치
+칸 500cm 정사각 격자 — 한 변 16~64칸을 모듈 수에서 잡는다
+모듈 = 표(UCL9ModuleDef)의 행. W×H칸을 차지하고 0/90/180/270 회전한다
+소켓 = 경계 칸 단위. 열린 변에 닿은 모든 칸이 문 후보이고, 안 쓴 자리는 벽으로 막힌다
+한 판 20~30모듈 — 사이트 BaseModuleCount 24 × 진행 SiteSizeCurve(1일 0.85 → 10일 1.25)
+층이 없다 — 높이차는 모듈 안의 계단으로 내고 이웃으로 전파되지 않는다
+입구 하나(시작 모듈 서쪽) + 비상구 하나(가장 먼 막다른 방의 flapIn) — 딱 둘
 ```
 
-맵 조각 11종(`truck` · `stair` · `flapIn` 등)은 [../plan/data/segkind.md](../plan/data/segkind.md).
-**무엇으로 짓는지**(조각 표·테마·타일링 배치)는 [asset-swap.md](asset-swap.md).
+배치는 **본줄기 → Special → 곁가지** 순이다. 본줄기는 가장 깊은 자리만 이어 붙여 멀리 뻗고,
+곁가지는 무작위 자리에 붙어 막다른 방으로 끝난다 — 리썰컴퍼니의 "지나는 곳 대부분이 막다른
+곁가지"를 그 비율로 흉내낸다. 이미 놓인 모듈끼리 맞닿으면 25% 확률로 문을 뚫어 **고리(우회로)**
+를 만든다 (DunGen의 `DoorwayConnectionChance`).
+
+실측(시드 200개): **22~24모듈 · 평균 24.0 · 막다른 방 29% · 판마다 고리 문 4.7개.**
+
+맵 조각 종류표는 [../plan/data/segkind.md](../plan/data/segkind.md), 모듈 16종은
+[../plan/data/module.md](../plan/data/module.md). **무엇으로 짓는지**(조각 표·테마·타일링
+배치)는 [asset-swap.md](asset-swap.md).
 
 ## 생성 흐름
 
 ```
 밤 시작 (호스트)
   ↓ 시드 결정 → GameState에 Replicated
-각 머신: Generator(시드) 실행 → 벽·케이지·둥지·계단·항아리 좌표 산출
-  ↓ 좌표대로 액터 배치 (메시는 종류별 표에서 읽는다 — 경로 하드코딩 금지)
-호스트만: 몬스터·아이템 스폰 (좌표는 생성기가, 개수는 site×곡선이 — raiding.md)
+각 머신: Generator(시드, 일자) 실행 → 모듈 배치 + 칸 점유 + 변 상태(벽/문/비상구) 산출
+  ↓ BuildSegments가 종류별 2D 발자국을 뱉고, 그대로 액터 배치
+    (메시는 종류별 표에서 읽는다 — 경로 하드코딩 금지)
+호스트만: 몬스터·아이템 스폰 (자리는 생성기의 LevelPoint가, 개수는 site×곡선이 — raiding.md)
 ```
 
 - 생성기는 결정적이어야 한다 — 같은 시드면 모든 머신에서 같은 좌표가 나온다.
@@ -63,82 +83,83 @@
 ## 디버깅
 
 ```
-cl9.seed <N>           // 특정 시드로 재생성 (cheats.md)
-cl9.shownav            // 몬스터 이동·경로 시각화
-cl9.showjars           // 항아리 배치·1500u 커버리지 확인
+cl9.seed <N> [site] [day]   // 특정 시드로 재생성. 0 = 짓지 않음, clear = 제거 (cheats.md)
+                            // day는 한 판의 모듈 수만 바꾼다 — 10일차 맵을 눈으로 볼 때 쓴다
+cl9.shownav                 // 몬스터 이동·경로 시각화
 ```
 
 ## 참고
 
-- 격자 컬럼·개구부 값: [../plan/data/site.md](../plan/data/site.md)
+- 모듈 표·조립 규칙: [../plan/data/module.md](../plan/data/module.md)
+- 사이트 컬럼: [../plan/data/site.md](../plan/data/site.md)
 - 조각 표·테마·팩 교체 절차: [asset-swap.md](asset-swap.md)
-- 리썰컴퍼니 던전 생성 분석(참고): [../plan/reference-lethal-company.md](../plan/reference-lethal-company.md)
+- 리썰컴퍼니 던전 생성 분석(참고): [../reference/lethal/lethal-map.md](../reference/lethal/lethal-map.md)
 - 스폰 개수·시간 규칙: [raiding.md](raiding.md) · [balance.md](balance.md)
 - 개발용 테스트 맵 관리 주의(.umap 비대): [../plan/build-order.md](../plan/build-order.md) "아직 모르는 것"
 
 ---
 
-## 구현 상태 (⑤ 5a 선행 — 2026-09-06)
-
-빌드 오더상 ④ 뒤지만 4c 다음에 당겨 넣었다 (사용자 결정: 새 생성기 작성 · 1층+지하 한 번에 · 마당·축사 외곽은
-시드와 무관한 고정 기하). CCL8의 검증된 생성기는 이식하지 않았다.
+## 구현 상태 (⑤ 5a — 2026-09-08 모듈 조립으로 재작성)
 
 ```
 Source/CL9/World/
-  CL9SiteLayout.h/.cpp   순수 생성기 — FCL9HenhouseParams(표 컬럼) + 시드 → FCL9SiteLayout(층별 OpenH/OpenV
-                         행렬·항아리 셀·개구멍 통로) → BuildSegments()가 종류별 2D 발자국(FCL9SiteSeg) 목록을 뱉는다.
-                         엔진 의존 없음. FRandomStream(시드)로 결정적. Kruskal 신장 트리(전 셀 연결 보장) 뒤
-                         TargetOpen까지 추가 개방. 항아리는 최원점 우선.
-  CL9SiteMap.h/.cpp      ACL9SiteMap — 세그먼트를 종류별 ISM(회색 100cm 큐브 스케일)으로 깐다. bReplicates=false,
-                         트랜지언트. 트럭 패드를 앵커로, 지면 z=0. 셀→월드 좌표 제공. 에디터 월드에선 editor-only.
-  CL9FlapIn.h/.cpp       ACL9FlapIn — 일방향 개구멍. 안쪽 트리거에 닿은 캐릭터만 캡슐 move-ignore로 밀고 나간다.
-Data/CL9SegKindDef       조각 종류 표 (DA_SegKindTable) — Mesh·Height·BaseZMode·bBlocksSight.
-Data/CL9SiteDef          격자 컬럼 (Generator·AisleCount…·TargetOpen·JarCount) — 기본값이 site.md 초안.
+  CL9SiteLayout.h/.cpp   순수 조립기 — FCL9SiteParams(사이트 컬럼 + 실측 치수) + 모듈 표 + 시드
+                         → FCL9SiteLayout(모듈 배치 · 칸 점유 · 변 상태 · LevelPoint) →
+                         BuildSegments()가 종류별 2D 발자국(FCL9SiteSeg) 목록을 뱉는다.
+                         엔진 의존 없음. FRandomStream(시드)로 결정적.
+  CL9SiteMap.h/.cpp      ACL9SiteMap — 발자국을 종류별 ISM으로 깐다. bReplicates=false, 트랜지언트.
+                         트럭 패드를 앵커로, 지면 z=0. 에디터 월드에선 editor-only.
+  CL9FlapIn.h/.cpp       ACL9FlapIn — 일방향 비상구. 이제 네 방향 어디에나 달린다.
+Source/CL9/Data/
+  CL9ModuleDef.h/.cpp    모듈 표 — Type·Size·Sockets(4비트)·Rarity·Height·bStairs·bOutdoor·PointPurposes.
+  CL9SiteDef             맵 컬럼이 다섯으로 줄었다 — Generator·Theme·CellSize·BaseModuleCount·EntryOffset.
+  CL9ProgressionDef      SiteSizeCurve 추가 — 한 판의 모듈 수 배율.
 ```
 
-생성 흐름(위 절)은 그대로다: `ACL9GameState::SetSiteMap(seed)` → `FCL9SiteMapKey{Seed, Build}` 복제 →
-OnRep에서 각 머신이 `ACL9SiteMap::Rebuild`. **시드는 로비 진입 때 굴린다** (게임 시작·로비 복귀·`cl9.seed`) —
-정차 중에도 오늘 밤 갈 미로가 서 있고, 밤 시작은 그 시드를 그대로 쓴다(2026-09-06 사용자 결정: 로비가 빈 판이면
-안 된다). 스폰은 밤 시작에 생성기 셀(층·통로·열 무작위 + 통로 안 지터)에서 하고, 항아리는 `JarClass`(GameMode BP)를
-항아리 셀에 스폰. 로비 복귀 때 스폰물이 철거되고 새 시드로 다음 밤 미로가 선다.
-**조리대(`ACL9Kitchen`)도 나중에 여기서 나온다** — 요리하는 자리가 던전 안에 생긴다(2026-09-06 사용자 결정,
-[cooking.md](cooking.md)). 지금은 `Lvl_Flat`에 손으로 놓아 두었고, 배치 규칙(층·개수·항아리처럼 커버리지를 볼지)은
-소품 배치 규칙과 함께 미결이다. 시드 0(외곽만)은 `cl9.seed 0`으로만
-나온다.
+생성 흐름은 그대로다: `ACL9GameState::SetSiteMap(seed)` → `FCL9SiteMapKey{Seed, Build}` 복제 →
+OnRep에서 각 머신이 `ACL9SiteMap::Rebuild(…, Seed, CurrentDay)`. 시드는 로비 진입 때 굴린다.
 
-고정 프레임(`FCL9SiteFrame`, cm): 벽 30 · 패드→축사 서벽 1400 · 마당 서쪽 경계 −900 · 여백 600 · 지하 낙차
-450 · 계단 복도 = 착지 150 + 경사로 600 + 착지 150 (기울기 0.75) · 개구멍 폭 180 · 1층 천장 630(`BarnCeiling`, 지하 천장은
-지면 높이 — 2026-09-06 "건물 안 느낌"으로 추가, 계단 복도도 덮고 지하 입구 위는 벽으로 막는다). 지하는 1층 동쪽에 나란히
-(패드 기준 x 10380~16380 — 2026-09-07 격자 확대 후 값), 구덩이 모양이라 지면 슬래브를 조각내 깔고 지하 바닥 슬래브는 −450에 둔다.
-**생성 맵은 전용 레벨 `Content/Maps/Lvl_Henhouse`에서 쓴다** (2026-09-06 사용자 결정 — 평지 테스트 레벨과 분리).
-그 레벨만 바닥 Floor_0를 z −500으로 내려 구덩이가 겹치지 않게 했고, 지면은 생성기가 깐다. `Lvl_Flat`은 원래
-평지 그대로이고 월드 세팅 게임모드가 `BP_CL9GameMode_Flat`(목적지 `flat` — `Generator=None`, 서식·재료는 양계장과
-같음)이라 생성기가 돌지 않고 밤 스폰은 종전 원환 스탠드인을 쓴다. 목적지 행의 `Generator`가 None이면
-`ACL9SiteMap`은 지워진다 — 레벨별로 생성 여부를 표 행 하나로 고른다.
+**스폰은 `LevelPoint`를 고른다** (module.md 결정 4). 배치된 칸마다 지점 하나가 나오고, 그 용도는
+모듈 표의 `PointPurposes` 컬럼이 정한다 — 그래서 "항아리는 납품 방에만" 같은 규칙이 C++에 별칭으로
+박히지 않는다. `PointsOfPurpose()`가 **시작 모듈에서 먼 것부터** 정렬해 돌려주므로, 몬스터는 그
+목록의 앞쪽 60%에서, 재료는 전체에서 고른다. 항아리는 Jar 용도가 켜진 모듈마다 하나다.
 
-넣지 않은 것: 주방 셀(요리는 트럭에서 — CL9 루프에 축사 주방이 없다), 둥지(trays — 재료는 셀 무작위),
-건초·물통·상자·보온상자 소품(좌표 규칙이 기획에 없음), 맵 배치 **창**(5a) — 대신 에디터 콘솔에서 `cl9.seed N`이
-같은 코드로 레벨에 트랜지언트·editor-only 액터를 깐다(`cl9.seed clear`로 제거). 몬스터 시야 채널
-`CL9_Occlusion`은 아직 없어 `bBlocksSight=false` 종류는 Visibility 채널만 무시한다.
+**치수는 여전히 실측이다** — 벽 두께는 `barn` 조각의 얇은 축, 문 폭은 `door` 조각의 넓은 축에서
+읽는다 ([asset-swap.md](asset-swap.md)). 표에 옮겨 적은 숫자는 팩이 바뀌면 조용히 틀린 값이 된다.
 
-### 5b 진행분 (2026-09-07)
+### 지운 것
 
-**조각 표를 갈라냈다.** seg kind 행이 메시 대신 **역할 이름**(`Piece`)을 가리키고, 실제 메시는
-`UCL9PieceDef`(`DA_PieceTable`)가 역할×테마로 갖는다 — 목적지 행의 `Theme`가 어느 묶음을 쓸지 고른다.
-에셋 팩을 갈아 끼울 때 고치는 곳이 그 표 하나로 모인다 ([asset-swap.md](asset-swap.md)).
+`FCL9HenhouseParams` · `FCL9SiteFrame`(고정 프레임 전부) · `FCL9FloorLayout`(OpenH/OpenV) ·
+Kruskal `CarveFloor` · 케이지 열 · 플러그 · 층 낙차와 경사로 · `CellToWorld` · `CeilingBase` ·
+`UCL9SiteDef`의 격자 컬럼 열세 개 · `UCL9SegKindDef::BaseZMode`(층이 없어져 고아가 됐다).
 
-배치 모드 `Placement`가 붙었다. `Tile`은 조각을 자연 크기로 깔아 나가는데 **축마다 다르게 다룬다** —
-길이 축은 장수로 나눠 늘어놓고, 두께 축은 늘리지 않고 발자국 가운데에 세우며, 높이 축은 단을 쌓고
-남는 높이만 맨 윗단이 받는다. 조각 치수와 피벗은 표에 적지 않고 `UStaticMesh::GetBoundingBox()`에서
-읽으므로, 새 팩은 경로만 갈아 끼우면 된다. 안 맞으면 `LogCL9`가 종류마다 맞춤 배율을 알려 주고
-0.85~1.15를 벗어나면 경고한다. 변형은 자리 좌표 해시로 고른다 — 난수 스트림은 호출 순서에 의존해
-머신마다 갈릴 수 있는데 지형은 복제되지 않고 각자 만들므로 그러면 사람마다 다른 벽을 보게 된다.
-ISM 컴포넌트는 (종류, 메시)마다 하나가 됐다.
+### 실제로 서는 것을 확인했다 (2026-09-08)
 
-**벽 두께가 상수에서 실측값으로 바뀌었다** — `barn` 조각의 두께를 읽어 `FCL9SiteFrame::Wall`에 넣는다.
-격자도 조각 모듈(500cm)에 맞춰 다시 잡았고 1층을 48칸 → 80칸으로 키웠다(site.md).
+`DA_ModuleTable`에 양계장 16종 행을 넣고 `DA_CL9DefList`에 등록했다. `Lvl_Henhouse`에서
+`cl9.seed`로 실측한 값이다.
 
-아직 안 한 것: 실제 배치 육안 확인(`cl9.seed 873`), 코너 조각, 지형·머티리얼.
+| 명령 | 결과 |
+|---|---|
+| `cl9.seed 873` | 1일차 · **20모듈** · 22×22 격자 · 지점 95 · 인스턴스 329 |
+| `cl9.seed 873 henhouse 10` | 10일차 · **30모듈** · 28×28 격자 · 지점 136 · 인스턴스 477 |
+| `cl9.seed 4242 henhouse 5` | 5일차 · **24모듈** · 24×24 격자 · 지점 106 · 인스턴스 373 |
 
-검증: 유닛 테스트 `CL9.Map.Determinism`·`Connectivity`(시드 1~300 전 셀 도달·개구부 수 일치)·`Segments`,
-PIE 시나리오 L절(testing/pie-scenarios.md). 2인 PIE에서는 양쪽 로그의 `hash %08X`가 같아야 한다.
+**일자 커브가 설계값 20 · 24 · 30을 그대로 낸다** (module.md 결정 5). 세 판 모두 목표 수를
+빠짐없이 채웠다. 20모듈 판의 실제 크기는 60m × 95m다.
+
+### 아직 안 한 것
+
+- **문 옆 벽 토막이 −75%로 눌린다.** 칸 500cm에 문 250cm를 뚫으면 양옆에 125cm 토막이 남는데,
+  타일링이 500짜리 벽 조각 한 장을 거기에 우겨 넣는다(`worst run fit 0.25`). 온전한 벽은 1.00으로
+  잘 맞고 문 옆 토막만 그렇다. 고치려면 문 폭을 칸에 맞추거나 토막 전용 조각이 필요하다.
+- **`door` seg kind 행** — 지금은 문 자리가 문틀 없는 개구부다. 조각 표의 `door` 역할을 그대로
+  쓰면 **안 된다** — 그 메시를 개구부에 채우면 콜리전이 생겨 문이 통째로 막힌다.
+- **천장을 꺼 두었다** (2026-09-08 사용자: "천장없는건 일단 유지해"). `DA_SegKindTable`의
+  `ceiling` 행을 `__ceiling_off__`로 바꿔 둔 상태라 로그에 그 종류를 못 찾는다는 에러가 뜬다 —
+  의도된 것이다. 맵을 위에서 내려다보며 확인한 뒤 되돌릴지 정한다.
+- **소품**(module.md 결정 7, REPO의 `ModulePropSwitch`) — `PropSets` 컬럼이 설계에만 있다.
+
+검증: 유닛 테스트 `CL9.Map.Determinism`(같은 시드 = 같은 해시·같은 칸·같은 변) ·
+`CL9.Map.Assembly`(시드 1~200에서 전 모듈 도달 · 칸 겹침 0 · 비상구 정확히 하나 · 크기 분포) ·
+`CL9.Map.Segments`(모듈당 바닥 한 장 · 실내 모듈당 천장 한 장 · 넓이 0인 박스 없음).
+2인 PIE에서는 양쪽 로그의 `hash %08X`가 같아야 한다.

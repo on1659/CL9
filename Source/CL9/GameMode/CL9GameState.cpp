@@ -347,7 +347,7 @@ void ACL9GameState::RebuildSiteMap()
 	const UCL9SiteDef* Site = Registry ? Registry->FindSite(CurrentSiteAlias) : nullptr;
 	if (Site != nullptr && Site->Generator != ECL9Generator::None)
 	{
-		ACL9SiteMap::Rebuild(World, *Site, *Registry, SiteMapKey.Seed);
+		ACL9SiteMap::Rebuild(World, *Site, *Registry, SiteMapKey.Seed, CurrentDay);
 	}
 	else
 	{

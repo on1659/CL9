@@ -116,7 +116,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
 	float StaminaRegenTime = 8.f;
 
-	/** 탈진 상태는 스태미나가 이 값을 넘어 회복해야만 풀린다 (경계값에서 깜빡이지 않도록 하는 히스테리시스) */
+	/**
+	 * 탈진 상태는 스태미나가 이 값을 넘어 회복해야만 풀린다 — 경계값에서 깜빡이지 않게 하는
+	 * 히스테리시스이자, 1.0이면 **만충까지 잠그는** 문턱이다. 0~1 정규화 값이다.
+	 *
+	 * 기본값이 1.0인 것은 2026-09-08 결정이다(decisions.md — "0이 되면 lock이 걸려서 풀로
+	 * 올라갈 때까지 못 쓰게 막힘"). 그때는 표 값만 올리고 이 기본값을 0.25로 두었는데, 그러면
+	 * 새로 만든 캐릭터 행이 조용히 옛 동작으로 시작한다 — 그래서 여기까지 맞췄다 (2026-09-09).
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stamina")
-	float StaminaMinResume = 0.25f;
+	float StaminaMinResume = 1.f;
 };

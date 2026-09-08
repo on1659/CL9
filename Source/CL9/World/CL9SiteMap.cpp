@@ -4,8 +4,10 @@
 #include "CL9.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Data/CL9DefRegistry.h"
+#include "Data/CL9ModuleDef.h"
 #include "Data/CL9PieceDef.h"
 #include "Data/CL9SegKindDef.h"
+#include "Data/CL9ProgressionDef.h"
 #include "Data/CL9SiteDef.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
@@ -127,23 +129,12 @@ namespace
 		float WorstRunFit = 1.f;
 	};
 
-	FCL9HenhouseParams ParamsFromSite(const UCL9SiteDef& Site)
+	/** 그 종류가 쓰는 조각의 첫 변형 메시 — 실측 치수를 재려고 꺼낸다 */
+	const UStaticMesh* LeadMesh(const UCL9DefRegistry& Registry, FName KindName, FName Theme)
 	{
-		FCL9HenhouseParams P;
-		P.AisleCount1F = Site.AisleCount;
-		P.ColCount1F = Site.ColCount;
-		P.AisleCountB1 = Site.AisleCountB1;
-		P.ColCountB1 = Site.ColCountB1;
-		P.AisleWidth = Site.AisleWidth;
-		P.ColWidth = Site.ColWidth;
-		P.RowDepth = Site.RowDepth;
-		P.OpenWidth = Site.OpenWidth;
-		P.PlugWidth = Site.PlugWidth;
-		P.TargetOpen1F = Site.TargetOpen1F;
-		P.TargetOpenB1 = Site.TargetOpenB1;
-		P.JarCount1F = Site.JarCount1F;
-		P.JarCountB1 = Site.JarCountB1;
-		return P;
+		const UCL9SegKindDef* Kind = Registry.FindSegKind(KindName);
+		const UCL9PieceDef* Piece = Kind != nullptr ? Registry.FindPiece(Kind->Piece, Theme) : nullptr;
+		return (Piece != nullptr && Piece->Variants.Num() > 0) ? Piece->Variants[0].LoadSynchronous() : nullptr;
 	}
 }
 
@@ -170,7 +161,7 @@ ACL9SiteMap* ACL9SiteMap::Find(UWorld* World)
 	return nullptr;
 }
 
-ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed)
+ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day)
 {
 	if (World == nullptr)
 	{
@@ -211,7 +202,7 @@ ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const 
 		Map->bIsEditorOnlyActor = World->WorldType == EWorldType::Editor;
 	}
 
-	Map->Build(Site, Registry, Seed);
+	Map->Build(Site, Registry, Seed, Day);
 	return Map;
 }
 
@@ -224,14 +215,15 @@ void ACL9SiteMap::Clear(UWorld* World)
 	}
 }
 
-FVector ACL9SiteMap::CellToWorld(int32 Floor, int32 Aisle, int32 Col) const
+FVector ACL9SiteMap::PointToWorld(const FCL9LevelPoint& Point) const
 {
-	return SiteToWorld(CL9SiteLayout::CellCenter(Params, Frame, Floor, Aisle, Col), Floor);
+	return SiteToWorld(Point.Local);
 }
 
-FVector ACL9SiteMap::SiteToWorld(const FVector2D& Local, int32 Floor) const
+FVector ACL9SiteMap::SiteToWorld(const FVector2D& Local) const
 {
-	return GetActorLocation() + FVector(Local.X, Local.Y, Frame.FloorBase(Floor));
+	// 층이 없으므로 사이트 로컬 Z는 언제나 지면이다 (docs/plan/data/module.md 결정 2)
+	return GetActorLocation() + FVector(Local.X, Local.Y, 0.f);
 }
 
 void ACL9SiteMap::ClearBuilt()
@@ -255,30 +247,50 @@ void ACL9SiteMap::ClearBuilt()
 	SpawnedActors.Reset();
 }
 
-void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed)
+void ACL9SiteMap::MeasurePieces(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry)
+{
+	// 벽 두께는 표에 적지 않는다 — 벽으로 세울 조각의 얇은 축이 곧 프레임의 벽 두께다.
+	if (const UStaticMesh* WallMesh = LeadMesh(Registry, CL9SegKind::Barn(), Site.Theme))
+	{
+		const FVector MeshSize = WallMesh->GetBoundingBox().GetSize();
+		Params.WallThickness = FMath::Max(FMath::Min(MeshSize.X, MeshSize.Y), 1.f);
+	}
+	// 문 폭도 마찬가지다 — 팩을 갈아 끼우면 개구부가 그 팩 문짝을 따라간다.
+	if (const UStaticMesh* DoorMesh = LeadMesh(Registry, CL9SegKind::Door(), Site.Theme))
+	{
+		const FVector MeshSize = DoorMesh->GetBoundingBox().GetSize();
+		Params.DoorWidth = FMath::Clamp(FMath::Max(MeshSize.X, MeshSize.Y), 1.f, Params.CellSize);
+	}
+}
+
+void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day)
 {
 	ClearBuilt();
 
-	Params = ParamsFromSite(Site);
+	Params = FCL9SiteParams();
+	Params.Theme = Site.Theme;
+	Params.CellSize = FMath::Max(Site.CellSize, 1.f);
+	Params.EntryOffset = Site.EntryOffset;
 
-	// 벽 두께는 표에 적지 않는다 — 축사 벽으로 세울 조각의 실측 두께가 곧 프레임의
-	// 벽 두께다. 팩을 갈아 끼우면 통로 폭이 그대로 따라 맞는다 (docs/systems/asset-swap.md).
-	if (const UCL9SegKindDef* BarnKind = Registry.FindSegKind(CL9SegKind::Barn()))
+	// 한 판의 크기 = 사이트 기준값 × 일자 커브 (module.md 결정 5).
+	// 커브가 비어 있으면 1.0이므로 기준값이 그대로 나온다.
+	const UCL9ProgressionDef* Progression = Registry.GetProgression();
+	const float SizeMult = Progression != nullptr ? Progression->SiteSizeAt(Day) : 1.f;
+	Params.ModuleCount = FMath::Max(2, FMath::RoundToInt(Site.BaseModuleCount * SizeMult));
+
+	MeasurePieces(Site, Registry);
+
+	TArray<const UCL9ModuleDef*> ModuleDefs;
+	Registry.GatherModules(Site.Theme, ModuleDefs);
+	if (ModuleDefs.Num() == 0 && Seed != 0)
 	{
-		const UCL9PieceDef* BarnPiece = Registry.FindPiece(BarnKind->Piece, Site.Theme);
-		const UStaticMesh* WallMesh = BarnPiece != nullptr && BarnPiece->Variants.Num() > 0 ? BarnPiece->Variants[0].LoadSynchronous() : nullptr;
-		if (BarnKind->Placement == ECL9SegPlacement::Tile && WallMesh != nullptr)
-		{
-			const FVector MeshSize = WallMesh->GetBoundingBox().GetSize();
-			Params.WallThickness = FMath::Max(FMath::Min(MeshSize.X, MeshSize.Y), 1.f);
-		}
+		UE_LOG(LogCL9, Error, TEXT("Site map: stage '%s' has no module rows — nothing to assemble (DA_ModuleTable)."), *Site.Theme.ToString());
 	}
 
-	Frame = CL9SiteLayout::ComputeFrame(Params);
-	Layout = CL9SiteLayout::Generate(Params, Seed);
+	Layout = CL9SiteLayout::Generate(Params, ModuleDefs, Seed);
 
 	TArray<FCL9SiteSeg> Segs;
-	CL9SiteLayout::BuildSegments(Params, Frame, Layout, Segs);
+	CL9SiteLayout::BuildSegments(Params, Layout, Segs);
 
 	TMap<TPair<FName, UStaticMesh*>, UInstancedStaticMeshComponent*> Components;
 	TMap<FName, FTileReport> Reports;
@@ -329,30 +341,10 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		const FVector2D Size = Seg.Rect.GetSize();
 		const FVector2D Center = Seg.Rect.GetCenter();
 
-		// kind별 수직 범위: 바닥은 자기 층 아래로 늘어지고, 계단 벽은
-		// 아래층 바닥에서 위층 위로 Height만큼 뻗어 올라간다.
-		float Base, Top;
-		if (Kind->BaseZMode == ECL9SegBaseZ::WorldTop)
-		{
-			Base = Frame.FloorBase(1);
-			Top = Frame.FloorBase(0) + Kind->Height;
-		}
-		else if (Seg.Kind == CL9SegKind::Floor())
-		{
-			Top = Frame.FloorBase(Seg.Floor);
-			Base = Top - Kind->Height;
-		}
-		else if (Seg.Kind == CL9SegKind::Ceiling())
-		{
-			Base = CL9SiteLayout::CeilingBase(Frame, Seg.Floor);
-			Top = Base + Kind->Height;
-		}
-		else
-		{
-			Base = Frame.FloorBase(Seg.Floor);
-			Top = Base + Kind->Height;
-		}
-
+		// 바닥만 기준점 아래로 자라고, 벽과 천장은 기준점 위로 자란다.
+		const bool bDownward = Seg.Kind == CL9SegKind::Floor();
+		const float Base = bDownward ? Seg.BaseZ - Kind->Height : Seg.BaseZ;
+		const float Top = bDownward ? Seg.BaseZ : Seg.BaseZ + Kind->Height;
 		const FVector Spot(Center.X, Center.Y, (Base + Top) * 0.5f);
 
 		if (Seg.Kind == CL9SegKind::FlapIn())
@@ -365,8 +357,8 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			if (ACL9FlapIn* Flap = GetWorld()->SpawnActor<ACL9FlapIn>(GetActorLocation() + Spot, FRotator::ZeroRotator, SpawnParams))
 			{
-				// 여닫이문은 동쪽 벽에 있다 — 안쪽은 서쪽 방향이다
-				Flap->Setup(Extent, -FVector::ForwardVector, Mesh);
+				// 안쪽은 바깥 방향의 반대다 — 배치기가 어느 변에 달았는지 알려 준다
+				Flap->Setup(Extent, FVector(-Seg.Outward.X, -Seg.Outward.Y, 0.f), Mesh);
 				Flap->bIsEditorOnlyActor = bIsEditorOnlyActor;
 				SpawnedActors.Add(Flap);
 				++Placed;
@@ -374,8 +366,7 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 			continue;
 		}
 
-		// 램프는 기울어진 슬래브라 쌓을 수가 없다 — 배치 모드와 무관하게 늘려서 깐다
-		if (Kind->Placement == ECL9SegPlacement::Tile && !Seg.bRamp)
+		if (Kind->Placement == ECL9SegPlacement::Tile)
 		{
 			UStaticMesh* Lead = Piece->Variants[0].LoadSynchronous();
 			if (Lead == nullptr)
@@ -422,20 +413,8 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		}
 
 		FTransform Instance;
-		if (Seg.bRamp)
-		{
-			const float Drop = Frame.FloorDrop;
-			const float Length = FMath::Sqrt(Size.X * Size.X + Drop * Drop);
-			const float Pitch = -FMath::RadiansToDegrees(FMath::Atan2(Drop, Size.X));
-			Instance.SetRotation(FRotator(Pitch, 0.f, 0.f).Quaternion());
-			Instance.SetLocation(FVector(Center.X, Center.Y, (Frame.FloorBase(0) + Frame.FloorBase(1)) * 0.5f - Kind->Height * 0.5f));
-			Instance.SetScale3D(FVector(Length, Size.Y, Kind->Height) / UnitCube);
-		}
-		else
-		{
-			Instance.SetLocation(FVector(Center.X, Center.Y, (Base + Top) * 0.5f));
-			Instance.SetScale3D(FVector(Size.X, Size.Y, Top - Base) / UnitCube);
-		}
+		Instance.SetLocation(FVector(Center.X, Center.Y, (Base + Top) * 0.5f));
+		Instance.SetScale3D(FVector(Size.X, Size.Y, Top - Base) / UnitCube);
 		ComponentFor(*Kind, Seg.Kind, Mesh)->AddInstance(Instance, /*bWorldSpace*/ false);
 		++Placed;
 	}
@@ -462,11 +441,25 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 			*Entry.Key.ToString(), Report.PieceSize.X, Report.PieceSize.Y, Report.PieceSize.Z, Report.Tiles, Report.WorstRunFit);
 		if (Report.WorstRunFit < TileFitMin || Report.WorstRunFit > TileFitMax)
 		{
-			UE_LOG(LogCL9, Warning, TEXT("Site map: '%s' pieces are stretched %+.0f%% along their run — retune the grid columns to this pack's module (docs/systems/asset-swap.md)."),
+			UE_LOG(LogCL9, Warning, TEXT("Site map: '%s' pieces are stretched %+.0f%% along their run — retune CellSize to this pack's module (docs/systems/asset-swap.md)."),
 				*Entry.Key.ToString(), (Report.WorstRunFit - 1.f) * 100.f);
 		}
 	}
-	UE_LOG(LogCL9, Log, TEXT("Site map built — site '%s', theme '%s', seed %u, hash %08X, %d instances in %d components%s."),
-		*Site.Alias.ToString(), *Site.Theme.ToString(), Seed, CL9SiteLayout::LayoutHash(Layout), Placed, KindComponents.Num(),
-		Layout.bHasMaze ? TEXT("") : TEXT(" (shell only)"));
+
+	if (!Layout.bBuilt)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Site map: nothing built — site '%s', seed %u (0 means the flat level stays as it is)."), *Site.Alias.ToString(), Seed);
+		return;
+	}
+
+	// 목표 수를 못 채우는 것은 흔한 실패다 — 격자가 좁거나 그 스테이지의 소켓이
+	// 서로 안 맞으면 프론티어가 먼저 마른다. 조용히 작은 맵이 나오느니 알린다.
+	if (Layout.Modules.Num() < Params.ModuleCount)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("Site map: asked for %d modules but only %d fit — check the stage's socket mix (docs/plan/data/module.md)."),
+			Params.ModuleCount, Layout.Modules.Num());
+	}
+	UE_LOG(LogCL9, Log, TEXT("Site map built — site '%s', stage '%s', day %d, seed %u, hash %08X, %d modules on a %dx%d grid, %d points, %d instances in %d components."),
+		*Site.Alias.ToString(), *Site.Theme.ToString(), Day, Seed, CL9SiteLayout::LayoutHash(Layout),
+		Layout.Modules.Num(), Layout.GridSize.X, Layout.GridSize.Y, Layout.Points.Num(), Placed, KindComponents.Num());
 }

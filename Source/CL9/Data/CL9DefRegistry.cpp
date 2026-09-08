@@ -2,9 +2,11 @@
 
 #include "Data/CL9DefRegistry.h"
 #include "CL9.h"
+#include "Data/CL9BuffDef.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9EquipmentDef.h"
 #include "Data/CL9ItemDef.h"
+#include "Data/CL9ModuleDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
@@ -242,6 +244,51 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		Pieces.Add(Key, PieceDef);
 		OrderedPieces.Add(PieceDef);
 	}
+	else if (const UCL9ModuleDef* ModuleDef = Cast<UCL9ModuleDef>(Def))
+	{
+		if (Modules.Contains(Key))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate module key '%s'/'%s' — the first row stays."),
+				*Def->GetName(), *Def->Alias.ToString(), *Def->SubAlias.ToString());
+			return;
+		}
+		Modules.Add(Key, ModuleDef);
+		OrderedModules.Add(ModuleDef);
+	}
+	else if (const UCL9BuffDef* BuffDef = Cast<UCL9BuffDef>(Def))
+	{
+		if (Buffs.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate buff key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		Buffs.Add(Def->Alias, BuffDef);
+		OrderedBuffs.Add(BuffDef);
+	}
+}
+
+const UCL9BuffDef* UCL9DefRegistry::FindBuff(FName Alias) const
+{
+	const UCL9BuffDef* const* Found = Buffs.Find(Alias);
+	return Found ? *Found : nullptr;
+}
+
+const UCL9ModuleDef* UCL9DefRegistry::FindModule(FName Alias, FName Stage) const
+{
+	const UCL9ModuleDef* const* Found = Modules.Find(TPair<FName, FName>(Alias, Stage));
+	return Found ? *Found : nullptr;
+}
+
+void UCL9DefRegistry::GatherModules(FName Stage, TArray<const UCL9ModuleDef*>& OutModules) const
+{
+	OutModules.Reset();
+	for (const TObjectPtr<const UCL9ModuleDef>& Module : OrderedModules)
+	{
+		if (Module->SubAlias == Stage)
+		{
+			OutModules.Add(Module.Get());
+		}
+	}
 }
 
 const UCL9PieceDef* UCL9DefRegistry::FindPiece(FName Role, FName Theme) const
@@ -335,25 +382,63 @@ void UCL9DefRegistry::CheckSiteReferences() const
 			}
 		}
 
-		// 생성기는 조각들을 종류로 지칭한다 — 행이 없으면 맵에 구멍이 생긴다
-		if (Site->Generator == ECL9Generator::Henhouse)
+		if (Site->Generator == ECL9Generator::None)
 		{
-			for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::Cage(), CL9SegKind::Plug(), CL9SegKind::Stair(), CL9SegKind::FlapIn(), CL9SegKind::Floor(), CL9SegKind::Ceiling()})
+			continue;
+		}
+
+		// 생성기는 조각들을 종류로 지칭한다 — 행이 없으면 맵에 구멍이 생긴다
+		for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::FlapIn(), CL9SegKind::Floor(), CL9SegKind::Ceiling()})
+		{
+			const UCL9SegKindDef* SegKind = FindSegKind(Kind);
+			if (SegKind == nullptr)
 			{
-				const UCL9SegKindDef* SegKind = FindSegKind(Kind);
-				if (SegKind == nullptr)
-				{
-					UE_LOG(LogCL9, Error, TEXT("%s: the henhouse generator needs seg kind '%s' which is missing or broken — those boxes are skipped."),
-						*Site->GetName(), *Kind.ToString());
-					continue;
-				}
-				// 테마를 절반만 채워 두면 맵이 까맣게 나오고 원인을 찾기 어렵다 —
-				// 여기서 미리 잡는다 (docs/systems/asset-swap.md 테마 완결성).
-				if (FindPiece(SegKind->Piece, Site->Theme) == nullptr)
-				{
-					UE_LOG(LogCL9, Error, TEXT("%s: theme '%s' has no piece for role '%s' (needed by seg kind '%s') — those boxes are skipped."),
-						*Site->GetName(), *Site->Theme.ToString(), *SegKind->Piece.ToString(), *Kind.ToString());
-				}
+				UE_LOG(LogCL9, Error, TEXT("%s: the module generator needs seg kind '%s' which is missing or broken — those boxes are skipped."),
+					*Site->GetName(), *Kind.ToString());
+				continue;
+			}
+			// 테마를 절반만 채워 두면 맵이 까맣게 나오고 원인을 찾기 어렵다 —
+			// 여기서 미리 잡는다 (docs/systems/asset-swap.md 테마 완결성).
+			if (FindPiece(SegKind->Piece, Site->Theme) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: theme '%s' has no piece for role '%s' (needed by seg kind '%s') — those boxes are skipped."),
+					*Site->GetName(), *Site->Theme.ToString(), *SegKind->Piece.ToString(), *Kind.ToString());
+			}
+		}
+
+		// door는 없어도 된다 — 그러면 문 자리가 문틀 없는 개구부가 된다. 지나다니는 데는
+		// 지장이 없으므로 에러가 아니라 알림이다 (docs/plan/data/module.md).
+		if (FindSegKind(CL9SegKind::Door()) == nullptr)
+		{
+			UE_LOG(LogCL9, Log, TEXT("%s: no 'door' seg kind — doorways will be bare openings."), *Site->GetName());
+		}
+
+		// 모듈 세트는 통째로 한 벌이다 (docs/plan/data/module.md). 시작 모듈이 없으면
+		// 한 발도 못 떼고, 나머지 타입이 비면 그 자리를 다른 타입이 메우지 못한다.
+		TArray<const UCL9ModuleDef*> StageModules;
+		GatherModules(Site->Theme, StageModules);
+		if (StageModules.Num() == 0)
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: stage '%s' has no module rows — the generator builds nothing (docs/plan/data/module.md)."),
+				*Site->GetName(), *Site->Theme.ToString());
+			continue;
+		}
+		bool bSeenType[5] = {false, false, false, false, false};
+		for (const UCL9ModuleDef* Module : StageModules)
+		{
+			bSeenType[static_cast<int32>(Module->Type)] = true;
+		}
+		if (!bSeenType[static_cast<int32>(ECL9ModuleType::Start)])
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: stage '%s' has no Start module — the truck has nothing to dock against."),
+				*Site->GetName(), *Site->Theme.ToString());
+		}
+		for (const ECL9ModuleType Type : {ECL9ModuleType::Normal, ECL9ModuleType::Passage, ECL9ModuleType::DeadEnd})
+		{
+			if (!bSeenType[static_cast<int32>(Type)])
+			{
+				UE_LOG(LogCL9, Warning, TEXT("%s: stage '%s' has no %s module — that share of the budget goes unspent and the map comes out small."),
+					*Site->GetName(), *Site->Theme.ToString(), *UEnum::GetValueAsString(Type));
 			}
 		}
 	}
@@ -419,6 +504,17 @@ void UCL9DefRegistry::CheckItemReferences() const
 			{
 				UE_LOG(LogCL9, Error, TEXT("%s: cook chain points at '%s'/'%s' which is missing or broken."),
 					*Item->GetName(), *Ref->ItemAlias.ToString(), *Ref->ItemSubAlias.ToString());
+			}
+		}
+
+		// 먹기 효과는 버프 표를 가리킨다 — 오타를 여기서 잡지 않으면 "먹었는데 아무 일도
+		// 없다"가 되고, 그건 화면에도 로그에도 안 남아서 못 찾는다 (docs/plan/data/buff.md)
+		for (const FName& BuffAlias : Item->EatBuffs)
+		{
+			if (FindBuff(BuffAlias) == nullptr)
+			{
+				UE_LOG(LogCL9, Error, TEXT("%s: EatBuffs names '%s' which is missing or broken — eating it would do nothing."),
+					*Item->GetName(), *BuffAlias.ToString());
 			}
 		}
 	}

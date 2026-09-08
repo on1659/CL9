@@ -45,70 +45,39 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Progress")
 	float ValueRate = 1.f;
 
-	// -- 맵 생성 (site.md 맵 생성). 격자는 사이트마다 고정돼 있고, 시드는
-	//    그 안의 미로 — 우리, 플러그, 항아리, 플랩 — 모양만 정한다.
+	// -- 맵 생성 (docs/plan/data/module.md). 사이트는 "얼마나 큰 판인가"만 정하고,
+	//    무엇이 놓이는지는 모듈 표가, 그 모듈을 무엇으로 세우는지는 조각 표가 정한다.
 
 	/** 이 사이트를 어떤 생성기로 배치할지 — None이면 평지 레벨을 그대로 둔다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	ECL9Generator Generator = ECL9Generator::None;
 
 	/**
-	 * 이 사이트를 어느 조각 묶음으로 지을지 — 조각 표(UCL9PieceDef)의 SubAlias를
-	 * 가리킨다 (docs/systems/asset-swap.md). 테마에 없는 역할은 테마 칸이 빈 공용
-	 * 행으로 떨어진다. 비워 두면 공용 행만 쓴다.
-	 *
-	 * 격자 치수는 조각 모듈에 맞춰야 예쁘게 떨어지므로, 실질적으로 테마와 아래
-	 * 격자 컬럼들은 한 벌로 움직인다 — 같은 배치를 다른 테마로 내려면 이 행을
-	 * 복제해서 Theme만 바꾼다.
+	 * 이 사이트를 어느 묶음으로 지을지. **두 표를 한 이름으로 가리킨다** — 모듈 표
+	 * (UCL9ModuleDef)의 SubAlias이자 조각 표(UCL9PieceDef)의 SubAlias다
+	 * (docs/systems/asset-swap.md · docs/plan/data/module.md). 조각 쪽은 테마에 없는
+	 * 역할이 테마 칸이 빈 공용 행으로 떨어지지만, 모듈 쪽은 폴백이 없다 — 스테이지의
+	 * 모듈 세트는 통째로 한 벌이다.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	FName Theme;
 
-	/** 1층 통로 수 (축사를 따라 나 있는 복도) */
+	/**
+	 * 격자 칸 하나의 크기 (cm). 조각 한 장과 같아야 벽이 안 늘어난다 — 보유 팩의
+	 * 모듈이 500이라 500이다 (docs/systems/asset-swap.md). 팩을 갈아 끼울 때 여기와
+	 * 모듈 표의 Size가 함께 움직인다.
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 AisleCount = 10;
+	float CellSize = 500.f;
 
-	/** 1층 열 수 (각 통로를 따라 있는 칸) */
+	/**
+	 * 한 판에 놓을 모듈 수의 기준값. 진행 표의 SiteSizeCurve가 여기에 곱해져서
+	 * 1일차 20 · 5일차 24 · 10일차 30이 나온다 (module.md 결정 5).
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCount = 16;
+	int32 BaseModuleCount = 24;
 
+	/** 트럭 패드에서 시작 모듈의 바깥면까지의 거리 (cm) — 그 사이가 걸어 들어가는 마당이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 AisleCountB1 = 8;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 ColCountB1 = 12;
-
-	/** 통로 폭 (cm) — 문과 계단 복도가 이 값을 공유한다 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float AisleWidth = 250.f;
-
-	/** 통로를 따라 있는 칸의 길이 (cm) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float ColWidth = 500.f;
-
-	/** 두 통로 사이 우리 행의 깊이 (cm) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float RowDepth = 120.f;
-
-	/** 우리 행을 가로질러 뚫는 개구부 (cm) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float OpenWidth = 200.f;
-
-	/** 통로를 가로막는 플러그 (cm, 통로 방향으로) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	float PlugWidth = 180.f;
-
-	/** ★ 난이도 손잡이 — 1층에서 통과 가능한 간선 수, 적을수록 막다른 길이 많아진다 (site.md 개구부) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpen1F = 175;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 TargetOpenB1 = 105;
-
-	/** 층마다 있는 반납 항아리 수, 모든 칸 근처에 하나씩 있도록 분산시킨다 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 JarCount1F = 7;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
-	int32 JarCountB1 = 6;
+	float EntryOffset = 1000.f;
 };

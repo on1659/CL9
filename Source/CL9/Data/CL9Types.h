@@ -249,6 +249,14 @@ struct FCL9ActiveEffect
 	/** 이 시각(서버 시각)이 지나면 사라진다 */
 	UPROPERTY()
 	float EndServerTime = 0.f;
+
+	/**
+	 * 이 효과를 건 버프 행의 별칭 — 화면이 "달리기 +60"이 아니라 버프 이름으로 묶어
+	 * 보여줄 수 있게 출처를 들고 다닌다. 한 버프가 스탯 셋을 걸면 항목 셋이 같은
+	 * 별칭을 단다 (docs/plan/data/buff.md).
+	 */
+	UPROPERTY()
+	FName BuffAlias;
 };
 
 /** 먹기 효과 행 하나 — 대상, 양, 지속시간이 모두 테이블에서 온다 */

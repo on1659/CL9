@@ -465,22 +465,39 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 
-	// 생성된 맵: 동물과 재료는 두 층 중 무작위 셀 위에 떨어진다
-	// (생성기 좌표계 — docs/systems/map.md 생성 흐름). 미로가 없으면
-	// 평지 레벨의 트럭 주변 원형 배치가 대신한다.
+	// 생성된 맵: 동물과 재료는 생성기가 내준 지점 위에 떨어진다
+	// (docs/plan/data/module.md 결정 4). 맵이 없으면 평지 레벨의 트럭 주변
+	// 원형 배치가 대신한다.
 	const ACL9SiteMap* SiteMap = ACL9SiteMap::Find(GetWorld());
-	const bool bUseCells = SiteMap != nullptr && SiteMap->GetLayout().bHasMaze;
-	auto FindCellSpot = [this, SiteMap](FVector& OutLocation)
+	const bool bUsePoints = SiteMap != nullptr && SiteMap->GetLayout().bBuilt;
+
+	TArray<int32> MonsterPoints;
+	TArray<int32> LootPoints;
+	TArray<int32> JarPoints;
+	if (bUsePoints)
 	{
-		const FCL9HenhouseParams& Params = SiteMap->GetParams();
+		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Monster, MonsterPoints);
+		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Loot, LootPoints);
+		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Jar, JarPoints);
+	}
+
+	// 목록은 시작 모듈에서 먼 것부터다 — 앞쪽만 보게 하면 "깊이 들어갈수록
+	// 위험하다"가 스폰 규칙 하나 없이 배치만으로 성립한다.
+	auto FindPointSpot = [this, SiteMap](const TArray<int32>& Points, float DeepShare, FVector& OutLocation)
+	{
+		if (Points.Num() == 0)
+		{
+			return false;
+		}
+		const int32 Limit = FMath::Clamp(FMath::RoundToInt(Points.Num() * DeepShare), 1, Points.Num());
+		// 칸 한복판에서 벽 쪽으로 조금 흔들되, 벽에 박히지는 않을 만큼만
+		const float Jitter = FMath::Max(SiteMap->GetParams().CellSize * 0.5f - 120.f, 0.f);
 		for (int32 Attempt = 0; Attempt < 12; ++Attempt)
 		{
-			const int32 Floor = FMath::RandRange(0, 1);
-			const FCL9FloorLayout& Grid = SiteMap->GetLayout().Floors[Floor];
-			FVector Candidate = SiteMap->CellToWorld(Floor, FMath::RandRange(0, Grid.Aisles - 1), FMath::RandRange(0, Grid.Cols - 1));
-			// 통로를 따라 흔들리게 하되, 셀 끝의 플러그와 옆의 케이지 열은 피한다
-			Candidate.X += FMath::FRandRange(-Params.ColWidth * 0.5f + 150.f, Params.ColWidth * 0.5f - 150.f);
-			Candidate.Y += FMath::FRandRange(-Params.AisleWidth * 0.5f + 60.f, Params.AisleWidth * 0.5f - 60.f);
+			const FCL9LevelPoint& Point = SiteMap->GetPoints()[Points[FMath::RandRange(0, Limit - 1)]];
+			FVector Candidate = SiteMap->PointToWorld(Point);
+			Candidate.X += FMath::FRandRange(-Jitter, Jitter);
+			Candidate.Y += FMath::FRandRange(-Jitter, Jitter);
 			if (!IsInsideCalmRadius(Candidate))
 			{
 				OutLocation = Candidate + FVector(0.f, 0.f, 5.f);
@@ -499,7 +516,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
 			FVector Location;
-			if (!(bUseCells ? FindCellSpot(Location) : FindSpawnPoint(900.f, 2400.f, Location)))
+			if (!(bUsePoints ? FindPointSpot(MonsterPoints, 0.6f, Location) : FindSpawnPoint(900.f, 2400.f, Location)))
 			{
 				continue;
 			}
@@ -521,7 +538,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
 			FVector Location;
-			if (!(bUseCells ? FindCellSpot(Location) : FindSpawnPoint(400.f, 1800.f, Location)))
+			if (!(bUsePoints ? FindPointSpot(LootPoints, 1.f, Location) : FindSpawnPoint(400.f, 1800.f, Location)))
 			{
 				continue;
 			}
@@ -535,32 +552,36 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
 	}
 
-	// 생성기의 항아리 셀 위에 반환용 항아리를 배치하되, 통로가 막히지 않도록 케이지 열에 붙여 놓는다
-	if (bUseCells)
+	// 반환용 항아리는 납품 방마다 하나다 — Jar 지점은 그 방의 칸마다 하나씩 나오므로
+	// 모듈당 첫 칸만 쓴다 (docs/plan/data/module.md 결정 4).
+	if (bUsePoints && JarPoints.Num() > 0)
 	{
 		if (JarClass == nullptr)
 		{
-			UE_LOG(LogCL9, Warning, TEXT("Night %d: no JarClass on the game mode — jar cells stay empty (assign BP_CL9Jar in BP_CL9GameMode)."), Day);
+			UE_LOG(LogCL9, Warning, TEXT("Night %d: no JarClass on the game mode — the delivery rooms stay empty (assign BP_CL9Jar in BP_CL9GameMode)."), Day);
 		}
 		else
 		{
+			TSet<int32> SeenModules;
 			int32 Jars = 0;
-			for (int32 Floor = 0; Floor < 2; ++Floor)
+			for (int32 Index : JarPoints)
 			{
-				for (const FIntPoint& Cell : SiteMap->GetLayout().Floors[Floor].JarCells)
+				const FCL9LevelPoint& Point = SiteMap->GetPoints()[Index];
+				bool bAlready = false;
+				SeenModules.Add(Point.Module, &bAlready);
+				if (bAlready)
 				{
-					FVector Location = SiteMap->CellToWorld(Floor, Cell.X, Cell.Y);
-					Location.Y += SiteMap->GetParams().AisleWidth * 0.5f - 45.f;
-					FActorSpawnParameters SpawnParams;
-					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-					if (AActor* Jar = GetWorld()->SpawnActor<ACL9Jar>(JarClass, Location, FRotator::ZeroRotator, SpawnParams))
-					{
-						NightSpawned.Add(Jar);
-						++Jars;
-					}
+					continue;
+				}
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				if (AActor* Jar = GetWorld()->SpawnActor<ACL9Jar>(JarClass, SiteMap->PointToWorld(Point), FRotator::ZeroRotator, SpawnParams))
+				{
+					NightSpawned.Add(Jar);
+					++Jars;
 				}
 			}
-			UE_LOG(LogCL9, Log, TEXT("Night %d: %d jars placed."), Day, Jars);
+			UE_LOG(LogCL9, Log, TEXT("Night %d: %d jars placed in %d delivery rooms."), Day, Jars, SeenModules.Num());
 		}
 	}
 }

@@ -31,7 +31,7 @@ namespace
 	{
 		if (!Args.IsValidIndex(0))
 		{
-			UE_LOG(LogCL9, Warning, TEXT("cl9.seed: usage cl9.seed <N> [site alias] — 0 = shell only, 'clear' removes the map."));
+			UE_LOG(LogCL9, Warning, TEXT("cl9.seed: usage cl9.seed <N> [site alias] [day] — 0 = build nothing, 'clear' removes the map."));
 			return;
 		}
 		if (Args[0].Equals(TEXT("clear"), ESearchCase::IgnoreCase))
@@ -61,7 +61,9 @@ namespace
 			return;
 		}
 		const uint32 Seed = static_cast<uint32>(FCString::Strtoui64(*Args[0], nullptr, 10));
-		ACL9SiteMap::Rebuild(World, *Site, *Registry, Seed);
+		// 일자는 한 판의 모듈 수만 바꾼다 (docs/plan/data/module.md 결정 5) — 안 적으면 1일차다
+		const int32 Day = Args.IsValidIndex(2) ? FMath::Max(1, FCString::Atoi(*Args[2])) : 1;
+		ACL9SiteMap::Rebuild(World, *Site, *Registry, Seed, Day);
 	}
 #endif
 
