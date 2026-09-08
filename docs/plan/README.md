@@ -9,6 +9,7 @@
 | 전체 기획 | [economy.md](economy.md) | 돈·가격·난이도 곡선·지켜야 할 부등식 |
 | 작업 순서 | [build-order.md](build-order.md) | **뭘 만들지 착수하기 전에 반드시** |
 | 세부 기획 | [data/](data/) | 표에 행을 추가하거나 컬럼을 만질 때 |
+| 참고 게임 | [reference/](reference/) | 리썰컴퍼니·R.E.P.O.가 같은 문제를 어떻게 풀었는지 볼 때 |
 
 ---
 
@@ -30,6 +31,8 @@
 | 플레이어 외형을 추가하고 싶다 | [data/character.md](data/character.md) |
 | 벽·상자 같은 맵 조각을 만지고 싶다 | [data/segkind.md](data/segkind.md) |
 | 표의 공통 규칙 (조회·기믹·소프트 참조) | [data/README.md](data/README.md) |
+| **저쪽 게임은 이걸 어떻게 했나** | [reference/README.md](reference/README.md) |
+| 참고 게임에서 CL9로 가져올 것 | [reference/takeaways.md](reference/takeaways.md) |
 
 ---
 
