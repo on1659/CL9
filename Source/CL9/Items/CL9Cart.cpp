@@ -104,7 +104,20 @@ void ACL9Cart::Tick(float DeltaSeconds)
 	if (Distance > HitchDistance && Distance > UE_KINDA_SMALL_NUMBER)
 	{
 		const FVector Towed = Puller->GetActorLocation() + Offset * (HitchDistance / Distance);
-		SetActorLocation(FVector(Towed.X, Towed.Y, GetActorLocation().Z), true);
+		const FVector Target(Towed.X, Towed.Y, GetActorLocation().Z);
+
+		// 막히면 벽을 타고 미끄러진다. 스윕 이동은 막히는 순간 이동 전체가 거부되므로,
+		// 그냥 두면 견인 직선 위에 벽이나 동물이 하나만 걸려도 수레가 거기 물려서
+		// 영영 따라오지 못한다 — 견인은 항상 견인자 쪽 직선으로만 밀기 때문이다
+		// (2026-09-08 PIE 재현: 빈 바닥에서는 119cm 간격을 정확히 지키다가,
+		// 스켈레탈 메시에 닿는 순간 굳어 다시는 움직이지 않았다).
+		FHitResult Hit;
+		SetActorLocation(Target, true, &Hit);
+		if (Hit.bBlockingHit)
+		{
+			const FVector Remaining = Target - GetActorLocation();
+			SetActorLocation(GetActorLocation() + FVector::VectorPlaneProject(Remaining, Hit.Normal), true);
+		}
 	}
 }
 
