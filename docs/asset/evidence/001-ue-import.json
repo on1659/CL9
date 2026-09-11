@@ -1,0 +1,314 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "import_options": {
+    "import_uniform_scale": 1,
+    "convert_scene": true,
+    "convert_scene_unit": true,
+    "force_front_x_axis": true
+  },
+  "assets": [
+    {
+      "name": "SM_Henhouse_Wall_500_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Wall_500_A.SM_Henhouse_Wall_500_A",
+      "dimensions_cm": [
+        500.0,
+        40.00008201599121,
+        400.0
+      ],
+      "expected_cm": [
+        500.0,
+        40.0,
+        400.0
+      ],
+      "max_dimension_error_cm": 8.20159912109375e-05,
+      "min_cm": [
+        -250.0,
+        -20.000041961669922,
+        0.0
+      ],
+      "max_cm": [
+        250.0,
+        20.00004005432129,
+        400.0
+      ],
+      "lod_count": 3,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_DarkTimber"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 1,
+      "expected_collision_hulls": 1,
+      "source_sha256": "565a7f78ab2498f2af8eacad5c3f6260a4ce48bf0e514fbbed8fd758a6e8093e"
+    },
+    {
+      "name": "SM_Henhouse_Floor_500_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Floor_500_A.SM_Henhouse_Floor_500_A",
+      "dimensions_cm": [
+        500.0000915527344,
+        500.0000915527344,
+        20.0
+      ],
+      "expected_cm": [
+        500.0,
+        500.0,
+        20.0
+      ],
+      "max_dimension_error_cm": 9.1552734375e-05,
+      "min_cm": [
+        -250.0000457763672,
+        -250.0000457763672,
+        -20.0
+      ],
+      "max_cm": [
+        250.0000457763672,
+        250.0000457763672,
+        0.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_Concrete"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 1,
+      "expected_collision_hulls": 1,
+      "source_sha256": "5dbae653556cf1f8bcb5f5a1953d30fa154b69bacd22ae7b24aafc3d9051972b"
+    },
+    {
+      "name": "SM_Henhouse_Nest_ThreeBay_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Nest_ThreeBay_A.SM_Henhouse_Nest_ThreeBay_A",
+      "dimensions_cm": [
+        300.0000305175781,
+        100.00004577636719,
+        160.0
+      ],
+      "expected_cm": [
+        300.0,
+        100.0,
+        160.0
+      ],
+      "max_dimension_error_cm": 4.57763671875e-05,
+      "min_cm": [
+        -150.00001525878906,
+        -50.000022888183594,
+        0.0
+      ],
+      "max_cm": [
+        150.00001525878906,
+        50.000022888183594,
+        160.0
+      ],
+      "lod_count": 3,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_Straw"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 14,
+      "expected_collision_hulls": 14,
+      "source_sha256": "16b6ca41be33ac5b6a3c4a2f6636a45f8b2c64ef9030140493093b3b31dd3fad"
+    },
+    {
+      "name": "SM_Henhouse_Crate_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Crate_A.SM_Henhouse_Crate_A",
+      "dimensions_cm": [
+        110.00001525878906,
+        82.25001525878906,
+        86.0
+      ],
+      "expected_cm": [
+        110.0,
+        82.25,
+        86.0
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "min_cm": [
+        -55.00000762939453,
+        -41.00000762939453,
+        0.0
+      ],
+      "max_cm": [
+        55.00000762939453,
+        41.25000762939453,
+        86.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_OxidizedSteel"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 1,
+      "expected_collision_hulls": 1,
+      "source_sha256": "73e25149ce1527cb732103b62b83eff5699387cf76ecd8887da7c84725b2c026"
+    },
+    {
+      "name": "SM_Henhouse_FeedSack_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_FeedSack_A.SM_Henhouse_FeedSack_A",
+      "dimensions_cm": [
+        60.0,
+        45.0,
+        87.0
+      ],
+      "expected_cm": [
+        60.0,
+        45.0,
+        87.0
+      ],
+      "max_dimension_error_cm": 0.0,
+      "min_cm": [
+        -29.999998092651367,
+        -22.5,
+        0.0
+      ],
+      "max_cm": [
+        30.000001907348633,
+        22.5,
+        87.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_Burlap",
+        "CL9_HH01_Wood"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 1,
+      "expected_collision_hulls": 1,
+      "source_sha256": "90c172b35b9ec1e5cce531652da273c1f401536db4c9b715c273164b2b6471e9"
+    },
+    {
+      "name": "SM_Egg_Raw_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+      "dimensions_cm": [
+        30.177786827087402,
+        30.177781105041504,
+        40.0
+      ],
+      "expected_cm": [
+        30.18,
+        30.18,
+        40.0
+      ],
+      "max_dimension_error_cm": 0.0022188949584958095,
+      "min_cm": [
+        -15.088896751403809,
+        -15.088887214660645,
+        -20.0
+      ],
+      "max_cm": [
+        15.088890075683594,
+        15.08889389038086,
+        20.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_Eggshell"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 0,
+      "expected_collision_hulls": 0,
+      "source_sha256": "7d137c5b8da226ef3150e4f6ceb3c4a7813ea2ba82666ab5f54e74b20a992843"
+    },
+    {
+      "name": "SM_Henhouse_WorkLamp_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_WorkLamp_A.SM_Henhouse_WorkLamp_A",
+      "dimensions_cm": [
+        50.0,
+        50.0,
+        37.5
+      ],
+      "expected_cm": [
+        50.0,
+        50.0,
+        37.5
+      ],
+      "max_dimension_error_cm": 0.0,
+      "min_cm": [
+        -25.0,
+        -25.0,
+        -18.5
+      ],
+      "max_cm": [
+        25.0,
+        25.0,
+        19.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_OxidizedSteel",
+        "CL9_HH01_Bulb"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 0,
+      "expected_collision_hulls": 0,
+      "source_sha256": "d93d35b56d1e208595878e8693b1f4ef7e4bbd86b73ddef72deca5cea369de51"
+    },
+    {
+      "name": "SM_Henhouse_FeedTrough_A",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_FeedTrough_A.SM_Henhouse_FeedTrough_A",
+      "dimensions_cm": [
+        240.00001525878906,
+        65.00003814697266,
+        45.999996185302734
+      ],
+      "expected_cm": [
+        240.0,
+        65.0,
+        46.0
+      ],
+      "max_dimension_error_cm": 3.814697265625e-05,
+      "min_cm": [
+        -120.00000762939453,
+        -32.50001907348633,
+        0.0
+      ],
+      "max_cm": [
+        120.00000762939453,
+        32.50001907348633,
+        45.999996185302734
+      ],
+      "lod_count": 1,
+      "materials": [
+        "CL9_HH01_OxidizedSteel",
+        "CL9_HH01_Straw"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 9,
+      "expected_collision_hulls": 9,
+      "source_sha256": "ab02cf4184d18b114de0a35d0fe96a400c79364e2b9d59fa7bda7844e838a0a3"
+    },
+    {
+      "name": "SM_CL9_UnitCube_100",
+      "path": "/Game/CL9Art/Maps/HenhouseSample01/SM_CL9_UnitCube_100.SM_CL9_UnitCube_100",
+      "dimensions_cm": [
+        100.00001525878906,
+        100.00001525878906,
+        100.0
+      ],
+      "expected_cm": [
+        100,
+        100,
+        100
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "min_cm": [
+        -50.00000762939453,
+        -50.00000762939453,
+        -50.0
+      ],
+      "max_cm": [
+        50.00000762939453,
+        50.00000762939453,
+        50.0
+      ],
+      "lod_count": 1,
+      "materials": [
+        "Material_0"
+      ],
+      "simple_collisions": 0,
+      "convex_collisions": 0,
+      "expected_collision_hulls": 0,
+      "source_sha256": "cc54e7216aa68c74b92fc035bdfaeea0fc3b8504e415e2989a96c4e2afed06a2"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:06:34.271962+00:00",
+  "assets": [
+    {
+      "id": "henhouse_fence",
+      "path": "/Game/CL9Art/Maps/HenhouseFence/SM_Henhouse_Fence_250_A.SM_Henhouse_Fence_250_A",
+      "dimensions_cm": [
+        250.0,
+        24.00004005432129,
+        288.0
+      ],
+      "max_dimension_error_cm": 4.0590763092041016e-05,
+      "source_sha256": "1d963dac42adffdc8cf4dbfbbafcb8bb8dfa83a4c7dd44fec31cbbcd20c94d12",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        144.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseFence/M_CL9_Fence_Wood.M_CL9_Fence_Wood",
+        "/Game/CL9Art/Maps/HenhouseFence/M_CL9_Fence_Metal.M_CL9_Fence_Metal"
+      ],
+      "sphere_radius_cm": 191.0628181532248,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

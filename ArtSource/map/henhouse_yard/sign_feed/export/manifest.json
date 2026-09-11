@@ -1,0 +1,54 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "sign_feed.blend",
+  "pivot": "bounds center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_SignFeed_Frame": {
+      "vertex_color": true,
+      "roughness": 0.74,
+      "metallic": 0.45
+    },
+    "M_CL9_SignFeed_Face": {
+      "vertex_color": true,
+      "roughness": 0.77,
+      "metallic": 0
+    }
+  },
+  "assets": {
+    "henhouse_sign_feed": {
+      "object": "SM_Henhouse_Sign_Feed_A",
+      "dimensions_cm": [
+        60.00000238418579,
+        4.399999976158142,
+        40.00000059604645
+      ],
+      "triangles": 856,
+      "vertices": 456,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_SignFeed_Frame",
+        "M_CL9_SignFeed_Face"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "bccf2bc0dbce471344c7fd9a1b0a593586c6f6ad7081c9ce0daa400709325d61",
+      "anchors_cm": {
+        "WallMount": [
+          0.0,
+          2.200000047683716,
+          0.0
+        ]
+      },
+      "rig": "N/A static sign",
+      "collision_policy": "NoCollision wall decoration",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "collision_hulls": 0
+    }
+  },
+  "icon_layer_fit": true
+}

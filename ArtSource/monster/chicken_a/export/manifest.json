@@ -1,0 +1,335 @@
+{
+  "source": "Original CL9 chicken built through Blender MCP",
+  "mesh": "SK_Chicken_A",
+  "skeleton": "SKEL_Chicken_A",
+  "dimensions_cm": [
+    132.812762260437,
+    75.59999823570251,
+    133.3185315132141
+  ],
+  "triangles": 10196,
+  "vertices": 5218,
+  "deform_bones": 17,
+  "material_slots": 1,
+  "vertex_color": "Color, linear RGBA; UE VertexColor -> BaseColor",
+  "weight_check": "all vertices one influence at 1.0",
+  "axis": "+X forward +Z up; root floor origin",
+  "clips": {
+    "Idle": {
+      "action": "AN_Chicken_Idle",
+      "duration_seconds": 2,
+      "frames": [
+        1,
+        61
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Walk": {
+      "action": "AN_Chicken_Walk",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 126,
+      "root_motion": false,
+      "stance_samples": [
+        {
+          "frame": 1,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 17.70000010728836
+        },
+        {
+          "frame": 2,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 13.500000536441803
+        },
+        {
+          "frame": 3,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 9.300000220537186
+        },
+        {
+          "frame": 4,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 5.099999904632568
+        },
+        {
+          "frame": 5,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 0.8999999612569809
+        },
+        {
+          "frame": 6,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -3.2999999821186066
+        },
+        {
+          "frame": 7,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -7.500000298023224
+        },
+        {
+          "frame": 8,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -11.699999868869781
+        },
+        {
+          "frame": 9,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -15.899999439716339
+        },
+        {
+          "frame": 10,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -20.100000500679016
+        },
+        {
+          "frame": 11,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -24.300000071525574
+        },
+        {
+          "frame": 12,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -28.49999964237213
+        },
+        {
+          "frame": 13,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 17.70000010728836
+        },
+        {
+          "frame": 14,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 13.500000536441803
+        },
+        {
+          "frame": 15,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 9.300000220537186
+        },
+        {
+          "frame": 16,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 5.099999904632568
+        },
+        {
+          "frame": 17,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 0.8999999612569809
+        },
+        {
+          "frame": 18,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -3.2999999821186066
+        },
+        {
+          "frame": 19,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -7.500000298023224
+        },
+        {
+          "frame": 20,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -11.699999868869781
+        },
+        {
+          "frame": 21,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -15.899999439716339
+        },
+        {
+          "frame": 22,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -20.100000500679016
+        },
+        {
+          "frame": 23,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -24.300000071525574
+        },
+        {
+          "frame": 24,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -28.49999964237213
+        },
+        {
+          "frame": 25,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 17.70000010728836
+        }
+      ]
+    },
+    "Run": {
+      "action": "AN_Chicken_Run",
+      "duration_seconds": 0.5,
+      "frames": [
+        1,
+        16
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 396,
+      "root_motion": false,
+      "stance_samples": [
+        {
+          "frame": 1,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 22.200000286102295
+        },
+        {
+          "frame": 2,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 9.000000357627869
+        },
+        {
+          "frame": 3,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -4.1999999433755875
+        },
+        {
+          "frame": 4,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -17.399999499320984
+        },
+        {
+          "frame": 5,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": -30.59999942779541
+        },
+        {
+          "frame": 9,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 15.600000321865082
+        },
+        {
+          "frame": 10,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": 2.4000000208616257
+        },
+        {
+          "frame": 11,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -10.80000028014183
+        },
+        {
+          "frame": 12,
+          "side": "r",
+          "z_cm": 6.5,
+          "x_cm": -23.999999463558197
+        },
+        {
+          "frame": 16,
+          "side": "l",
+          "z_cm": 6.5,
+          "x_cm": 22.200000286102295
+        }
+      ]
+    },
+    "LookAround": {
+      "action": "AN_Chicken_LookAround",
+      "duration_seconds": 2,
+      "frames": [
+        1,
+        61
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "HitReact": {
+      "action": "AN_Chicken_HitReact",
+      "duration_seconds": 0.3,
+      "frames": [
+        1,
+        10
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "WakeTelegraph": {
+      "action": "AN_Chicken_WakeTelegraph",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Catch": {
+      "action": "AN_Chicken_Catch",
+      "duration_seconds": 0.6,
+      "frames": [
+        1,
+        19
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Death": {
+      "action": "AN_Chicken_Death",
+      "duration_seconds": 1.2,
+      "frames": [
+        1,
+        37
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    }
+  }
+}

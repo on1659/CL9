@@ -217,12 +217,13 @@ void ACL9SiteMap::Clear(UWorld* World)
 
 FVector ACL9SiteMap::PointToWorld(const FCL9LevelPoint& Point) const
 {
-	return SiteToWorld(Point.Local);
+	// 지점의 Z는 그 지점이 있는 층의 바닥이다 — 스폰이 2층 방을 고르면 2층에 놓인다.
+	return SiteToWorld(Point.Local) + FVector(0.f, 0.f, Point.Floor * Params.FloorHeight);
 }
 
 FVector ACL9SiteMap::SiteToWorld(const FVector2D& Local) const
 {
-	// 층이 없으므로 사이트 로컬 Z는 언제나 지면이다 (docs/plan/data/module.md 결정 2)
+	// 평면 좌표만 옮긴다 — 층 높이는 부르는 쪽이 얹는다 (PointToWorld)
 	return GetActorLocation() + FVector(Local.X, Local.Y, 0.f);
 }
 
@@ -278,6 +279,12 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	const float SizeMult = Progression != nullptr ? Progression->SiteSizeAt(Day) : 1.f;
 	Params.ModuleCount = FMath::Max(2, FMath::RoundToInt(Site.BaseModuleCount * SizeMult));
 
+	// 층은 일자와 무관하다 — 목적지가 몇 층짜리 건물인가는 그 목적지의 성질이다.
+	Params.MaxFloors = FMath::Clamp(Site.MaxFloors, 1, 8);
+	Params.StairCountMin = FMath::Max(1, Site.StairCountMin);
+	Params.StairCountMax = FMath::Max(Params.StairCountMin, Site.StairCountMax);
+	Params.bBuildCeilings = Site.bBuildCeilings;
+
 	MeasurePieces(Site, Registry);
 
 	TArray<const UCL9ModuleDef*> ModuleDefs;
@@ -285,6 +292,21 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	if (ModuleDefs.Num() == 0 && Seed != 0)
 	{
 		UE_LOG(LogCL9, Error, TEXT("Site map: stage '%s' has no module rows — nothing to assemble (DA_ModuleTable)."), *Site.Theme.ToString());
+	}
+
+	// 한 층의 높이 = 가장 높은 방의 천장 + 천장 판 + 바닥 판. 판 두께는 조각 표에서
+	// 실측으로 오므로, 팩을 갈아 끼우면 층 높이가 그 팩을 따라간다 (asset-swap.md).
+	{
+		float Tallest = 0.f;
+		for (const UCL9ModuleDef* Def : ModuleDefs)
+		{
+			Tallest = FMath::Max(Tallest, Def->Height);
+		}
+		const UCL9SegKindDef* CeilingKind = Registry.FindSegKind(CL9SegKind::Ceiling());
+		const UCL9SegKindDef* FloorKind = Registry.FindSegKind(CL9SegKind::Floor());
+		const float Sandwich = (CeilingKind != nullptr ? CeilingKind->Height : 30.f)
+			+ (FloorKind != nullptr ? FloorKind->Height : 30.f);
+		Params.FloorHeight = FMath::Max(Tallest, 200.f) + Sandwich;
 	}
 
 	Layout = CL9SiteLayout::Generate(Params, ModuleDefs, Seed);
@@ -454,12 +476,26 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 
 	// 목표 수를 못 채우는 것은 흔한 실패다 — 격자가 좁거나 그 스테이지의 소켓이
 	// 서로 안 맞으면 프론티어가 먼저 마른다. 조용히 작은 맵이 나오느니 알린다.
+	// 위층 몫은 덧붙는 것이라 목표는 ModuleCount가 아니라 층을 합친 값이다. 위층은 받쳐 주는
+	// 자리에만 서서 목표를 다 못 채우는 게 보통이므로, 1층 몫에도 못 미칠 때만 경고한다.
 	if (Layout.Modules.Num() < Params.ModuleCount)
 	{
-		UE_LOG(LogCL9, Warning, TEXT("Site map: asked for %d modules but only %d fit — check the stage's socket mix (docs/plan/data/module.md)."),
-			Params.ModuleCount, Layout.Modules.Num());
+		UE_LOG(LogCL9, Warning, TEXT("Site map: asked for %d modules (%d with upper floors) but only %d fit — check the stage's socket mix (docs/plan/data/module.md)."),
+			Params.ModuleCount, Layout.Wanted, Layout.Modules.Num());
 	}
-	UE_LOG(LogCL9, Log, TEXT("Site map built — site '%s', stage '%s', day %d, seed %u, hash %08X, %d modules on a %dx%d grid, %d points, %d instances in %d components."),
+	int32 Stairs = 0;
+	for (const FCL9ModulePlacement& Module : Layout.Modules)
+	{
+		Stairs += Module.bStairUp ? 1 : 0;
+	}
+	if (Params.MaxFloors > 1 && Layout.FloorCount < Params.MaxFloors)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("Site map: asked for %d floors but only %d stood — the floor below was too small to carry another (docs/plan/data/module.md)."),
+			Params.MaxFloors, Layout.FloorCount);
+	}
+	UE_LOG(LogCL9, Log, TEXT("Site map built — site '%s', stage '%s', day %d, seed %u, hash %08X, %d of %d modules on a %dx%d grid, %d floors (%.0fcm each) with %d stairs, ceilings %s, %d points, %d instances in %d components."),
 		*Site.Alias.ToString(), *Site.Theme.ToString(), Day, Seed, CL9SiteLayout::LayoutHash(Layout),
-		Layout.Modules.Num(), Layout.GridSize.X, Layout.GridSize.Y, Layout.Points.Num(), Placed, KindComponents.Num());
+		Layout.Modules.Num(), Layout.Wanted, Layout.GridSize.X, Layout.GridSize.Y, Layout.FloorCount, Params.FloorHeight, Stairs,
+		Params.bBuildCeilings ? TEXT("on") : TEXT("off"),
+		Layout.Points.Num(), Placed, KindComponents.Num());
 }

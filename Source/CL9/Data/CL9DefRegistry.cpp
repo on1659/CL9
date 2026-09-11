@@ -387,8 +387,14 @@ void UCL9DefRegistry::CheckSiteReferences() const
 			continue;
 		}
 
-		// 생성기는 조각들을 종류로 지칭한다 — 행이 없으면 맵에 구멍이 생긴다
-		for (const FName& Kind : {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::FlapIn(), CL9SegKind::Floor(), CL9SegKind::Ceiling()})
+		// 생성기는 조각들을 종류로 지칭한다 — 행이 없으면 맵에 구멍이 생긴다.
+		// 천장을 끈 사이트는 천장 조각을 아예 안 쓰므로 없어도 문제가 아니다.
+		TArray<FName> Needed = {CL9SegKind::Wall(), CL9SegKind::Barn(), CL9SegKind::FlapIn(), CL9SegKind::Floor()};
+		if (Site->bBuildCeilings)
+		{
+			Needed.Add(CL9SegKind::Ceiling());
+		}
+		for (const FName& Kind : Needed)
 		{
 			const UCL9SegKindDef* SegKind = FindSegKind(Kind);
 			if (SegKind == nullptr)

@@ -1,0 +1,89 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:42:15.259675+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_part_ground_support_and_sign_collision",
+  "checks": [
+    {
+      "case": "GroundNatural_bounds",
+      "dimensions_cm": [
+        500.0000915527344,
+        500.0000915527344,
+        30.000001907348633
+      ]
+    },
+    {
+      "case": "GroundNormalized_bounds",
+      "dimensions_cm": [
+        500.0000762939453,
+        500.0000762939453,
+        30.0
+      ]
+    },
+    {
+      "case": "Exit_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400007963180542,
+        40.0
+      ]
+    },
+    {
+      "case": "Feed_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400006055831909,
+        40.0
+      ]
+    },
+    {
+      "case": "Kitchen_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400005578994751,
+        40.0
+      ]
+    },
+    {
+      "case": "Coop_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400006055831909,
+        40.0
+      ]
+    },
+    {
+      "case": "ground_seam",
+      "gap_cm": -8.392333984375e-05,
+      "top_z": 1030.0000019073486
+    },
+    {
+      "case": "probe_support",
+      "collision_gap_cm": 2.8691711122519337e-06,
+      "speed_cm_s": 0.0,
+      "nominal_soil_gap_cm": 0.5000028691711123
+    },
+    {
+      "case": "Exit_decoration",
+      "profile": "NoCollision",
+      "blocked": false
+    },
+    {
+      "case": "Feed_decoration",
+      "profile": "NoCollision",
+      "blocked": false
+    },
+    {
+      "case": "Kitchen_decoration",
+      "profile": "NoCollision",
+      "blocked": false
+    },
+    {
+      "case": "Coop_decoration",
+      "profile": "NoCollision",
+      "blocked": false
+    }
+  ],
+  "scope": "Two floor parts, four decoration signs and one physics probe. No full map, actual CL9 item, visual navigation or 2-player claim."
+}

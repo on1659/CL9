@@ -21,12 +21,11 @@
 |---|---|---|
 | UE5 마네킹 (Manny/Quinn) + 애님 (Walk/Jog/Jump/Attack/Death/HitReact) | `Content/Characters/Mannequins/` | 1c 임시 캐릭터 메시 — 계획 그대로 |
 | FPP 팔 (ABP_FP + 컨트롤릭) | `Content/FirstPerson/Anims/` | 1인칭 손 뷰모델의 출발점 |
-| 닭 SK_Chicken + 애님 8종 | `Content/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/` | ③ 1호 몬스터 — 커버리지 전수 확인 ([chicken.md](../plan/data/monster/chicken.md) 에셋 절) |
-| 돼지·양 SK + 애님 풀셋 | 같은 팩 `Chars/Pig` · `Chars/Sheep` | 몬스터 시스템 검증용으로 표에 올림 (2026-09-05) — `ABP_Pig`·`ABP_Sheep`은 ABP_Chicken 복제, 커버리지는 [pig.md](../plan/data/monster/pig.md)·[sheep.md](../plan/data/monster/sheep.md) |
+| 동물 5종 자체 제작 SK + 클립 (닭·거위·너구리·돼지·양) | `Content/CL9Art/Monsters/<종>A/` | 2026-09-11 연결 — `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제·종별 스켈레톤), `DA_MonsterTable` 행이 가리킴. 제작 기록은 [docs/asset/monster/](../asset/monster/README.md), 결정은 decisions.md 2026-09-11 |
+| (구) Dreamscape 닭·돼지·양 SK | `Content/DreamscapeSeries/.../Chars/` | 09-10 팩 축소로 애님 시퀀스가 사라져 **더 이상 쓰지 않는다** — `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`은 빈 플레이어인 채 남아 있음 |
 | Farmlands 환경 (농장 건물·지형·폴리지) + Horror 조명 깜빡임 | `DreamscapeFarmlands/` · `Variant_Horror/` | 5a 맵·light.md 참고 |
 
-**없는 것: 거위·너구리 메시.** 거위는 닭과 기능이 같고 에셋만 다르므로(2026-09-01 확인),
-전용 에셋을 구하기 전까지 `SK_Chicken` 스케일·틴트 변형으로 ③을 돌 수 있다 (초안).
+거위·너구리도 2026-09-11부터 전용 메시(`SK_Goose_A`·`SK_Raccoon_A`)를 쓴다 — 닭 빌려 쓰기·AVP 여우는 끝.
 
 ## 스켈레톤 규칙
 
@@ -68,9 +67,11 @@
 
 - **블렌드 문턱은 테이블 속도와 정합**시킨다 — 배회 속도 = 완전 걷기, 추격 속도 = 완전
   달리기. 그 사이 속도는 포즈 블렌드가 아니라 재생 배율이 흡수한다.
-- 현재 기준 속도 (초안, ABP의 SafeDivide 상수): 닭 Walk 250 · Run 550,
-  여우(너구리) Walk 300 · Run 650 (1차 피드백 "발걸음 너무 빠름"으로 1.5배 상향).
-- 에셋을 공유하는 종은 자동으로 제 속도의 배율을 얻는다 (거위=닭 ABP, 추격 528 → 1.33배).
+- 기준 속도 (2026-09-11, 자체 제작 클립은 표 속도에 맞춰 발을 심었으므로 manifest의
+  `reference_speed_cm_s`가 곧 SafeDivide 상수): Walk = WanderSpeed(닭·거위·돼지·양 126, 너구리 140),
+  Run = ChaseSpeed(닭·돼지·양 396, 거위 528, 너구리 462). 팩 애님 시절의 눈대중 값(닭 165/396,
+  여우 210/462)은 폐기.
+- 종마다 ABP가 따로 있으므로(`ABP_<종>_A`) 속도 상수도 종마다 제 값이다 — 이제 공유 ABP는 없다.
 
 ## 1인칭 팔 (FPP Arms)
 

@@ -1,0 +1,20 @@
+{
+  "utc": "2026-09-10T16:24:35.150888+00:00",
+  "rows": [
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_5",
+      "old": "/Engine/BasicShapes/Cube.Cube",
+      "new": "/Game/CL9Art/Items/MeatStates/SM_Meat_Raw_A.SM_Meat_Raw_A"
+    },
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_6",
+      "old": "/Engine/BasicShapes/Cube.Cube",
+      "new": "/Game/CL9Art/Items/MeatStates/SM_Meat_Cooked_A.SM_Meat_Cooked_A"
+    },
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_7",
+      "old": "/Engine/BasicShapes/Cube.Cube",
+      "new": "/Game/CL9Art/Items/MeatStates/SM_Meat_Burnt_A.SM_Meat_Burnt_A"
+    }
+  ]
+}

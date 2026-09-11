@@ -1,0 +1,1082 @@
+{
+  "path": "/Game/CL9Art/Tests/FarmerRigRoundtrip/SK_RigProbe",
+  "sha256": "ff19046760c52315f3fb80039a0df18f11df250ba4d1fc807d8f3c9d73cd2052",
+  "bone_count": 89,
+  "extra_bones": [],
+  "dimensions_cm": [
+    110.84529495239258,
+    42.5222110748291,
+    180.644797436893
+  ],
+  "bones": [
+    {
+      "name": "root",
+      "parent": "None",
+      "parent_matches": true,
+      "position_error_cm": 0.0,
+      "rotation_error_deg": 4.517745487845101e-06,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    {
+      "name": "pelvis",
+      "parent": "root",
+      "parent_matches": true,
+      "position_error_cm": 1.4306860869283371e-06,
+      "rotation_error_deg": 1.4983666681503321e-05,
+      "scale": [
+        99.99999274293215,
+        99.99996890177758,
+        99.99999403953564
+      ]
+    },
+    {
+      "name": "spine_01",
+      "parent": "pelvis",
+      "parent_matches": true,
+      "position_error_cm": 4.349180292363985e-06,
+      "rotation_error_deg": 6.201477017890266e-05,
+      "scale": [
+        99.99999604759378,
+        99.99997114824038,
+        99.99999403953566
+      ]
+    },
+    {
+      "name": "spine_02",
+      "parent": "spine_01",
+      "parent_matches": true,
+      "position_error_cm": 1.0617957761151387e-05,
+      "rotation_error_deg": 1.322660445345283e-05,
+      "scale": [
+        99.99998912358303,
+        99.99997082642308,
+        99.99999403953565
+      ]
+    },
+    {
+      "name": "spine_03",
+      "parent": "spine_02",
+      "parent_matches": true,
+      "position_error_cm": 1.3088577333711482e-05,
+      "rotation_error_deg": 2.5441881649397815e-05,
+      "scale": [
+        99.99999215219967,
+        99.99998067025489,
+        99.99999403953565
+      ]
+    },
+    {
+      "name": "spine_04",
+      "parent": "spine_03",
+      "parent_matches": true,
+      "position_error_cm": 5.365484374378586e-06,
+      "rotation_error_deg": 1.790890709046331e-05,
+      "scale": [
+        99.99998667876208,
+        99.99997029296988,
+        99.99999404261337
+      ]
+    },
+    {
+      "name": "spine_05",
+      "parent": "spine_04",
+      "parent_matches": true,
+      "position_error_cm": 2.8355250956115187e-06,
+      "rotation_error_deg": 4.154641875820248e-05,
+      "scale": [
+        99.99999055155278,
+        99.99997391408914,
+        99.99999403953562
+      ]
+    },
+    {
+      "name": "neck_01",
+      "parent": "spine_05",
+      "parent_matches": true,
+      "position_error_cm": 4.327364731071938e-07,
+      "rotation_error_deg": 8.42774492610277e-05,
+      "scale": [
+        99.99998548746049,
+        99.99997569032853,
+        99.99999403953561
+      ]
+    },
+    {
+      "name": "neck_02",
+      "parent": "neck_01",
+      "parent_matches": true,
+      "position_error_cm": 7.1073978635511325e-06,
+      "rotation_error_deg": 8.14627130223605e-05,
+      "scale": [
+        99.99999447168217,
+        99.99997272644563,
+        99.99999403968171
+      ]
+    },
+    {
+      "name": "head",
+      "parent": "neck_02",
+      "parent_matches": true,
+      "position_error_cm": 8.256328503201609e-06,
+      "rotation_error_deg": 1.7075472925031877e-06,
+      "scale": [
+        99.9999955495025,
+        99.99996868771214,
+        99.99999403953562
+      ]
+    },
+    {
+      "name": "clavicle_l",
+      "parent": "spine_05",
+      "parent_matches": true,
+      "position_error_cm": 4.318692377113451e-06,
+      "rotation_error_deg": 2.4148365394514667e-06,
+      "scale": [
+        100.00000302503756,
+        99.99999164484035,
+        100.0000010956532
+      ]
+    },
+    {
+      "name": "upperarm_l",
+      "parent": "clavicle_l",
+      "parent_matches": true,
+      "position_error_cm": 3.605561868589957e-05,
+      "rotation_error_deg": 1.1066171232981565e-05,
+      "scale": [
+        100.00000176543597,
+        99.99999573444386,
+        99.99999066496625
+      ]
+    },
+    {
+      "name": "lowerarm_l",
+      "parent": "upperarm_l",
+      "parent_matches": true,
+      "position_error_cm": 1.4058755118163693e-05,
+      "rotation_error_deg": 1.1326587362040635e-05,
+      "scale": [
+        99.99999628691587,
+        99.99999120210155,
+        99.99999450722645
+      ]
+    },
+    {
+      "name": "lowerarm_twist_02_l",
+      "parent": "lowerarm_l",
+      "parent_matches": true,
+      "position_error_cm": 1.4222748085283477e-05,
+      "rotation_error_deg": 2.3036072399967966e-05,
+      "scale": [
+        99.99999340076269,
+        99.99999564447847,
+        99.99999275595218
+      ]
+    },
+    {
+      "name": "lowerarm_twist_01_l",
+      "parent": "lowerarm_l",
+      "parent_matches": true,
+      "position_error_cm": 3.206979732982871e-05,
+      "rotation_error_deg": 1.961822478742194e-05,
+      "scale": [
+        99.9999964848682,
+        100.00000385402242,
+        99.99999275595218
+      ]
+    },
+    {
+      "name": "hand_l",
+      "parent": "lowerarm_l",
+      "parent_matches": true,
+      "position_error_cm": 2.254413795012614e-05,
+      "rotation_error_deg": 5.983729108619324e-05,
+      "scale": [
+        100.00000261562502,
+        99.99998063922467,
+        100.00000079664396
+      ]
+    },
+    {
+      "name": "index_metacarpal_l",
+      "parent": "hand_l",
+      "parent_matches": true,
+      "position_error_cm": 1.684548942189767e-05,
+      "rotation_error_deg": 3.1762215659848187e-05,
+      "scale": [
+        100.0000114337956,
+        99.99998526436367,
+        100.00000606693139
+      ]
+    },
+    {
+      "name": "index_01_l",
+      "parent": "index_metacarpal_l",
+      "parent_matches": true,
+      "position_error_cm": 2.944329170085179e-05,
+      "rotation_error_deg": 6.05156302264597e-05,
+      "scale": [
+        100.00001173693873,
+        99.9999739537166,
+        99.99999372549328
+      ]
+    },
+    {
+      "name": "index_02_l",
+      "parent": "index_01_l",
+      "parent_matches": true,
+      "position_error_cm": 2.4866040727532822e-05,
+      "rotation_error_deg": 5.8056607945109e-05,
+      "scale": [
+        100.0000092887528,
+        99.99998560265061,
+        100.00000454425538
+      ]
+    },
+    {
+      "name": "index_03_l",
+      "parent": "index_02_l",
+      "parent_matches": true,
+      "position_error_cm": 1.9800342088031818e-05,
+      "rotation_error_deg": 3.9495683302510704e-05,
+      "scale": [
+        100.0000103341034,
+        99.99997581774814,
+        99.99999334809189
+      ]
+    },
+    {
+      "name": "middle_metacarpal_l",
+      "parent": "hand_l",
+      "parent_matches": true,
+      "position_error_cm": 1.62087570126148e-05,
+      "rotation_error_deg": 5.1055378502021736e-05,
+      "scale": [
+        99.99999046760014,
+        99.99997659608876,
+        100.00000037485499
+      ]
+    },
+    {
+      "name": "middle_01_l",
+      "parent": "middle_metacarpal_l",
+      "parent_matches": true,
+      "position_error_cm": 1.7727051470224806e-05,
+      "rotation_error_deg": 6.864255162735611e-05,
+      "scale": [
+        100.0000021372648,
+        99.99997910903022,
+        99.9999985806815
+      ]
+    },
+    {
+      "name": "middle_02_l",
+      "parent": "middle_01_l",
+      "parent_matches": true,
+      "position_error_cm": 2.1965566048811052e-05,
+      "rotation_error_deg": 7.615354631895131e-05,
+      "scale": [
+        99.99999404516282,
+        99.9999758556225,
+        99.99999788278429
+      ]
+    },
+    {
+      "name": "middle_03_l",
+      "parent": "middle_02_l",
+      "parent_matches": true,
+      "position_error_cm": 3.407358895996136e-05,
+      "rotation_error_deg": 1.3336370687868314e-05,
+      "scale": [
+        99.99999298037004,
+        99.99997117059773,
+        99.99998575019704
+      ]
+    },
+    {
+      "name": "thumb_01_l",
+      "parent": "hand_l",
+      "parent_matches": true,
+      "position_error_cm": 1.9353904801605766e-05,
+      "rotation_error_deg": 5.128330543201934e-05,
+      "scale": [
+        99.999999810079,
+        99.9999822387229,
+        99.99999715392008
+      ]
+    },
+    {
+      "name": "thumb_02_l",
+      "parent": "thumb_01_l",
+      "parent_matches": true,
+      "position_error_cm": 2.1603929028626228e-05,
+      "rotation_error_deg": 9.179555716498759e-05,
+      "scale": [
+        99.99998582104354,
+        99.99997900449294,
+        100.00000661978473
+      ]
+    },
+    {
+      "name": "thumb_03_l",
+      "parent": "thumb_02_l",
+      "parent_matches": true,
+      "position_error_cm": 1.4691243873385147e-05,
+      "rotation_error_deg": 0.00011281448491009547,
+      "scale": [
+        99.99999900540023,
+        99.9999785658924,
+        100.00000248695487
+      ]
+    },
+    {
+      "name": "pinky_metacarpal_l",
+      "parent": "hand_l",
+      "parent_matches": true,
+      "position_error_cm": 2.3508631743999845e-05,
+      "rotation_error_deg": 7.372175999958062e-05,
+      "scale": [
+        100.00000781402956,
+        99.99998622114411,
+        99.99999576631156
+      ]
+    },
+    {
+      "name": "pinky_01_l",
+      "parent": "pinky_metacarpal_l",
+      "parent_matches": true,
+      "position_error_cm": 2.88895944532639e-05,
+      "rotation_error_deg": 4.080287782440209e-05,
+      "scale": [
+        100.00000972975418,
+        99.99999456392483,
+        100.00000856035608
+      ]
+    },
+    {
+      "name": "pinky_02_l",
+      "parent": "pinky_01_l",
+      "parent_matches": true,
+      "position_error_cm": 1.5293456607396764e-05,
+      "rotation_error_deg": 2.1052056881276854e-05,
+      "scale": [
+        100.00001589498314,
+        99.99997963013163,
+        100.0000028440069
+      ]
+    },
+    {
+      "name": "pinky_03_l",
+      "parent": "pinky_02_l",
+      "parent_matches": true,
+      "position_error_cm": 5.893333545149204e-05,
+      "rotation_error_deg": 3.61016043548253e-05,
+      "scale": [
+        100.0000115649507,
+        99.99998297811572,
+        100.00000395003987
+      ]
+    },
+    {
+      "name": "ring_metacarpal_l",
+      "parent": "hand_l",
+      "parent_matches": true,
+      "position_error_cm": 2.3020572008912736e-05,
+      "rotation_error_deg": 5.065403858922616e-05,
+      "scale": [
+        100.00000378742476,
+        99.99999133694129,
+        99.99999560515111
+      ]
+    },
+    {
+      "name": "ring_01_l",
+      "parent": "ring_metacarpal_l",
+      "parent_matches": true,
+      "position_error_cm": 9.58287487928428e-06,
+      "rotation_error_deg": 3.1762215659848187e-05,
+      "scale": [
+        100.00000069358376,
+        99.99999155668436,
+        99.99998998849307
+      ]
+    },
+    {
+      "name": "ring_02_l",
+      "parent": "ring_01_l",
+      "parent_matches": true,
+      "position_error_cm": 2.364564684458748e-05,
+      "rotation_error_deg": 9.123800849298372e-05,
+      "scale": [
+        100.00000244099267,
+        99.99999191741524,
+        99.99999318927763
+      ]
+    },
+    {
+      "name": "ring_03_l",
+      "parent": "ring_02_l",
+      "parent_matches": true,
+      "position_error_cm": 2.5473973481431155e-05,
+      "rotation_error_deg": 5.1396889857834046e-05,
+      "scale": [
+        100.00000185172124,
+        99.99998466068051,
+        99.9999937560009
+      ]
+    },
+    {
+      "name": "upperarm_twist_01_l",
+      "parent": "upperarm_l",
+      "parent_matches": true,
+      "position_error_cm": 1.6270082966000442e-05,
+      "rotation_error_deg": 1.0663629423853015e-05,
+      "scale": [
+        99.9999928827597,
+        100.00000482373635,
+        99.99999298732575
+      ]
+    },
+    {
+      "name": "upperarm_twist_02_l",
+      "parent": "upperarm_l",
+      "parent_matches": true,
+      "position_error_cm": 1.674751985626556e-05,
+      "rotation_error_deg": 9.659346157805868e-06,
+      "scale": [
+        100.00000213177067,
+        99.99998969986356,
+        99.99999358371697
+      ]
+    },
+    {
+      "name": "clavicle_r",
+      "parent": "spine_05",
+      "parent_matches": true,
+      "position_error_cm": 3.835275854609001e-07,
+      "rotation_error_deg": 0.0006153925582557042,
+      "scale": [
+        100.00107830424078,
+        100.0000154433061,
+        100.00006447994541
+      ]
+    },
+    {
+      "name": "upperarm_r",
+      "parent": "clavicle_r",
+      "parent_matches": true,
+      "position_error_cm": 1.1740480178657581e-05,
+      "rotation_error_deg": 0.0006533036666527661,
+      "scale": [
+        100.00107065060133,
+        100.00002411992647,
+        100.0000705381071
+      ]
+    },
+    {
+      "name": "lowerarm_r",
+      "parent": "upperarm_r",
+      "parent_matches": true,
+      "position_error_cm": 0.00025637193711319225,
+      "rotation_error_deg": 0.0006402687600360731,
+      "scale": [
+        100.00107548733658,
+        100.00002465600384,
+        100.0000641313104
+      ]
+    },
+    {
+      "name": "lowerarm_twist_02_r",
+      "parent": "lowerarm_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0003244101104663659,
+      "rotation_error_deg": 0.0006277390692197436,
+      "scale": [
+        100.00107517276004,
+        100.00002702364857,
+        100.00007771406261
+      ]
+    },
+    {
+      "name": "lowerarm_twist_01_r",
+      "parent": "lowerarm_r",
+      "parent_matches": true,
+      "position_error_cm": 0.00040146340582857166,
+      "rotation_error_deg": 0.0006316771128734052,
+      "scale": [
+        100.00105962096248,
+        100.00001167896808,
+        100.00007781114576
+      ]
+    },
+    {
+      "name": "hand_r",
+      "parent": "lowerarm_r",
+      "parent_matches": true,
+      "position_error_cm": 0.00047871248298882543,
+      "rotation_error_deg": 0.0002067190350062753,
+      "scale": [
+        100.00106492545287,
+        100.00001754257778,
+        100.00005836667789
+      ]
+    },
+    {
+      "name": "pinky_metacarpal_r",
+      "parent": "hand_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0004963914859196364,
+      "rotation_error_deg": 0.0002418938278049654,
+      "scale": [
+        100.00107177363884,
+        100.00001553252814,
+        100.00005088110953
+      ]
+    },
+    {
+      "name": "pinky_01_r",
+      "parent": "pinky_metacarpal_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005625795475355654,
+      "rotation_error_deg": 0.000244370242385244,
+      "scale": [
+        100.00109264524893,
+        100.0000271145656,
+        100.00005260114968
+      ]
+    },
+    {
+      "name": "pinky_02_r",
+      "parent": "pinky_01_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005911650530704707,
+      "rotation_error_deg": 0.00035241724353445443,
+      "scale": [
+        100.00109311131106,
+        100.00003169064583,
+        100.0000628317602
+      ]
+    },
+    {
+      "name": "pinky_03_r",
+      "parent": "pinky_02_r",
+      "parent_matches": true,
+      "position_error_cm": 0.000629604251168365,
+      "rotation_error_deg": 0.0003435608915519113,
+      "scale": [
+        100.00108014368196,
+        100.0000215172275,
+        100.0000615007321
+      ]
+    },
+    {
+      "name": "ring_metacarpal_r",
+      "parent": "hand_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005060190424874156,
+      "rotation_error_deg": 0.00022818608127814335,
+      "scale": [
+        100.0010782996274,
+        100.00002654285173,
+        100.00006136496187
+      ]
+    },
+    {
+      "name": "ring_01_r",
+      "parent": "ring_metacarpal_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005318341433260125,
+      "rotation_error_deg": 0.00029498589917848617,
+      "scale": [
+        100.00106809266748,
+        100.0000292375635,
+        100.00005702534945
+      ]
+    },
+    {
+      "name": "ring_02_r",
+      "parent": "ring_01_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0006002873977526418,
+      "rotation_error_deg": 0.0004121949843043702,
+      "scale": [
+        100.00107882414433,
+        100.00001972858868,
+        100.00005802247702
+      ]
+    },
+    {
+      "name": "ring_03_r",
+      "parent": "ring_02_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0006182250450734267,
+      "rotation_error_deg": 0.00046545308725412304,
+      "scale": [
+        100.00108019251596,
+        100.00003286905716,
+        100.00005075477537
+      ]
+    },
+    {
+      "name": "middle_metacarpal_r",
+      "parent": "hand_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0004890910975552141,
+      "rotation_error_deg": 0.0001985019137349003,
+      "scale": [
+        100.0010578833938,
+        100.00000721291288,
+        100.00004768760657
+      ]
+    },
+    {
+      "name": "middle_01_r",
+      "parent": "middle_metacarpal_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005472985434617929,
+      "rotation_error_deg": 0.000278879643264227,
+      "scale": [
+        100.00106593565717,
+        100.00002116212029,
+        100.00006569206266
+      ]
+    },
+    {
+      "name": "middle_02_r",
+      "parent": "middle_01_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0006087969668869287,
+      "rotation_error_deg": 0.0004475793830744036,
+      "scale": [
+        100.00105720220796,
+        100.00000344125813,
+        100.00004290941818
+      ]
+    },
+    {
+      "name": "middle_03_r",
+      "parent": "middle_02_r",
+      "parent_matches": true,
+      "position_error_cm": 0.000666454421849687,
+      "rotation_error_deg": 0.0005093902926756127,
+      "scale": [
+        100.00106309989488,
+        100.00003500380089,
+        100.00006461366999
+      ]
+    },
+    {
+      "name": "index_metacarpal_r",
+      "parent": "hand_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0004904873394201703,
+      "rotation_error_deg": 0.00020531791767454353,
+      "scale": [
+        100.00105404234472,
+        100.00003022009429,
+        100.00005689114296
+      ]
+    },
+    {
+      "name": "index_01_r",
+      "parent": "index_metacarpal_r",
+      "parent_matches": true,
+      "position_error_cm": 0.000541230555614751,
+      "rotation_error_deg": 0.00028889863407328124,
+      "scale": [
+        100.00105587721681,
+        100.0000173436327,
+        100.00006062187978
+      ]
+    },
+    {
+      "name": "index_02_r",
+      "parent": "index_01_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005864026502907829,
+      "rotation_error_deg": 0.0003589709545805764,
+      "scale": [
+        100.00106466778347,
+        100.0000300358021,
+        100.00007008550226
+      ]
+    },
+    {
+      "name": "index_03_r",
+      "parent": "index_02_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0006245602830789835,
+      "rotation_error_deg": 0.00040076465986518616,
+      "scale": [
+        100.00104899537756,
+        100.00003211797507,
+        100.00006247926193
+      ]
+    },
+    {
+      "name": "thumb_01_r",
+      "parent": "hand_r",
+      "parent_matches": true,
+      "position_error_cm": 0.00047493512809394583,
+      "rotation_error_deg": 0.0004775884929803652,
+      "scale": [
+        100.00106997040123,
+        100.00002555158386,
+        100.00005083474835
+      ]
+    },
+    {
+      "name": "thumb_02_r",
+      "parent": "thumb_01_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005178197210267468,
+      "rotation_error_deg": 0.000495129830384122,
+      "scale": [
+        100.0010613181826,
+        100.00002330425959,
+        100.00004441849185
+      ]
+    },
+    {
+      "name": "thumb_03_r",
+      "parent": "thumb_02_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0005530181196276647,
+      "rotation_error_deg": 0.0005070840494397415,
+      "scale": [
+        100.00106845592506,
+        100.00003051912088,
+        100.00004368838876
+      ]
+    },
+    {
+      "name": "upperarm_twist_01_r",
+      "parent": "upperarm_r",
+      "parent_matches": true,
+      "position_error_cm": 9.094765904038879e-05,
+      "rotation_error_deg": 0.0002873148118558047,
+      "scale": [
+        100.00107248277405,
+        100.00003836239067,
+        100.00006823145957
+      ]
+    },
+    {
+      "name": "upperarm_twist_02_r",
+      "parent": "upperarm_r",
+      "parent_matches": true,
+      "position_error_cm": 0.0001874494208723515,
+      "rotation_error_deg": 0.0006859071032292335,
+      "scale": [
+        100.00108584543277,
+        100.00002347037379,
+        100.0000714241255
+      ]
+    },
+    {
+      "name": "thigh_r",
+      "parent": "pelvis",
+      "parent_matches": true,
+      "position_error_cm": 1.3526930347544464e-05,
+      "rotation_error_deg": 4.227688475409174e-05,
+      "scale": [
+        99.99995145443532,
+        99.99995400142036,
+        99.9996556636767
+      ]
+    },
+    {
+      "name": "calf_r",
+      "parent": "thigh_r",
+      "parent_matches": true,
+      "position_error_cm": 2.013723449378894e-05,
+      "rotation_error_deg": 6.56018247311409e-05,
+      "scale": [
+        99.99995371995641,
+        99.99994737473254,
+        99.99964878610892
+      ]
+    },
+    {
+      "name": "foot_r",
+      "parent": "calf_r",
+      "parent_matches": true,
+      "position_error_cm": 4.05508990893247e-06,
+      "rotation_error_deg": 7.224357953120653e-05,
+      "scale": [
+        99.99994480580897,
+        99.99995780555497,
+        99.99963205462169
+      ]
+    },
+    {
+      "name": "ball_r",
+      "parent": "foot_r",
+      "parent_matches": true,
+      "position_error_cm": 1.1643959485191894e-05,
+      "rotation_error_deg": 5.900311009451305e-05,
+      "scale": [
+        99.99993684183968,
+        99.99995732111691,
+        99.99963671390682
+      ]
+    },
+    {
+      "name": "calf_twist_02_r",
+      "parent": "calf_r",
+      "parent_matches": true,
+      "position_error_cm": 4.060724534368992e-06,
+      "rotation_error_deg": 5.645245351138942e-05,
+      "scale": [
+        99.9999558880925,
+        99.99996414406101,
+        99.99964738175449
+      ]
+    },
+    {
+      "name": "calf_twist_01_r",
+      "parent": "calf_r",
+      "parent_matches": true,
+      "position_error_cm": 4.202825368365134e-06,
+      "rotation_error_deg": 5.122641877509564e-06,
+      "scale": [
+        99.99994153714249,
+        99.99996926896723,
+        99.99964556999325
+      ]
+    },
+    {
+      "name": "thigh_twist_01_r",
+      "parent": "thigh_r",
+      "parent_matches": true,
+      "position_error_cm": 1.0249267758131688e-05,
+      "rotation_error_deg": 9.744994988060363e-05,
+      "scale": [
+        99.9999598146591,
+        99.99996108339771,
+        99.99965351432326
+      ]
+    },
+    {
+      "name": "thigh_twist_02_r",
+      "parent": "thigh_r",
+      "parent_matches": true,
+      "position_error_cm": 6.640413918409798e-06,
+      "rotation_error_deg": 9.458024146629457e-05,
+      "scale": [
+        99.9999597322021,
+        99.99996209339193,
+        99.99965418506613
+      ]
+    },
+    {
+      "name": "thigh_l",
+      "parent": "pelvis",
+      "parent_matches": true,
+      "position_error_cm": 2.933548444544841e-06,
+      "rotation_error_deg": 1.4286365630539068e-05,
+      "scale": [
+        99.99998945352571,
+        99.99996681592218,
+        100.00000613078156
+      ]
+    },
+    {
+      "name": "calf_l",
+      "parent": "thigh_l",
+      "parent_matches": true,
+      "position_error_cm": 2.3610721531876204e-05,
+      "rotation_error_deg": 9.352621701108683e-06,
+      "scale": [
+        99.9999889141629,
+        99.9999563232006,
+        100.00001226967034
+      ]
+    },
+    {
+      "name": "foot_l",
+      "parent": "calf_l",
+      "parent_matches": true,
+      "position_error_cm": 8.253465411500372e-06,
+      "rotation_error_deg": 9.956626120759429e-06,
+      "scale": [
+        99.9999842346712,
+        99.99998081550604,
+        99.9999923761712
+      ]
+    },
+    {
+      "name": "ball_l",
+      "parent": "foot_l",
+      "parent_matches": true,
+      "position_error_cm": 1.6584671747429934e-05,
+      "rotation_error_deg": 8.365239156607494e-06,
+      "scale": [
+        99.99997316818347,
+        99.9999813574012,
+        99.99999893334791
+      ]
+    },
+    {
+      "name": "calf_twist_02_l",
+      "parent": "calf_l",
+      "parent_matches": true,
+      "position_error_cm": 9.509461862832368e-06,
+      "rotation_error_deg": 6.613302226726412e-06,
+      "scale": [
+        99.99998856300299,
+        99.99997541468782,
+        99.99999345699064
+      ]
+    },
+    {
+      "name": "calf_twist_01_l",
+      "parent": "calf_l",
+      "parent_matches": true,
+      "position_error_cm": 1.1999115461060407e-05,
+      "rotation_error_deg": 6.830189170012753e-06,
+      "scale": [
+        99.99998856300299,
+        99.99998131823253,
+        99.99999323884731
+      ]
+    },
+    {
+      "name": "thigh_twist_01_l",
+      "parent": "thigh_l",
+      "parent_matches": true,
+      "position_error_cm": 1.9188891196938363e-05,
+      "rotation_error_deg": 8.365239156607494e-06,
+      "scale": [
+        100.00000432362125,
+        99.99996757999952,
+        100.00001099487667
+      ]
+    },
+    {
+      "name": "thigh_twist_02_l",
+      "parent": "thigh_l",
+      "parent_matches": true,
+      "position_error_cm": 2.4934004363806268e-05,
+      "rotation_error_deg": 8.365239156607494e-06,
+      "scale": [
+        100.0000043023701,
+        99.99996757999952,
+        100.00001097652913
+      ]
+    },
+    {
+      "name": "ik_foot_root",
+      "parent": "root",
+      "parent_matches": true,
+      "position_error_cm": 0.0,
+      "rotation_error_deg": 0.0,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    {
+      "name": "ik_foot_l",
+      "parent": "ik_foot_root",
+      "parent_matches": true,
+      "position_error_cm": 2.7314279645418166e-07,
+      "rotation_error_deg": 3.818191820832845e-06,
+      "scale": [
+        100.00001428040306,
+        99.99999482184626,
+        100.00000560496002
+      ]
+    },
+    {
+      "name": "ik_foot_r",
+      "parent": "ik_foot_root",
+      "parent_matches": true,
+      "position_error_cm": 1.0749512193722386e-06,
+      "rotation_error_deg": 0.0018576176187009082,
+      "scale": [
+        100.00023371595357,
+        100.00000139892582,
+        100.0000112809672
+      ]
+    },
+    {
+      "name": "ik_hand_root",
+      "parent": "root",
+      "parent_matches": true,
+      "position_error_cm": 0.0,
+      "rotation_error_deg": 0.0,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    {
+      "name": "ik_hand_gun",
+      "parent": "ik_hand_root",
+      "parent_matches": true,
+      "position_error_cm": 5.5107709557181455e-06,
+      "rotation_error_deg": 6.613302226726412e-06,
+      "scale": [
+        100.00000419083554,
+        100.00000788097734,
+        100.00000860592715
+      ]
+    },
+    {
+      "name": "ik_hand_l",
+      "parent": "ik_hand_gun",
+      "parent_matches": true,
+      "position_error_cm": 2.4922917171079247e-05,
+      "rotation_error_deg": 2.1327258847706054e-05,
+      "scale": [
+        100.00001259912788,
+        100.00001719784295,
+        100.00000931796986
+      ]
+    },
+    {
+      "name": "ik_hand_r",
+      "parent": "ik_hand_gun",
+      "parent_matches": true,
+      "position_error_cm": 6.569502847877416e-06,
+      "rotation_error_deg": 1.0663629423853015e-05,
+      "scale": [
+        100.00000215387641,
+        99.9999983124323,
+        100.00000954480123
+      ]
+    },
+    {
+      "name": "interaction",
+      "parent": "root",
+      "parent_matches": true,
+      "position_error_cm": 0.0,
+      "rotation_error_deg": 0.0,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    {
+      "name": "center_of_mass",
+      "parent": "root",
+      "parent_matches": true,
+      "position_error_cm": 0.0,
+      "rotation_error_deg": 0.0,
+      "scale": [
+        100.0,
+        100.0,
+        100.0
+      ]
+    }
+  ],
+  "passed": false
+}

@@ -47,5 +47,14 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 		{
 			OutErrors.Add(TEXT("EntryOffset cannot be negative — the truck pad sits outside the grid."));
 		}
+		if (MaxFloors < 1)
+		{
+			OutErrors.Add(TEXT("MaxFloors must be at least 1 — a site always has a ground floor."));
+		}
+		if (MaxFloors > 1 && (StairCountMin < 1 || StairCountMax < StairCountMin))
+		{
+			// 층이 둘 이상인데 계단이 없으면 위층으로 올라갈 길이 없다.
+			OutErrors.Add(TEXT("StairCountMin must be at least 1 and no greater than StairCountMax when MaxFloors > 1."));
+		}
 	}
 }

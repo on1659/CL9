@@ -1,0 +1,11 @@
+{
+  "vertices": 432,
+  "restore_scale": [
+    5,
+    5,
+    0.3
+  ],
+  "restored_floor_offset_cm": 15,
+  "max_source_restore_error_cm": 1.3969838619232178e-07,
+  "scope": "Blender vertex positions; not UE shading or LOD validation"
+}

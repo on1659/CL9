@@ -1,0 +1,190 @@
+{
+  "source": "Original CL9 geometry via Blender MCP; existing Epic Manny bones/reference transforms reused",
+  "source_blend": "farmer_a.blend",
+  "scene": "CL9_FARMER_A",
+  "rig": "RIG_Farmer_A",
+  "authoring_units_m": 1,
+  "bone_count_without_root_object": 88,
+  "materials": {
+    "Cloth": "M_CL9_Farmer_Cloth",
+    "Detail": "M_CL9_Farmer_Detail",
+    "Skin": "M_CL9_Farmer_Skin"
+  },
+  "assets": {
+    "SK_Farmer_A_Body": {
+      "triangles": 4100,
+      "vertices": 2148,
+      "dimensions_cm": [
+        111.34824752807617,
+        43.053531646728516,
+        184.39998626708984
+      ],
+      "uv_layers": 2,
+      "vertex_groups": 51,
+      "materials": [
+        "M_CL9_Farmer_Cloth",
+        "M_CL9_Farmer_Skin",
+        "M_CL9_Farmer_Detail"
+      ],
+      "fbx_sha256": "e836e48593dfbc13610bc45840438a30fcb073686af2f62ccdbf12aedfc4aae8",
+      "weights_normalized": true,
+      "manifold_islands": true,
+      "max_influences": 2
+    },
+    "SK_Farmer_A_Arms": {
+      "triangles": 1496,
+      "vertices": 784,
+      "dimensions_cm": [
+        111.34824752807617,
+        40.31061232089996,
+        57.12371468544006
+      ],
+      "uv_layers": 2,
+      "vertex_groups": 36,
+      "materials": [
+        "M_CL9_Farmer_Cloth",
+        "M_CL9_Farmer_Detail"
+      ],
+      "fbx_sha256": "d21c33e61a4f1e225a80c52e2a9f5a5752b168852a231ce7e43bcd74e02561b7",
+      "weights_normalized": true,
+      "manifold_islands": true,
+      "max_influences": 2
+    }
+  },
+  "silhouette_fit": {
+    "SK_Farmer_A_Body": [
+      "raised_shoulder_neckline",
+      "tucked_hip_join",
+      "rounded_sleeve_cap",
+      "broad_glove_palm",
+      "tucked_hip_join",
+      "rounded_sleeve_cap",
+      "broad_glove_palm"
+    ],
+    "SK_Farmer_A_Arms": [
+      "rounded_sleeve_cap",
+      "broad_glove_palm",
+      "rounded_sleeve_cap",
+      "broad_glove_palm"
+    ]
+  },
+  "cloth_tint_default": [
+    0.13,
+    0.2,
+    0.08,
+    1
+  ],
+  "export_settings": {
+    "staging_unit_m": 0.01,
+    "source_unit_m": 1,
+    "forward": "-Y",
+    "up": "Z",
+    "scale_options": "FBX_SCALE_ALL",
+    "root_node": "root",
+    "bone_count_in_ue_expected": 89,
+    "ue_force_front_x_axis": false
+  },
+  "palette_bake": {
+    "texture": "textures/T_Farmer_Palette.png",
+    "size": [
+      256,
+      8
+    ],
+    "swatches_linear_rgb": [
+      [
+        0.014,
+        0.018,
+        0.014
+      ],
+      [
+        0.023,
+        0.028,
+        0.023
+      ],
+      [
+        0.045,
+        0.055,
+        0.048
+      ],
+      [
+        0.075,
+        0.042,
+        0.023
+      ],
+      [
+        0.08,
+        0.065,
+        0.042
+      ],
+      [
+        0.1,
+        0.054,
+        0.026
+      ],
+      [
+        0.12,
+        0.14,
+        0.065
+      ],
+      [
+        0.13,
+        0.075,
+        0.032
+      ],
+      [
+        0.13,
+        0.15,
+        0.072
+      ],
+      [
+        0.13,
+        0.15,
+        0.085
+      ],
+      [
+        0.22,
+        0.16,
+        0.075
+      ],
+      [
+        0.27,
+        0.105,
+        0.063
+      ],
+      [
+        0.45,
+        0.4,
+        0.25
+      ],
+      [
+        0.71,
+        0.63,
+        0.4
+      ],
+      [
+        0.72,
+        0.76,
+        0.65
+      ],
+      [
+        0.78,
+        0.8,
+        0.76
+      ],
+      [
+        0.88,
+        0.9,
+        0.85
+      ],
+      [
+        1,
+        1,
+        1
+      ]
+    ],
+    "uv_channel": 1,
+    "kept_unwrap_channel": 0,
+    "reason": "Authored vertex colours present in FBX but actual UE shading returned white; explicit palette texture makes colours reproducible.",
+    "sha256": "df621f74741bd4132cd52dec8d9b4b79189f3a49c7c37b1c82fd7a35c073d902"
+  }
+}

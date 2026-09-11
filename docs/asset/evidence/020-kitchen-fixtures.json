@@ -1,0 +1,129 @@
+{
+  "before_actor_names": [
+    "BP_CL9Item_C_0",
+    "BP_CL9Item_C_1",
+    "DirectionalLight_0",
+    "PlayerStart_0",
+    "PlayerStart_1",
+    "PointLight_0",
+    "PointLight_1",
+    "PointLight_2",
+    "StaticMeshActor_0",
+    "StaticMeshActor_1",
+    "StaticMeshActor_10",
+    "StaticMeshActor_11",
+    "StaticMeshActor_12",
+    "StaticMeshActor_13",
+    "StaticMeshActor_14",
+    "StaticMeshActor_15",
+    "StaticMeshActor_16",
+    "StaticMeshActor_17",
+    "StaticMeshActor_18",
+    "StaticMeshActor_19",
+    "StaticMeshActor_2",
+    "StaticMeshActor_20",
+    "StaticMeshActor_3",
+    "StaticMeshActor_4",
+    "StaticMeshActor_5",
+    "StaticMeshActor_6",
+    "StaticMeshActor_7",
+    "StaticMeshActor_8",
+    "StaticMeshActor_9"
+  ],
+  "fixtures": [
+    {
+      "label": "QA020_Floor",
+      "name": "StaticMeshActor_21",
+      "position": [
+        20000,
+        0,
+        970
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_500_A.SM_Henhouse_YardGround_500_A"
+    },
+    {
+      "label": "QA020_Kitchen",
+      "name": "BP_CL9Kitchen_C_0",
+      "position": [
+        20000.0,
+        0.0,
+        1000.0
+      ],
+      "class": "/Game/Items/BP_CL9Kitchen.BP_CL9Kitchen_C"
+    },
+    {
+      "label": "QA020_Egg",
+      "name": "BP_CL9Item_C_2",
+      "position": [
+        20000.0,
+        170.0,
+        1035.0
+      ],
+      "class": "/Game/Items/BP_CL9Item.BP_CL9Item_C"
+    },
+    {
+      "label": "QA020_Probe",
+      "name": "StaticMeshActor_22",
+      "position": [
+        20080.0,
+        0.0,
+        1160.0
+      ],
+      "class": "/Script/Engine.StaticMeshActor"
+    }
+  ],
+  "cleaned_up": true,
+  "egg_rows": [
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_0",
+      "sub_alias": "None",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_1",
+      "sub_alias": "cooked",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_2",
+      "sub_alias": "burnt",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_3",
+      "sub_alias": "cracked",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_4",
+      "sub_alias": "broken",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    }
+  ],
+  "heat_zone_fit": {
+    "absolute_rotation": true,
+    "world_rotation": "<Struct 'Rotator' (0x0000024E2C49C6F0) {pitch: 0.000000, yaw: 0.000000, roll: 0.000000}>",
+    "reason": "BeginPlay extents are already world AABB; inherited yaw rotated them twice"
+  }
+}

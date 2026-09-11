@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:38:01.096519+00:00",
+  "assets": [
+    {
+      "id": "henhouse_sign_exit",
+      "path": "/Game/CL9Art/Maps/HenhouseYard/SignExit/SM_Henhouse_Sign_Exit_A.SM_Henhouse_Sign_Exit_A",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400007963180542,
+        40.0
+      ],
+      "max_dimension_error_cm": 7.987022399902344e-06,
+      "source_sha256": "cb6d3eda8559a527291251180951d956b75f0443545816b1dd1dfd9cdbb85412",
+      "lod_count": 3,
+      "convex_collision_hulls": 0,
+      "bounds_center_cm": [
+        0.0,
+        -8.344650268554688e-07,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseYard/SignExit/M_CL9_SignExit_Frame.M_CL9_SignExit_Frame",
+        "/Game/CL9Art/Maps/HenhouseYard/SignExit/M_CL9_SignExit_Face.M_CL9_SignExit_Face"
+      ],
+      "sphere_radius_cm": 35.645478745835085,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

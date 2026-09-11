@@ -1,0 +1,73 @@
+{
+  "utc": "2026-09-10T16:22:57.814071+00:00",
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "scope": "Isolated asset import/LOD/bounds. Runtime data and gameplay untested.",
+  "assets": [
+    {
+      "state": "raw",
+      "path": "/Game/CL9Art/Items/MeatStates/SM_Meat_Raw_A.SM_Meat_Raw_A",
+      "dimensions_cm": [
+        67.0999755859375,
+        34.599966049194336,
+        34.0
+      ],
+      "dimension_error_cm": 9.5367431640625e-07,
+      "sphere_radius_cm": 33.68384936565432,
+      "radius30_runtime_scale": 0.8906345493454632,
+      "runtime_dimensions_cm": [
+        59.761556517073025,
+        30.81592516959252,
+        30.28157467774575
+      ],
+      "lod_count": 3,
+      "material": "/Game/CL9Art/Items/MeatStates/M_Meat_Raw_Vertex.M_Meat_Raw_Vertex",
+      "source_sha256": "0a4a0ab98a7247a51009fa8bc1f484c390ff7c0cdb7ca9f89ad10aa6f88c889a",
+      "predicted_sphere_floor_gap_cm": 14.859212661127126,
+      "collision": "Actor SphereComponent; mesh collision disabled"
+    },
+    {
+      "state": "cooked",
+      "path": "/Game/CL9Art/Items/MeatStates/SM_Meat_Cooked_A.SM_Meat_Cooked_A",
+      "dimensions_cm": [
+        67.0999755859375,
+        34.599966049194336,
+        34.0
+      ],
+      "dimension_error_cm": 9.5367431640625e-07,
+      "sphere_radius_cm": 33.68384936565432,
+      "radius30_runtime_scale": 0.8906345493454632,
+      "runtime_dimensions_cm": [
+        59.761556517073025,
+        30.81592516959252,
+        30.28157467774575
+      ],
+      "lod_count": 3,
+      "material": "/Game/CL9Art/Items/MeatStates/M_Meat_Cooked_Vertex.M_Meat_Cooked_Vertex",
+      "source_sha256": "a626243b69dd8909ace00cbdcad9b551ba30283507e07f165f8ae383bee487b2",
+      "predicted_sphere_floor_gap_cm": 14.859212661127126,
+      "collision": "Actor SphereComponent; mesh collision disabled"
+    },
+    {
+      "state": "burnt",
+      "path": "/Game/CL9Art/Items/MeatStates/SM_Meat_Burnt_A.SM_Meat_Burnt_A",
+      "dimensions_cm": [
+        67.0999755859375,
+        34.599966049194336,
+        34.0
+      ],
+      "dimension_error_cm": 9.5367431640625e-07,
+      "sphere_radius_cm": 33.68384936565432,
+      "radius30_runtime_scale": 0.8906345493454632,
+      "runtime_dimensions_cm": [
+        59.761556517073025,
+        30.81592516959252,
+        30.28157467774575
+      ],
+      "lod_count": 3,
+      "material": "/Game/CL9Art/Items/MeatStates/M_Meat_Burnt_Vertex.M_Meat_Burnt_Vertex",
+      "source_sha256": "742c5a9b0d427b0d65f92024eaa98893baa436d15b550e4879429df64bef57c6",
+      "predicted_sphere_floor_gap_cm": 14.859212661127126,
+      "collision": "Actor SphereComponent; mesh collision disabled"
+    }
+  ]
+}

@@ -64,6 +64,8 @@ namespace
 			Add(TEXT("coop_small"), ECL9ModuleType::DeadEnd, 2, 2, SockE);
 			Add(TEXT("delivery"), ECL9ModuleType::Special, 2, 2, SockN | SockS, /*bOutdoor*/ false, /*Purposes*/ 0xF);
 			Add(TEXT("kitchen"), ECL9ModuleType::Special, 2, 3, SockE | SockW);
+			// 계단실은 아래층과 위층의 같은 칸을 함께 차지한다 — MaxFloors가 1이면 안 뽑힌다.
+			Add(TEXT("stair_up"), ECL9ModuleType::Stair, 2, 2, SockN | SockE | SockS | SockW);
 		}
 	};
 
@@ -236,6 +238,23 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 	}
 	TestEqual(TEXT("one floor slab per module"), ByKind.FindRef(CL9SegKind::Floor()), Layout.Modules.Num());
 	TestEqual(TEXT("one ceiling per indoor module"), ByKind.FindRef(CL9SegKind::Ceiling()), Indoor);
+
+	// 천장 스위치를 끄면 천장만 사라지고 바닥·벽은 그대로다 (site.md bBuildCeilings)
+	{
+		FCL9SiteParams NoCeiling = Params;
+		NoCeiling.bBuildCeilings = false;
+		TArray<FCL9SiteSeg> Bare;
+		CL9SiteLayout::BuildSegments(NoCeiling, Layout, Bare);
+		int32 Ceilings = 0;
+		int32 Floors = 0;
+		for (const FCL9SiteSeg& Seg : Bare)
+		{
+			Ceilings += Seg.Kind == CL9SegKind::Ceiling() ? 1 : 0;
+			Floors += Seg.Kind == CL9SegKind::Floor() ? 1 : 0;
+		}
+		TestEqual(TEXT("ceilings off means no ceiling boxes"), Ceilings, 0);
+		TestEqual(TEXT("ceilings off leaves the floors alone"), Floors, ByKind.FindRef(CL9SegKind::Floor()));
+	}
 	TestEqual(TEXT("one emergency exit"), ByKind.FindRef(CL9SegKind::FlapIn()), 1);
 	TestTrue(TEXT("the outer wall is sealed"), ByKind.FindRef(CL9SegKind::Barn()) + ByKind.FindRef(CL9SegKind::Wall()) > 0);
 	// 입구 하나 + 모듈을 이은 문들 (module.md 결정 3)
@@ -252,6 +271,224 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 	CL9SiteLayout::PointsOfPurpose(Layout, ECL9PointPurpose::Monster, MonsterPoints);
 	TestTrue(TEXT("monster spots are sorted deepest first"),
 		MonsterPoints.Num() < 2 || Layout.Points[MonsterPoints[0]].Hops >= Layout.Points[MonsterPoints.Last()].Hops);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCL9SiteLayoutFloorsTest,
+	"CL9.Map.Floors",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FCL9SiteLayoutFloorsTest::RunTest(const FString& Parameters)
+{
+	const FTestModules Modules;
+	FCL9SiteParams Params;
+	Params.Theme = TEXT("henhouse");
+
+	// 계단 모듈이 한 행도 없으면 층이 몇이든 단층이어야 한다 — 올라갈 길이 없으니까.
+	{
+		FCL9SiteParams Tall = Params;
+		Tall.MaxFloors = 3;
+		TArray<const UCL9ModuleDef*> NoStairs = Modules.Defs;
+		NoStairs.RemoveAll([](const UCL9ModuleDef* Def) { return Def->Type == ECL9ModuleType::Stair; });
+		TestEqual(TEXT("no stair row means one floor"), CL9SiteLayout::Generate(Tall, NoStairs, 873).FloorCount, 1);
+	}
+
+	// MaxFloors 1은 예전 그대로여야 한다 — 층을 넣었다고 단층 판이 달라지면 회귀다.
+	TestEqual(TEXT("MaxFloors 1 stays single-storey"),
+		CL9SiteLayout::Generate(Params, Modules.Defs, 873).FloorCount, 1);
+
+	Params.MaxFloors = 3;
+	Params.StairCountMin = 2;
+	Params.StairCountMax = 4;
+
+	int32 Disconnected = 0;
+	int32 Overlapped = 0;
+	int32 Unsupported = 0;
+	int32 Floating = 0;
+	int32 Stranded = 0;
+	int32 TwoOrMore = 0;
+	int32 ThreeFloors = 0;
+	float Stairs = 0.f;
+	float Upstairs = 0.f;
+	float ReachSum = 0.f;
+	int32 Runs = 0;
+
+	// 계단 위층에서 **내려오지 않고** 문만으로 닿는 모듈 수 — 계단 자신은 빼고 센다
+	auto UpperReach = [](const FCL9SiteLayout& Layout, int32 StairIndex)
+	{
+		const int32 Upper = Layout.Modules[StairIndex].Floor + 1;
+		TSet<int32> Seen;
+		TArray<int32> Queue;
+		Seen.Add(StairIndex);
+		Queue.Add(StairIndex);
+		while (Queue.Num() > 0)
+		{
+			const FCL9ModulePlacement Module = Layout.Modules[Queue.Pop(EAllowShrinking::No)];
+			// 이 모듈이 위층에 없으면(다른 층의 계단 등) 거기서 멈춘다
+			if (Module.Floor > Upper || Module.TopFloor() < Upper)
+			{
+				continue;
+			}
+			for (int32 Side = 0; Side < 4; ++Side)
+			{
+				if (!(Module.Sockets & (1 << Side)))
+				{
+					continue;
+				}
+				const int32 Count = (Side == 0 || Side == 2) ? Module.Size.X : Module.Size.Y;
+				for (int32 Index = 0; Index < Count; ++Index)
+				{
+					FIntPoint Cell;
+					switch (Side)
+					{
+					case 0: Cell = FIntPoint(Module.Origin.X + Index, Module.Origin.Y + Module.Size.Y - 1); break;
+					case 2: Cell = FIntPoint(Module.Origin.X + Index, Module.Origin.Y); break;
+					case 1: Cell = FIntPoint(Module.Origin.X + Module.Size.X - 1, Module.Origin.Y + Index); break;
+					default: Cell = FIntPoint(Module.Origin.X, Module.Origin.Y + Index); break;
+					}
+					ECL9GridEdge Edge;
+					FIntPoint Next;
+					switch (Side)
+					{
+					case 1: Edge = Layout.EdgeAtX(Upper, Cell.X + 1, Cell.Y); Next = Cell + FIntPoint(1, 0); break;
+					case 3: Edge = Layout.EdgeAtX(Upper, Cell.X, Cell.Y); Next = Cell + FIntPoint(-1, 0); break;
+					case 0: Edge = Layout.EdgeAtY(Upper, Cell.X, Cell.Y + 1); Next = Cell + FIntPoint(0, 1); break;
+					default: Edge = Layout.EdgeAtY(Upper, Cell.X, Cell.Y); Next = Cell + FIntPoint(0, -1); break;
+					}
+					if (Edge != ECL9GridEdge::Door)
+					{
+						continue;
+					}
+					const int32 Other = Layout.CellAt(Upper, Next);
+					if (Other != INDEX_NONE && !Seen.Contains(Other))
+					{
+						Seen.Add(Other);
+						Queue.Add(Other);
+					}
+				}
+			}
+		}
+		return Seen.Num() - 1;
+	};
+
+	for (uint32 Seed = 1; Seed <= 100; ++Seed)
+	{
+		const FCL9SiteLayout Layout = CL9SiteLayout::Generate(Params, Modules.Defs, Seed);
+		if (!Layout.bBuilt)
+		{
+			continue;
+		}
+		++Runs;
+		TwoOrMore += Layout.FloorCount >= 2 ? 1 : 0;
+		ThreeFloors += Layout.FloorCount >= 3 ? 1 : 0;
+
+		if (!CL9SiteLayout::IsConnected(Layout))
+		{
+			++Disconnected;
+		}
+
+		int32 Expected = 0;
+		for (const FCL9ModulePlacement& Module : Layout.Modules)
+		{
+			// 계단은 두 층을 차지하므로 칸을 두 번 센다
+			Expected += Module.Size.X * Module.Size.Y * (Module.TopFloor() - Module.Floor + 1);
+			Stairs += Module.bStairUp ? 1 : 0;
+			Upstairs += Module.Floor > 0 ? 1 : 0;
+
+			// 계단을 올라가면 반드시 갈 데가 있어야 한다 (CL9SiteLayout::StairMinReach)
+			if (Module.bStairUp)
+			{
+				const int32 Reach = UpperReach(Layout, &Module - Layout.Modules.GetData());
+				ReachSum += Reach;
+				if (Reach < CL9SiteLayout::StairMinReach)
+				{
+					++Stranded;
+				}
+			}
+
+			if (Module.TopFloor() >= Layout.FloorCount)
+			{
+				++Floating;
+			}
+			if (Module.Floor == 0)
+			{
+				continue;
+			}
+			// 위층 모듈은 아래층 실내 모듈이 빠짐없이 받쳐 줘야 한다
+			for (int32 Y = 0; Y < Module.Size.Y; ++Y)
+			{
+				for (int32 X = 0; X < Module.Size.X; ++X)
+				{
+					const int32 Below = Layout.CellAt(Module.Floor - 1, FIntPoint(Module.Origin.X + X, Module.Origin.Y + Y));
+					if (Below == INDEX_NONE || Layout.Modules[Below].Def->bOutdoor)
+					{
+						++Unsupported;
+					}
+				}
+			}
+		}
+		if (Expected != CountOccupiedCells(Layout))
+		{
+			++Overlapped;
+		}
+	}
+
+	AddInfo(FString::Printf(TEXT("%d runs: %d reached 2 floors, %d reached 3. %.1f stairs and %.1f upstairs modules per run, %.1f rooms reachable above each stair."),
+		Runs, TwoOrMore, ThreeFloors, Stairs / FMath::Max(Runs, 1), Upstairs / FMath::Max(Runs, 1), ReachSum / FMath::Max(Stairs, 1.f)));
+	TestEqual(TEXT("no stair leads to a dead upper floor"), Stranded, 0);
+
+	// 계단실은 위층 쪽에도 밟을 바닥이 있어야 한다 — 없으면 올라와서 디딤판 끝에 선 채로
+	// 어디로도 못 간다. 통로만 뚫려 있고 나머지는 덮여 있는지 본다.
+	{
+		const FCL9SiteLayout Layout = CL9SiteLayout::Generate(Params, Modules.Defs, 873);
+		TArray<FCL9SiteSeg> Segs;
+		CL9SiteLayout::BuildSegments(Params, Layout, Segs);
+
+		int32 Checked = 0;
+		int32 Landless = 0;
+		for (const FCL9ModulePlacement& Module : Layout.Modules)
+		{
+			if (!Module.bStairUp)
+			{
+				continue;
+			}
+			++Checked;
+			const float UpperZ = (Module.Floor + 1) * Params.FloorHeight;
+			const FBox2D Rect(
+				Layout.Origin + FVector2D(Module.Origin.X * Params.CellSize, Module.Origin.Y * Params.CellSize),
+				Layout.Origin + FVector2D((Module.Origin.X + Module.Size.X) * Params.CellSize,
+					(Module.Origin.Y + Module.Size.Y) * Params.CellSize));
+
+			float Covered = 0.f;
+			for (const FCL9SiteSeg& Seg : Segs)
+			{
+				if (Seg.Kind != CL9SegKind::Floor() || !FMath::IsNearlyEqual(Seg.BaseZ, UpperZ, 1.f))
+				{
+					continue;
+				}
+				if (Rect.Intersect(Seg.Rect))
+				{
+					const FBox2D Overlap = Rect.Overlap(Seg.Rect);
+					Covered += Overlap.GetSize().X * Overlap.GetSize().Y;
+				}
+			}
+			// 통로만 뚫려 있으면 3분의 1은 덮여 있다 (양옆 띠 + 오르기 시작하는 쪽 참)
+			if (Covered < Rect.GetArea() * 0.3f)
+			{
+				++Landless;
+			}
+		}
+		TestTrue(TEXT("seed 873 has stairs to check"), Checked > 0);
+		TestEqual(TEXT("every stairwell has a landing to step off onto"), Landless, 0);
+	}
+
+	TestEqual(TEXT("every module is reachable, floors included"), Disconnected, 0);
+	TestEqual(TEXT("no two modules share a cell on any floor"), Overlapped, 0);
+	TestEqual(TEXT("no upstairs cell hangs in the air"), Unsupported, 0);
+	TestEqual(TEXT("no module reaches past the top floor"), Floating, 0);
+	// 계단이 설 자리는 시드마다 다르지만, 대부분의 판은 2층까지 올라가야 한다
+	TestTrue(FString::Printf(TEXT("%d of %d runs reached a second floor"), TwoOrMore, Runs),
+		TwoOrMore >= Runs * 3 / 4);
 	return true;
 }
 

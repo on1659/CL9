@@ -1,0 +1,79 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "standing_lamp_a.blend",
+  "pivot": "bounds center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_StandingLamp_Frame": {
+      "vertex_color": true,
+      "roughness": 0.72,
+      "metallic": 0.2
+    },
+    "M_CL9_StandingLamp_Diffuser": {
+      "vertex_color": false,
+      "base_color": [
+        0.5,
+        0.58,
+        0.52,
+        1
+      ],
+      "roughness": 0.4,
+      "metallic": 0.05,
+      "emission_color": [
+        1,
+        0.68,
+        0.3,
+        1
+      ],
+      "emission_parameter": "LightStrength",
+      "emission_default": 0,
+      "preview_on_strength": 4
+    }
+  },
+  "assets": {
+    "standing_lamp": {
+      "object": "SM_StandingLamp_A",
+      "dimensions_cm": [
+        86.95446252822876,
+        75.59759616851807,
+        179.60000038146973
+      ],
+      "triangles": 1552,
+      "vertices": 836,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_StandingLamp_Frame",
+        "M_CL9_StandingLamp_Diffuser"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "f4dc56bd1a924de7740b6f60880f76a6f941e4ca690a005221c62bb8f0397b29",
+      "anchors_cm": {
+        "Floor": [
+          0.0,
+          -10.701203346252441,
+          -89.80000305175781
+        ],
+        "LightOrigin": [
+          0.0,
+          -10.701203346252441,
+          53.499996185302734
+        ],
+        "CarryGrip": [
+          0.0,
+          -10.701203346252441,
+          87.5
+        ]
+      },
+      "rig": "N/A static prop",
+      "states": {
+        "off": {
+          "LightStrength": 0
+        },
+        "on_preview": {
+          "LightStrength": 4
+        }
+      }
+    }
+  }
+}

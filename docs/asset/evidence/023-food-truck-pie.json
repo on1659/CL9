@@ -1,0 +1,96 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:27:30.719851+00:00",
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "world_count": 1,
+  "checks": [
+    {
+      "case": "Body_bounds",
+      "passed": true,
+      "dimensions_cm": [
+        630.0000305175781,
+        353.5000762939453,
+        325.1000061035156
+      ]
+    },
+    {
+      "case": "Steps_bounds",
+      "passed": true,
+      "dimensions_cm": [
+        120.0000228881836,
+        114.00001525878906,
+        64.00000762939453
+      ]
+    },
+    {
+      "case": "Kitchen_bounds",
+      "passed": true,
+      "dimensions_cm": [
+        300.0000305175782,
+        120.00004196167002,
+        90.0
+      ]
+    },
+    {
+      "case": "step_1",
+      "passed": true,
+      "support_z": 1015.9996604919434
+    },
+    {
+      "case": "step_2",
+      "passed": true,
+      "support_z": 1031.9997596740723
+    },
+    {
+      "case": "step_3",
+      "passed": true,
+      "support_z": 1047.9998588562012
+    },
+    {
+      "case": "step_4",
+      "passed": true,
+      "support_z": 1063.99995803833
+    },
+    {
+      "case": "rear_entry",
+      "passed": true,
+      "blocked": false
+    },
+    {
+      "case": "aisle_with_kitchen",
+      "passed": true,
+      "blocked": false
+    },
+    {
+      "case": "blind_wall",
+      "passed": true,
+      "blocked": true
+    },
+    {
+      "case": "cab_bulkhead",
+      "passed": true,
+      "blocked": true
+    },
+    {
+      "case": "ceiling",
+      "passed": true,
+      "blocked": true
+    },
+    {
+      "case": "top_step_threshold_height",
+      "passed": true,
+      "support_z": 1064.0002250671387
+    },
+    {
+      "case": "cargo_floor_threshold_height",
+      "passed": true,
+      "support_z": 1064.0002250671387
+    }
+  ],
+  "scope": "Isolated truck parts and existing kitchen footprint. Capsule sweeps, not keyboard walking, whole-map layout, 2-player or performance validation.",
+  "capsule_cm": {
+    "radius": 39.0,
+    "half_height": 90.0
+  },
+  "status": "passed_part_checks"
+}

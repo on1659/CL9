@@ -1,0 +1,8 @@
+{
+  "status": "visually_reviewed_palette_colours_restored",
+  "elapsed": 2.0017735064029694,
+  "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "body_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body.SK_Farmer_A_Body",
+  "arms_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms.SK_Farmer_A_Arms",
+  "review": "Dark boots, brown gloves/belt and green cloth visible on actual pawn. Harsh QA lighting, not final level lighting or first-person camera validation."
+}

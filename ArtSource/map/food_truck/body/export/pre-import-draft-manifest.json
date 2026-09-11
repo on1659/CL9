@@ -1,0 +1,112 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "food_truck.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_FoodTruck_Paint": {
+      "vertex_color": false,
+      "base_color": [
+        0.38,
+        0.33,
+        0.23,
+        1
+      ],
+      "roughness": 0.77,
+      "metallic": 0.08
+    },
+    "M_CL9_FoodTruck_Red": {
+      "vertex_color": false,
+      "base_color": [
+        0.19,
+        0.032,
+        0.022,
+        1
+      ],
+      "roughness": 0.77,
+      "metallic": 0.08
+    },
+    "M_CL9_FoodTruck_Steel": {
+      "vertex_color": false,
+      "base_color": [
+        0.095,
+        0.112,
+        0.12,
+        1
+      ],
+      "roughness": 0.48,
+      "metallic": 0.72
+    },
+    "M_CL9_FoodTruck_Dark": {
+      "vertex_color": false,
+      "base_color": [
+        0.014,
+        0.023,
+        0.027,
+        1
+      ],
+      "roughness": 0.77,
+      "metallic": 0.08
+    }
+  },
+  "assets": {
+    "food_truck": {
+      "object": "SM_FoodTruck_A",
+      "dimensions_cm": [
+        630.0000190734863,
+        353.50000858306885,
+        325.0999927520752
+      ],
+      "triangles": 5144,
+      "vertices": 2858,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_FoodTruck_Steel",
+        "M_CL9_FoodTruck_Paint",
+        "M_CL9_FoodTruck_Red",
+        "M_CL9_FoodTruck_Dark"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "339c1c238dccf6d6093af8120b7051a305c2fb04ed4ce1fb5c4a80cd85561829",
+      "anchors_cm": {
+        "RearThreshold": [
+          -297.0000305175781,
+          -78.25,
+          64.0
+        ],
+        "StepsOrigin": [
+          -357.0000305175781,
+          -78.25,
+          0.0
+        ],
+        "ServiceSill": [
+          -82.00000762939453,
+          111.75000762939453,
+          154.0
+        ],
+        "KitchenFootprintCentre": [
+          -77.00000762939453,
+          33.750003814697266,
+          64.0
+        ],
+        "RearPanelMount": [
+          -300.0,
+          44.750003814697266,
+          64.0
+        ]
+      },
+      "rig": "N/A fixed base vehicle; opaque closed cab, fixed open cargo door/canopy",
+      "cargo_floor_height_cm": 64,
+      "rear_opening_width_cm": 124,
+      "rear_opening_height_cm": 206,
+      "material_budget_exception": "4 slots for painted body/red band/metal/tyres and opaque windows",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        162.5500030517578
+      ],
+      "collision_hulls": 23
+    }
+  }
+}

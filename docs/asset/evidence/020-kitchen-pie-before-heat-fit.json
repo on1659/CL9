@@ -1,0 +1,183 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:56:36.403196+00:00",
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "world_count": 1,
+  "status": "failed",
+  "phase": "cook_chain",
+  "checks": [
+    {
+      "case": "held",
+      "time": 2.66666778922081,
+      "sub_alias": "None",
+      "hand": "egg",
+      "phase": "<CL9CookPhase.NONE: 0>",
+      "progress": 0.0,
+      "parent": "BP_CL9Character_C_0",
+      "location": [
+        20000.0,
+        149.99999999999994,
+        1122.0
+      ],
+      "visual_bottom_z": 1101.0000009536743,
+      "sphere_bottom_z": 1101.0,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A"
+    },
+    {
+      "case": "on_griddle",
+      "time": 5.666669070720673,
+      "sub_alias": "None",
+      "hand": "None",
+      "phase": "<CL9CookPhase.COOKING: 1>",
+      "progress": 0.16470588743686676,
+      "parent": null,
+      "location": [
+        20000.0,
+        39.9999996332656,
+        1111.0000000356654
+      ],
+      "visual_bottom_z": 1090.0000009893397,
+      "sphere_bottom_z": 1090.0000000356654,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A"
+    },
+    {
+      "case": "removed_while_cooking",
+      "time": 6.666669487953186,
+      "sub_alias": "None",
+      "hand": "egg",
+      "phase": "<CL9CookPhase.NONE: 0>",
+      "progress": 0.0,
+      "parent": "BP_CL9Character_C_0",
+      "location": [
+        20000.0,
+        39.99999999999994,
+        1122.0
+      ],
+      "visual_bottom_z": 1101.0000009536743,
+      "sphere_bottom_z": 1101.0,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A"
+    },
+    {
+      "case": "chain_None",
+      "time": 8.666796028614044,
+      "sub_alias": "None",
+      "hand": "None",
+      "phase": "<CL9CookPhase.COOKING: 1>",
+      "progress": 0.08235294371843338,
+      "parent": null,
+      "location": [
+        20000.0,
+        39.99999963326559,
+        1111.0000000356654
+      ],
+      "visual_bottom_z": 1090.0000009893397,
+      "sphere_bottom_z": 1090.0000000356654,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A"
+    },
+    {
+      "case": "chain_cooked",
+      "time": 20.000235855579376,
+      "sub_alias": "cooked",
+      "hand": "None",
+      "phase": "<CL9CookPhase.BURNING: 2>",
+      "progress": 0.0117647061124444,
+      "parent": null,
+      "location": [
+        20000.0,
+        39.99999963326559,
+        1111.0000000356654
+      ],
+      "visual_bottom_z": 1090.0000021814326,
+      "sphere_bottom_z": 1090.0000000356654,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere"
+    },
+    {
+      "case": "chain_burnt",
+      "time": 44.0002481341362,
+      "sub_alias": "burnt",
+      "hand": "None",
+      "phase": "<CL9CookPhase.NONE: 0>",
+      "progress": 0.0,
+      "parent": null,
+      "location": [
+        20000.0,
+        39.99999963326559,
+        1111.0000000356654
+      ],
+      "visual_bottom_z": 1090.0000021814326,
+      "sphere_bottom_z": 1090.0000000356654,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere"
+    },
+    {
+      "case": "kitchen_bounds_and_heat",
+      "dimensions_cm": [
+        300.0000305175782,
+        120.00004196167002,
+        90.0
+      ],
+      "bottom_z": 1000.0,
+      "top": [
+        20000.0,
+        -5.722045898437502e-06,
+        1090.0
+      ],
+      "heat_origin": [
+        20000.0,
+        -5.722045898437502e-06,
+        1120.0
+      ],
+      "heat_dimensions": [
+        120.00004196167012,
+        300.00003051757824,
+        60.0
+      ]
+    }
+  ],
+  "egg_rows": [
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_0",
+      "sub_alias": "None",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_1",
+      "sub_alias": "cooked",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_2",
+      "sub_alias": "burnt",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_3",
+      "sub_alias": "cracked",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_4",
+      "sub_alias": "broken",
+      "cook_time": 12.0,
+      "burn_time": 24.0,
+      "mesh": "/Engine/BasicShapes/Sphere.Sphere",
+      "radius": 21.0
+    }
+  ],
+  "scope": "Real kitchen BP/egg RPC pickup-place-removal and natural cook/burn. Teleport setup, no 2-player or final egg-art claim.",
+  "game_elapsed": 44.0002481341362,
+  "chain_start": 13.00013181567192,
+  "last_sub": "burnt",
+  "error": ""
+}

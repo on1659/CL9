@@ -1,0 +1,10 @@
+{
+  "animation": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Walk.AN_Chicken_Walk",
+  "duration_seconds": 0.800000011920929,
+  "skeleton": "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A_Skeleton.SK_Chicken_A_Skeleton",
+  "material": "/Game/CL9Art/Monsters/ChickenA/M_CL9_Chicken_Vertex.M_CL9_Chicken_Vertex",
+  "source_sha256": "5c25877717a9171f1aa5cd10f7473d4b586aae42f2ca5a539867bd2cc2095da8",
+  "imported": [
+    "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Walk.AN_Chicken_Walk"
+  ]
+}

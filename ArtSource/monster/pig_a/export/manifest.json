@@ -1,0 +1,509 @@
+{
+  "source": "Original CL9 pig built through Blender MCP",
+  "mesh": "SK_Pig_A",
+  "skeleton": "SKEL_Pig_A",
+  "dimensions_cm": [
+    187.23031282424927,
+    81.99999928474426,
+    109.89999771118164
+  ],
+  "triangles": 8404,
+  "vertices": 4278,
+  "deform_bones": 24,
+  "material_slots": 1,
+  "vertex_color": "Color, linear RGBA; UE VertexColor -> BaseColor",
+  "axis": "+X forward +Z up; root floor origin",
+  "weight_check": "sum 1, max 2 influences",
+  "clips": {
+    "Idle": {
+      "action": "AN_Pig_Idle",
+      "duration_seconds": 2,
+      "frames": [
+        1,
+        61
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Walk": {
+      "action": "AN_Pig_Walk",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 126,
+      "root_motion": false,
+      "stance_samples": [
+        {
+          "frame": 1,
+          "limb": "front_l",
+          "x_cm": 49.68000054359436,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 1,
+          "limb": "hind_r",
+          "x_cm": -17.320001125335693,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 2,
+          "limb": "front_l",
+          "x_cm": 45.4800009727478,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 2,
+          "limb": "hind_r",
+          "x_cm": -21.52000069618225,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 3,
+          "limb": "front_l",
+          "x_cm": 41.280001401901245,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 3,
+          "limb": "hind_r",
+          "x_cm": -25.72000026702881,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 4,
+          "limb": "front_l",
+          "x_cm": 37.08000183105469,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 4,
+          "limb": "hind_r",
+          "x_cm": -29.919999837875366,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 5,
+          "limb": "front_l",
+          "x_cm": 32.87999927997589,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 5,
+          "limb": "hind_r",
+          "x_cm": -34.12000238895416,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 6,
+          "limb": "front_l",
+          "x_cm": 28.679999709129333,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 6,
+          "limb": "hind_r",
+          "x_cm": -38.32000195980072,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 7,
+          "limb": "front_l",
+          "x_cm": 24.480000138282776,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 7,
+          "limb": "hind_r",
+          "x_cm": -42.52000153064728,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 8,
+          "limb": "front_l",
+          "x_cm": 20.28000056743622,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 8,
+          "limb": "hind_r",
+          "x_cm": -46.720001101493835,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 9,
+          "limb": "front_l",
+          "x_cm": 16.08000099658966,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 9,
+          "limb": "hind_r",
+          "x_cm": -50.92000365257263,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 10,
+          "limb": "front_l",
+          "x_cm": 11.880000680685043,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 10,
+          "limb": "hind_r",
+          "x_cm": -55.12000322341919,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 11,
+          "limb": "front_l",
+          "x_cm": 7.680000364780426,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 11,
+          "limb": "hind_r",
+          "x_cm": -59.32000279426575,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 13,
+          "limb": "front_r",
+          "x_cm": 49.68000054359436,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 13,
+          "limb": "hind_l",
+          "x_cm": -17.320001125335693,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 14,
+          "limb": "front_r",
+          "x_cm": 45.4800009727478,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 14,
+          "limb": "hind_l",
+          "x_cm": -21.52000069618225,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 15,
+          "limb": "front_r",
+          "x_cm": 41.280001401901245,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 15,
+          "limb": "hind_l",
+          "x_cm": -25.72000026702881,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 16,
+          "limb": "front_r",
+          "x_cm": 37.08000183105469,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 16,
+          "limb": "hind_l",
+          "x_cm": -29.919999837875366,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 17,
+          "limb": "front_r",
+          "x_cm": 32.87999927997589,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 17,
+          "limb": "hind_l",
+          "x_cm": -34.12000238895416,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 18,
+          "limb": "front_r",
+          "x_cm": 28.679999709129333,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 18,
+          "limb": "hind_l",
+          "x_cm": -38.32000195980072,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 19,
+          "limb": "front_r",
+          "x_cm": 24.480000138282776,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 19,
+          "limb": "hind_l",
+          "x_cm": -42.52000153064728,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 20,
+          "limb": "front_r",
+          "x_cm": 20.28000056743622,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 20,
+          "limb": "hind_l",
+          "x_cm": -46.720001101493835,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 21,
+          "limb": "front_r",
+          "x_cm": 16.08000099658966,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 21,
+          "limb": "hind_l",
+          "x_cm": -50.92000365257263,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 22,
+          "limb": "front_r",
+          "x_cm": 11.880000680685043,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 22,
+          "limb": "hind_l",
+          "x_cm": -55.12000322341919,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 23,
+          "limb": "front_r",
+          "x_cm": 7.680000364780426,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 23,
+          "limb": "hind_l",
+          "x_cm": -59.32000279426575,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 25,
+          "limb": "front_l",
+          "x_cm": 49.68000054359436,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 25,
+          "limb": "hind_r",
+          "x_cm": -17.320001125335693,
+          "z_cm": 7.000000029802322
+        }
+      ]
+    },
+    "Run": {
+      "action": "AN_Pig_Run",
+      "duration_seconds": 0.5,
+      "frames": [
+        1,
+        16
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 396,
+      "root_motion": false,
+      "stance_samples": [
+        {
+          "frame": 1,
+          "limb": "front_l",
+          "x_cm": 51.749998331069946,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 1,
+          "limb": "hind_r",
+          "x_cm": -15.250000357627869,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 2,
+          "limb": "front_l",
+          "x_cm": 38.55000138282776,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 2,
+          "limb": "hind_r",
+          "x_cm": -28.450000286102295,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 3,
+          "limb": "front_l",
+          "x_cm": 25.350001454353333,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 3,
+          "limb": "hind_r",
+          "x_cm": -41.65000021457672,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 4,
+          "limb": "front_l",
+          "x_cm": 12.150000780820847,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 4,
+          "limb": "hind_r",
+          "x_cm": -54.85000014305115,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 9,
+          "limb": "front_r",
+          "x_cm": 45.14999985694885,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 9,
+          "limb": "hind_l",
+          "x_cm": -21.850000321865082,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 10,
+          "limb": "front_r",
+          "x_cm": 31.949999928474426,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 10,
+          "limb": "hind_l",
+          "x_cm": -35.05000174045563,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 11,
+          "limb": "front_r",
+          "x_cm": 18.75,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 11,
+          "limb": "hind_l",
+          "x_cm": -48.250001668930054,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 12,
+          "limb": "front_r",
+          "x_cm": 5.550000816583633,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 12,
+          "limb": "hind_l",
+          "x_cm": -61.44999861717224,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 16,
+          "limb": "front_l",
+          "x_cm": 51.749998331069946,
+          "z_cm": 7.000000029802322
+        },
+        {
+          "frame": 16,
+          "limb": "hind_r",
+          "x_cm": -15.250000357627869,
+          "z_cm": 7.000000029802322
+        }
+      ]
+    },
+    "LookAround": {
+      "action": "AN_Pig_LookAround",
+      "duration_seconds": 2,
+      "frames": [
+        1,
+        61
+      ],
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "HitReact": {
+      "action": "AN_Pig_HitReact",
+      "duration_seconds": 0.3,
+      "frames": [
+        1,
+        10
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "WakeTelegraph": {
+      "action": "AN_Pig_WakeTelegraph",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Catch": {
+      "action": "AN_Pig_Catch",
+      "duration_seconds": 0.6,
+      "frames": [
+        1,
+        19
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    },
+    "Death": {
+      "action": "AN_Pig_Death",
+      "duration_seconds": 1.2,
+      "frames": [
+        1,
+        37
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": []
+    }
+  }
+}

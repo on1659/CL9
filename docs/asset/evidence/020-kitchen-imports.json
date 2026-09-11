@@ -1,0 +1,36 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:54:21.726625+00:00",
+  "assets": [
+    {
+      "id": "kitchen",
+      "path": "/Game/CL9Art/Maps/Kitchen/SM_Kitchen_A.SM_Kitchen_A",
+      "dimensions_cm": [
+        120.00004196166992,
+        300.0000305175781,
+        90.0
+      ],
+      "max_dimension_error_cm": 3.719329833984375e-05,
+      "source_sha256": "22a5520ead167c88a1e56cb2f6779a5bec252b75eb22ce779ba75b4c0cdce40b",
+      "lod_count": 3,
+      "convex_collision_hulls": 8,
+      "bounds_center_cm": [
+        -5.7220458984375e-06,
+        0.0,
+        45.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/Kitchen/M_CL9_Kitchen_Steel.M_CL9_Kitchen_Steel",
+        "/Game/CL9Art/Maps/Kitchen/M_CL9_Kitchen_Enamel.M_CL9_Kitchen_Enamel",
+        "/Game/CL9Art/Maps/Kitchen/M_CL9_Kitchen_Red.M_CL9_Kitchen_Red"
+      ],
+      "sphere_radius_cm": 167.45543418853507,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

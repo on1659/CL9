@@ -1,0 +1,50 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "reference_signature_before": "18706d2b893249b0b5d81d3a95d44d45c1d6649fbb2d60f987fd6134292e922b",
+  "assets": [
+    {
+      "name": "SK_Farmer_A_Body",
+      "path": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body",
+      "sha256": "97c41010bd9c655daef9a69612b75acd0497f944afc62fbe702704d1616f729e",
+      "dimensions_cm": [
+        111.3482437133789,
+        43.053537368774414,
+        184.39999693632126
+      ],
+      "dimension_error_cm": 0.0014104843139648438,
+      "bone_count": 89,
+      "max_reference_position_error_cm": 0.00022177241791920493,
+      "max_reference_rotation_error_deg": 0.009537321327178501,
+      "max_bone_scale_error": 6.556510172117669e-06,
+      "materials": [
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Cloth.M_CL9_Farmer_Cloth",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Skin.M_CL9_Farmer_Skin",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Detail.M_CL9_Farmer_Detail"
+      ],
+      "vertex_colors": true
+    },
+    {
+      "name": "SK_Farmer_A_Arms",
+      "path": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms",
+      "sha256": "96578dee2730d3244e4dbad88b559d512afa2cd8a328cfef3e02d754eda3cd07",
+      "dimensions_cm": [
+        111.3482437133789,
+        40.31061363220215,
+        57.12373352050781
+      ],
+      "dimension_error_cm": 0.0014104843139648438,
+      "bone_count": 89,
+      "max_reference_position_error_cm": 0.00022177241791920493,
+      "max_reference_rotation_error_deg": 0.009537321327178501,
+      "max_bone_scale_error": 6.556510172117669e-06,
+      "materials": [
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Cloth.M_CL9_Farmer_Cloth",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Detail.M_CL9_Farmer_Detail"
+      ],
+      "vertex_colors": true
+    }
+  ],
+  "reference_signature_after": "18706d2b893249b0b5d81d3a95d44d45c1d6649fbb2d60f987fd6134292e922b",
+  "existing_skeleton_unchanged": true
+}

@@ -1,0 +1,247 @@
+{
+  "assets": {
+    "wall": {
+      "object": "SM_Henhouse_Wall_500_A",
+      "dimensions_cm": [
+        500.0,
+        40.0,
+        400.0
+      ],
+      "triangles": 1408,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_DarkTimber"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 1,
+      "collision_reason": "Authored convex boxes"
+    },
+    "floor": {
+      "object": "SM_Henhouse_Floor_500_A",
+      "dimensions_cm": [
+        500.0,
+        500.0,
+        20.0
+      ],
+      "triangles": 12,
+      "materials": [
+        "CL9_HH01_Concrete"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 1,
+      "collision_reason": "Authored convex boxes"
+    },
+    "nest": {
+      "object": "SM_Henhouse_Nest_ThreeBay_A",
+      "dimensions_cm": [
+        300.0,
+        100.0,
+        160.0
+      ],
+      "triangles": 1960,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_Straw"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 14,
+      "collision_reason": "Authored convex boxes"
+    },
+    "crate": {
+      "object": "SM_Henhouse_Crate_A",
+      "dimensions_cm": [
+        110.0,
+        82.25,
+        86.0
+      ],
+      "triangles": 168,
+      "materials": [
+        "CL9_HH01_Wood",
+        "CL9_HH01_OxidizedSteel"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 1,
+      "collision_reason": "Authored convex boxes"
+    },
+    "sack": {
+      "object": "SM_Henhouse_FeedSack_A",
+      "dimensions_cm": [
+        60.0,
+        45.0,
+        87.0
+      ],
+      "triangles": 284,
+      "materials": [
+        "CL9_HH01_Burlap",
+        "CL9_HH01_Wood"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 1,
+      "collision_reason": "Authored convex boxes"
+    },
+    "egg": {
+      "object": "SM_Egg_Raw_A",
+      "dimensions_cm": [
+        30.18,
+        30.18,
+        40.0
+      ],
+      "triangles": 440,
+      "materials": [
+        "CL9_HH01_Eggshell"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 0,
+      "collision_reason": "Item sphere owns collision"
+    },
+    "lamp": {
+      "object": "SM_Henhouse_WorkLamp_A",
+      "dimensions_cm": [
+        50.0,
+        50.0,
+        37.5
+      ],
+      "triangles": 344,
+      "materials": [
+        "CL9_HH01_OxidizedSteel",
+        "CL9_HH01_Bulb"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 0,
+      "collision_reason": "Ceiling light outside walkable reach"
+    },
+    "trough": {
+      "object": "SM_Henhouse_FeedTrough_A",
+      "dimensions_cm": [
+        240.0,
+        65.0,
+        46.0
+      ],
+      "triangles": 312,
+      "materials": [
+        "CL9_HH01_OxidizedSteel",
+        "CL9_HH01_Straw"
+      ],
+      "uv_layers": 1,
+      "collision_hulls": 9,
+      "collision_reason": "Authored convex boxes"
+    }
+  },
+  "materials": {
+    "CL9_HH01_Wood": {
+      "base_color_linear": [
+        0.1899999976158142,
+        0.11500000208616257,
+        0.06599999964237213,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_DarkTimber": {
+      "base_color_linear": [
+        0.07100000232458115,
+        0.04800000041723251,
+        0.029999999329447746,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_OxidizedSteel": {
+      "base_color_linear": [
+        0.0949999988079071,
+        0.12999999523162842,
+        0.11999999731779099,
+        1.0
+      ],
+      "roughness": 0.5600000023841858,
+      "metallic": 0.550000011920929,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_Straw": {
+      "base_color_linear": [
+        0.41999998688697815,
+        0.28999999165534973,
+        0.10000000149011612,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_Eggshell": {
+      "base_color_linear": [
+        0.8299999833106995,
+        0.7400000095367432,
+        0.47999998927116394,
+        1.0
+      ],
+      "roughness": 0.5199999809265137,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_Concrete": {
+      "base_color_linear": [
+        0.17000000178813934,
+        0.1850000023841858,
+        0.17499999701976776,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_Burlap": {
+      "base_color_linear": [
+        0.3400000035762787,
+        0.26499998569488525,
+        0.1599999964237213,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_Bulb": {
+      "base_color_linear": [
+        1.0,
+        0.47999998927116394,
+        0.11999999731779099,
+        1.0
+      ],
+      "roughness": 0.3199999928474426,
+      "metallic": 0.0,
+      "emission_strength": 4.0
+    },
+    "CL9_HH01_FadedTeal": {
+      "base_color_linear": [
+        0.054999999701976776,
+        0.1899999976158142,
+        0.17000000178813934,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    },
+    "CL9_HH01_SignalRed": {
+      "base_color_linear": [
+        0.36000001430511475,
+        0.04500000178813934,
+        0.020999999716877937,
+        1.0
+      ],
+      "roughness": 0.800000011920929,
+      "metallic": 0.0,
+      "emission_strength": 0.0
+    }
+  },
+  "unit": "m",
+  "export_axis": "X forward Z up",
+  "ue_import_verified": false,
+  "textures": "None: constant material values; reconstruct in UE.",
+  "crate_pivot_fixed": "2026-09-11: min Z -0.5cm corrected to zero; shared stage instances updated"
+}

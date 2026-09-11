@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "utc": "2026-09-10T16:37:06.699129+00:00",
+  "world_count": 1,
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "level": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+  "scope": "Real Server_PickPlace and Server_Flashlight RPC state/attachment; no input-focus, rendered beam, or 2-player claim.",
+  "elapsed": 2.5,
+  "step": 1,
+  "events": [],
+  "original_pawn_location": [
+    400.0,
+    0.0,
+    91.65000534057617
+  ],
+  "error": "CL9Item: Property 'bLightOn' for attribute 'bLightOn' on 'BP_CL9Item_C' is protected and cannot be read"
+}

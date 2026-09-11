@@ -1,0 +1,427 @@
+{
+  "elapsed": 7.026877097785473,
+  "step": 5,
+  "events": [
+    {
+      "event": "before_pickup",
+      "game_seconds": 1.0160939022898674,
+      "worlds": [
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.00000004986816
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                400.3256927605536,
+                -99.99996947763852,
+                21.000000619780575
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        },
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_1_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.000000132053835
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                400.30047361890246,
+                -99.99999999999999,
+                20.999999268112486
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "event": "after_pickup",
+      "game_seconds": 2.002337198704481,
+      "worlds": [
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.00000004986816
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                327.3583038806807,
+                -99.99996947795924,
+                21.00000135542001
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        },
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_1_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.000000132053835
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                327.4134786954522,
+                -99.99999999999999,
+                21.000001236290046
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "event": "after_pocket",
+      "game_seconds": 3.5155643969774246,
+      "worlds": [
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.00000004986816
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                210.78697467838833,
+                -99.99996947741224,
+                20.99999965142557
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        },
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_1_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.000000132053835
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                209.96228132014974,
+                -99.99999999999999,
+                21.00000026724761
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "event": "after_unpocket",
+      "game_seconds": 5.020024295896292,
+      "worlds": [
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.00000004986816
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                96.98443902214093,
+                -101.05708944132537,
+                21.00000076650305
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        },
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_1_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.000000132053835
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                96.42450743811756,
+                -101.02869727140455,
+                21.000000677286746
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "event": "after_throw",
+      "game_seconds": 7.026877097785473,
+      "worlds": [
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.00000004986816
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                -70.12843216486985,
+                -105.59966749074404,
+                -319.62728607902665
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        },
+        {
+          "world": "/Game/CL9Art/Tests/UEDPIE_1_Lvl_AssetQA01.Lvl_AssetQA01",
+          "items": [
+            {
+              "name": "BP_CL9Item_C_0",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                260.0,
+                0.0,
+                21.000000132053835
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            },
+            {
+              "name": "BP_CL9Item_C_1",
+              "alias": "egg",
+              "sub_alias": "None",
+              "mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A.SM_Egg_Raw_A",
+              "attached": false,
+              "location": [
+                -70.80072863937914,
+                -105.47159320803432,
+                -323.0664883470778
+              ],
+              "mesh_scale": [
+                1.0499999523162842,
+                1.0499999523162842,
+                1.0499999523162842
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "status": "observed"
+}

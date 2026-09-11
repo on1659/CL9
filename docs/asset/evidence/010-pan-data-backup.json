@@ -1,0 +1,11 @@
+{
+  "utc": "2026-09-10T16:45:31.998158+00:00",
+  "restored": true,
+  "rows": [
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_11",
+      "old": "/Engine/BasicShapes/Cylinder.Cylinder",
+      "new": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A"
+    }
+  ]
+}

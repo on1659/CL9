@@ -1,0 +1,69 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "henhouse_workbench.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Workbench_Wood": {
+      "vertex_color": true,
+      "roughness": 0.85,
+      "metallic": 0
+    },
+    "M_CL9_Workbench_Frame": {
+      "vertex_color": true,
+      "roughness": 0.7,
+      "metallic": 0.45
+    }
+  },
+  "assets": {
+    "henhouse_workbench": {
+      "object": "SM_Henhouse_Workbench_A",
+      "dimensions_cm": [
+        180.00000715255737,
+        75.0,
+        90.00000357627869
+      ],
+      "triangles": 1212,
+      "vertices": 664,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Workbench_Wood",
+        "M_CL9_Workbench_Frame"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "d96669c006955c31f2ba8a0bea9ace007ae131ddcd733ead09911e5caf86f8a0",
+      "anchors_cm": {
+        "WorkSurface": [
+          0.0,
+          0.0,
+          90.0
+        ],
+        "WorkLeft": [
+          -50.0,
+          0.0,
+          90.0
+        ],
+        "WorkRight": [
+          50.0,
+          0.0,
+          90.0
+        ],
+        "Shelf": [
+          0.0,
+          0.0,
+          25.0
+        ]
+      },
+      "rig": "N/A static furniture",
+      "work_surface_height_cm": 90,
+      "shelf_height_cm": 25,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        45.0
+      ],
+      "collision_hulls": 12
+    }
+  }
+}

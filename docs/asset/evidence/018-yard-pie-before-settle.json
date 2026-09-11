@@ -1,0 +1,64 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:41:40.258430+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "failed",
+  "checks": [
+    {
+      "case": "GroundNatural_bounds",
+      "dimensions_cm": [
+        500.0000915527344,
+        500.0000915527344,
+        30.000001907348633
+      ]
+    },
+    {
+      "case": "GroundNormalized_bounds",
+      "dimensions_cm": [
+        500.0000762939453,
+        500.0000762939453,
+        30.0
+      ]
+    },
+    {
+      "case": "Exit_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400007963180542,
+        40.0
+      ]
+    },
+    {
+      "case": "Feed_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400006055831909,
+        40.0
+      ]
+    },
+    {
+      "case": "Kitchen_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400005578994751,
+        40.0
+      ]
+    },
+    {
+      "case": "Coop_bounds",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400006055831909,
+        40.0
+      ]
+    },
+    {
+      "case": "ground_seam",
+      "gap_cm": -8.392333984375e-05,
+      "top_z": 1030.0000019073486
+    }
+  ],
+  "scope": "Two floor parts, four decoration signs and one physics probe. No full map, actual CL9 item, visual navigation or 2-player claim.",
+  "error": ""
+}

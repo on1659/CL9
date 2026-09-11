@@ -1,0 +1,21 @@
+{
+  "utc": "2026-09-10T18:33:52.975365+00:00",
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "row": "/Game/Data/DA_CharacterTable.DA_CharacterTable:CL9CharacterDef_0",
+  "fields": {
+    "alias": "farmer_a",
+    "skeletal_mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "anim_bp": "/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed.ABP_Unarmed_C",
+    "arms_mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+    "arms_anim_bp": "/Game/FirstPerson/Anims/ABP_FP_Copy.ABP_FP_Copy_C",
+    "tint_color": "<Struct 'LinearColor' (0x0000024EF14FA988) {r: 1.000000, g: 1.000000, b: 1.000000, a: 1.000000}>",
+    "capsule_radius": "39.0",
+    "capsule_half_height": "90.0",
+    "eye_height": "156.0"
+  },
+  "reference_fbx": "ArtSource\\character\\_reference\\farmer_a_existing_rig.fbx",
+  "sha256": "922ccbcafb82bd8f46b418279c82aa1753e66c434176ef974be1536516c6d3e0",
+  "source": "Existing project Epic mannequin. Rig reference only; not CL9 original model delivery or a completed farmer model.",
+  "next": "Import this actual exported rig in an isolated Blender scene; preserve bone names, hierarchy and reference transforms before authoring replacement workwear/body and first-person arms."
+}

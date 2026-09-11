@@ -1,0 +1,84 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "pad.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_TruckPad_Steel": {
+      "vertex_color": false,
+      "base_color": [
+        0.045,
+        0.057,
+        0.061,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.5
+    },
+    "M_CL9_TruckPad_Green": {
+      "vertex_color": false,
+      "base_color": [
+        0.042,
+        0.14,
+        0.09,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.1
+    },
+    "M_CL9_TruckPad_Mark": {
+      "vertex_color": false,
+      "base_color": [
+        0.64,
+        0.56,
+        0.34,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.1
+    }
+  },
+  "assets": {
+    "truck_pad": {
+      "object": "SM_TruckPad_A",
+      "dimensions_cm": [
+        400.0,
+        400.0,
+        20.000001788139343
+      ],
+      "triangles": 784,
+      "vertices": 504,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_TruckPad_Steel",
+        "M_CL9_TruckPad_Green",
+        "M_CL9_TruckPad_Mark"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "c00b86792c6a44bd1b7228264f3d8ad18ea05615e5d17658fe93e6dec2bd9afc",
+      "anchors_cm": {
+        "StandingTop": [
+          0.0,
+          0.0,
+          20.0
+        ],
+        "HealZoneCenter": [
+          0.0,
+          0.0,
+          120.00000762939453
+        ]
+      },
+      "rig": "N/A fixed recovery platform",
+      "top_height_cm": 20,
+      "unmarked_deck_height_cm": 19.9,
+      "surface_collision_gap_cm": 0.1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        10.000000953674316
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

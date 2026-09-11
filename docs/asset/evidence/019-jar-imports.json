@@ -1,0 +1,36 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:47:52.287880+00:00",
+  "assets": [
+    {
+      "id": "return_jar",
+      "path": "/Game/CL9Art/Maps/ReturnJar/SM_ReturnJar_A.SM_ReturnJar_A",
+      "dimensions_cm": [
+        94.4000015258789,
+        99.9408950805664,
+        100.0
+      ],
+      "max_dimension_error_cm": 9.5367431640625e-07,
+      "source_sha256": "df49182053c04a60b2a4959904e1f349e703e88295568f2c1963d51dd0f78f65",
+      "lod_count": 3,
+      "convex_collision_hulls": 17,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        50.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/ReturnJar/M_CL9_ReturnJar_Clay.M_CL9_ReturnJar_Clay",
+        "/Game/CL9Art/Maps/ReturnJar/M_CL9_ReturnJar_Glaze.M_CL9_ReturnJar_Glaze",
+        "/Game/CL9Art/Maps/ReturnJar/M_CL9_ReturnJar_Mark.M_CL9_ReturnJar_Mark"
+      ],
+      "sphere_radius_cm": 61.72875974011448,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

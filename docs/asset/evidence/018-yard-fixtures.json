@@ -1,0 +1,142 @@
+{
+  "before_actor_names": [
+    "BP_CL9Item_C_0",
+    "BP_CL9Item_C_1",
+    "DirectionalLight_0",
+    "PlayerStart_0",
+    "PlayerStart_1",
+    "PointLight_0",
+    "PointLight_1",
+    "PointLight_2",
+    "StaticMeshActor_0",
+    "StaticMeshActor_1",
+    "StaticMeshActor_10",
+    "StaticMeshActor_11",
+    "StaticMeshActor_12",
+    "StaticMeshActor_13",
+    "StaticMeshActor_14",
+    "StaticMeshActor_15",
+    "StaticMeshActor_16",
+    "StaticMeshActor_17",
+    "StaticMeshActor_18",
+    "StaticMeshActor_19",
+    "StaticMeshActor_2",
+    "StaticMeshActor_20",
+    "StaticMeshActor_3",
+    "StaticMeshActor_4",
+    "StaticMeshActor_5",
+    "StaticMeshActor_6",
+    "StaticMeshActor_7",
+    "StaticMeshActor_8",
+    "StaticMeshActor_9"
+  ],
+  "fixtures": [
+    {
+      "label": "QA018_GroundNatural",
+      "name": "StaticMeshActor_21",
+      "position": [
+        20000,
+        0,
+        1000
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_500_A.SM_Henhouse_YardGround_500_A"
+    },
+    {
+      "label": "QA018_GroundNormalized",
+      "name": "StaticMeshActor_22",
+      "position": [
+        20500,
+        0,
+        1015
+      ],
+      "yaw": 0,
+      "scale": [
+        5,
+        5,
+        0.3
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_Stretch100_A.SM_Henhouse_YardGround_Stretch100_A"
+    },
+    {
+      "label": "QA018_Exit",
+      "name": "StaticMeshActor_23",
+      "position": [
+        22000,
+        0,
+        1200
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/SignExit/SM_Henhouse_Sign_Exit_A.SM_Henhouse_Sign_Exit_A"
+    },
+    {
+      "label": "QA018_Feed",
+      "name": "StaticMeshActor_24",
+      "position": [
+        22100,
+        0,
+        1200
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/SignFeed/SM_Henhouse_Sign_Feed_A.SM_Henhouse_Sign_Feed_A"
+    },
+    {
+      "label": "QA018_Kitchen",
+      "name": "StaticMeshActor_25",
+      "position": [
+        22200,
+        0,
+        1200
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/SignKitchen/SM_Henhouse_Sign_Kitchen_A.SM_Henhouse_Sign_Kitchen_A"
+    },
+    {
+      "label": "QA018_Coop",
+      "name": "StaticMeshActor_26",
+      "position": [
+        22300,
+        0,
+        1200
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/SignCoop/SM_Henhouse_Sign_Coop_A.SM_Henhouse_Sign_Coop_A"
+    },
+    {
+      "label": "QA018_DropProbe",
+      "name": "StaticMeshActor_27",
+      "position": [
+        20000,
+        0,
+        1150
+      ],
+      "role": "10cm radius physics probe"
+    }
+  ],
+  "cleaned_up": true
+}

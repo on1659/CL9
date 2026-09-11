@@ -1,0 +1,82 @@
+{
+  "before_actor_names": [
+    "BP_CL9Item_C_0",
+    "BP_CL9Item_C_1",
+    "DirectionalLight_0",
+    "PlayerStart_0",
+    "PlayerStart_1",
+    "PointLight_0",
+    "PointLight_1",
+    "PointLight_2",
+    "StaticMeshActor_0",
+    "StaticMeshActor_1",
+    "StaticMeshActor_10",
+    "StaticMeshActor_11",
+    "StaticMeshActor_12",
+    "StaticMeshActor_13",
+    "StaticMeshActor_14",
+    "StaticMeshActor_15",
+    "StaticMeshActor_16",
+    "StaticMeshActor_17",
+    "StaticMeshActor_18",
+    "StaticMeshActor_19",
+    "StaticMeshActor_2",
+    "StaticMeshActor_20",
+    "StaticMeshActor_3",
+    "StaticMeshActor_4",
+    "StaticMeshActor_5",
+    "StaticMeshActor_6",
+    "StaticMeshActor_7",
+    "StaticMeshActor_8",
+    "StaticMeshActor_9"
+  ],
+  "fixtures": [
+    {
+      "label": "QA021_SupportFloor",
+      "name": "StaticMeshActor_21",
+      "position": [
+        20000,
+        0,
+        970
+      ],
+      "yaw": 0,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "mesh": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_500_A.SM_Henhouse_YardGround_500_A"
+    },
+    {
+      "label": "QA021_Counter",
+      "name": "BP_CL9Counter_C_0",
+      "position": [
+        20000.0,
+        0.0,
+        1000.0
+      ],
+      "class": "/Game/Items/BP_CL9Counter.BP_CL9Counter_C"
+    },
+    {
+      "label": "QA021_Egg",
+      "name": "BP_CL9Item_C_2",
+      "position": [
+        20120.0,
+        0.0,
+        1035.0
+      ],
+      "class": "/Game/Items/BP_CL9Item.BP_CL9Item_C"
+    },
+    {
+      "label": "QA021_DropProbe",
+      "name": "StaticMeshActor_22",
+      "position": [
+        20000.0,
+        0.0,
+        1150.0
+      ],
+      "class": "/Script/Engine.StaticMeshActor"
+    }
+  ],
+  "cleaned_up": true
+}

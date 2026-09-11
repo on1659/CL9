@@ -1,0 +1,71 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "wall250.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_wall250_Wood": {
+      "vertex_color": false,
+      "base_color": [
+        0.19,
+        0.115,
+        0.066,
+        1
+      ],
+      "roughness": 0.8,
+      "metallic": 0
+    },
+    "M_CL9_wall250_DarkTimber": {
+      "vertex_color": false,
+      "base_color": [
+        0.071,
+        0.048,
+        0.03,
+        1
+      ],
+      "roughness": 0.8,
+      "metallic": 0
+    }
+  },
+  "assets": {
+    "henhouse_wall250": {
+      "object": "SM_Henhouse_Wall_250_A",
+      "dimensions_cm": [
+        250.0,
+        40.00000059604645,
+        400.0
+      ],
+      "triangles": 792,
+      "vertices": 432,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_wall250_Wood",
+        "M_CL9_wall250_DarkTimber"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "5830aa690754f3ff174e69234763c7cc935f79ad0b6bbd2fe7122bdd31daa8eb",
+      "anchors_cm": {
+        "Left": [
+          -125.0,
+          0.0,
+          0.0
+        ],
+        "Right": [
+          125.0,
+          0.0,
+          0.0
+        ]
+      },
+      "rig": "N/A static wall",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        200.0
+      ],
+      "collision_hulls": 1
+    }
+  },
+  "intersection_fit": true,
+  "top_fit": true
+}

@@ -1,0 +1,52 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "tables": {
+    "DA_PieceTable": [
+      {
+        "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_3",
+        "alias": "door",
+        "variants": [
+          {
+            "path": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_A.SM_Door_A",
+            "dimensions_cm": [
+              131.98728942871094,
+              31.01846694946289,
+              256.4242858886719
+            ]
+          },
+          {
+            "path": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_C.SM_Door_C",
+            "dimensions_cm": [
+              109.771240234375,
+              34.00996017456055,
+              258.56591796875
+            ]
+          },
+          {
+            "path": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_D.SM_Door_D",
+            "dimensions_cm": [
+              131.9873046875,
+              31.01846694946289,
+              282.6295471191406
+            ]
+          },
+          {
+            "path": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_E.SM_Door_E",
+            "dimensions_cm": [
+              109.771240234375,
+              34.00996017456055,
+              316.03857421875
+            ]
+          }
+        ]
+      }
+    ],
+    "DA_SegKindTable": [
+      {
+        "path": "/Game/Data/DA_SegKindTable.DA_SegKindTable:CL9SegKindDef_8",
+        "alias": "flapIn",
+        "height": 630.0
+      }
+    ]
+  }
+}

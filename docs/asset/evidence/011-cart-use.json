@@ -1,0 +1,249 @@
+{
+  "status": "passed_local_load_unload_tow_response",
+  "utc": "2026-09-10T16:54:52.379217+00:00",
+  "world_count": 1,
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "level": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+  "elapsed": 16.875,
+  "step": 13,
+  "events": [
+    {
+      "event": "egg_held",
+      "hand": "egg",
+      "cart_location": [
+        700.0,
+        450.0,
+        60.69696991668196
+      ],
+      "pawn_location": [
+        255.0,
+        -200.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 29.348370253682226,
+      "cart_sphere_bottom_z": 0.6969699166819581,
+      "egg_parent": "BP_CL9Character_C_0",
+      "egg_bottom_z": 100.6500072479248,
+      "deck_z": 54.7484709565689,
+      "egg_to_deck_gap_cm": 45.9015362913559,
+      "egg_relative_location": [
+        75.0,
+        0.0,
+        30.0
+      ]
+    },
+    {
+      "event": "loaded",
+      "hand": "None",
+      "cart_location": [
+        700.0,
+        450.0,
+        60.69696991668196
+      ],
+      "pawn_location": [
+        655.0,
+        450.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 29.348370253682226,
+      "cart_sphere_bottom_z": 0.6969699166819581,
+      "egg_parent": "BP_CL9Cart_C_0",
+      "egg_bottom_z": 120.69697087035627,
+      "deck_z": 54.7484709565689,
+      "egg_to_deck_gap_cm": 65.94849991378737,
+      "egg_relative_location": [
+        -23.0,
+        -26.0,
+        81.0
+      ]
+    },
+    {
+      "event": "unloaded",
+      "hand": "egg",
+      "cart_location": [
+        700.0,
+        450.0,
+        60.69696991668196
+      ],
+      "pawn_location": [
+        632.0,
+        424.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 29.348370253682226,
+      "cart_sphere_bottom_z": 0.6969699166819581,
+      "egg_parent": "BP_CL9Character_C_0",
+      "egg_bottom_z": 100.6500072479248,
+      "deck_z": 54.7484709565689,
+      "egg_to_deck_gap_cm": 45.9015362913559,
+      "egg_relative_location": [
+        75.0,
+        0.0,
+        30.0
+      ]
+    },
+    {
+      "event": "tow_connected",
+      "hand": "None",
+      "cart_location": [
+        700.0,
+        450.0,
+        60.69696991668196
+      ],
+      "pawn_location": [
+        655.0,
+        450.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 29.348370253682226,
+      "cart_sphere_bottom_z": 0.6969699166819581,
+      "egg_parent": null,
+      "egg_bottom_z": -0.49999776241985927,
+      "deck_z": 54.7484709565689,
+      "egg_to_deck_gap_cm": -55.24846871898876,
+      "egg_relative_location": [
+        557.0,
+        424.0,
+        20.50000009181293
+      ]
+    },
+    {
+      "event": "tow_followed",
+      "hand": "None",
+      "cart_location": [
+        656.624297609643,
+        629.7861627467319,
+        117.20427624282001
+      ],
+      "pawn_location": [
+        655.0,
+        750.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 85.85567657982028,
+      "cart_sphere_bottom_z": 57.204276242820015,
+      "egg_parent": null,
+      "egg_bottom_z": -0.49999776241985927,
+      "deck_z": 111.25577728270696,
+      "egg_to_deck_gap_cm": -111.75577504512682,
+      "egg_relative_location": [
+        557.0,
+        424.0,
+        20.50000009181293
+      ]
+    },
+    {
+      "event": "tow_released",
+      "hand": "None",
+      "cart_location": [
+        656.60774987327,
+        631.0108563468696,
+        117.20427624282001
+      ],
+      "pawn_location": [
+        655.0,
+        750.0,
+        91.65000629425049
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 85.85567657982028,
+      "cart_sphere_bottom_z": 57.204276242820015,
+      "egg_parent": null,
+      "egg_bottom_z": -0.49999776241985927,
+      "deck_z": 111.25577728270696,
+      "egg_to_deck_gap_cm": -111.75577504512682,
+      "egg_relative_location": [
+        557.0,
+        424.0,
+        20.50000009181293
+      ]
+    },
+    {
+      "event": "released_stays",
+      "hand": "None",
+      "cart_location": [
+        656.60774987327,
+        631.0108563468696,
+        117.20427624282001
+      ],
+      "pawn_location": [
+        610.875,
+        950.0,
+        91.65000247955322
+      ],
+      "mesh": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "scale": [
+        0.5948501229286194,
+        0.5948501229286194,
+        0.5948501229286194
+      ],
+      "cart_visual_bottom_z": 85.85567657982028,
+      "cart_sphere_bottom_z": 57.204276242820015,
+      "egg_parent": null,
+      "egg_bottom_z": -0.49999776241985927,
+      "deck_z": 111.25577728270696,
+      "egg_to_deck_gap_cm": -111.75577504512682,
+      "egg_relative_location": [
+        557.0,
+        424.0,
+        20.50000009181293
+      ]
+    }
+  ],
+  "scope": "Real pickup/load/unload/interact RPC; pawn teleport setup tests towing response, not walking inputs/2-player.",
+  "setup_cart_original_position": [
+    700.0,
+    450.0,
+    40.0
+  ],
+  "setup_cart_corrected_position": [
+    700.0,
+    450.0,
+    62.0
+  ],
+  "before_pull": [
+    700.0,
+    450.0,
+    60.69696991668196
+  ],
+  "released_at": [
+    656.60774987327,
+    631.0108563468696,
+    117.20427624282001
+  ]
+}

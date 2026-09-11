@@ -1,0 +1,90 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "ground.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Yard_Soil": {
+      "vertex_color": true,
+      "roughness": 0.98,
+      "metallic": 0
+    }
+  },
+  "assets": {
+    "henhouse_ground": {
+      "object": "SM_Henhouse_YardGround_500_A",
+      "dimensions_cm": [
+        500.0,
+        500.0,
+        30.000001192092896
+      ],
+      "triangles": 1180,
+      "vertices": 662,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Yard_Soil"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "bb5e890942c05676b7b2cc1dfc45de28874ed886f278081ea14f5f13b06bf931",
+      "anchors_cm": {
+        "Top": [
+          0.0,
+          0.0,
+          30.000001907348633
+        ],
+        "Left": [
+          -250.0,
+          0.0,
+          30.000001907348633
+        ],
+        "Right": [
+          250.0,
+          0.0,
+          30.000001907348633
+        ]
+      },
+      "rig": "N/A static terrain tile",
+      "soil_surface_cm": 29.5,
+      "collision_top_cm": 30,
+      "max_soil_collision_gap_cm": 0.5,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        15.000000953674316
+      ],
+      "collision_hulls": 1
+    },
+    "henhouse_ground_stretch0": {
+      "object": "SM_Henhouse_YardGround_Stretch100_A",
+      "dimensions_cm": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "triangles": 1180,
+      "vertices": 662,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Yard_Soil"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "06be0e913474613d99937554f7a13f3d9bf5fe6888e30bea4beb6389245d6c3a",
+      "anchors_cm": {},
+      "rig": "N/A static terrain tile",
+      "soil_surface_cm": 29.5,
+      "collision_top_cm": 30,
+      "max_soil_collision_gap_cm": 0.5,
+      "bounds_center_cm": [
+        0,
+        0,
+        0
+      ],
+      "collision_hulls": 1,
+      "pivot_override": "bounds center",
+      "normalized_yaw_degrees": 0.0,
+      "consumer": "Centered 100cm bounds; restore with placement Size/100"
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "cookware.blend",
+  "axis": "+X forward, opening +Z",
+  "pivot": "bounds center",
+  "rig": "N/A static carried props",
+  "materials": {
+    "M_CL9_Cookware_Surface": {
+      "vertex_color": true,
+      "roughness": 0.6,
+      "metallic": 0.25
+    },
+    "M_CL9_Cookware_Grip": {
+      "vertex_color": true,
+      "roughness": 0.84,
+      "metallic": 0.02
+    }
+  },
+  "assets": {
+    "frying_pan": {
+      "object": "SM_FryingPan_A",
+      "dimensions_cm": [
+        60.19999980926514,
+        34.99999940395355,
+        8.049999922513962
+      ],
+      "triangles": 1120,
+      "vertices": 568,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Cookware_Surface",
+        "M_CL9_Cookware_Grip"
+      ],
+      "runtime_radius_cm": 30,
+      "grip_reference_cm": [
+        -16.200000762939453,
+        0.0,
+        2.674999713897705
+      ],
+      "closed_surfaces": true,
+      "fbx_sha256": "60012a368f0ecd2ac47f99310c4d461070091f4a5e5852b62596a7a57df961db"
+    },
+    "pot": {
+      "object": "SM_Pot_A",
+      "dimensions_cm": [
+        36.800000071525574,
+        53.00000309944153,
+        25.999999046325684
+      ],
+      "triangles": 1804,
+      "vertices": 912,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Cookware_Surface",
+        "M_CL9_Cookware_Grip"
+      ],
+      "runtime_radius_cm": null,
+      "grip_reference_cm": [
+        0.0,
+        -25.0,
+        7.100000381469727
+      ],
+      "closed_surfaces": true,
+      "fbx_sha256": "949d692705b7c6593f27b8acaa6b075440ca287b3c4bc1ea40257c2d62873619"
+    }
+  },
+  "handle_fit_revision": 1,
+  "inner_wall_fit": true
+}

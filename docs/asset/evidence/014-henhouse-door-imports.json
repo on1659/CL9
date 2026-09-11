@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:12:13.810139+00:00",
+  "assets": [
+    {
+      "id": "henhouse_door",
+      "path": "/Game/CL9Art/Maps/HenhouseDoor/SM_Henhouse_Door_A.SM_Henhouse_Door_A",
+      "dimensions_cm": [
+        131.987289966349,
+        15.999998092651367,
+        256.4242858886719
+      ],
+      "max_dimension_error_cm": 4.5299530029296875e-06,
+      "source_sha256": "cd8ea8a6abfda5f0104d6539807be81d7b8306a820bce6bc007f3be7b30f035d",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        65.99364444553643,
+        1.621246337890625e-05,
+        128.21214294433594
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseDoor/M_CL9_Door_PaintedWood.M_CL9_Door_PaintedWood",
+        "/Game/CL9Art/Maps/HenhouseDoor/M_CL9_Door_Hardware.M_CL9_Door_Hardware"
+      ],
+      "sphere_radius_cm": 144.10031304559672,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

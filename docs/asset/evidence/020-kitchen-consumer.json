@@ -1,0 +1,69 @@
+[
+  {
+    "name": "BP_CL9Kitchen_C_0",
+    "class": "/Game/Items/BP_CL9Kitchen.BP_CL9Kitchen_C",
+    "location": [
+      -600.0,
+      -350.0,
+      45.0
+    ],
+    "scale": [
+      3.0,
+      1.2,
+      0.9
+    ],
+    "components": [
+      {
+        "name": "Mesh",
+        "class": "StaticMeshComponent",
+        "relative_location": [
+          -600.0,
+          -350.0,
+          45.0
+        ],
+        "relative_scale": [
+          3.0,
+          1.2,
+          0.9
+        ],
+        "bounds_center": [
+          -600.0,
+          -350.0,
+          45.0
+        ],
+        "dimensions": [
+          300.0,
+          120.0,
+          90.0
+        ],
+        "collision": "BlockAllDynamic",
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      },
+      {
+        "name": "HeatZone",
+        "class": "BoxComponent",
+        "relative_location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "relative_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "bounds_center": [
+          -600.0,
+          -350.0,
+          45.0
+        ],
+        "dimensions": [
+          64.0,
+          64.0,
+          64.0
+        ],
+        "collision": "NoCollision"
+      }
+    ]
+  }
+]

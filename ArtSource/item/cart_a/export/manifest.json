@@ -1,0 +1,77 @@
+{
+  "source": "Original CL9 farm cart geometry through Blender MCP",
+  "source_blend": "cart_a.blend",
+  "pivot": "bounds center",
+  "axis": "+X handle / +Z up",
+  "materials": {
+    "M_CL9_Cart_Frame": {
+      "vertex_color": true,
+      "roughness": 0.77,
+      "metallic": 0.18
+    },
+    "M_CL9_Cart_Rubber": {
+      "vertex_color": true,
+      "roughness": 0.9,
+      "metallic": 0.01
+    }
+  },
+  "assets": {
+    "cart": {
+      "object": "SM_Cart_A",
+      "dimensions_cm": [
+        153.40001583099365,
+        115.20000696182251,
+        105.39999008178711
+      ],
+      "triangles": 5532,
+      "vertices": 2968,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Cart_Frame",
+        "M_CL9_Cart_Rubber"
+      ],
+      "runtime_radius_cm": 60,
+      "closed_surfaces": true,
+      "fbx_sha256": "24af6e9a8eb0574ce3d057ba017793debbb0ce276afd67326bf5b6e809d15612",
+      "anchors_cm": {
+        "CargoFloor": [
+          -18.00000762939453,
+          0.0,
+          -9.999996185302734
+        ],
+        "TowGrip": [
+          72.99999237060547,
+          0.0,
+          49.0
+        ],
+        "Wheel_0": [
+          -58.000003814697266,
+          -49.0,
+          -33.999996185302734
+        ],
+        "Wheel_1": [
+          -58.000003814697266,
+          49.0,
+          -33.999996185302734
+        ],
+        "Wheel_2": [
+          21.9999942779541,
+          -49.0,
+          -33.999996185302734
+        ],
+        "Wheel_3": [
+          21.9999942779541,
+          49.0,
+          -33.999996185302734
+        ]
+      },
+      "cargo_clear_area_cm": [
+        102,
+        70
+      ],
+      "wheel_radius_cm": 18.7,
+      "wheel_rotation_axis": "Y",
+      "animation": "Current UE consumer is StaticMesh; wheel rotation and steering have no consumer."
+    }
+  }
+}

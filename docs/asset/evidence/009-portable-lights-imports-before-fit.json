@@ -1,0 +1,66 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:30:53.380605+00:00",
+  "assets": [
+    {
+      "id": "flashlight",
+      "path": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+      "dimensions_cm": [
+        26.400001525878906,
+        10.40000057220459,
+        10.40000057220459
+      ],
+      "max_dimension_error_cm": 1.6689300537109375e-06,
+      "source_sha256": "53b9f66411a7f493a3407bdd06afcc4d2558e3cfb1a3d14bc40f10a3d7185ef1",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/PortableLights/M_CL9_PortableLight_Body.M_CL9_PortableLight_Body",
+        "/Game/CL9Art/Items/PortableLights/M_CL9_PortableLight_Lens.M_CL9_PortableLight_Lens"
+      ],
+      "sphere_radius_cm": 13.708757026382433,
+      "radius12_scale": 0.8753528840657152,
+      "runtime_dimensions_cm": [
+        23.109317475017384,
+        9.103670495164376,
+        9.103670495164376
+      ],
+      "runtime_lens_center_cm": [
+        11.554657902707127,
+        -0.0,
+        0.0
+      ],
+      "predicted_sphere_bottom_gap_cm": 7.448164752417812,
+      "actual_wear_toggle_qa": "not tested"
+    },
+    {
+      "id": "headlamp",
+      "path": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+      "dimensions_cm": [
+        30.500000953674316,
+        24.40000057220459,
+        11.749999523162842
+      ],
+      "max_dimension_error_cm": 2.980232238769531e-07,
+      "source_sha256": "174b770d1ad987f9b96feb5237c8f5e016160fb3714530277f711d78378053d5",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/PortableLights/M_CL9_PortableLight_Body.M_CL9_PortableLight_Body",
+        "/Game/CL9Art/Items/PortableLights/M_CL9_PortableLight_Lens.M_CL9_PortableLight_Lens"
+      ],
+      "sphere_radius_cm": 16.040983019203246,
+      "radius12_scale": 0.7480838291290729,
+      "runtime_dimensions_cm": [
+        22.81655750186506,
+        18.25324585880638,
+        8.78998463555244
+      ],
+      "runtime_lens_center_cm": [
+        11.408278394218362,
+        -0.0,
+        -1.2530402889412386
+      ],
+      "predicted_sphere_bottom_gap_cm": 7.60500768222378,
+      "actual_wear_toggle_qa": "not tested"
+    }
+  ]
+}

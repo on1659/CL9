@@ -1,0 +1,50 @@
+{
+  "utc": "2026-09-10T18:31:56.904386+00:00",
+  "assets": [
+    {
+      "part": "body",
+      "source_sha256": "4253881ebf85ef5ac2696d9dc16ad31bcfbb269b6a952609330f85da590b84fc",
+      "dimensions_cm": [
+        630.0000190734863,
+        353.50000858306885,
+        325.0999927520752
+      ],
+      "triangles": 5128,
+      "vertices": 2850,
+      "uv_layers": 1,
+      "materials": 4,
+      "closed_manifold_islands": true,
+      "collision_hulls": 24,
+      "ue_hash_matches": true,
+      "preview_views": [
+        "neutral",
+        "night",
+        "flashlight"
+      ]
+    },
+    {
+      "part": "steps",
+      "source_sha256": "402a07489a12d0c9472935c1945c1d2627d90774eabee47f56ab1016eec366c9",
+      "dimensions_cm": [
+        120.00000476837158,
+        113.99999856948853,
+        64.000004529953
+      ],
+      "triangles": 224,
+      "vertices": 128,
+      "uv_layers": 1,
+      "materials": 2,
+      "closed_manifold_islands": true,
+      "collision_hulls": 4,
+      "ue_hash_matches": true,
+      "preview_views": [
+        "neutral",
+        "night",
+        "flashlight"
+      ]
+    }
+  ],
+  "rear_fit_view": "ArtSource/map/food_truck/body/preview/rear_fit.png",
+  "post_walk_change": "Non-collision rear lamps relocated onto wall posts; coincident grille vertices welded without moving surfaces. Final bounds/hull count/import hash/manifold revalidated; movement collision unchanged.",
+  "remaining": "Permanent base BP hooks, 2-player representation, in-game lighting and LOD/performance remain unverified."
+}

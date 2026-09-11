@@ -94,6 +94,9 @@ void ACL9Kitchen::TickCooking(float Now) {
 - **진행도는 아이템에 실려 복제된다** — `ACL9Item`의 `GetCookProgress()`(0~1) · `IsOnHeat()` · `IsNextBurnt()` ·
   `GetCookPhase()`(`ECL9CookPhase` None/Cooking/Burning). 복제 실체는 `uint8` 하나와 enum 하나로, 표현(게이지) 전용이다.
   HUD의 요리 게이지가 이걸 읽는다(UI 세션).
+- **"무엇을 익히는 중인가"는 조리대에 실려 복제된다** — `ACL9Kitchen::GetCookingItem()`. HUD가 익히는 중인
+  조리대마다 그 꼭대기(`GetTopLocation()`) 위에 게이지를 띄우는데, 클라도 조리대↔재료 짝을 알아야 해서다
+  (2026-09-10 — ui.md 조리 게이지).
 - `BurnWarnTime` 전 "연기" 로그만 있다 — **연기 VFX·소리는 미구현** (표현 계층, 에셋 없음).
 - **불(버너)은 아직 없다** — 조리대는 늘 뜨겁다.
 

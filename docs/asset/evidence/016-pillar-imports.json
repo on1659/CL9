@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:21:52.045876+00:00",
+  "assets": [
+    {
+      "id": "henhouse_pillar",
+      "path": "/Game/CL9Art/Maps/HenhouseStructure/Pillar/SM_Henhouse_Pillar_400_A.SM_Henhouse_Pillar_400_A",
+      "dimensions_cm": [
+        28.000003814697266,
+        28.000003814697266,
+        400.0
+      ],
+      "max_dimension_error_cm": 3.6954879760742188e-06,
+      "source_sha256": "5016d970f2615e4871c23a83f1e0c7923df584c4e7ae3fdc137a259d1808dbf6",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        200.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseStructure/Pillar/M_CL9_Pillar_Wood.M_CL9_Pillar_Wood",
+        "/Game/CL9Art/Maps/HenhouseStructure/Pillar/M_CL9_Pillar_Metal.M_CL9_Pillar_Metal"
+      ],
+      "sphere_radius_cm": 200.9499439766211,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

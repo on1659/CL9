@@ -1,0 +1,69 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:17:22.916903+00:00",
+  "creatures": [
+    {
+      "species": "Sheep",
+      "mesh": "/Game/CL9Art/Monsters/SheepA/SK_Sheep_A.SK_Sheep_A",
+      "skeleton": "/Game/CL9Art/Monsters/SheepA/SK_Sheep_A_Skeleton.SK_Sheep_A_Skeleton",
+      "material": "/Game/CL9Art/Monsters/SheepA/M_CL9_Sheep_Vertex.M_CL9_Sheep_Vertex",
+      "has_vertex_colors": true,
+      "dimensions_cm": [
+        164.90222930908203,
+        90.16390991210938,
+        116.40000200271606
+      ],
+      "dimension_error_cm": 7.152557373046875e-06,
+      "clips": [
+        {
+          "name": "Idle",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_Idle.AN_Sheep_Idle",
+          "duration_seconds": 2.0,
+          "source_sha256": "c42c9351637626e2e47471e096b1fb25f4f581dc4c2e0c9cd0aa12fb3cafb561"
+        },
+        {
+          "name": "Walk",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_Walk.AN_Sheep_Walk",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "f0de4b1bc1f158bc5a5cdb4b4da9582062cdfaf9c1d2abe23fdb89b470951bf3"
+        },
+        {
+          "name": "Run",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_Run.AN_Sheep_Run",
+          "duration_seconds": 0.5,
+          "source_sha256": "c055d2486713e68bea7746f0807ad3f40f8a7cfd3f91c747393dd1e724db3cfa"
+        },
+        {
+          "name": "LookAround",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_LookAround.AN_Sheep_LookAround",
+          "duration_seconds": 2.0,
+          "source_sha256": "b8ebb93d853b33cd943fa57359d5694d15672968a424cb4057cb9420a3857114"
+        },
+        {
+          "name": "HitReact",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_HitReact.AN_Sheep_HitReact",
+          "duration_seconds": 0.30000001192092896,
+          "source_sha256": "bae75cc3d01b4889703230e2e6a7186b249b975c613a90eb91a13ea1937b9880"
+        },
+        {
+          "name": "WakeTelegraph",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_WakeTelegraph.AN_Sheep_WakeTelegraph",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "5e442370d2b7d4db4dc486c0498de40b411641e529e75086856d474340b3dc8d"
+        },
+        {
+          "name": "Catch",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_Catch.AN_Sheep_Catch",
+          "duration_seconds": 0.6000000238418579,
+          "source_sha256": "5096d623576949593cd102b1203e5fd60a289ac3bf4bd4bd5d41fa8e1f064dd9"
+        },
+        {
+          "name": "Death",
+          "path": "/Game/CL9Art/Monsters/SheepA/AN_Sheep_Death.AN_Sheep_Death",
+          "duration_seconds": 1.2000000476837158,
+          "source_sha256": "be5b376b4968a4ca55f6033aa62c928acfa2b492a8607e92f4c2c1a513b610fa"
+        }
+      ]
+    }
+  ]
+}

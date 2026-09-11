@@ -1,0 +1,62 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:37:57.585682+00:00",
+  "assets": [
+    {
+      "id": "henhouse_ground",
+      "path": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_500_A.SM_Henhouse_YardGround_500_A",
+      "dimensions_cm": [
+        500.0000915527344,
+        500.0000915527344,
+        30.000001907348633
+      ],
+      "max_dimension_error_cm": 9.1552734375e-05,
+      "source_sha256": "bb5e890942c05676b7b2cc1dfc45de28874ed886f278081ea14f5f13b06bf931",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        15.000000953674316
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseYard/Ground/M_CL9_Yard_Soil.M_CL9_Yard_Soil"
+      ],
+      "sphere_radius_cm": 353.8714456248405,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    },
+    {
+      "id": "henhouse_ground_stretch0",
+      "path": "/Game/CL9Art/Maps/HenhouseYard/Ground/SM_Henhouse_YardGround_Stretch100_A.SM_Henhouse_YardGround_Stretch100_A",
+      "dimensions_cm": [
+        100.00001525878906,
+        100.00001525878906,
+        100.0
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "source_sha256": "06be0e913474613d99937554f7a13f3d9bf5fe6888e30bea4beb6389245d6c3a",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseYard/Ground/M_CL9_Yard_Soil.M_CL9_Yard_Soil"
+      ],
+      "sphere_radius_cm": 86.60254037844453,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

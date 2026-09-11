@@ -1,0 +1,82 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "delivery_counter.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Counter_Enamel": {
+      "vertex_color": false,
+      "base_color": [
+        0.36,
+        0.32,
+        0.23,
+        1
+      ],
+      "roughness": 0.76,
+      "metallic": 0.12
+    },
+    "M_CL9_Counter_Steel": {
+      "vertex_color": false,
+      "base_color": [
+        0.043,
+        0.053,
+        0.056,
+        1
+      ],
+      "roughness": 0.76,
+      "metallic": 0.6
+    },
+    "M_CL9_Counter_Blue": {
+      "vertex_color": false,
+      "base_color": [
+        0.044,
+        0.105,
+        0.155,
+        1
+      ],
+      "roughness": 0.76,
+      "metallic": 0.12
+    }
+  },
+  "assets": {
+    "delivery_counter": {
+      "object": "SM_DeliveryCounter_A",
+      "dimensions_cm": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "triangles": 1552,
+      "vertices": 854,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Counter_Steel",
+        "M_CL9_Counter_Enamel",
+        "M_CL9_Counter_Blue"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "19e58b2aae2e83fc92f8b74d6d0ae98a0572eaeaf91394ab8ad582c67d8f7ba9",
+      "anchors_cm": {
+        "ReceivingTop": [
+          0.0,
+          0.0,
+          100.0
+        ],
+        "ServiceFront": [
+          50.0,
+          0.0,
+          55.0
+        ]
+      },
+      "rig": "N/A fixed counter; stock is data, no moving drawer",
+      "top_height_cm": 100,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        50.0
+      ],
+      "collision_hulls": 6
+    }
+  }
+}

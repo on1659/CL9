@@ -1,0 +1,42 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:00:36.161358+00:00",
+  "assets": [
+    {
+      "id": "standing_lamp",
+      "path": "/Game/CL9Art/Items/StandingLampA/SM_StandingLamp_A.SM_StandingLamp_A",
+      "dimensions_cm": [
+        86.95446395874023,
+        75.59760284423828,
+        179.60000610351562
+      ],
+      "max_dimension_error_cm": 6.67572021484375e-06,
+      "source_sha256": "f4dc56bd1a924de7740b6f60880f76a6f941e4ca690a005221c62bb8f0397b29",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/StandingLampA/M_CL9_StandingLamp_Frame.M_CL9_StandingLamp_Frame",
+        "/Game/CL9Art/Items/StandingLampA/M_CL9_StandingLamp_Diffuser.M_CL9_StandingLamp_Diffuser"
+      ],
+      "sphere_radius_cm": 105.01273489972363,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ],
+  "material_states": [
+    {
+      "state": "Off",
+      "path": "/Game/CL9Art/Items/StandingLampA/MI_StandingLamp_Off.MI_StandingLamp_Off",
+      "LightStrength": 0.0
+    },
+    {
+      "state": "On",
+      "path": "/Game/CL9Art/Items/StandingLampA/MI_StandingLamp_On.MI_StandingLamp_On",
+      "LightStrength": 4.0
+    }
+  ],
+  "gameplay_status": "No standing_lamp item/equipment runtime row. No gameplay QA claim."
+}

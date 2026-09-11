@@ -1,0 +1,76 @@
+{
+  "before_actor_names": [
+    "BP_CL9Item_C_0",
+    "BP_CL9Item_C_1",
+    "DirectionalLight_0",
+    "PlayerStart_0",
+    "PlayerStart_1",
+    "PointLight_0",
+    "PointLight_1",
+    "PointLight_2",
+    "StaticMeshActor_0",
+    "StaticMeshActor_1",
+    "StaticMeshActor_10",
+    "StaticMeshActor_11",
+    "StaticMeshActor_12",
+    "StaticMeshActor_13",
+    "StaticMeshActor_14",
+    "StaticMeshActor_15",
+    "StaticMeshActor_16",
+    "StaticMeshActor_17",
+    "StaticMeshActor_18",
+    "StaticMeshActor_19",
+    "StaticMeshActor_2",
+    "StaticMeshActor_20",
+    "StaticMeshActor_3",
+    "StaticMeshActor_4",
+    "StaticMeshActor_5",
+    "StaticMeshActor_6",
+    "StaticMeshActor_7",
+    "StaticMeshActor_8",
+    "StaticMeshActor_9"
+  ],
+  "fixtures": [
+    {
+      "label": "QA013_A",
+      "name": "StaticMeshActor_21",
+      "position": [
+        20000,
+        0,
+        1000
+      ],
+      "yaw": 0
+    },
+    {
+      "label": "QA013_B",
+      "name": "StaticMeshActor_22",
+      "position": [
+        20250,
+        0,
+        1000
+      ],
+      "yaw": 0
+    },
+    {
+      "label": "QA013_C",
+      "name": "StaticMeshActor_23",
+      "position": [
+        21000,
+        0,
+        1000
+      ],
+      "yaw": 90
+    },
+    {
+      "label": "QA013_D",
+      "name": "StaticMeshActor_24",
+      "position": [
+        22000,
+        0,
+        1000
+      ],
+      "yaw": 270
+    }
+  ],
+  "cleaned_up": true
+}

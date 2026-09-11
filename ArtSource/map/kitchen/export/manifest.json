@@ -1,0 +1,85 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "kitchen.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Kitchen_Enamel": {
+      "vertex_color": false,
+      "base_color": [
+        0.36,
+        0.32,
+        0.23,
+        1
+      ],
+      "roughness": 0.72,
+      "metallic": 0.12
+    },
+    "M_CL9_Kitchen_Steel": {
+      "vertex_color": false,
+      "base_color": [
+        0.043,
+        0.053,
+        0.056,
+        1
+      ],
+      "roughness": 0.62,
+      "metallic": 0.65
+    },
+    "M_CL9_Kitchen_Red": {
+      "vertex_color": false,
+      "base_color": [
+        0.19,
+        0.036,
+        0.023,
+        1
+      ],
+      "roughness": 0.62,
+      "metallic": 0.12
+    }
+  },
+  "assets": {
+    "kitchen": {
+      "object": "SM_Kitchen_A",
+      "dimensions_cm": [
+        120.00000476837158,
+        300.0,
+        89.99999761581421
+      ],
+      "triangles": 2608,
+      "vertices": 1424,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Kitchen_Steel",
+        "M_CL9_Kitchen_Enamel",
+        "M_CL9_Kitchen_Red"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "22a5520ead167c88a1e56cb2f6779a5bec252b75eb22ce779ba75b4c0cdce40b",
+      "anchors_cm": {
+        "CookTop": [
+          0.0,
+          0.0,
+          90.0
+        ],
+        "Front": [
+          60.000003933906555,
+          0.0,
+          50.0
+        ]
+      },
+      "rig": "N/A fixed griddle; no moving lid or heat controls",
+      "top_height_cm": 90,
+      "placement_yaw_for_legacy_extent": 90,
+      "heat_contract": "HeatZone derives XY bounds and topZ; no geometry above flat 90cm surface",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        45.0
+      ],
+      "collision_hulls": 8
+    }
+  },
+  "handle_fit": true
+}

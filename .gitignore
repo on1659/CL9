@@ -21,3 +21,7 @@ Desktop.ini
 
 # Vendor asset pack (Dreamscape Farmlands) — kept locally, not pushed (size)
 Content/DreamscapeSeries/
+
+# Blender backup files
+*.blend1
+__pycache__/

@@ -1,0 +1,299 @@
+{
+  "status": "passed_local_rpc_state_and_attachment",
+  "utc": "2026-09-10T16:37:32.046192+00:00",
+  "world_count": 1,
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "level": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+  "scope": "Real Server_PickPlace and Server_Flashlight RPC state/attachment; no input-focus, rendered beam, or 2-player claim.",
+  "elapsed": 9.7,
+  "step": 7,
+  "events": [
+    {
+      "event": "flashlight_held_off",
+      "hand": "flashlight",
+      "head": "None",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": null,
+          "relative_location": [
+            -600.0,
+            300.0,
+            11.500000022121021
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "event": "flashlight_on",
+      "hand": "flashlight",
+      "head": "None",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": true,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": null,
+          "relative_location": [
+            -600.0,
+            300.0,
+            11.500000022121021
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "event": "flashlight_off",
+      "hand": "flashlight",
+      "head": "None",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": null,
+          "relative_location": [
+            -600.0,
+            300.0,
+            11.500000022121021
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "event": "headlamp_worn_off",
+      "hand": "flashlight",
+      "head": "headlamp",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            7.999999999999982,
+            0.0,
+            9.999999999999991
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "event": "worn_light_priority_on",
+      "hand": "flashlight",
+      "head": "headlamp",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            7.999999999999982,
+            0.0,
+            9.999999999999991
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": true,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "event": "worn_light_off",
+      "hand": "flashlight",
+      "head": "headlamp",
+      "lamps": {
+        "flashlight": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            66.0,
+            0.0,
+            30.0
+          ],
+          "scale": [
+            0.8753528594970703,
+            0.8753528594970703,
+            0.8753528594970703
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "headlamp": {
+          "mesh": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A",
+          "parent": "BP_CL9Character_C_0",
+          "relative_location": [
+            7.999999999999982,
+            0.0,
+            9.999999999999991
+          ],
+          "scale": [
+            0.7452951669692993,
+            0.7452951669692993,
+            0.7452951669692993
+          ],
+          "spot_visible": false,
+          "spot_local_location": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  ],
+  "original_pawn_location": [
+    275.0,
+    450.0,
+    91.65000629425049
+  ]
+}

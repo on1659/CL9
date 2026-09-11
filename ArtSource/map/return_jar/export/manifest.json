@@ -1,0 +1,88 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "return_jar.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_ReturnJar_Clay": {
+      "vertex_color": false,
+      "base_color": [
+        0.23,
+        0.115,
+        0.056,
+        1
+      ],
+      "roughness": 0.82,
+      "metallic": 0
+    },
+    "M_CL9_ReturnJar_Glaze": {
+      "vertex_color": false,
+      "base_color": [
+        0.035,
+        0.115,
+        0.075,
+        1
+      ],
+      "roughness": 0.38,
+      "metallic": 0
+    },
+    "M_CL9_ReturnJar_Mark": {
+      "vertex_color": false,
+      "base_color": [
+        0.65,
+        0.59,
+        0.39,
+        1
+      ],
+      "roughness": 0.82,
+      "metallic": 0
+    }
+  },
+  "assets": {
+    "return_jar": {
+      "object": "SM_ReturnJar_A",
+      "dimensions_cm": [
+        94.40000057220459,
+        99.94089603424072,
+        100.0
+      ],
+      "triangles": 1980,
+      "vertices": 1046,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_ReturnJar_Clay",
+        "M_CL9_ReturnJar_Glaze",
+        "M_CL9_ReturnJar_Mark"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "df49182053c04a60b2a4959904e1f349e703e88295568f2c1963d51dd0f78f65",
+      "anchors_cm": {
+        "Mouth": [
+          -1.199999451637268,
+          0.0,
+          100.0
+        ],
+        "InteriorFloor": [
+          -1.199999451637268,
+          0.0,
+          9.0
+        ],
+        "InteractionFront": [
+          48.79999923706055,
+          0.0,
+          50.0
+        ]
+      },
+      "rig": "N/A fixed vessel; return consumes held item, no moving lid",
+      "mouth_clear_diameter_cm": 58,
+      "collision_note": "16 convex shell sectors plus base; inner curved wall conservatively approximated",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        50.0
+      ],
+      "collision_hulls": 17
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:49:52.375285+00:00",
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_local_pawn_meshes_existing_anim_and_move",
+  "samples": [
+    {
+      "phase": 0,
+      "time": 1.0007561147212982,
+      "location": [
+        20000.0,
+        0.0,
+        1092.0
+      ],
+      "body_anim": "/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed.ABP_Unarmed_C",
+      "arms_anim": "/Game/FirstPerson/Anims/ABP_FP_Copy.ABP_FP_Copy_C",
+      "body_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body.SK_Farmer_A_Body",
+      "arms_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms.SK_Farmer_A_Arms",
+      "hand_l": [
+        20022.007219824867,
+        -27.457450530276994,
+        1091.779871836964
+      ],
+      "foot_l": [
+        20010.986891819517,
+        -20.54774940472698,
+        1008.5610655206409
+      ]
+    },
+    {
+      "phase": 1,
+      "time": 1.6691512167453766,
+      "location": [
+        20000.0,
+        103.7767319905758,
+        1092.0
+      ],
+      "body_anim": "/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed.ABP_Unarmed_C",
+      "arms_anim": "/Game/FirstPerson/Anims/ABP_FP_Copy.ABP_FP_Copy_C",
+      "body_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body.SK_Farmer_A_Body",
+      "arms_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms.SK_Farmer_A_Arms",
+      "hand_l": [
+        20025.671871077036,
+        72.23630156947566,
+        1089.3035126138707
+      ],
+      "foot_l": [
+        20000.659195303633,
+        108.30833169296022,
+        1009.6472340039093
+      ]
+    },
+    {
+      "phase": 2,
+      "time": 2.335831642150879,
+      "location": [
+        20000.0,
+        210.12939818418027,
+        1092.0
+      ],
+      "body_anim": "/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed.ABP_Unarmed_C",
+      "arms_anim": "/Game/FirstPerson/Anims/ABP_FP_Copy.ABP_FP_Copy_C",
+      "body_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body.SK_Farmer_A_Body",
+      "arms_mesh": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms.SK_Farmer_A_Arms",
+      "hand_l": [
+        20018.97087170189,
+        184.0723677591277,
+        1090.2784033105165
+      ],
+      "foot_l": [
+        20011.043110624592,
+        189.6118737505575,
+        1008.5275022149707
+      ]
+    }
+  ],
+  "scope": "Actual CL9 pawn with authored body/arms in one PIE world; existing Unarmed/FP Copy AnimBP. No permanent data change, grip/2-player claim."
+}

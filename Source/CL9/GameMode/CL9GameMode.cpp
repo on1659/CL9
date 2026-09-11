@@ -392,6 +392,26 @@ ACL9Character* ACL9GameMode::FindLivingPawn(const AActor* Except, const AActor* 
 	return Living[(AfterIndex + 1) % Living.Num()];
 }
 
+FVector ACL9GameMode::WakeSpot(const ACL9TruckPad& Pad, const ACL9Character& Character)
+{
+	const float HalfHeight = Character.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const float Radius = Character.GetCapsuleComponent()->GetScaledCapsuleRadius();
+
+	// **패드 원점에 세우면 안 된다.** 패드는 바닥 판이 아니라 트럭 몸체까지 포함한 덩어리라
+	// (2026-09-10 실측: 400 × 400 × 240), 원점에 놓인 캡슐은 그 콜리전 안에 갇혀 한 발도
+	// 못 움직인다. 사이트 맵은 패드에서 **+X 쪽으로** 서므로, 그쪽으로 비켜 세우면
+	// 트럭을 등지고 입구를 보게 된다.
+	FVector PadOrigin = FVector::ZeroVector;
+	FVector PadExtent = FVector::ZeroVector;
+	Pad.GetActorBounds(/*bOnlyCollidingComponents*/ true, PadOrigin, PadExtent);
+
+	// 여럿이 같은 자리에 겹치지 않게 옆으로만 흩는다 — 앞뒤로 흩으면 다시 트럭에 박힌다.
+	return FVector(
+		PadOrigin.X + PadExtent.X + Radius + 60.f,
+		PadOrigin.Y + FMath::FRandRange(-60.f, 60.f),
+		Pad.GetActorLocation().Z + HalfHeight + 5.f);
+}
+
 void ACL9GameMode::ReviveDead()
 {
 	if (GameState == nullptr)
@@ -415,9 +435,7 @@ void ACL9GameMode::ReviveDead()
 			Character->HostRevive();
 			if (Pad != nullptr)
 			{
-				const float HalfHeight = Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-				const FVector Scatter(FMath::FRandRange(-60.f, 60.f), FMath::FRandRange(-60.f, 60.f), HalfHeight + 5.f);
-				Character->SetActorLocationAndRotation(Pad->GetActorLocation() + Scatter, Pad->GetActorRotation(),
+				Character->SetActorLocationAndRotation(WakeSpot(*Pad, *Character), FRotator::ZeroRotator,
 					false, nullptr, ETeleportType::TeleportPhysics);
 			}
 		}

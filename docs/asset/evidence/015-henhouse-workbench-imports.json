@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:16:34.971236+00:00",
+  "assets": [
+    {
+      "id": "henhouse_workbench",
+      "path": "/Game/CL9Art/Maps/HenhouseWorkbench/SM_Henhouse_Workbench_A.SM_Henhouse_Workbench_A",
+      "dimensions_cm": [
+        180.00001525878906,
+        75.00003051757812,
+        90.0
+      ],
+      "max_dimension_error_cm": 3.0517578125e-05,
+      "source_sha256": "d96669c006955c31f2ba8a0bea9ace007ae131ddcd733ead09911e5caf86f8a0",
+      "lod_count": 3,
+      "convex_collision_hulls": 12,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        45.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseWorkbench/M_CL9_Workbench_Wood.M_CL9_Workbench_Wood",
+        "/Game/CL9Art/Maps/HenhouseWorkbench/M_CL9_Workbench_Frame.M_CL9_Workbench_Frame"
+      ],
+      "sphere_radius_cm": 107.07740921135398,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

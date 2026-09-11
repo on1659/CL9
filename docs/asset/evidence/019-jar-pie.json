@@ -1,0 +1,52 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:50:09.758826+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_local_return_and_vessel_collision",
+  "elapsed": 6.0,
+  "step": 3,
+  "checks": [
+    {
+      "case": "pickup",
+      "hand": "egg",
+      "parent": "BP_CL9Character_C_0"
+    },
+    {
+      "case": "return",
+      "hand": "None",
+      "returned_count": 1,
+      "last_alias": "egg",
+      "last_sub_alias": "None"
+    },
+    {
+      "case": "jar_mesh_bounds",
+      "mesh": "/Game/CL9Art/Maps/ReturnJar/SM_ReturnJar_A.SM_ReturnJar_A",
+      "dimensions_cm": [
+        94.4000015258789,
+        99.9408950805664,
+        100.0
+      ],
+      "bottom_z": 1000.0,
+      "profile": "BlockAllDynamic"
+    },
+    {
+      "case": "mouth_and_body",
+      "mouth_blocked": false,
+      "body_blocks_capsule": true
+    },
+    {
+      "case": "interior_probe_support",
+      "gap_cm": -6.938724880001246e-05,
+      "speed_cm_s": 0.0,
+      "location": [
+        19998.79995487964,
+        -4.3206819022514617e-05,
+        1019.0000009359266
+      ]
+    }
+  ],
+  "scope": "Actual Jar BP instance with authored mesh; local pickup/return RPC; teleport setup; physics probe, not physical item insertion or 2-player.",
+  "returned_before": 0,
+  "harness_recovery": "Same PIE: unsupported unreal.is_valid replaced with actual actor-list absence; successful pickup/return retained."
+}

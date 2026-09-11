@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:16:57.735393+00:00",
+  "assets": [
+    {
+      "id": "food_truck_steps",
+      "path": "/Game/CL9Art/Maps/FoodTruck/Steps/SM_FoodTruck_Steps_A.SM_FoodTruck_Steps_A",
+      "dimensions_cm": [
+        120.0000228881836,
+        114.00001525878906,
+        64.00000762939453
+      ],
+      "max_dimension_error_cm": 1.811981201171875e-05,
+      "source_sha256": "481a6fdeb4e057398413e72e8260fc5483722722cbdc7101ba9d6dd0393e681b",
+      "lod_count": 3,
+      "convex_collision_hulls": 4,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        32.000003814697266
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Steel.M_CL9_TruckSteps_Steel",
+        "/Game/CL9Art/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Mark.M_CL9_TruckSteps_Mark"
+      ],
+      "sphere_radius_cm": 88.42952184617712,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

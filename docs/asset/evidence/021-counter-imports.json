@@ -1,0 +1,36 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:01:20.416757+00:00",
+  "assets": [
+    {
+      "id": "delivery_counter",
+      "path": "/Game/CL9Art/Maps/DeliveryCounter/SM_DeliveryCounter_A.SM_DeliveryCounter_A",
+      "dimensions_cm": [
+        100.00001525878906,
+        100.00001525878906,
+        100.0
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "source_sha256": "19e58b2aae2e83fc92f8b74d6d0ae98a0572eaeaf91394ab8ad582c67d8f7ba9",
+      "lod_count": 3,
+      "convex_collision_hulls": 6,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        50.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/DeliveryCounter/M_CL9_Counter_Steel.M_CL9_Counter_Steel",
+        "/Game/CL9Art/Maps/DeliveryCounter/M_CL9_Counter_Enamel.M_CL9_Counter_Enamel",
+        "/Game/CL9Art/Maps/DeliveryCounter/M_CL9_Counter_Blue.M_CL9_Counter_Blue"
+      ],
+      "sphere_radius_cm": 85.68126858880778,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

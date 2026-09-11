@@ -1,0 +1,69 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:12:59.104582+00:00",
+  "creatures": [
+    {
+      "species": "Pig",
+      "mesh": "/Game/CL9Art/Monsters/PigA/SK_Pig_A.SK_Pig_A",
+      "skeleton": "/Game/CL9Art/Monsters/PigA/SK_Pig_A_Skeleton.SK_Pig_A_Skeleton",
+      "material": "/Game/CL9Art/Monsters/PigA/M_CL9_Pig_Vertex.M_CL9_Pig_Vertex",
+      "has_vertex_colors": true,
+      "dimensions_cm": [
+        187.23031616210938,
+        81.99999618530273,
+        109.90000224113464
+      ],
+      "dimension_error_cm": 4.5299530029296875e-06,
+      "clips": [
+        {
+          "name": "Idle",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_Idle.AN_Pig_Idle",
+          "duration_seconds": 2.0,
+          "source_sha256": "bf2d46f47733a1335bc763cebf62ebf6d07430b9f73875066ee339dd135b1509"
+        },
+        {
+          "name": "Walk",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_Walk.AN_Pig_Walk",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "2a8164d5e9dfbf1669053a816cf2a19d9e350dc694e7a22fe1dd5d59ea3e4a14"
+        },
+        {
+          "name": "Run",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_Run.AN_Pig_Run",
+          "duration_seconds": 0.5,
+          "source_sha256": "5ffe66a860ec9744e0b7fc6af2735c2fec19e2cde866c39d99bf66be2255bc75"
+        },
+        {
+          "name": "LookAround",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_LookAround.AN_Pig_LookAround",
+          "duration_seconds": 2.0,
+          "source_sha256": "b3ef55774728ef360d1dc637eb2a2b9170388248d556d7162502dc767b1eb0a2"
+        },
+        {
+          "name": "HitReact",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_HitReact.AN_Pig_HitReact",
+          "duration_seconds": 0.30000001192092896,
+          "source_sha256": "cdc935fa78eeb0b90476aa3a0734fe8c28619aec6611a97dce81bb5a70e3ab51"
+        },
+        {
+          "name": "WakeTelegraph",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_WakeTelegraph.AN_Pig_WakeTelegraph",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "8ffebeb8fd1fecd956048797c541486a06ac4c0130d9fd123fb517fcc3c357a3"
+        },
+        {
+          "name": "Catch",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_Catch.AN_Pig_Catch",
+          "duration_seconds": 0.6000000238418579,
+          "source_sha256": "23c0ef2462572d270d3b4d1d35eaabd72aa4e408e38a6028e846429a3d2e54db"
+        },
+        {
+          "name": "Death",
+          "path": "/Game/CL9Art/Monsters/PigA/AN_Pig_Death.AN_Pig_Death",
+          "duration_seconds": 1.2000000476837158,
+          "source_sha256": "ab0d34ec6d1e05415661fde1063220a6742d6ce9e579607900494f43a16b0c44"
+        }
+      ]
+    }
+  ]
+}

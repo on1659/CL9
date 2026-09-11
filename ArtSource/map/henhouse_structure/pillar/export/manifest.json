@@ -1,0 +1,57 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "pillar.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Pillar_Wood": {
+      "vertex_color": true,
+      "roughness": 0.91,
+      "metallic": 0
+    },
+    "M_CL9_Pillar_Metal": {
+      "vertex_color": true,
+      "roughness": 0.69,
+      "metallic": 0.55
+    }
+  },
+  "assets": {
+    "henhouse_pillar": {
+      "object": "SM_Henhouse_Pillar_400_A",
+      "dimensions_cm": [
+        28.00000011920929,
+        28.00000011920929,
+        400.0
+      ],
+      "triangles": 596,
+      "vertices": 328,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Pillar_Wood",
+        "M_CL9_Pillar_Metal"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "5016d970f2615e4871c23a83f1e0c7923df584c4e7ae3fdc137a259d1808dbf6",
+      "anchors_cm": {
+        "Base": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "Top": [
+          0.0,
+          0.0,
+          400.0
+        ]
+      },
+      "rig": "N/A static structure",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        200.0
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

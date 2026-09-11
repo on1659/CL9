@@ -1,0 +1,82 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "portable_lights.blend",
+  "pivot": "bounds center",
+  "axis": "+X lens / +Z up",
+  "rig": "N/A static objects; light toggle by UE",
+  "assets": {
+    "flashlight": {
+      "object": "SM_Flashlight_A",
+      "dimensions_cm": [
+        26.399999856948853,
+        10.400000214576721,
+        10.400000214576721
+      ],
+      "triangles": 1528,
+      "vertices": 792,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_PortableLight_Body",
+        "M_CL9_PortableLight_Lens"
+      ],
+      "lens_center_cm": [
+        13.199999809265137,
+        0.0,
+        0.0
+      ],
+      "fbx_sha256": "095b6f8ea8d4c1bd925eb519f10aefa8fa4ba211c07481ec55465bf4df4ecce4",
+      "closed_surfaces": true
+    },
+    "headlamp": {
+      "object": "SM_Headlamp_A",
+      "dimensions_cm": [
+        30.500000715255737,
+        24.400000274181366,
+        12.13049665093422
+      ],
+      "triangles": 2844,
+      "vertices": 1444,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_PortableLight_Body",
+        "M_CL9_PortableLight_Lens"
+      ],
+      "lens_center_cm": [
+        15.25,
+        0.0,
+        -1.8652479648590088
+      ],
+      "fbx_sha256": "4397f86ad8b92341009661913b4a02019f37ef6dbe581e33d039c16dc4decb16",
+      "closed_surfaces": true
+    }
+  },
+  "materials": {
+    "M_CL9_PortableLight_Body": {
+      "vertex_color": true,
+      "roughness": 0.72,
+      "metallic": 0.12
+    },
+    "M_CL9_PortableLight_Lens": {
+      "vertex_color": false,
+      "base_color": [
+        0.48,
+        0.66,
+        0.67,
+        1
+      ],
+      "roughness": 0.21,
+      "metallic": 0.35,
+      "emission": 0
+    }
+  },
+  "trim_fit_revision": 2,
+  "trim_fixes": [
+    "flashlight:grip_plate",
+    "headlamp:ridge",
+    "headlamp:reflector",
+    "headlamp:bracket",
+    "headlamp:reflector",
+    "headlamp:bracket",
+    "headlamp:lamp_body"
+  ]
+}

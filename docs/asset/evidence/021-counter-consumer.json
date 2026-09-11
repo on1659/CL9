@@ -1,0 +1,44 @@
+[
+  {
+    "name": "BP_CL9Counter_C_0",
+    "class": "/Game/Items/BP_CL9Counter.BP_CL9Counter_C",
+    "location": [
+      -350.0,
+      -350.0,
+      50.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "components": [
+      {
+        "name": "Mesh",
+        "class": "StaticMeshComponent",
+        "relative_location": [
+          -350.0,
+          -350.0,
+          50.0
+        ],
+        "relative_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "bounds_center": [
+          -350.0,
+          -350.0,
+          50.0
+        ],
+        "dimensions": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "collision": "BlockAllDynamic",
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    ]
+  }
+]

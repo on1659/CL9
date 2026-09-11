@@ -19,8 +19,17 @@ enum class ECL9ModuleType : uint8
 	/** 한쪽으로만 뚫린 곁가지 끝 */
 	DeadEnd,
 	/** 반드시 나와야 하는 방 (납품 항아리·조리대) */
-	Special
+	Special,
+	/**
+	 * 위층으로 올라가는 계단실. **아래층과 위층의 같은 칸을 함께 차지한다** — 그래서
+	 * 이 모듈 하나가 두 층을 잇는 유일한 통로가 된다. 한 판에 몇 개가 서는지는
+	 * 사이트 행의 `StairCountMin`·`StairCountMax` 사이에서 시드가 뽑는다.
+	 */
+	Stair
 };
+
+/** 모듈 타입의 가짓수 — 타입별 후보 묶음을 만들 때 쓴다 */
+constexpr int32 CL9ModuleTypeCount = 6;
 
 /**
  * 모듈의 네 변. **비트 순서가 곧 시계 방향(N→E→S→W)이라 회전이 비트 회전이 된다** —

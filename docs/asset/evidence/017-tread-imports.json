@@ -1,0 +1,93 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:29:01.520774+00:00",
+  "assets": [
+    {
+      "id": "henhouse_tread",
+      "path": "/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_A.SM_Henhouse_Tread_A",
+      "dimensions_cm": [
+        263.9745788574219,
+        27.41939926147461,
+        30.000001907348633
+      ],
+      "max_dimension_error_cm": 4.076957702636719e-05,
+      "source_sha256": "987a219f8fe1d9f986758798e3a557cf00e6e69b14326dadad25bbf41899b104",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        15.000000953674316
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Concrete.M_CL9_Tread_Concrete",
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Surface.M_CL9_Tread_Surface"
+      ],
+      "sphere_radius_cm": 133.52107896285125,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    },
+    {
+      "id": "henhouse_tread_stretch0",
+      "path": "/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_YRun_A.SM_Henhouse_Tread_Stretch100_YRun_A",
+      "dimensions_cm": [
+        100.00001525878906,
+        100.00001525878906,
+        100.0
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "source_sha256": "1d20ec6a0580caf48227a275f11a8121172ca727a7efce9c233635b4041f5369",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Concrete.M_CL9_Tread_Concrete",
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Surface.M_CL9_Tread_Surface"
+      ],
+      "sphere_radius_cm": 86.38860655732393,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    },
+    {
+      "id": "henhouse_tread_stretch90",
+      "path": "/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_XRun_A.SM_Henhouse_Tread_Stretch100_XRun_A",
+      "dimensions_cm": [
+        100.00001525878906,
+        100.00001525878906,
+        100.0
+      ],
+      "max_dimension_error_cm": 1.52587890625e-05,
+      "source_sha256": "49d919ffa9294667cd11f9c1bc031692dd8db4cb29705341522bd39dc147cfec",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Concrete.M_CL9_Tread_Concrete",
+        "/Game/CL9Art/Maps/HenhouseAccess/Tread/M_CL9_Tread_Surface.M_CL9_Tread_Surface"
+      ],
+      "sphere_radius_cm": 86.38860655732393,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

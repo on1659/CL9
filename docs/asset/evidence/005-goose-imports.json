@@ -1,0 +1,81 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:07:41.478714+00:00",
+  "creatures": [
+    {
+      "species": "Goose",
+      "mesh": "/Game/CL9Art/Monsters/GooseA/SK_Goose_A.SK_Goose_A",
+      "skeleton": "/Game/CL9Art/Monsters/GooseA/SK_Goose_A_Skeleton.SK_Goose_A_Skeleton",
+      "material": "/Game/CL9Art/Monsters/GooseA/M_CL9_Goose_Vertex.M_CL9_Goose_Vertex",
+      "has_vertex_colors": true,
+      "dimensions_cm": [
+        166.20672607421875,
+        79.79999923706055,
+        167.2999975681305
+      ],
+      "dimension_error_cm": 1.1682510375976562e-05,
+      "clips": [
+        {
+          "name": "Idle",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Idle.AN_Goose_Idle",
+          "duration_seconds": 2.0,
+          "source_sha256": "8e21c08bf96ee08552c4605349253edff8a0bb8d5aaf2788ced30459b75622a6"
+        },
+        {
+          "name": "Walk",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Walk.AN_Goose_Walk",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "5d9a62e9bd4a4ce4ff09f9727a8d12059d98551c956cdbf14a6bef90a7c05a1f"
+        },
+        {
+          "name": "Run",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Run.AN_Goose_Run",
+          "duration_seconds": 0.5,
+          "source_sha256": "26f1afff481218b84838f590cdabeb807114b68be225744536fd6730db260ba8"
+        },
+        {
+          "name": "LookAround",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_LookAround.AN_Goose_LookAround",
+          "duration_seconds": 2.0,
+          "source_sha256": "14199e0e1ea7eb513854dafcb2087e1416e89c48236fc504f4ababb87d46777e"
+        },
+        {
+          "name": "HitReact",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_HitReact.AN_Goose_HitReact",
+          "duration_seconds": 0.30000001192092896,
+          "source_sha256": "92b5603d88c1d231f201e14160faa8663a25e1b3ffb59cc383c212fbdab02bfd"
+        },
+        {
+          "name": "WakeTelegraph",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_WakeTelegraph.AN_Goose_WakeTelegraph",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "94cc8d0cfa5a86c0fcfab6441a6fc2b779bebcec489ee89d8023969dc84776d0"
+        },
+        {
+          "name": "Death",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Death.AN_Goose_Death",
+          "duration_seconds": 1.2000000476837158,
+          "source_sha256": "465120fd19162ba594ef40806359fbad373df927e350019daf3bd03ba8b38e60"
+        },
+        {
+          "name": "Sleep",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Sleep.AN_Goose_Sleep",
+          "duration_seconds": 2.0,
+          "source_sha256": "77a3371e5913ad691e6b07d0476c3561cd097daf3b24545d457f641b5263617a"
+        },
+        {
+          "name": "AlertWindup",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_AlertWindup.AN_Goose_AlertWindup",
+          "duration_seconds": 0.550000011920929,
+          "source_sha256": "ac504e5e49a6ceb6bee9d3b0bb2930e7e4259d751dbc94d461561f0da17e1b82"
+        },
+        {
+          "name": "Honk",
+          "path": "/Game/CL9Art/Monsters/GooseA/AN_Goose_Honk.AN_Goose_Honk",
+          "duration_seconds": 0.6000000238418579,
+          "source_sha256": "2ae2246e227c733a7b317f37f2e4c6719941a18747c4b3e3ecbf074b79660ee8"
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
+#include "Net/UnrealNetwork.h"
 #include "CL9.h"
 #include "Data/CL9ItemDef.h"
 #include "Items/CL9Item.h"
@@ -34,9 +35,22 @@ void ACL9Kitchen::BeginPlay()
 	HeatZone->SetWorldLocation(MeshComponent->Bounds.Origin + FVector(0.f, 0.f, Top + HeatReach * 0.5f));
 }
 
+void ACL9Kitchen::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACL9Kitchen, Cooking);
+}
+
 ACL9Item* ACL9Kitchen::GetCookingItem() const
 {
-	return Cooking.Get();
+	// 익히던 것이 파괴됐을 수 있다(창구 납품 등) — 죽어 가는 액터를 돌려주지 않는다
+	return IsValid(Cooking) ? Cooking.Get() : nullptr;
+}
+
+FVector ACL9Kitchen::GetTopLocation() const
+{
+	const FBoxSphereBounds& Bounds = MeshComponent->Bounds;
+	return Bounds.Origin + FVector(0.f, 0.f, Bounds.BoxExtent.Z);
 }
 
 void ACL9Kitchen::Tick(float DeltaSeconds)
@@ -88,7 +102,7 @@ void ACL9Kitchen::TickCooking(float DeltaSeconds)
 	GatherOnHeat(OnHeat);
 
 	// 익히던 것이 집혀 갔거나 굴러 나갔으면 시계를 버리고 자리를 비운다
-	ACL9Item* Current = Cooking.Get();
+	ACL9Item* Current = GetCookingItem();
 	if (Current != nullptr && !OnHeat.Contains(Current))
 	{
 		Current->SetCookState(ECL9CookPhase::None, 0.f);
@@ -101,6 +115,7 @@ void ACL9Kitchen::TickCooking(float DeltaSeconds)
 	// 조리대 하나가 한 번에 하나를 익힌다 — 자리가 비어 있을 때만 다음 재료를 집어 든다
 	if (Current == nullptr)
 	{
+		Cooking = nullptr;   // 파괴된 것을 붙들고 있었을 수 있다
 		if (OnHeat.Num() == 0)
 		{
 			return;

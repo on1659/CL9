@@ -1,0 +1,18 @@
+{
+  "source": "Existing Manny LOD2 as compatibility probe only",
+  "rig_object": "root",
+  "bone_count_in_blender": 88,
+  "fbx_root_is_armature_object": true,
+  "sha256": "ff19046760c52315f3fb80039a0df18f11df250ba4d1fc807d8f3c9d73cd2052",
+  "mesh_dimensions_cm": [
+    110.84611415863037,
+    42.52288639545441,
+    180.64581155776978
+  ],
+  "settings": {
+    "forward": "-Y",
+    "up": "Z",
+    "scale_options": "FBX_SCALE_ALL",
+    "armature_nodetype": "ROOT"
+  }
+}

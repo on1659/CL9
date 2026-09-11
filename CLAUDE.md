@@ -20,6 +20,7 @@
 | 무엇을 만드는가 (게임 기획) | [docs/plan/README.md](docs/plan/README.md) |
 | 게임 개요 | [docs/plan/overview.md](docs/plan/overview.md) |
 | UE 설계 규약 | [docs/conventions.md](docs/conventions.md) |
+| 모델·애니메이션 제작 | [docs/asset/README.md](docs/asset/README.md) |
 | 결정의 변경·번복 | [docs/decisions.md](docs/decisions.md) |
 
 ## 하지 말 것

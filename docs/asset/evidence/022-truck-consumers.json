@@ -1,0 +1,111 @@
+[
+  {
+    "name": "BP_CL9TruckPad_C_0",
+    "class": "/Game/Items/BP_CL9TruckPad.BP_CL9TruckPad_C",
+    "location": [
+      -600.0,
+      0.0,
+      10.0
+    ],
+    "scale": [
+      4.0,
+      4.0,
+      0.2
+    ],
+    "components": [
+      {
+        "name": "Mesh",
+        "class": "StaticMeshComponent",
+        "relative_location": [
+          -600.0,
+          0.0,
+          10.0
+        ],
+        "relative_scale": [
+          4.0,
+          4.0,
+          0.2
+        ],
+        "bounds_center": [
+          -600.0,
+          0.0,
+          20.0
+        ],
+        "dimensions": [
+          400.0,
+          400.0,
+          20.0
+        ],
+        "collision": "BlockAllDynamic",
+        "mesh": "/Game/LevelPrototyping/Meshes/SM_Cylinder.SM_Cylinder"
+      },
+      {
+        "name": "HealZone",
+        "class": "BoxComponent",
+        "relative_location": [
+          0.0,
+          0.0,
+          120.0
+        ],
+        "relative_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "bounds_center": [
+          -600.0,
+          0.0,
+          34.0
+        ],
+        "dimensions": [
+          400.0,
+          400.0,
+          240.0
+        ],
+        "collision": "Custom"
+      }
+    ]
+  },
+  {
+    "name": "BP_CL9TruckPanel_C_0",
+    "class": "/Game/Items/BP_CL9TruckPanel.BP_CL9TruckPanel_C",
+    "location": [
+      -380.0,
+      0.0,
+      60.0
+    ],
+    "scale": [
+      0.15,
+      0.8,
+      1.2
+    ],
+    "components": [
+      {
+        "name": "Mesh",
+        "class": "StaticMeshComponent",
+        "relative_location": [
+          -380.0,
+          0.0,
+          60.0
+        ],
+        "relative_scale": [
+          0.15,
+          0.8,
+          1.2
+        ],
+        "bounds_center": [
+          -380.0,
+          0.0,
+          60.0
+        ],
+        "dimensions": [
+          15.0,
+          80.0,
+          120.0
+        ],
+        "collision": "BlockAllDynamic",
+        "mesh": "/Engine/BasicShapes/Cube.Cube"
+      }
+    ]
+  }
+]

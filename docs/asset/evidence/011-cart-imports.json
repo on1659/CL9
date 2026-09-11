@@ -1,0 +1,33 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:50:35.501189+00:00",
+  "assets": [
+    {
+      "id": "cart",
+      "path": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "dimensions_cm": [
+        153.40003204345703,
+        115.20001983642578,
+        105.39999389648438
+      ],
+      "max_dimension_error_cm": 1.621246337890625e-05,
+      "source_sha256": "24af6e9a8eb0574ce3d057ba017793debbb0ce276afd67326bf5b6e809d15612",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/CartA/M_CL9_Cart_Frame.M_CL9_Cart_Frame",
+        "/Game/CL9Art/Items/CartA/M_CL9_Cart_Rubber.M_CL9_Cart_Rubber"
+      ],
+      "sphere_radius_cm": 100.8657443412906,
+      "runtime_radius_cm": 60,
+      "runtime_scale": 0.5948501187576949,
+      "runtime_dimensions_cm": [
+        91.25002727848462,
+        68.52674548058668,
+        62.697198886384044
+      ],
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": 28.651400556807978,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

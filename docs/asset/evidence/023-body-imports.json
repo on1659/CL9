@@ -1,0 +1,37 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:31:51.279078+00:00",
+  "assets": [
+    {
+      "id": "food_truck",
+      "path": "/Game/CL9Art/Maps/FoodTruck/Body/SM_FoodTruck_A.SM_FoodTruck_A",
+      "dimensions_cm": [
+        630.0000305175781,
+        353.5000762939453,
+        325.1000061035156
+      ],
+      "max_dimension_error_cm": 6.771087646484375e-05,
+      "source_sha256": "4253881ebf85ef5ac2696d9dc16ad31bcfbb269b6a952609330f85da590b84fc",
+      "lod_count": 3,
+      "convex_collision_hulls": 24,
+      "bounds_center_cm": [
+        1.52587890625e-05,
+        -7.62939453125e-06,
+        162.5500030517578
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+        "/Game/CL9Art/Maps/FoodTruck/Body/M_CL9_FoodTruck_Paint.M_CL9_FoodTruck_Paint",
+        "/Game/CL9Art/Maps/FoodTruck/Body/M_CL9_FoodTruck_Red.M_CL9_FoodTruck_Red",
+        "/Game/CL9Art/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark"
+      ],
+      "sphere_radius_cm": 363.0171064744079,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

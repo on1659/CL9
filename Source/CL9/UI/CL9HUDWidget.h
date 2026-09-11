@@ -11,8 +11,11 @@
 class ACL9Character;
 class ACL9GameState;
 class ACL9Item;
+class ACL9Kitchen;
 class ACL9PlayerState;
 class UBorder;
+class UCanvasPanel;
+class UCL9CookGaugeWidget;
 class UCL9ItemDef;
 class UCL9ScanLabelWidget;
 class UHorizontalBox;
@@ -126,9 +129,20 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> CounterText;
 
-	/** 아이템 라벨 안의 조리 게이지 — 열을 받는 중일 때만 보인다(docs/systems/cooking.md) */
+	/**
+	 * 조리 게이지가 붙는 캔버스 — 익히는 중인 조리대마다 WBP_CookGauge 하나가 여기 붙어 조리대
+	 * 꼭대기 위로 투영된다. 재료를 바라보지 않아도, 어느 쪽에서 봐도 보인다(docs/systems/cooking.md)
+	 */
 	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UProgressBar> CookBar;
+	TObjectPtr<UCanvasPanel> CookLayer;
+
+	/** WBP_CookGauge — WBP_HUD에서 지정 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	TSubclassOf<UCL9CookGaugeWidget> CookGaugeClass;
+
+	/** 조리대 꼭대기와 게이지 아래쪽 끝 사이의 간격, cm 단위 — 상판에 놓인 재료(반지름 20 안팎)에 가리지 않을 만큼 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float CookGaugeLift = 60.f;
 
 	/** 이번 기간 수입과 정산까지 남은 날 — 압박이 숫자로 읽히게 한다(docs/systems/economy.md 정산) */
 	UPROPERTY(meta=(BindWidget))
@@ -141,14 +155,6 @@ protected:
 	/** 탈진 래치가 달리기를 막는 동안의 채우기 색(docs/systems/character.md 세 조항) */
 	UPROPERTY(EditAnywhere, Category="HUD")
 	FLinearColor StaminaExhaustedColor = FLinearColor(0.75f, 0.25f, 0.2f, 1.f);
-
-	/** 익어가는 동안의 조리 게이지 색 */
-	UPROPERTY(EditAnywhere, Category="HUD")
-	FLinearColor CookColor = FLinearColor(0.95f, 0.7f, 0.25f, 1.f);
-
-	/** 다음 전이가 "탄 것"일 때의 조리 게이지 색 — 지금 집으라는 신호다 */
-	UPROPERTY(EditAnywhere, Category="HUD")
-	FLinearColor BurnColor = FLinearColor(0.85f, 0.25f, 0.15f, 1.f);
 
 	/** 이번 기간 수입이 목표를 채웠을 때의 색 */
 	UPROPERTY(EditAnywhere, Category="HUD")
@@ -212,8 +218,8 @@ private:
 	void RefreshItemLabel();
 	void FillItemLabel(const ACL9Item& Item);
 
-	/** 조리 진행도는 매 프레임 바뀌므로 라벨 내용과 따로 갱신한다 */
-	void RefreshCookBar(const ACL9Item& Item);
+	/** 익히는 중인 조리대마다 게이지를 하나씩 두고 매 프레임 꼭대기 위로 투영한다 — 끝난 조리대의 것은 뗀다 */
+	void RefreshCookGauges();
 
 	void RefreshHead();
 	void RefreshOrders();
@@ -249,6 +255,9 @@ private:
 
 	/** …또는 그 아래 행이 바뀔 때도(요리는 같은 액터 위에서 행을 바꿔치기한다) */
 	TWeakObjectPtr<const UCL9ItemDef> LabeledDef;
+
+	/** 조리대 → 그 위에 띄운 게이지. 게이지는 CookLayer의 자식이라 소유는 캔버스가 한다 */
+	TMap<TWeakObjectPtr<ACL9Kitchen>, TWeakObjectPtr<UCL9CookGaugeWidget>> CookGauges;
 
 	/** 번쩍임의 위상 — 경고가 꺼져 있는 동안 0으로 돌아가 항상 밝은 지점에서 시작한다 */
 	float NightWarnPhase = 0.f;

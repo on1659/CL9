@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:32:51.038279+00:00",
+  "assets": [
+    {
+      "id": "henhouse_wall125",
+      "path": "/Game/CL9Art/Maps/HenhouseAccess/Wall125/SM_Henhouse_Wall_125_A.SM_Henhouse_Wall_125_A",
+      "dimensions_cm": [
+        125.00000762939453,
+        40.00001907348633,
+        400.0
+      ],
+      "max_dimension_error_cm": 1.8477439880371094e-05,
+      "source_sha256": "3e447a0ab5fa622934052be8d2f016105bb5f7e1f8973ce4c46da5de39ba77c5",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        200.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseAccess/Wall125/M_CL9_wall125_Wood.M_CL9_wall125_Wood",
+        "/Game/CL9Art/Maps/HenhouseAccess/Wall125/M_CL9_wall125_DarkTimber.M_CL9_wall125_DarkTimber"
+      ],
+      "sphere_radius_cm": 210.02649794821892,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

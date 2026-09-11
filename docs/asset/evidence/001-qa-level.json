@@ -1,0 +1,8 @@
+{
+  "level": "/Game/CL9Art/Tests/Lvl_AssetQA01",
+  "old_egg_mesh": "<Object '/Engine/BasicShapes/Sphere.Sphere' (0x0000024E48141000) Class 'StaticMesh'>",
+  "new_egg_mesh": "/Game/CL9Art/Maps/HenhouseSample01/SM_Egg_Raw_A",
+  "data_row": "DA_ItemTable.rows[0]",
+  "actors": 29,
+  "engine": "5.8.1-56057345+++UE5+Release-5.8"
+}

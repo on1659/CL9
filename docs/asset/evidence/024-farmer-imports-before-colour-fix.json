@@ -1,0 +1,51 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "reference_signature_before": "18706d2b893249b0b5d81d3a95d44d45c1d6649fbb2d60f987fd6134292e922b",
+  "assets": [
+    {
+      "name": "SK_Farmer_A_Body",
+      "path": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body",
+      "sha256": "97c41010bd9c655daef9a69612b75acd0497f944afc62fbe702704d1616f729e",
+      "dimensions_cm": [
+        111.34827423095703,
+        43.053526878356934,
+        184.40001899003983
+      ],
+      "dimension_error_cm": 0.0013799667358398438,
+      "bone_count": 89,
+      "max_reference_position_error_cm": 0.00024277981670103857,
+      "max_reference_rotation_error_deg": 0.0003774838307268284,
+      "max_bone_scale_error": 6.6161144113285886e-06,
+      "materials": [
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Cloth.M_CL9_Farmer_Cloth",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Skin.M_CL9_Farmer_Skin",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Detail.M_CL9_Farmer_Detail"
+      ],
+      "vertex_colors": true
+    },
+    {
+      "name": "SK_Farmer_A_Arms",
+      "path": "/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms",
+      "sha256": "96578dee2730d3244e4dbad88b559d512afa2cd8a328cfef3e02d754eda3cd07",
+      "dimensions_cm": [
+        111.34827423095703,
+        40.31060314178467,
+        57.12376403808594
+      ],
+      "dimension_error_cm": 0.0013799667358398438,
+      "bone_count": 89,
+      "max_reference_position_error_cm": 0.00024277981670103857,
+      "max_reference_rotation_error_deg": 0.0003774838307268284,
+      "max_bone_scale_error": 6.6161144113285886e-06,
+      "materials": [
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Cloth.M_CL9_Farmer_Cloth",
+        "/Game/CL9Art/Characters/FarmerA/M_CL9_Farmer_Detail.M_CL9_Farmer_Detail"
+      ],
+      "vertex_colors": true
+    }
+  ],
+  "reference_signature_after": "18706d2b893249b0b5d81d3a95d44d45c1d6649fbb2d60f987fd6134292e922b",
+  "existing_skeleton_unchanged": true,
+  "material_slot_fit": "Assigned struct copies back to array indices and saved only the two owned meshes."
+}

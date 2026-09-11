@@ -1,0 +1,56 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T16:44:25.933320+00:00",
+  "assets": [
+    {
+      "id": "frying_pan",
+      "path": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "dimensions_cm": [
+        60.20000076293945,
+        35.0,
+        8.050000190734863
+      ],
+      "max_dimension_error_cm": 9.5367431640625e-07,
+      "source_sha256": "60012a368f0ecd2ac47f99310c4d461070091f4a5e5852b62596a7a57df961db",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/Cookware/M_CL9_Cookware_Surface.M_CL9_Cookware_Surface",
+        "/Game/CL9Art/Items/Cookware/M_CL9_Cookware_Grip.M_CL9_Cookware_Grip"
+      ],
+      "sphere_radius_cm": 30.35482903458066,
+      "runtime_radius_cm": 30,
+      "runtime_scale": 0.9883106231902531,
+      "runtime_dimensions_cm": [
+        59.4963002700744,
+        34.59087181165886,
+        7.955900705186829
+      ],
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": 26.022049647406586,
+      "actual_gameplay_qa": "not tested in import step"
+    },
+    {
+      "id": "pot",
+      "path": "/Game/CL9Art/Items/Cookware/SM_Pot_A.SM_Pot_A",
+      "dimensions_cm": [
+        36.79999923706055,
+        53.000003814697266,
+        26.0
+      ],
+      "max_dimension_error_cm": 9.5367431640625e-07,
+      "source_sha256": "949d692705b7c6593f27b8acaa6b075440ca287b3c4bc1ea40257c2d62873619",
+      "lod_count": 3,
+      "materials": [
+        "/Game/CL9Art/Items/Cookware/M_CL9_Cookware_Surface.M_CL9_Cookware_Surface",
+        "/Game/CL9Art/Items/Cookware/M_CL9_Cookware_Grip.M_CL9_Cookware_Grip"
+      ],
+      "sphere_radius_cm": 27.754505960104925,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

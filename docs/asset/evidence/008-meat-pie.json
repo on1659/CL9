@@ -1,0 +1,134 @@
+{
+  "utc": "2026-09-10T16:25:52.169478+00:00",
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "scenario": "Lvl_Flat / cl9.additem 6,7,8 / physical settling",
+  "world_count": 1,
+  "scope": "Mesh selection, scale and floor gap. No carry/cooking gameplay claim.",
+  "worlds": [
+    {
+      "world": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+      "items": [
+        {
+          "name": "BP_CL9Item_C_5",
+          "state": "None",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Raw_A.SM_Meat_Raw_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            -40.0,
+            450.0,
+            29.49999990591489
+          ],
+          "speed_cm_s": 11.935527801513672,
+          "visual_bottom_z": 14.359212781281101,
+          "sphere_bottom_z": -0.5000000940851095,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        },
+        {
+          "name": "BP_CL9Item_C_6",
+          "state": "cooked",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Cooked_A.SM_Meat_Cooked_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            80.0,
+            450.0,
+            29.49999990591489
+          ],
+          "speed_cm_s": 11.935527801513672,
+          "visual_bottom_z": 14.359212781281101,
+          "sphere_bottom_z": -0.5000000940851095,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        },
+        {
+          "name": "BP_CL9Item_C_7",
+          "state": "burnt",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Burnt_A.SM_Meat_Burnt_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            200.0,
+            450.0,
+            29.49999990591489
+          ],
+          "speed_cm_s": 11.935527801513672,
+          "visual_bottom_z": 14.359212781281101,
+          "sphere_bottom_z": -0.5000000940851095,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        },
+        {
+          "name": "BP_CL9Item_C_11",
+          "state": "None",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Raw_A.SM_Meat_Raw_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            200.0,
+            3.793471379706525e-14,
+            29.3995533890587
+          ],
+          "speed_cm_s": 8.88371086120707,
+          "visual_bottom_z": 14.25876626442491,
+          "sphere_bottom_z": -0.6004466109413009,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        },
+        {
+          "name": "BP_CL9Item_C_12",
+          "state": "cooked",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Cooked_A.SM_Meat_Cooked_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            200.00000000000009,
+            6.5168932626445594e-15,
+            149.34294275814935
+          ],
+          "speed_cm_s": 6.771707534795427,
+          "visual_bottom_z": 134.20215563351556,
+          "sphere_bottom_z": 119.34294275814935,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        },
+        {
+          "name": "BP_CL9Item_C_13",
+          "state": "burnt",
+          "mesh": "/Game/CL9Art/Items/MeatStates/SM_Meat_Burnt_A.SM_Meat_Burnt_A",
+          "scale": [
+            0.8906345367431641,
+            0.8906345367431641,
+            0.8906345367431641
+          ],
+          "location": [
+            200.00000000000034,
+            3.8592971884827795e-14,
+            89.34294271846584
+          ],
+          "speed_cm_s": 6.771707534807222,
+          "visual_bottom_z": 74.20215559383205,
+          "sphere_bottom_z": 59.342942718465835,
+          "visual_to_sphere_bottom_gap_cm": 14.859212875366211,
+          "attached": false
+        }
+      ]
+    }
+  ]
+}

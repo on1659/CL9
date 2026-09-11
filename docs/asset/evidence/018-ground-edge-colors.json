@@ -1,0 +1,15 @@
+{
+  "scope": "Original soil boundary vertex color equality; not a UE lighting measurement",
+  "axes": [
+    {
+      "axis": 0,
+      "pairs": 11,
+      "max_color_error": 0.0
+    },
+    {
+      "axis": 1,
+      "pairs": 11,
+      "max_color_error": 0.0
+    }
+  ]
+}

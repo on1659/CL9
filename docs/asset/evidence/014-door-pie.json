@@ -1,0 +1,52 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:13:57.329207+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_part_pivot_and_clearance",
+  "checks": [
+    {
+      "label": "QA014_Closed",
+      "dimensions_cm": [
+        131.987289966349,
+        15.999998092651367,
+        256.4242858886719
+      ],
+      "bottom_z": 1000.0,
+      "pivot_cm": [
+        20000.0,
+        0.0,
+        1000.0
+      ],
+      "capsule_blocked": true
+    },
+    {
+      "label": "QA014_OpenReference",
+      "dimensions_cm": [
+        15.9999980926514,
+        131.98728996634904,
+        256.4242858886719
+      ],
+      "bottom_z": 1000.0,
+      "pivot_cm": [
+        21000.0,
+        0.0,
+        1000.0
+      ],
+      "capsule_blocked": false
+    }
+  ],
+  "scope": "Two static part fixtures. Manually placed 90 degree pose is a hinge/clearance reference, not a gameplay animation.",
+  "capsule_cm": {
+    "radius": 39.0,
+    "half_height": 90.0
+  },
+  "consumer_dependency": {
+    "current_flap_height_cm": 630,
+    "source_height_cm": 256.424286,
+    "predicted_vertical_scale": 2.4568655716175027,
+    "predicted_push_grip_height_cm": 270.2552128779253,
+    "rotation_animation": "No current consumer; CL9FlapIn only changes movement ignore.",
+    "actual_flap_gameplay": "Not tested. Lvl_Flat editor has zero CL9FlapIn actors; no full map generated."
+  }
+}

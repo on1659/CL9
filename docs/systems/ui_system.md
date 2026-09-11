@@ -88,6 +88,9 @@ public:
   옮긴다. 라벨 **내용**은 대상이 바뀔 때만 채운다(아이템 표 `DisplayName`·`Weight`·개체의 `GetValue()`·
   `CarrySlot`·`bFragile`). 값 폴링이 아니라 좌표 추적이므로 위의 폴링 예외와는 별개다. 액터에
   WidgetComponent를 붙이지 않는다 — 위젯은 WBP_HUD 하나에 있다.
+- **조리 게이지도 같은 방식이다** — HUD가 매 프레임 `ACL9Kitchen`을 훑어 익히는 중인 조리대마다
+  `WBP_CookGauge` 하나를 자기 `CookLayer`에 붙이고 조리대 꼭대기로 투영한다(스캔 라벨과 같은 꼴).
+  끝난 조리대의 것은 뗀다. 포커스와 무관하고, 진행도는 재료의 복제값이라 클라도 같은 바를 본다.
 - 서버가 화면 전환을 지시할 때는 Multicast RPC → 로컬에서 `OpenWidget` 호출
   (예: 밤 종료 → 전원 새벽 화면). 단 "지금 열려 있어야 할 Screen"은 **GameState 페이즈에서
   파생 가능**해야 한다 — Multicast를 놓친 중간 참가자가 페이즈에서 파생한 이름과

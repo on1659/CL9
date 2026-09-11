@@ -1,0 +1,20 @@
+{
+  "module_heights_cm": [
+    400.0,
+    450.0,
+    500.0,
+    550.0
+  ],
+  "stairs": [
+    {
+      "alias": "stair_pass",
+      "size": "<Struct 'IntPoint' (0x0000024EF0153D1C) {x: 2, y: 2}>",
+      "height": 550.0
+    },
+    {
+      "alias": "stair_up",
+      "size": "<Struct 'IntPoint' (0x0000024EF01545DC) {x: 2, y: 2}>",
+      "height": 400.0
+    }
+  ]
+}

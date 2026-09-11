@@ -1,0 +1,85 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:09:06.620870+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "checks": [
+    {
+      "case": "QA013_A_bounds",
+      "dimensions_cm": [
+        250.0,
+        24.00004005432129,
+        288.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "QA013_B_bounds",
+      "dimensions_cm": [
+        250.0,
+        24.00004005432129,
+        288.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "QA013_C_bounds",
+      "dimensions_cm": [
+        24.000040054321353,
+        250.00000000000006,
+        288.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "QA013_D_bounds",
+      "dimensions_cm": [
+        24.000040054321353,
+        250.00000000000006,
+        288.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "two_tile_seam",
+      "gap_cm": 0.0,
+      "total_length_cm": 500.0
+    },
+    {
+      "case": "front",
+      "line_blocked": true,
+      "capsule_blocked": true,
+      "expected_blocked": true
+    },
+    {
+      "case": "seam",
+      "line_blocked": true,
+      "capsule_blocked": true,
+      "expected_blocked": true
+    },
+    {
+      "case": "rotated90",
+      "line_blocked": true,
+      "capsule_blocked": true,
+      "expected_blocked": true
+    },
+    {
+      "case": "rotated270",
+      "line_blocked": true,
+      "capsule_blocked": true,
+      "expected_blocked": true
+    },
+    {
+      "case": "clear_end",
+      "line_blocked": false,
+      "capsule_blocked": false,
+      "expected_blocked": false
+    }
+  ],
+  "status": "passed_local_collision_and_seam",
+  "scope": "PIE bounds, seam, simple line trace and current player capsule sweep. No walking-input, 2-player or performance claim.",
+  "capsule_cm": {
+    "radius": 39.0,
+    "half_height": 90.0
+  }
+}

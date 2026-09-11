@@ -1,0 +1,15 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "segments": [
+    {
+      "alias": "floor",
+      "height_cm": 30.0,
+      "piece": "box"
+    },
+    {
+      "alias": "ceiling",
+      "height_cm": 30.0,
+      "piece": "box"
+    }
+  ]
+}

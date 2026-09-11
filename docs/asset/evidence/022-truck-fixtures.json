@@ -1,0 +1,82 @@
+{
+  "before_actor_names": [
+    "BP_CL9Item_C_0",
+    "BP_CL9Item_C_1",
+    "DirectionalLight_0",
+    "PlayerStart_0",
+    "PlayerStart_1",
+    "PointLight_0",
+    "PointLight_1",
+    "PointLight_2",
+    "StaticMeshActor_0",
+    "StaticMeshActor_1",
+    "StaticMeshActor_10",
+    "StaticMeshActor_11",
+    "StaticMeshActor_12",
+    "StaticMeshActor_13",
+    "StaticMeshActor_14",
+    "StaticMeshActor_15",
+    "StaticMeshActor_16",
+    "StaticMeshActor_17",
+    "StaticMeshActor_18",
+    "StaticMeshActor_19",
+    "StaticMeshActor_2",
+    "StaticMeshActor_20",
+    "StaticMeshActor_3",
+    "StaticMeshActor_4",
+    "StaticMeshActor_5",
+    "StaticMeshActor_6",
+    "StaticMeshActor_7",
+    "StaticMeshActor_8",
+    "StaticMeshActor_9"
+  ],
+  "fixtures": [
+    {
+      "label": "QA022_Floor",
+      "name": "StaticMeshActor_21",
+      "position": [
+        20000,
+        0,
+        985
+      ],
+      "yaw": 0,
+      "scale": [
+        10,
+        10,
+        0.3
+      ],
+      "mesh": "/Engine/BasicShapes/Cube.Cube"
+    },
+    {
+      "label": "QA022_Pad",
+      "name": "BP_CL9TruckPad_C_0",
+      "position": [
+        20000.0,
+        0.0,
+        1000.0
+      ],
+      "class": "/Game/Items/BP_CL9TruckPad.BP_CL9TruckPad_C"
+    },
+    {
+      "label": "QA022_Panel",
+      "name": "BP_CL9TruckPanel_C_0",
+      "position": [
+        20320.0,
+        0.0,
+        1000.0
+      ],
+      "class": "/Game/Items/BP_CL9TruckPanel.BP_CL9TruckPanel_C"
+    },
+    {
+      "label": "QA022_Probe",
+      "name": "StaticMeshActor_22",
+      "position": [
+        20100.0,
+        0.0,
+        1070.0
+      ],
+      "class": "/Script/Engine.StaticMeshActor"
+    }
+  ],
+  "cleaned_up": true
+}

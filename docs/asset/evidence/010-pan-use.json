@@ -1,0 +1,102 @@
+{
+  "status": "passed_local_pick_place_throw",
+  "utc": "2026-09-10T16:45:49.671776+00:00",
+  "world_count": 1,
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "level": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+  "step": 9,
+  "elapsed": 12.0,
+  "events": [
+    {
+      "event": "held",
+      "hand": "frying_pan",
+      "mesh": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "parent": "BP_CL9Character_C_0",
+      "location": [
+        479.0,
+        450.0,
+        121.65000629425049
+      ],
+      "scale": [
+        0.9883105754852295,
+        0.9883105754852295,
+        0.9883105754852295
+      ],
+      "visual_bottom_z": 117.6720561336698,
+      "sphere_bottom_z": 91.65000629425049
+    },
+    {
+      "event": "placed",
+      "hand": "None",
+      "mesh": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "parent": null,
+      "location": [
+        300.81401382679076,
+        450.0,
+        49.69755249928113
+      ],
+      "scale": [
+        0.9883105754852295,
+        0.9883105754852295,
+        0.9883105754852295
+      ],
+      "visual_bottom_z": 45.71960233870044,
+      "sphere_bottom_z": 19.69755249928113
+    },
+    {
+      "event": "held_again",
+      "hand": "frying_pan",
+      "mesh": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "parent": "BP_CL9Character_C_0",
+      "location": [
+        339.81401382679076,
+        450.0,
+        121.65000629425049
+      ],
+      "scale": [
+        0.9883105754852295,
+        0.9883105754852295,
+        0.9883105754852295
+      ],
+      "visual_bottom_z": 117.6720561336698,
+      "sphere_bottom_z": 91.65000629425049
+    },
+    {
+      "event": "thrown",
+      "hand": "None",
+      "mesh": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "parent": null,
+      "location": [
+        592.3208053375066,
+        895.4586663653707,
+        30.09129421125666
+      ],
+      "scale": [
+        0.9883105754852295,
+        0.9883105754852295,
+        0.9883105754852295
+      ],
+      "visual_bottom_z": 26.11334405067597,
+      "sphere_bottom_z": 0.09129421125665971
+    },
+    {
+      "event": "after_throw",
+      "hand": "None",
+      "mesh": "/Game/CL9Art/Items/Cookware/SM_FryingPan_A.SM_FryingPan_A",
+      "parent": null,
+      "location": [
+        592.3208053375066,
+        895.4586663653707,
+        30.09129421125666
+      ],
+      "scale": [
+        0.9883105754852295,
+        0.9883105754852295,
+        0.9883105754852295
+      ],
+      "visual_bottom_z": 26.11334405067597,
+      "sphere_bottom_z": 0.09129421125665971
+    }
+  ],
+  "scope": "Local real pickup/place/throw RPC and mesh/attachment positions; no 2-player or rendered grip claim."
+}

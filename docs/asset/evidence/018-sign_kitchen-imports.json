@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:40:09.258551+00:00",
+  "assets": [
+    {
+      "id": "henhouse_sign_kitchen",
+      "path": "/Game/CL9Art/Maps/HenhouseYard/SignKitchen/SM_Henhouse_Sign_Kitchen_A.SM_Henhouse_Sign_Kitchen_A",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400005578994751,
+        40.0
+      ],
+      "max_dimension_error_cm": 5.602836608886719e-06,
+      "source_sha256": "2889b03e94414efaa4daad6ad8d697588a79afc02fd4f99dd41155401b4fcbc6",
+      "lod_count": 3,
+      "convex_collision_hulls": 0,
+      "bounds_center_cm": [
+        0.0,
+        -2.0265579223632812e-06,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseYard/SignKitchen/M_CL9_SignKitchen_Frame.M_CL9_SignKitchen_Frame",
+        "/Game/CL9Art/Maps/HenhouseYard/SignKitchen/M_CL9_SignKitchen_Face.M_CL9_SignKitchen_Face"
+      ],
+      "sphere_radius_cm": 35.645478699014724,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

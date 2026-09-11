@@ -1,0 +1,16 @@
+{
+  "utc": "2026-09-10T16:36:26.689391+00:00",
+  "restored": true,
+  "rows": [
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_9",
+      "old": "/Engine/BasicShapes/Cylinder.Cylinder",
+      "new": "/Game/CL9Art/Items/PortableLights/SM_Flashlight_A.SM_Flashlight_A"
+    },
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_10",
+      "old": "/Engine/BasicShapes/Cylinder.Cylinder",
+      "new": "/Game/CL9Art/Items/PortableLights/SM_Headlamp_A.SM_Headlamp_A"
+    }
+  ]
+}

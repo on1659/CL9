@@ -1,0 +1,93 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "ceiling.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Ceiling_Wood": {
+      "vertex_color": true,
+      "roughness": 0.91,
+      "metallic": 0
+    }
+  },
+  "assets": {
+    "henhouse_ceiling": {
+      "object": "SM_Henhouse_Ceiling_500_A",
+      "dimensions_cm": [
+        500.0,
+        500.0000476837158,
+        30.000001192092896
+      ],
+      "triangles": 792,
+      "vertices": 432,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Ceiling_Wood"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "818e46b6f32652e6e4e2b526dc05e6a1ae3b2a1af6cf590ae6db42191a1d38af",
+      "anchors_cm": {
+        "EdgeLeft": [
+          -250.0,
+          -2.384185791015625e-05,
+          0.0
+        ],
+        "EdgeRight": [
+          250.0,
+          -2.384185791015625e-05,
+          0.0
+        ],
+        "EdgeFront": [
+          0.0,
+          -250.00003051757812,
+          0.0
+        ],
+        "EdgeBack": [
+          0.0,
+          249.99996948242188,
+          0.0
+        ]
+      },
+      "rig": "N/A static structure",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        15.000000953674316
+      ],
+      "collision_hulls": 1
+    },
+    "henhouse_ceiling_stretch100": {
+      "object": "SM_Henhouse_Ceiling_Stretch100_A",
+      "dimensions_cm": [
+        100.0,
+        100.00001192092896,
+        100.0
+      ],
+      "triangles": 792,
+      "vertices": 432,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Ceiling_Wood"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "49d1af6bf29f452781eb75c7703986f359a8be47f5c14436b00b12f129dc8e33",
+      "anchors_cm": {},
+      "rig": "N/A static structure",
+      "bounds_center_cm": [
+        0,
+        0,
+        0
+      ],
+      "collision_hulls": 1,
+      "pivot_override": "bounds center",
+      "restore_scale": [
+        5,
+        5,
+        0.3
+      ],
+      "consumer": "CL9SiteMap Stretch: scale size/100, centered pivot"
+    }
+  }
+}

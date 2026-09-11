@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:21:51.219051+00:00",
+  "assets": [
+    {
+      "id": "henhouse_beam",
+      "path": "/Game/CL9Art/Maps/HenhouseStructure/Beam/SM_Henhouse_Beam_500_A.SM_Henhouse_Beam_500_A",
+      "dimensions_cm": [
+        500.0,
+        28.000078201293945,
+        32.0
+      ],
+      "max_dimension_error_cm": 7.808208465576172e-05,
+      "source_sha256": "c010dc5d760116c6bc0f6d0f1c92211ec7df2e54a9307030b651053d04748682",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        16.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseStructure/Beam/M_CL9_Beam_Wood.M_CL9_Beam_Wood",
+        "/Game/CL9Art/Maps/HenhouseStructure/Beam/M_CL9_Beam_Metal.M_CL9_Beam_Metal"
+      ],
+      "sphere_radius_cm": 250.6483212588894,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

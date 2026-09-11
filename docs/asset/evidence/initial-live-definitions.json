@@ -1,0 +1,1672 @@
+{
+  "Item": [
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_0",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 21,
+        "bFragile": true,
+        "crackSpeed": 450,
+        "breakSpeed": 1260,
+        "crackedBreakSpeed": 750,
+        "gravity": 1950,
+        "restitution": 0.3400000035762787,
+        "friction": 0.6200000047683716,
+        "bEmitsLight": true,
+        "lightKind": "Glow",
+        "lightRadius": 192,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 276,
+        "bShowOnMinimap": false,
+        "valueMin": 80,
+        "valueMax": 120,
+        "bWorthlessIfBroken": true,
+        "bWorthlessIfBurnt": true,
+        "cookResult": {
+          "itemAlias": "egg",
+          "itemSubAlias": "cooked"
+        },
+        "burnResult": {
+          "itemAlias": "egg",
+          "itemSubAlias": "burnt"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "egg",
+        "subAlias": "None",
+        "displayName": "계란",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Sphere.Sphere"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_1",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 21,
+        "bFragile": true,
+        "crackSpeed": 450,
+        "breakSpeed": 1260,
+        "crackedBreakSpeed": 750,
+        "gravity": 1950,
+        "restitution": 0.3400000035762787,
+        "friction": 0.6200000047683716,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 150,
+        "valueMax": 200,
+        "bWorthlessIfBroken": true,
+        "bWorthlessIfBurnt": true,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "egg",
+          "itemSubAlias": "burnt"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Dish",
+        "eatBuffs": [
+          "leg_strength"
+        ],
+        "alias": "egg",
+        "subAlias": "cooked",
+        "displayName": "익은 계란",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Sphere.Sphere"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_2",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 21,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.3400000035762787,
+        "friction": 0.6200000047683716,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "egg",
+        "subAlias": "burnt",
+        "displayName": "탄 계란",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Sphere.Sphere"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_3",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 21,
+        "bFragile": true,
+        "crackSpeed": 450,
+        "breakSpeed": 1260,
+        "crackedBreakSpeed": 750,
+        "gravity": 1950,
+        "restitution": 0.3400000035762787,
+        "friction": 0.6200000047683716,
+        "bEmitsLight": true,
+        "lightKind": "Glow",
+        "lightRadius": 192,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 276,
+        "bShowOnMinimap": false,
+        "valueMin": 80,
+        "valueMax": 120,
+        "bWorthlessIfBroken": true,
+        "bWorthlessIfBurnt": true,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "egg",
+        "subAlias": "cracked",
+        "displayName": "금 간 계란",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Sphere.Sphere"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_4",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 21,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.10000000149011612,
+        "friction": 0.800000011920929,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "egg",
+        "subAlias": "broken",
+        "displayName": "깨진 계란",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Sphere.Sphere"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_5",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 30,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.15000000596046448,
+        "friction": 0.75,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 140,
+        "valueMax": 180,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": true,
+        "cookResult": {
+          "itemAlias": "meat",
+          "itemSubAlias": "cooked"
+        },
+        "burnResult": {
+          "itemAlias": "meat",
+          "itemSubAlias": "burnt"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "meat",
+        "subAlias": "None",
+        "displayName": "고기",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cube.Cube"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_6",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 30,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.15000000596046448,
+        "friction": 0.75,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 250,
+        "valueMax": 320,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": true,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "meat",
+          "itemSubAlias": "burnt"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Dish",
+        "eatBuffs": [],
+        "alias": "meat",
+        "subAlias": "cooked",
+        "displayName": "익은 고기",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cube.Cube"
+        },
+        "actorClass": "None",
+        "gimmicks": [
+          {
+            "refPath": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_6.CL9Gimmick_Spin_0"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_7",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 30,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.15000000596046448,
+        "friction": 0.75,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Ingredient",
+        "eatBuffs": [],
+        "alias": "meat",
+        "subAlias": "burnt",
+        "displayName": "탄 고기",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cube.Cube"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_8",
+      "values": {
+        "carrySlot": "CartOnly",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": false,
+        "radius": 60,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.10000000149011612,
+        "friction": 0.800000011920929,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Tool",
+        "eatBuffs": [],
+        "alias": "cart",
+        "subAlias": "None",
+        "displayName": "수레",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cube.Cube"
+        },
+        "actorClass": {
+          "refPath": "/Game/Items/BP_CL9Cart.BP_CL9Cart_C"
+        },
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_9",
+      "values": {
+        "carrySlot": "Pocketable",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 12,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.30000001192092896,
+        "friction": 0.5,
+        "bEmitsLight": true,
+        "lightKind": "Flashlight",
+        "lightRadius": 800,
+        "lightIntensity": 6000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Tool",
+        "eatBuffs": [],
+        "alias": "flashlight",
+        "subAlias": "None",
+        "displayName": "손전등",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cylinder.Cylinder"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_10",
+      "values": {
+        "carrySlot": "Head",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": true,
+        "radius": 12,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.30000001192092896,
+        "friction": 0.5,
+        "bEmitsLight": true,
+        "lightKind": "Flashlight",
+        "lightRadius": 800,
+        "lightIntensity": 6000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": false,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Tool",
+        "eatBuffs": [],
+        "alias": "headlamp",
+        "subAlias": "None",
+        "displayName": "헤드램프",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cylinder.Cylinder"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_11",
+      "values": {
+        "carrySlot": "Hand",
+        "weight": 0,
+        "bStackable": false,
+        "bPhysicsEnabled": false,
+        "radius": 30,
+        "bFragile": false,
+        "crackSpeed": 0,
+        "breakSpeed": 0,
+        "crackedBreakSpeed": 0,
+        "gravity": 1950,
+        "restitution": 0.30000001192092896,
+        "friction": 0.5,
+        "bEmitsLight": false,
+        "lightKind": "Glow",
+        "lightRadius": 0,
+        "lightIntensity": 5000,
+        "lightConeAngle": 32,
+        "bLightLostInPocket": true,
+        "carrierSeenRadius": 0,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "bWorthlessIfBroken": false,
+        "bWorthlessIfBurnt": false,
+        "cookResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "burnResult": {
+          "itemAlias": "None",
+          "itemSubAlias": "None"
+        },
+        "cookTime": 12,
+        "burnTime": 24,
+        "burnWarnTime": 6,
+        "itemType": "Tool",
+        "eatBuffs": [],
+        "alias": "frying_pan",
+        "subAlias": "None",
+        "displayName": "프라이팬",
+        "description": "",
+        "icon": "None",
+        "mesh": {
+          "refPath": "/Engine/BasicShapes/Cylinder.Cylinder"
+        },
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Monster": [
+    {
+      "path": "/Game/Data/DA_MonsterTable.DA_MonsterTable:CL9MonsterDef_0",
+      "values": {
+        "skeletalMesh": {
+          "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/SK_Chicken.SK_Chicken"
+        },
+        "skeleton": {
+          "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/Skeleton/SKEL_Chicken.SKEL_Chicken"
+        },
+        "animBP": "/Game/Monsters/ABP_Chicken.ABP_Chicken_C",
+        "meshYawOffset": -90,
+        "hpMin": 3,
+        "hpMax": 4,
+        "hitStunMs": 300,
+        "wanderSpeed": 126,
+        "patrolSpeed": 195,
+        "chaseSpeed": 396,
+        "retreatSpeed": 0,
+        "turnRate": 280,
+        "turnDrag": 0.44999998807907104,
+        "outdoorChaseMult": 0.800000011920929,
+        "radius": 36,
+        "separationDist": 90,
+        "sightIn": 330,
+        "sightOut": 219,
+        "sightDark": 111,
+        "hearRadius": 180,
+        "detectNearRadius": 120,
+        "detectRateNear": 2.5,
+        "detectRateFar": 0.5,
+        "detectDecay": 0.4000000059604645,
+        "detectGrace": 0.5,
+        "chaseBudget": 45,
+        "chaseLoseTime": 6,
+        "chaseBreakTime": 1.2000000476837158,
+        "chaseCooldown": 3,
+        "homeRange": 840,
+        "deaggroRadius": 510,
+        "catchRadius": 84,
+        "catchDamage": 1,
+        "searchHops": 3,
+        "searchDwellTime": 2,
+        "wakeTelegraph": 0.800000011920929,
+        "wakeSightRadius": 900,
+        "wakeRetryTime": 2,
+        "packAlarmRadius": 600,
+        "killAlarmRadius": 2100,
+        "bAlertsOthers": false,
+        "wakeRadius": 0,
+        "hearRunRadius": 0,
+        "alertWindup": 0,
+        "sleepTime": 0,
+        "alertCooldown": 0,
+        "rageTime": 9,
+        "killCooldown": 9,
+        "revengeTime": 5,
+        "revengeRadius": 276,
+        "pushStun": 0.800000011920929,
+        "pushKnockback": 1560,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "dropItems": [],
+        "alias": "chicken",
+        "subAlias": "None",
+        "displayName": "닭",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_MonsterTable.DA_MonsterTable:CL9MonsterDef_Goose",
+      "values": {
+        "skeletalMesh": {
+          "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/SK_Chicken.SK_Chicken"
+        },
+        "skeleton": {
+          "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Chicken/Skeleton/SKEL_Chicken.SKEL_Chicken"
+        },
+        "animBP": "/Game/Monsters/ABP_Chicken.ABP_Chicken_C",
+        "meshYawOffset": -90,
+        "hpMin": 3,
+        "hpMax": 4,
+        "hitStunMs": 300,
+        "wanderSpeed": 126,
+        "patrolSpeed": 195,
+        "chaseSpeed": 528,
+        "retreatSpeed": 270,
+        "turnRate": 280,
+        "turnDrag": 0.44999998807907104,
+        "outdoorChaseMult": 0.800000011920929,
+        "radius": 45,
+        "separationDist": 90,
+        "sightIn": 330,
+        "sightOut": 219,
+        "sightDark": 111,
+        "hearRadius": 180,
+        "detectNearRadius": 120,
+        "detectRateNear": 2.5,
+        "detectRateFar": 0.5,
+        "detectDecay": 0.4000000059604645,
+        "detectGrace": 0.5,
+        "chaseBudget": 45,
+        "chaseLoseTime": 6,
+        "chaseBreakTime": 1.2000000476837158,
+        "chaseCooldown": 3,
+        "homeRange": 2280,
+        "deaggroRadius": 510,
+        "catchRadius": 0,
+        "catchDamage": 0,
+        "searchHops": 3,
+        "searchDwellTime": 2,
+        "wakeTelegraph": 0.800000011920929,
+        "wakeSightRadius": 900,
+        "wakeRetryTime": 2,
+        "packAlarmRadius": 600,
+        "killAlarmRadius": 2100,
+        "bAlertsOthers": true,
+        "wakeRadius": 450,
+        "hearRunRadius": 1260,
+        "alertWindup": 0.550000011920929,
+        "sleepTime": 4,
+        "alertCooldown": 2.5,
+        "rageTime": 9,
+        "killCooldown": 9,
+        "revengeTime": 5,
+        "revengeRadius": 276,
+        "pushStun": 0.800000011920929,
+        "pushKnockback": 1560,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "dropItems": [],
+        "alias": "goose",
+        "subAlias": "None",
+        "displayName": "거위",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_MonsterTable.DA_MonsterTable:CL9MonsterDef_Raccoon",
+      "values": {
+        "skeletalMesh": "/Game/AnimalVarietyPack/Fox/Meshes/SK_Fox.SK_Fox",
+        "skeleton": "/Game/AnimalVarietyPack/Fox/Meshes/SK_Fox_Skeleton.SK_Fox_Skeleton",
+        "animBP": "/Game/Monsters/ABP_Fox.ABP_Fox_C",
+        "meshYawOffset": -90,
+        "hpMin": 4,
+        "hpMax": 5,
+        "hitStunMs": 300,
+        "wanderSpeed": 140,
+        "patrolSpeed": 210,
+        "chaseSpeed": 462,
+        "retreatSpeed": 220,
+        "turnRate": 320,
+        "turnDrag": 0.3499999940395355,
+        "outdoorChaseMult": 0.8999999761581421,
+        "radius": 40,
+        "separationDist": 100,
+        "sightIn": 390,
+        "sightOut": 260,
+        "sightDark": 130,
+        "hearRadius": 210,
+        "detectNearRadius": 130,
+        "detectRateNear": 2.799999952316284,
+        "detectRateFar": 0.6000000238418579,
+        "detectDecay": 0.4000000059604645,
+        "detectGrace": 0.5,
+        "chaseBudget": 30,
+        "chaseLoseTime": 5,
+        "chaseBreakTime": 1.2000000476837158,
+        "chaseCooldown": 3,
+        "homeRange": 1200,
+        "deaggroRadius": 510,
+        "catchRadius": 84,
+        "catchDamage": 1,
+        "searchHops": 3,
+        "searchDwellTime": 2,
+        "wakeTelegraph": 0.800000011920929,
+        "wakeSightRadius": 900,
+        "wakeRetryTime": 2,
+        "packAlarmRadius": 600,
+        "killAlarmRadius": 2100,
+        "bAlertsOthers": false,
+        "wakeRadius": 0,
+        "hearRunRadius": 0,
+        "alertWindup": 0,
+        "sleepTime": 0,
+        "alertCooldown": 0,
+        "rageTime": 9,
+        "killCooldown": 9,
+        "revengeTime": 5,
+        "revengeRadius": 276,
+        "pushStun": 0.800000011920929,
+        "pushKnockback": 1560,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "dropItems": [],
+        "alias": "raccoon",
+        "subAlias": "None",
+        "displayName": "너구리",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_MonsterTable.DA_MonsterTable:CL9MonsterDef_1",
+      "values": {
+        "skeletalMesh": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Pig/SK_Pig.SK_Pig",
+        "skeleton": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Pig/Skeleton/SKEL_Pig.SKEL_Pig",
+        "animBP": "/Game/Monsters/ABP_Pig.ABP_Pig_C",
+        "meshYawOffset": -90,
+        "hpMin": 3,
+        "hpMax": 4,
+        "hitStunMs": 300,
+        "wanderSpeed": 126,
+        "patrolSpeed": 195,
+        "chaseSpeed": 396,
+        "retreatSpeed": 0,
+        "turnRate": 280,
+        "turnDrag": 0.44999998807907104,
+        "outdoorChaseMult": 0.800000011920929,
+        "radius": 36,
+        "separationDist": 90,
+        "sightIn": 330,
+        "sightOut": 219,
+        "sightDark": 111,
+        "hearRadius": 180,
+        "detectNearRadius": 120,
+        "detectRateNear": 2.5,
+        "detectRateFar": 0.5,
+        "detectDecay": 0.4000000059604645,
+        "detectGrace": 0.5,
+        "chaseBudget": 45,
+        "chaseLoseTime": 6,
+        "chaseBreakTime": 1.2000000476837158,
+        "chaseCooldown": 3,
+        "homeRange": 840,
+        "deaggroRadius": 510,
+        "catchRadius": 84,
+        "catchDamage": 1,
+        "searchHops": 0,
+        "searchDwellTime": 2,
+        "wakeTelegraph": 0.800000011920929,
+        "wakeSightRadius": 900,
+        "wakeRetryTime": 2,
+        "packAlarmRadius": 600,
+        "killAlarmRadius": 2100,
+        "bAlertsOthers": false,
+        "wakeRadius": 0,
+        "hearRunRadius": 0,
+        "alertWindup": 0,
+        "sleepTime": 0,
+        "alertCooldown": 0,
+        "rageTime": 9,
+        "killCooldown": 9,
+        "revengeTime": 5,
+        "revengeRadius": 276,
+        "pushStun": 0.800000011920929,
+        "pushKnockback": 1560,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "dropItems": [],
+        "alias": "pig",
+        "subAlias": "None",
+        "displayName": "돼지",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_MonsterTable.DA_MonsterTable:CL9MonsterDef_2",
+      "values": {
+        "skeletalMesh": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Sheep/SK_Sheep.SK_Sheep",
+        "skeleton": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Sheep/Skeleton/SKEL_Sheep.SKEL_Sheep",
+        "animBP": "/Game/Monsters/ABP_Sheep.ABP_Sheep_C",
+        "meshYawOffset": -90,
+        "hpMin": 3,
+        "hpMax": 4,
+        "hitStunMs": 300,
+        "wanderSpeed": 126,
+        "patrolSpeed": 195,
+        "chaseSpeed": 396,
+        "retreatSpeed": 0,
+        "turnRate": 280,
+        "turnDrag": 0.44999998807907104,
+        "outdoorChaseMult": 0.800000011920929,
+        "radius": 36,
+        "separationDist": 90,
+        "sightIn": 330,
+        "sightOut": 219,
+        "sightDark": 111,
+        "hearRadius": 180,
+        "detectNearRadius": 120,
+        "detectRateNear": 2.5,
+        "detectRateFar": 0.5,
+        "detectDecay": 0.4000000059604645,
+        "detectGrace": 0.5,
+        "chaseBudget": 45,
+        "chaseLoseTime": 6,
+        "chaseBreakTime": 1.2000000476837158,
+        "chaseCooldown": 3,
+        "homeRange": 840,
+        "deaggroRadius": 510,
+        "catchRadius": 84,
+        "catchDamage": 1,
+        "searchHops": 0,
+        "searchDwellTime": 2,
+        "wakeTelegraph": 0.800000011920929,
+        "wakeSightRadius": 900,
+        "wakeRetryTime": 2,
+        "packAlarmRadius": 600,
+        "killAlarmRadius": 2100,
+        "bAlertsOthers": false,
+        "wakeRadius": 0,
+        "hearRunRadius": 0,
+        "alertWindup": 0,
+        "sleepTime": 0,
+        "alertCooldown": 0,
+        "rageTime": 9,
+        "killCooldown": 9,
+        "revengeTime": 5,
+        "revengeRadius": 276,
+        "pushStun": 0.800000011920929,
+        "pushKnockback": 1560,
+        "bShowOnMinimap": false,
+        "valueMin": 0,
+        "valueMax": 0,
+        "dropItems": [],
+        "alias": "sheep",
+        "subAlias": "None",
+        "displayName": "양",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Character": [
+    {
+      "path": "/Game/Data/DA_CharacterTable.DA_CharacterTable:CL9CharacterDef_0",
+      "values": {
+        "skeletalMesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+        "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+        "animBP": "/Game/Characters/Mannequins/Anims/Unarmed/ABP_Unarmed.ABP_Unarmed_C",
+        "armsMesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+        "armsAnimBP": "/Game/FirstPerson/Anims/ABP_FP_Copy.ABP_FP_Copy_C",
+        "tintColor": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        },
+        "walkSpeed": 396,
+        "runSpeed": 654,
+        "carryMult": 1,
+        "cartMult": 0.75,
+        "capsuleRadius": 39,
+        "capsuleHalfHeight": 90,
+        "eyeHeight": 156,
+        "jumpVelocity": 780,
+        "jumpGravity": 1950,
+        "hpMin": 3,
+        "hpMax": 3,
+        "hurtStun": 0.3499999940395355,
+        "knockdownTime": 1.5,
+        "staminaDrainTime": 6,
+        "staminaRegenTime": 8,
+        "staminaMinResume": 1,
+        "alias": "farmer_a",
+        "subAlias": "None",
+        "displayName": "농부 A",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Piece": [
+    {
+      "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_0",
+      "values": {
+        "variants": [
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_5x4_A_01.SM_House_Wall_5x4_A_01"
+          },
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_5x4_A_02.SM_House_Wall_5x4_A_02"
+          },
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_5x4_A_03.SM_House_Wall_5x4_A_03"
+          }
+        ],
+        "alias": "wall",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_1",
+      "values": {
+        "variants": [
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_2_5x4_01.SM_House_Wall_2_5x4_01",
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_2_5x4_02.SM_House_Wall_2_5x4_02",
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Components/Walls/SM_House_Wall_2_5x4_03.SM_House_Wall_2_5x4_03"
+        ],
+        "alias": "wallHalf",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_2",
+      "values": {
+        "variants": [
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Structures/SM_VillageWall_TIling.SM_VillageWall_TIling"
+          },
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Structures/SM_VillageWall_TIling_2.SM_VillageWall_TIling_2"
+          }
+        ],
+        "alias": "fence",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_3",
+      "values": {
+        "variants": [
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_A.SM_Door_A",
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_C.SM_Door_C",
+          {
+            "refPath": "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_D.SM_Door_D"
+          },
+          "/Game/DreamscapeSeries/DreamscapeFarmlands/Meshes/Modular/House/Objects/SM_Door_E.SM_Door_E"
+        ],
+        "alias": "door",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_PieceTable.DA_PieceTable:CL9PieceDef_4",
+      "values": {
+        "variants": [
+          {
+            "refPath": "/Engine/BasicShapes/Cube.Cube"
+          }
+        ],
+        "alias": "box",
+        "subAlias": "None",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Module": [
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_0",
+      "values": {
+        "type": "Start",
+        "size": {
+          "x": 3,
+          "y": 2
+        },
+        "sockets": 15,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": true,
+        "pointPurposes": 0,
+        "alias": "yard_gate",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_1",
+      "values": {
+        "type": "Passage",
+        "size": {
+          "x": 1,
+          "y": 2
+        },
+        "sockets": 5,
+        "rarity": 3,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "corridor",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_2",
+      "values": {
+        "type": "Passage",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 3,
+        "rarity": 3,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "corner",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_3",
+      "values": {
+        "type": "Passage",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 5,
+        "rarity": 2,
+        "height": 550,
+        "bStairs": true,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "stair_pass",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_4",
+      "values": {
+        "type": "Normal",
+        "size": {
+          "x": 3,
+          "y": 3
+        },
+        "sockets": 15,
+        "rarity": 3,
+        "height": 500,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "coop_hall",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_5",
+      "values": {
+        "type": "Normal",
+        "size": {
+          "x": 3,
+          "y": 2
+        },
+        "sockets": 15,
+        "rarity": 3,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "pen",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_6",
+      "values": {
+        "type": "Normal",
+        "size": {
+          "x": 2,
+          "y": 3
+        },
+        "sockets": 11,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "feed_store",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_7",
+      "values": {
+        "type": "Normal",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 15,
+        "rarity": 3,
+        "height": 450,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "cross",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_8",
+      "values": {
+        "type": "Normal",
+        "size": {
+          "x": 3,
+          "y": 3
+        },
+        "sockets": 15,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": true,
+        "pointPurposes": 11,
+        "alias": "yard_open",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_9",
+      "values": {
+        "type": "DeadEnd",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 4,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "incubator",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_10",
+      "values": {
+        "type": "DeadEnd",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 4,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "tool_room",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_11",
+      "values": {
+        "type": "DeadEnd",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 8,
+        "rarity": 3,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "storage",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_12",
+      "values": {
+        "type": "DeadEnd",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 1,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "office",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_13",
+      "values": {
+        "type": "DeadEnd",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 2,
+        "rarity": 3,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "coop_small",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_14",
+      "values": {
+        "type": "Special",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 5,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 15,
+        "alias": "delivery",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_15",
+      "values": {
+        "type": "Special",
+        "size": {
+          "x": 2,
+          "y": 3
+        },
+        "sockets": 10,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": false,
+        "bOutdoor": false,
+        "pointPurposes": 11,
+        "alias": "kitchen",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_ModuleTable.DA_ModuleTable:CL9ModuleDef_16",
+      "values": {
+        "type": "Stair",
+        "size": {
+          "x": 2,
+          "y": 2
+        },
+        "sockets": 15,
+        "rarity": 2,
+        "height": 400,
+        "bStairs": true,
+        "bOutdoor": false,
+        "pointPurposes": 8,
+        "alias": "stair_up",
+        "subAlias": "henhouse",
+        "displayName": "",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Site": [
+    {
+      "path": "/Game/Data/DA_SiteTable.DA_SiteTable:CL9SiteDef_0",
+      "values": {
+        "monsterSpawns": [
+          {
+            "alias": "chicken",
+            "minCount": 8,
+            "maxCount": 12
+          },
+          {
+            "alias": "goose",
+            "minCount": 0,
+            "maxCount": 1
+          }
+        ],
+        "itemSpawns": [
+          {
+            "alias": "egg",
+            "minCount": 16,
+            "maxCount": 20
+          },
+          {
+            "alias": "meat",
+            "minCount": 8,
+            "maxCount": 12
+          }
+        ],
+        "baseDanger": 1,
+        "unlockDay": 1,
+        "valueRate": 1,
+        "generator": "Henhouse",
+        "theme": "henhouse",
+        "cellSize": 500,
+        "baseModuleCount": 24,
+        "entryOffset": 1000,
+        "maxFloors": 2,
+        "stairCountMin": 2,
+        "stairCountMax": 4,
+        "bBuildCeilings": false,
+        "alias": "henhouse",
+        "subAlias": "None",
+        "displayName": "양계장",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    },
+    {
+      "path": "/Game/Data/DA_SiteTable.DA_SiteTable:CL9SiteDef_1",
+      "values": {
+        "monsterSpawns": [
+          {
+            "alias": "chicken",
+            "minCount": 8,
+            "maxCount": 12
+          },
+          {
+            "alias": "goose",
+            "minCount": 0,
+            "maxCount": 1
+          }
+        ],
+        "itemSpawns": [
+          {
+            "alias": "egg",
+            "minCount": 16,
+            "maxCount": 20
+          },
+          {
+            "alias": "meat",
+            "minCount": 8,
+            "maxCount": 12
+          }
+        ],
+        "baseDanger": 1,
+        "unlockDay": 1,
+        "valueRate": 1,
+        "generator": "None",
+        "theme": "None",
+        "cellSize": 500,
+        "baseModuleCount": 24,
+        "entryOffset": 1000,
+        "maxFloors": 1,
+        "stairCountMin": 2,
+        "stairCountMax": 4,
+        "bBuildCeilings": true,
+        "alias": "flat",
+        "subAlias": "None",
+        "displayName": "평지 (테스트)",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ],
+  "Equipment": [
+    {
+      "path": "/Game/Data/DA_EquipmentTable.DA_EquipmentTable:CL9EquipmentDef_0",
+      "values": {
+        "price": 200,
+        "unlockDay": 1,
+        "maxOwned": 3,
+        "bPhysicalProp": true,
+        "slot": "Carryable",
+        "bUsableAsTool": true,
+        "itemDef": {
+          "itemAlias": "frying_pan",
+          "itemSubAlias": "None"
+        },
+        "alias": "frying_pan",
+        "subAlias": "None",
+        "displayName": "프라이팬",
+        "description": "",
+        "icon": "None",
+        "mesh": "None",
+        "actorClass": "None",
+        "gimmicks": []
+      }
+    }
+  ]
+}

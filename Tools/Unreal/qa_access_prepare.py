@@ -1,0 +1,13 @@
+PREFIX='QA017_';FIXTURE_EVIDENCE='017-access-fixtures.json'
+MESH_PATH='/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Wall_500_A'
+MESH_PATHS={
+    'Wall250':'/Game/CL9Art/Maps/HenhouseAccess/Wall250/SM_Henhouse_Wall_250_A',
+    'Wall125':'/Game/CL9Art/Maps/HenhouseAccess/Wall125/SM_Henhouse_Wall_125_A',
+    'TreadNatural':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_A',
+    'TreadY':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_YRun_A',
+    'TreadX':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_XRun_A'}
+width=263.9745788574219;depth=850/31
+FIXTURE_SCALES={'TreadY':(width/100,depth/100,.3),'TreadX':(depth/100,width/100,.3)}
+FIXTURES=[('Wall500',(20000,0,1000),0),('Wall250',(20375,0,1000),0),('Wall125',(20562.5,0,1000),0),
+    ('TreadNatural',(22000,0,1000),0),('TreadY',(22500,0,1015),0),('TreadX',(23000,0,1015),0)]
+exec(compile(open('D:/Work/unreal/CL9/Tools/Unreal/qa_fence_prepare.py',encoding='utf-8').read(),'qa_fence_prepare.py','exec'))

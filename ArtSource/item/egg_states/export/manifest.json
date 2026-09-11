@@ -1,0 +1,183 @@
+{
+  "source": "Original CL9 procedural geometry via Blender MCP; raw reused from henhouse sample",
+  "source_blend": "egg_states.blend",
+  "fps": 30,
+  "rig": "N/A static state swaps",
+  "assets": {
+    "raw": {
+      "object": "SM_Egg_Raw_A",
+      "dimensions_cm": [
+        30.177786946296692,
+        30.177780985832214,
+        40.00000059604645
+      ],
+      "triangles": 440,
+      "uv_layers": 1,
+      "max_vertex_radius_cm": 20.000000707805142,
+      "materials": [
+        {
+          "name": "CL9_HH01_Eggshell",
+          "base_color": [
+            0.8299999833106995,
+            0.7400000095367432,
+            0.47999998927116394,
+            1.0
+          ],
+          "roughness": 0.5199999809265137,
+          "metallic": 0.0
+        }
+      ]
+    },
+    "cooked": {
+      "object": "SM_Egg_Cooked_A",
+      "dimensions_cm": [
+        24.688896536827087,
+        30.177780985832214,
+        40.00000059604645
+      ],
+      "triangles": 448,
+      "uv_layers": 1,
+      "max_vertex_radius_cm": 20.000000707805142,
+      "materials": [
+        {
+          "name": "CL9_EGG01_CookedWhite",
+          "base_color": [
+            0.9100000262260437,
+            0.8600000143051147,
+            0.6700000166893005,
+            1.0
+          ],
+          "roughness": 0.47999998927116394,
+          "metallic": 0.0
+        },
+        {
+          "name": "CL9_EGG01_Yolk",
+          "base_color": [
+            0.9200000166893005,
+            0.38999998569488525,
+            0.02500000037252903,
+            1.0
+          ],
+          "roughness": 0.38999998569488525,
+          "metallic": 0.0
+        }
+      ]
+    },
+    "cracked": {
+      "object": "SM_Egg_Cracked_A",
+      "dimensions_cm": [
+        30.232518911361694,
+        30.177780985832214,
+        40.00000059604645
+      ],
+      "triangles": 982,
+      "uv_layers": 1,
+      "max_vertex_radius_cm": 20.000000707805142,
+      "materials": [
+        {
+          "name": "CL9_EGG01_Shell",
+          "base_color": [
+            0.8299999833106995,
+            0.7400000095367432,
+            0.47999998927116394,
+            1.0
+          ],
+          "roughness": 0.6200000047683716,
+          "metallic": 0.0
+        },
+        {
+          "name": "CL9_EGG01_FractureInterior",
+          "base_color": [
+            0.25,
+            0.06499999761581421,
+            0.008999999612569809,
+            1.0
+          ],
+          "roughness": 0.6499999761581421,
+          "metallic": 0.0
+        }
+      ]
+    },
+    "burnt": {
+      "object": "SM_Egg_Burnt_A",
+      "dimensions_cm": [
+        30.223417282104492,
+        30.177780985832214,
+        40.00000059604645
+      ],
+      "triangles": 1480,
+      "uv_layers": 1,
+      "max_vertex_radius_cm": 20.000000707805142,
+      "materials": [
+        {
+          "name": "CL9_EGG01_Charcoal",
+          "base_color": [
+            0.01899999938905239,
+            0.014000000432133675,
+            0.012000000104308128,
+            1.0
+          ],
+          "roughness": 0.9800000190734863,
+          "metallic": 0.0
+        },
+        {
+          "name": "CL9_EGG01_BurntFissure",
+          "base_color": [
+            0.14000000059604645,
+            0.05400000140070915,
+            0.012000000104308128,
+            1.0
+          ],
+          "roughness": 0.8999999761581421,
+          "metallic": 0.0
+        }
+      ]
+    },
+    "broken": {
+      "object": "SM_Egg_Broken_A",
+      "dimensions_cm": [
+        29.118511080741882,
+        30.177780985832214,
+        40.00000059604645
+      ],
+      "triangles": 1228,
+      "uv_layers": 1,
+      "max_vertex_radius_cm": 20.000000707805142,
+      "materials": [
+        {
+          "name": "CL9_EGG01_Shell",
+          "base_color": [
+            0.8299999833106995,
+            0.7400000095367432,
+            0.47999998927116394,
+            1.0
+          ],
+          "roughness": 0.6200000047683716,
+          "metallic": 0.0
+        },
+        {
+          "name": "CL9_EGG01_FractureInterior",
+          "base_color": [
+            0.25,
+            0.06499999761581421,
+            0.008999999612569809,
+            1.0
+          ],
+          "roughness": 0.6499999761581421,
+          "metallic": 0.0
+        },
+        {
+          "name": "CL9_EGG01_Yolk",
+          "base_color": [
+            0.9200000166893005,
+            0.38999998569488525,
+            0.02500000037252903,
+            1.0
+          ],
+          "roughness": 0.38999998569488525,
+          "metallic": 0.0
+        }
+      ]
+    }
+  }
+}

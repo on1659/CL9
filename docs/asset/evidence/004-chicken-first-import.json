@@ -1,0 +1,16 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "mesh": "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A.SK_Chicken_A",
+  "skeleton": "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A_Skeleton.SK_Chicken_A_Skeleton",
+  "imported": [
+    "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A_Skeleton.SK_Chicken_A_Skeleton",
+    "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A.SK_Chicken_A"
+  ],
+  "source_sha256": "f8844c42599cb9c82b61c56f82c1f9d7f3244aa565828e6bd0c4ae108994ec8e",
+  "options": {
+    "convert_scene": true,
+    "convert_scene_unit": true,
+    "force_front_x_axis": true,
+    "scale": 1
+  }
+}

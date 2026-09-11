@@ -1,0 +1,59 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:18:05.548643+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_part_support_and_clearance",
+  "checks": [
+    {
+      "case": "QA015_A_bounds",
+      "dimensions_cm": [
+        180.00001525878906,
+        75.00003051757812,
+        90.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "QA015_B_bounds",
+      "dimensions_cm": [
+        75.00003051757818,
+        180.00001525878912,
+        90.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "gravity_probe_on_worktop",
+      "simulating_physics": true,
+      "center_cm": [
+        19999.99992482828,
+        0.00016640901960602954,
+        1100.0000009548576
+      ],
+      "bottom_to_top_gap_cm": -0.00018323469316783303,
+      "speed_cm_s": 0.0014002551653910758
+    },
+    {
+      "case": "body_blocks",
+      "blocked": true,
+      "expected": true
+    },
+    {
+      "case": "beside_clear",
+      "blocked": false,
+      "expected": false
+    },
+    {
+      "case": "center_under_top_clear",
+      "blocked": false,
+      "expected": false
+    },
+    {
+      "case": "shelf_blocks",
+      "blocked": true,
+      "expected": true
+    }
+  ],
+  "scope": "Part bounds, capsule/line clearance and a simulated basic sphere on the work surface. No actual CL9 item or 2-player claim."
+}

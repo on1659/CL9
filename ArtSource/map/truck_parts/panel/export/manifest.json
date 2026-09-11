@@ -1,0 +1,81 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "panel.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_TruckPanel_Steel": {
+      "vertex_color": false,
+      "base_color": [
+        0.045,
+        0.057,
+        0.061,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.5
+    },
+    "M_CL9_TruckPanel_Green": {
+      "vertex_color": false,
+      "base_color": [
+        0.042,
+        0.14,
+        0.09,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.1
+    },
+    "M_CL9_TruckPanel_Mark": {
+      "vertex_color": false,
+      "base_color": [
+        0.64,
+        0.56,
+        0.34,
+        1
+      ],
+      "roughness": 0.79,
+      "metallic": 0.1
+    }
+  },
+  "assets": {
+    "truck_panel": {
+      "object": "SM_TruckPanel_A",
+      "dimensions_cm": [
+        15.000000596046448,
+        80.0000011920929,
+        120.00000476837158
+      ],
+      "triangles": 868,
+      "vertices": 474,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_TruckPanel_Steel",
+        "M_CL9_TruckPanel_Green",
+        "M_CL9_TruckPanel_Mark"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "446759a70a83432619629950cbaa59f3a02fd1343b62b38a3bb1f154f630fa68",
+      "anchors_cm": {
+        "WallMount": [
+          -7.500000476837158,
+          0.0,
+          60.000003814697266
+        ],
+        "UsePoint": [
+          7.500000476837158,
+          0.0,
+          60.000003814697266
+        ]
+      },
+      "rig": "N/A fixed control panel; real shop opens through BP",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        60.000003814697266
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

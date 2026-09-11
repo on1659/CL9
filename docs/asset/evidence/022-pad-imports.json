@@ -1,0 +1,36 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:07:04.815170+00:00",
+  "assets": [
+    {
+      "id": "truck_pad",
+      "path": "/Game/CL9Art/Maps/TruckParts/Pad/SM_TruckPad_A.SM_TruckPad_A",
+      "dimensions_cm": [
+        400.00006103515625,
+        400.00006103515625,
+        20.000001907348633
+      ],
+      "max_dimension_error_cm": 6.103515625e-05,
+      "source_sha256": "c00b86792c6a44bd1b7228264f3d8ad18ea05615e5d17658fe93e6dec2bd9afc",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        10.000000953674316
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/TruckParts/Pad/M_CL9_TruckPad_Steel.M_CL9_TruckPad_Steel",
+        "/Game/CL9Art/Maps/TruckParts/Pad/M_CL9_TruckPad_Green.M_CL9_TruckPad_Green",
+        "/Game/CL9Art/Maps/TruckParts/Pad/M_CL9_TruckPad_Mark.M_CL9_TruckPad_Mark"
+      ],
+      "sphere_radius_cm": 266.6008279880599,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

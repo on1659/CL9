@@ -158,6 +158,13 @@ protected:
 	void ReviveDead();
 
 	/**
+	 * 트럭 패드 앞의 깨어나는 자리 (docs/plan/loop.md 귀환). 패드 원점이 아니라 **앞으로
+	 * 비켜선 자리**다 — 패드는 트럭 몸체까지 포함한 덩어리라 원점에 세우면 캡슐이 그
+	 * 콜리전에 갇힌다 (2026-09-10).
+	 */
+	static FVector WakeSpot(const class ACL9TruckPad& Pad, const class ACL9Character& Character);
+
+	/**
 	 * 호스트 전용, 밤 시작: 사이트의 기준값 × 날짜 곡선을 굴려
 	 * 오늘 밤의 동물과 재료를 스폰한다(docs/systems/raiding.md 스폰).
 	 * 아직 맵 생성기가 없어(⑤) 평지 레벨이 트럭 주변에 흩뿌려 대신한다.

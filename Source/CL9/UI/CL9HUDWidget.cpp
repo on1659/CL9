@@ -3,11 +3,13 @@
 #include "UI/CL9HUDWidget.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/Border.h"
+#include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBox.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "TimerManager.h"
 #include "Character/CL9Character.h"
 #include "Character/CL9CharacterMovement.h"
@@ -19,8 +21,10 @@
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Counter.h"
 #include "Items/CL9Item.h"
+#include "Items/CL9Kitchen.h"
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
+#include "UI/CL9CookGaugeWidget.h"
 #include "UI/CL9ScanLabelWidget.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
@@ -126,6 +130,7 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshStamina();
 	RefreshCharge();
 	RefreshItemLabel();
+	RefreshCookGauges();
 	RefreshCounter();
 	RefreshBuffs();
 	RefreshNightWarn(InDeltaTime);
@@ -404,28 +409,75 @@ void UCL9HUDWidget::RefreshItemLabel()
 		CanvasSlot->SetPosition(ScreenPos);
 	}
 	ItemLabelBox->SetVisibility(ESlateVisibility::HitTestInvisible);
-
-	RefreshCookBar(*Item);
 }
 
-void UCL9HUDWidget::RefreshCookBar(const ACL9Item& Item)
+void UCL9HUDWidget::RefreshCookGauges()
 {
-	if (CookBar == nullptr)
+	UWorld* World = GetWorld();
+	if (CookLayer == nullptr || CookGaugeClass == nullptr || World == nullptr)
 	{
 		return;
 	}
 
 	// 조리대가 열원이고 진행도는 재료가 들고 있다(docs/systems/cooking.md) — 이름이 바뀌기 전에
-	// 얼마나 남았는지 보여주지 않으면 태우지 않을 방법이 없다. 라벨 값과 달리 매 프레임 갱신한다.
-	if (!Item.IsOnHeat())
+	// 얼마나 남았는지 보여주지 않으면 태우지 않을 방법이 없다. 재료를 바라봐야 보이던 라벨 안의 바
+	// 대신, 익히는 중인 조리대마다 그 꼭대기 위에 게이지를 하나씩 띄운다(2026-09-10 사용자).
+	// 조리대는 판에 몇 개 없으므로 매 프레임 훑는다.
+	TSet<ACL9Kitchen*> Cooking;
+	for (TActorIterator<ACL9Kitchen> It(World); It; ++It)
 	{
-		CookBar->SetVisibility(ESlateVisibility::Collapsed);
-		return;
+		ACL9Kitchen* Kitchen = *It;
+		const ACL9Item* Item = Kitchen->GetCookingItem();
+		if (Item == nullptr || !Item->IsOnHeat())
+		{
+			continue;
+		}
+
+		UCL9CookGaugeWidget* Gauge = CookGauges.FindRef(Kitchen).Get();
+		if (Gauge == nullptr)
+		{
+			Gauge = CreateWidget<UCL9CookGaugeWidget>(GetOwningPlayer(), CookGaugeClass);
+			if (Gauge == nullptr)
+			{
+				continue;
+			}
+			if (UCanvasPanelSlot* CanvasSlot = CookLayer->AddChildToCanvas(Gauge))
+			{
+				CanvasSlot->SetAutoSize(true);
+				CanvasSlot->SetAlignment(FVector2D(0.5f, 1.f));
+			}
+			Gauge->SetVisibility(ESlateVisibility::HitTestInvisible);
+			CookGauges.Add(Kitchen, Gauge);
+		}
+		Cooking.Add(Kitchen);
+
+		// 위치는 표시 값이라 매 프레임 다시 투영한다(docs/systems/ui_system.md 데이터 연결)
+		const FVector Anchor = Kitchen->GetTopLocation() + FVector(0.f, 0.f, CookGaugeLift);
+		FVector2D ScreenPos;
+		if (!UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(GetOwningPlayer(), Anchor, ScreenPos, false))
+		{
+			ScreenPos = FVector2D(-10000.f, -10000.f);   // 카메라 뒤 — 화면 밖에 세워 둔다
+		}
+		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(Gauge->Slot))
+		{
+			CanvasSlot->SetPosition(ScreenPos);
+		}
+		Gauge->Refresh(*Item);
 	}
 
-	CookBar->SetVisibility(ESlateVisibility::HitTestInvisible);
-	CookBar->SetPercent(Item.GetCookProgress());
-	CookBar->SetFillColorAndOpacity(Item.IsNextBurnt() ? BurnColor : CookColor);
+	// 다 익었거나 집혀 간 조리대(또는 사라진 조리대)의 게이지는 뗀다
+	for (auto It = CookGauges.CreateIterator(); It; ++It)
+	{
+		if (Cooking.Contains(It.Key().Get()))
+		{
+			continue;
+		}
+		if (UCL9CookGaugeWidget* Gauge = It.Value().Get())
+		{
+			Gauge->RemoveFromParent();
+		}
+		It.RemoveCurrent();
+	}
 }
 
 void UCL9HUDWidget::FillItemLabel(const ACL9Item& Item)

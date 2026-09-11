@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:38:03.732625+00:00",
+  "assets": [
+    {
+      "id": "henhouse_sign_coop",
+      "path": "/Game/CL9Art/Maps/HenhouseYard/SignCoop/SM_Henhouse_Sign_Coop_A.SM_Henhouse_Sign_Coop_A",
+      "dimensions_cm": [
+        60.000003814697266,
+        4.400006055831909,
+        40.0
+      ],
+      "max_dimension_error_cm": 6.079673767089844e-06,
+      "source_sha256": "257583948377f91634d3a4ec100cc1ef268409e874f8669772a490d970504e50",
+      "lod_count": 3,
+      "convex_collision_hulls": 0,
+      "bounds_center_cm": [
+        0.0,
+        -1.7881393432617188e-06,
+        0.0
+      ],
+      "materials": [
+        "/Game/CL9Art/Maps/HenhouseYard/SignCoop/M_CL9_SignCoop_Frame.M_CL9_SignCoop_Frame",
+        "/Game/CL9Art/Maps/HenhouseYard/SignCoop/M_CL9_SignCoop_Face.M_CL9_SignCoop_Face"
+      ],
+      "sphere_radius_cm": 35.64547870837879,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

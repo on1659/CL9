@@ -61,6 +61,23 @@ struct FCL9SiteParams
 	 * 온다 — 팩을 갈아 끼우면 문 크기가 그 팩 문짝을 따라간다.
 	 */
 	float DoorWidth = 250.f;
+
+	/** 세울 수 있는 최대 층수 (UCL9SiteDef::MaxFloors). 1이면 단층이다 */
+	int32 MaxFloors = 1;
+
+	/** 층 사이마다 놓을 계단 모듈 수의 범위 — 시드가 이 안에서 뽑는다 */
+	int32 StairCountMin = 2;
+	int32 StairCountMax = 4;
+
+	/** 실내 모듈에 천장을 씌우나 (UCL9SiteDef::bBuildCeilings) */
+	bool bBuildCeilings = true;
+
+	/**
+	 * 한 층의 높이 (cm) — 아래층 바닥에서 위층 바닥까지다. 모듈 천장 높이에
+	 * 천장 판과 바닥 판의 두께를 더한 값이고, 표가 아니라 ACL9SiteMap이 조각
+	 * 실측으로 채워 준다 (docs/systems/asset-swap.md).
+	 */
+	float FloorHeight = 460.f;
 };
 
 /** 격자에 앉은 모듈 하나 */
@@ -83,6 +100,22 @@ struct FCL9ModulePlacement
 
 	/** 시작 모듈에서 몇 개의 모듈을 거쳐 왔나 — 멀수록 깊은 곳이다 */
 	int32 Hops = 0;
+
+	/** 이 모듈이 앉은 층. 0이 1층이다 */
+	int32 Floor = 0;
+
+	/**
+	 * 위층으로 올라가는 계단 모듈인가. 그렇다면 이 모듈은 `Floor`와 `Floor + 1`의
+	 * **같은 칸을 함께 차지한다** — 두 층에서 같은 인덱스가 나오므로 도달 검사가
+	 * 층을 자연스럽게 넘나든다.
+	 */
+	bool bStairUp = false;
+
+	/** 이 모듈이 차지한 가장 높은 층 */
+	int32 TopFloor() const
+	{
+		return Floor + (bStairUp ? 1 : 0);
+	}
 };
 
 /**
@@ -104,6 +137,9 @@ struct FCL9LevelPoint
 	/** 시작 모듈로부터의 홉 수 — 그 모듈의 값을 복사해 둔 것이다 */
 	int32 Hops = 0;
 
+	/** 이 지점이 있는 층 — 사이트 로컬 Z는 이 값 × FCL9SiteParams::FloorHeight다 */
+	int32 Floor = 0;
+
 	bool Has(ECL9PointPurpose Purpose) const
 	{
 		return (Purposes & static_cast<uint8>(Purpose)) != 0;
@@ -117,19 +153,31 @@ struct FCL9SiteLayout
 	/** 시드 0이거나 쓸 모듈이 없으면 false — 그 경우 아무것도 짓지 않는다 */
 	bool bBuilt = false;
 
-	/** 격자 칸 수 */
+	/**
+	 * 이 판이 놓으려 한 모듈 수 — 1층 ModuleCount에 위층 몫(절반씩)을 더한 값이다.
+	 * 실제 Modules.Num()이 이보다 눈에 띄게 적으면 격자가 좁거나 소켓이 안 맞는 것이다.
+	 */
+	int32 Wanted = 0;
+
+	/** 격자 칸 수 — 층이 몇이든 평면 크기는 하나다 */
 	FIntPoint GridSize = FIntPoint::ZeroValue;
+
+	/**
+	 * 실제로 선 층 수 (1 이상). `FCL9SiteParams::MaxFloors`가 상한이고, 위층은
+	 * 아래층이 받쳐 주는 자리에만 설 수 있어서 자리가 없으면 그보다 낮게 끝난다.
+	 */
+	int32 FloorCount = 1;
 
 	/** 칸 (0,0)의 최소 모서리가 놓이는 사이트 로컬 좌표 */
 	FVector2D Origin = FVector2D::ZeroVector;
 
-	/** GridSize.X * GridSize.Y — 그 칸을 차지한 모듈 인덱스, 빈 칸은 INDEX_NONE */
+	/** FloorCount * GridSize.X * GridSize.Y — 그 칸을 차지한 모듈 인덱스, 빈 칸은 INDEX_NONE */
 	TArray<int32> CellModule;
 
-	/** (GridSize.X+1) * GridSize.Y — 칸 (gx-1,gy)와 (gx,gy) 사이의 세로 변 */
+	/** FloorCount * (GridSize.X+1) * GridSize.Y — 칸 (gx-1,gy)와 (gx,gy) 사이의 세로 변 */
 	TArray<uint8> EdgeX;
 
-	/** GridSize.X * (GridSize.Y+1) — 칸 (gx,gy-1)와 (gx,gy) 사이의 가로 변 */
+	/** FloorCount * GridSize.X * (GridSize.Y+1) — 칸 (gx,gy-1)와 (gx,gy) 사이의 가로 변 */
 	TArray<uint8> EdgeY;
 
 	TArray<FCL9ModulePlacement> Modules;
@@ -144,21 +192,33 @@ struct FCL9SiteLayout
 		return Cell.X >= 0 && Cell.Y >= 0 && Cell.X < GridSize.X && Cell.Y < GridSize.Y;
 	}
 
-	int32 CellAt(FIntPoint Cell) const
+	bool IsFloor(int32 Floor) const
 	{
-		return IsInside(Cell) ? CellModule[Cell.X + Cell.Y * GridSize.X] : INDEX_NONE;
+		return Floor >= 0 && Floor < FloorCount;
+	}
+
+	/** 한 층이 쓰는 칸 배열의 길이 — 층 인덱스에 곱하면 그 층의 시작이다 */
+	int32 CellStride() const { return GridSize.X * GridSize.Y; }
+	int32 EdgeXStride() const { return (GridSize.X + 1) * GridSize.Y; }
+	int32 EdgeYStride() const { return GridSize.X * (GridSize.Y + 1); }
+
+	int32 CellAt(int32 Floor, FIntPoint Cell) const
+	{
+		return IsInside(Cell) && IsFloor(Floor)
+			? CellModule[Floor * CellStride() + Cell.X + Cell.Y * GridSize.X]
+			: INDEX_NONE;
 	}
 
 	/** 칸 (gx-1,gy)와 (gx,gy) 사이의 세로 변 — gx는 0 ~ GridSize.X */
-	ECL9GridEdge EdgeAtX(int32 GX, int32 GY) const
+	ECL9GridEdge EdgeAtX(int32 Floor, int32 GX, int32 GY) const
 	{
-		return static_cast<ECL9GridEdge>(EdgeX[GX + GY * (GridSize.X + 1)]);
+		return static_cast<ECL9GridEdge>(EdgeX[Floor * EdgeXStride() + GX + GY * (GridSize.X + 1)]);
 	}
 
 	/** 칸 (gx,gy-1)와 (gx,gy) 사이의 가로 변 — gy는 0 ~ GridSize.Y */
-	ECL9GridEdge EdgeAtY(int32 GX, int32 GY) const
+	ECL9GridEdge EdgeAtY(int32 Floor, int32 GX, int32 GY) const
 	{
-		return static_cast<ECL9GridEdge>(EdgeY[GX + GY * GridSize.X]);
+		return static_cast<ECL9GridEdge>(EdgeY[Floor * EdgeYStride() + GX + GY * GridSize.X]);
 	}
 };
 
@@ -174,9 +234,8 @@ struct FCL9SiteSeg
 	 * 이 박스가 기준으로 삼는 Z. 벽은 여기서 위로, 바닥은 여기서 아래로, 천장은
 	 * 여기서 위로 자란다 — 어느 쪽인지는 seg kind가 정한다.
 	 *
-	 * **지금은 바닥 종류가 언제나 0이다** (module.md 결정 2: 높이차는 모듈 밖으로
-	 * 전파되지 않는다). 언젠가 진짜 층이 필요해지면 여기에 0이 아닌 값을 넣는 것이
-	 * 착수 지점이 된다.
+	 * 층이 생긴 뒤로는 그 모듈이 앉은 층이 여기에 실린다 —
+	 * `Floor × FCL9SiteParams::FloorHeight`다. 계단의 디딤판도 이 값만 다른 바닥 박스다.
 	 */
 	float BaseZ = 0.f;
 
@@ -199,6 +258,14 @@ namespace CL9SegKind
 
 namespace CL9SiteLayout
 {
+	/**
+	 * **계단을 올라가면 반드시 이어지는 공간이 있어야 한다** (2026-09-10 사용자 규칙: "계단이
+	 * 있는 방은 계단 이후 바로 고립되면 안 된다"). 계단 하나가 위층에 최소 이만큼의 모듈을
+	 * 자기 둘레에 틔우지 못하면 그 계단은 계단이 아니게 되돌린다 — 개수를 줄여서 맞추는 게
+	 * 아니라, 갈 데 없는 계단이 애초에 서지 않게 한다.
+	 */
+	constexpr int32 StairMinReach = 3;
+
 	/**
 	 * 모듈을 조립해 한 판을 만든다. 시드가 0이거나 쓸 모듈이 없으면 아무것도 짓지
 	 * 않은 배치를 돌려준다(bBuilt == false). Modules는 레지스트리 순서 그대로여야

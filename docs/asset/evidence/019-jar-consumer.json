@@ -1,0 +1,44 @@
+[
+  {
+    "name": "BP_CL9Jar_C_0",
+    "class": "/Game/Items/BP_CL9Jar.BP_CL9Jar_C",
+    "location": [
+      200.0,
+      300.0,
+      49.49999511241913
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "components": [
+      {
+        "name": "Mesh",
+        "class": "StaticMeshComponent",
+        "relative_location": [
+          200.0,
+          300.0,
+          49.49999511241913
+        ],
+        "relative_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "bounds_center": [
+          200.0,
+          300.0,
+          49.49999511241913
+        ],
+        "dimensions": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "collision": "BlockAllDynamic",
+        "mesh": "/Engine/BasicShapes/Cylinder.Cylinder"
+      }
+    ]
+  }
+]

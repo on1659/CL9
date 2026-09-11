@@ -1,0 +1,124 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T18:11:06.029453+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_local_heal_reset_and_shop_open",
+  "phase": "complete",
+  "heal_time": 5.0,
+  "checks": [
+    {
+      "case": "outside_not_healed",
+      "elapsed": 6.666669994592667,
+      "hp": 2,
+      "max_hp": 3,
+      "overlapping": false,
+      "pawn_location": [
+        20400.0,
+        0.0,
+        1092.0
+      ]
+    },
+    {
+      "case": "partial_stay",
+      "elapsed": 9.666671097278595,
+      "hp": 2,
+      "max_hp": 3,
+      "overlapping": true,
+      "pawn_location": [
+        20000.0,
+        0.0,
+        1112.0
+      ]
+    },
+    {
+      "case": "exit",
+      "elapsed": 10.666671693325043,
+      "hp": 2,
+      "max_hp": 3,
+      "overlapping": false,
+      "pawn_location": [
+        20400.0,
+        0.0,
+        1092.0
+      ]
+    },
+    {
+      "case": "reentry_timer_reset",
+      "elapsed": 13.666672825813293,
+      "hp": 2,
+      "max_hp": 3,
+      "overlapping": true,
+      "pawn_location": [
+        20000.0,
+        0.0,
+        1112.0
+      ]
+    },
+    {
+      "case": "full_heal",
+      "elapsed": 16.333624124526978,
+      "hp": 3,
+      "max_hp": 3,
+      "overlapping": true,
+      "pawn_location": [
+        20000.0,
+        0.0,
+        1112.0
+      ]
+    },
+    {
+      "case": "panel_focus",
+      "focused": true,
+      "prompt": "[E] \uc7a5\ube44 \uad6c\ub9e4"
+    },
+    {
+      "case": "shop_open",
+      "open": true,
+      "screen": "Shop",
+      "manager": "/Engine/Transient.UnrealEdEngine_0:BP_CL9GameInstance_C_32.CL9UIManager_0"
+    },
+    {
+      "case": "pad_bounds",
+      "dimensions_cm": [
+        400.00006103515625,
+        400.00006103515625,
+        20.000001907348633
+      ],
+      "bottom_z": 1000.0,
+      "mesh": "/Game/CL9Art/Maps/TruckParts/Pad/SM_TruckPad_A.SM_TruckPad_A"
+    },
+    {
+      "case": "panel_bounds",
+      "dimensions_cm": [
+        15.00001049041748,
+        80.0,
+        120.00000762939453
+      ],
+      "bottom_z": 1000.0,
+      "mesh": "/Game/CL9Art/Maps/TruckParts/Panel/SM_TruckPanel_A.SM_TruckPanel_A"
+    },
+    {
+      "case": "heal_zone",
+      "origin": [
+        20000.0,
+        0.0,
+        1120.0
+      ],
+      "dimensions_cm": [
+        400.0,
+        400.0,
+        240.0
+      ]
+    },
+    {
+      "case": "pad_probe_support",
+      "gap_cm": 9.329369277111255e-07,
+      "speed_cm_s": 0.0
+    }
+  ],
+  "scope": "Actual pad BP + damage cheat + timed enter/exit reset; real panel pickup/interact RPC opens Shop; no purchase/2-player/keyboard walking claim.",
+  "elapsed": 19.00029182434082,
+  "reentered": 100.66696360707283,
+  "screen_before": "OrderSelect"
+}

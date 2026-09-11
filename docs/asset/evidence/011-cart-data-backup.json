@@ -1,0 +1,11 @@
+{
+  "utc": "2026-09-10T16:52:03.979351+00:00",
+  "restored": true,
+  "rows": [
+    {
+      "row": "/Game/Data/DA_ItemTable.DA_ItemTable:CL9ItemDef_8",
+      "old": "/Engine/BasicShapes/Cube.Cube",
+      "new": "/Game/CL9Art/Items/CartA/SM_Cart_A.SM_Cart_A"
+    }
+  ]
+}

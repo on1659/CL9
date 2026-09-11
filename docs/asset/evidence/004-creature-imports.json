@@ -1,0 +1,132 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T15:59:35.379186+00:00",
+  "creatures": [
+    {
+      "species": "Chicken",
+      "mesh": "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A.SK_Chicken_A",
+      "skeleton": "/Game/CL9Art/Monsters/ChickenA/SK_Chicken_A_Skeleton.SK_Chicken_A_Skeleton",
+      "material": "/Game/CL9Art/Monsters/ChickenA/M_CL9_Chicken_Vertex.M_CL9_Chicken_Vertex",
+      "has_vertex_colors": true,
+      "dimensions_cm": [
+        132.81277465820312,
+        75.5999984741211,
+        133.31852769851685
+      ],
+      "dimension_error_cm": 1.239776611328125e-05,
+      "clips": [
+        {
+          "name": "Idle",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Idle.AN_Chicken_Idle",
+          "duration_seconds": 2.0,
+          "source_sha256": "e3017bb561e6a33df1a50a0e808188592c1e849e97f6df0452f092573885ba3a"
+        },
+        {
+          "name": "Walk",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Walk.AN_Chicken_Walk",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "5c25877717a9171f1aa5cd10f7473d4b586aae42f2ca5a539867bd2cc2095da8"
+        },
+        {
+          "name": "Run",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Run.AN_Chicken_Run",
+          "duration_seconds": 0.5,
+          "source_sha256": "fcf3488b18c7b5cc02c5069f05ce0453e80925dbe65b23d1153d0b76b64069fd"
+        },
+        {
+          "name": "LookAround",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_LookAround.AN_Chicken_LookAround",
+          "duration_seconds": 2.0,
+          "source_sha256": "dabdf24de936694710c1cc0dd8214a7cac2ab382e8f5e6f29ac5dd1d13b880e0"
+        },
+        {
+          "name": "HitReact",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_HitReact.AN_Chicken_HitReact",
+          "duration_seconds": 0.30000001192092896,
+          "source_sha256": "cbd6ecf7bb0105d493c92c32cfb2decdd56af5c05c0780f9517e1535eb592197"
+        },
+        {
+          "name": "WakeTelegraph",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_WakeTelegraph.AN_Chicken_WakeTelegraph",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "447067ef00dbcb5cfbe9f2e2b17acd878a83eabb4889fe4197cafbc04ac98c27"
+        },
+        {
+          "name": "Catch",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Catch.AN_Chicken_Catch",
+          "duration_seconds": 0.6000000238418579,
+          "source_sha256": "8124721f9aa38b861cdd056ba61b2b1e88a7d5e77b1b388ce97e14d5dcc37af2"
+        },
+        {
+          "name": "Death",
+          "path": "/Game/CL9Art/Monsters/ChickenA/AN_Chicken_Death.AN_Chicken_Death",
+          "duration_seconds": 1.2000000476837158,
+          "source_sha256": "60a8b40ddd0676c00c3118d7e3c7a482aec1a5c23a1e5a07e339e8dae219cd27"
+        }
+      ]
+    },
+    {
+      "species": "Raccoon",
+      "mesh": "/Game/CL9Art/Monsters/RaccoonA/SK_Raccoon_A.SK_Raccoon_A",
+      "skeleton": "/Game/CL9Art/Monsters/RaccoonA/SK_Raccoon_A_Skeleton.SK_Raccoon_A_Skeleton",
+      "material": "/Game/CL9Art/Monsters/RaccoonA/M_CL9_Raccoon_Vertex.M_CL9_Raccoon_Vertex",
+      "has_vertex_colors": true,
+      "dimensions_cm": [
+        211.00253295898438,
+        68.99999618530273,
+        104.46588897705078
+      ],
+      "dimension_error_cm": 7.62939453125e-06,
+      "clips": [
+        {
+          "name": "Idle",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_Idle.AN_Raccoon_Idle",
+          "duration_seconds": 2.0,
+          "source_sha256": "6ed3267f53831caf16399ebd42237472eb8c5885262df86c3f00fda4781a975a"
+        },
+        {
+          "name": "Walk",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_Walk.AN_Raccoon_Walk",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "d37847ec8730349530819524fd6df0d14338941f3d3631f6c04f0e9955d4d559"
+        },
+        {
+          "name": "Run",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_Run.AN_Raccoon_Run",
+          "duration_seconds": 0.5,
+          "source_sha256": "9bbb3d40e6a4dfe122904622543d7e7c5f21c5095a575b56ccffbbec37c9cc21"
+        },
+        {
+          "name": "LookAround",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_LookAround.AN_Raccoon_LookAround",
+          "duration_seconds": 2.0,
+          "source_sha256": "c2fb63351e5762ca9855b9fd7e6b2f729e441fd0bb404ff523f8009ca0f3534b"
+        },
+        {
+          "name": "HitReact",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_HitReact.AN_Raccoon_HitReact",
+          "duration_seconds": 0.30000001192092896,
+          "source_sha256": "2c77728e99ceef18361aefef153632cdd591a676e9e67357208171788a796de9"
+        },
+        {
+          "name": "WakeTelegraph",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_WakeTelegraph.AN_Raccoon_WakeTelegraph",
+          "duration_seconds": 0.800000011920929,
+          "source_sha256": "c7369acf8140fb87af91b4f7d0c5dd2ff0d03dfce3c2d4d529fc026fb57ee588"
+        },
+        {
+          "name": "Catch",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_Catch.AN_Raccoon_Catch",
+          "duration_seconds": 0.6000000238418579,
+          "source_sha256": "e2d30525b7bf8afaa290e9f68e435a79e1f388acf5771f8b8c5f7baa3fd53220"
+        },
+        {
+          "name": "Death",
+          "path": "/Game/CL9Art/Monsters/RaccoonA/AN_Raccoon_Death.AN_Raccoon_Death",
+          "duration_seconds": 1.2000000476837158,
+          "source_sha256": "0ec34f886b29a66c93e0d1b56ad8dc3d03de640bdbac5780728faf822e845640"
+        }
+      ]
+    }
+  ]
+}

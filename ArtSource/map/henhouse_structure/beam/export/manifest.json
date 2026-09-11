@@ -1,0 +1,57 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "beam.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Beam_Wood": {
+      "vertex_color": true,
+      "roughness": 0.91,
+      "metallic": 0
+    },
+    "M_CL9_Beam_Metal": {
+      "vertex_color": true,
+      "roughness": 0.69,
+      "metallic": 0.55
+    }
+  },
+  "assets": {
+    "henhouse_beam": {
+      "object": "SM_Henhouse_Beam_500_A",
+      "dimensions_cm": [
+        500.0,
+        28.00000011920929,
+        31.999999284744263
+      ],
+      "triangles": 508,
+      "vertices": 280,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Beam_Wood",
+        "M_CL9_Beam_Metal"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "c010dc5d760116c6bc0f6d0f1c92211ec7df2e54a9307030b651053d04748682",
+      "anchors_cm": {
+        "EndLeft": [
+          -250.0,
+          0.0,
+          0.0
+        ],
+        "EndRight": [
+          250.0,
+          0.0,
+          0.0
+        ]
+      },
+      "rig": "N/A static structure",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        16.0
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:31:56.322206+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_part_seams_and_directional_tread_fit",
+  "checks": [
+    {
+      "case": "Wall500_bounds",
+      "dimensions_cm": [
+        500.0,
+        40.00008201599121,
+        400.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "Wall250_bounds",
+      "dimensions_cm": [
+        250.0,
+        40.00004196166992,
+        400.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "Wall125_bounds",
+      "dimensions_cm": [
+        125.00000762939453,
+        40.00001907348633,
+        400.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "TreadNatural_bounds",
+      "dimensions_cm": [
+        263.9745788574219,
+        27.41939926147461,
+        30.000001907348633
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "TreadY_bounds",
+      "dimensions_cm": [
+        263.97461913674607,
+        27.419359022571193,
+        30.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "TreadX_bounds",
+      "dimensions_cm": [
+        27.419359022571193,
+        263.97461913674607,
+        30.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "Wall500_Wall250_seam",
+      "gap_cm": 0.0
+    },
+    {
+      "case": "Wall250_Wall125_seam",
+      "gap_cm": -3.814697265625e-06
+    },
+    {
+      "case": "wall_seam_capsule",
+      "x": 20250,
+      "blocked": true
+    },
+    {
+      "case": "wall_seam_capsule",
+      "x": 20500,
+      "blocked": true
+    },
+    {
+      "case": "TreadNatural_support",
+      "blocked": true
+    },
+    {
+      "case": "TreadY_support",
+      "blocked": true
+    },
+    {
+      "case": "TreadX_support",
+      "blocked": true
+    }
+  ],
+  "scope": "Isolated wall interfaces and tread direction variants. No complete staircase, actual stair walking, 2-player or module selection claim."
+}

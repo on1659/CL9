@@ -1,0 +1,97 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-10T17:23:45.465270+00:00",
+  "world_count": 1,
+  "level": "/Game/CL9Art/Tests/UEDPIE_0_Lvl_AssetQA01.Lvl_AssetQA01",
+  "status": "passed_part_seams_stretch_and_collision",
+  "checks": [
+    {
+      "case": "BeamA_bounds",
+      "dimensions_cm": [
+        500.0,
+        28.000078201293945,
+        32.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "BeamB_bounds",
+      "dimensions_cm": [
+        500.0,
+        28.000078201293945,
+        32.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "Beam90_bounds",
+      "dimensions_cm": [
+        28.000078201294063,
+        500.0000000000001,
+        32.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "Pillar_bounds",
+      "dimensions_cm": [
+        28.000003814697266,
+        28.000003814697266,
+        400.0
+      ],
+      "bottom_z": 1000.0
+    },
+    {
+      "case": "CeilingNatural_bounds",
+      "dimensions_cm": [
+        500.0000915527344,
+        500.0001220703125,
+        30.000001907348633
+      ],
+      "bottom_z": 1600.0
+    },
+    {
+      "case": "CeilingStretch_bounds",
+      "dimensions_cm": [
+        500.0000762939453,
+        500.0001525878906,
+        30.000002288818358
+      ],
+      "bottom_z": 1600.0
+    },
+    {
+      "case": "BeamA_BeamB_seam",
+      "gap_cm": 0.0
+    },
+    {
+      "case": "CeilingNatural_CeilingStretch_seam",
+      "gap_cm": -8.392333984375e-05
+    },
+    {
+      "case": "beam_cross",
+      "blocked": true,
+      "expected": true
+    },
+    {
+      "case": "pillar_cross",
+      "blocked": true,
+      "expected": true
+    },
+    {
+      "case": "ceiling_seam",
+      "blocked": true,
+      "expected": true
+    },
+    {
+      "case": "ceiling_below_clear",
+      "blocked": false,
+      "expected": false
+    },
+    {
+      "case": "ceiling_above_blocks",
+      "blocked": true,
+      "expected": true
+    }
+  ],
+  "scope": "Six isolated part fixtures. Current 100-unit Stretch scale applied to a compatible export. No actual module generation/2-player/performance claim."
+}

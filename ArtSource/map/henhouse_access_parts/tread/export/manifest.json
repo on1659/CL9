@@ -1,0 +1,117 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "tread.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Tread_Concrete": {
+      "vertex_color": true,
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "M_CL9_Tread_Surface": {
+      "vertex_color": true,
+      "roughness": 0.83,
+      "metallic": 0.25
+    }
+  },
+  "assets": {
+    "henhouse_tread": {
+      "object": "SM_Henhouse_Tread_A",
+      "dimensions_cm": [
+        263.97457122802734,
+        27.419358491897583,
+        30.000001192092896
+      ],
+      "triangles": 220,
+      "vertices": 120,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Tread_Concrete",
+        "M_CL9_Tread_Surface"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "987a219f8fe1d9f986758798e3a557cf00e6e69b14326dadad25bbf41899b104",
+      "anchors_cm": {
+        "Top": [
+          0,
+          0,
+          30
+        ]
+      },
+      "rig": "N/A static step",
+      "calculated_tread_depth_cm": 27.419354838709676,
+      "calculated_rise_cm": 19.677419354838708,
+      "bounds_center_cm": [
+        0,
+        0,
+        15
+      ],
+      "collision_hulls": 1
+    },
+    "henhouse_tread_stretch0": {
+      "object": "SM_Henhouse_Tread_Stretch100_YRun_A",
+      "dimensions_cm": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "triangles": 220,
+      "vertices": 120,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Tread_Concrete",
+        "M_CL9_Tread_Surface"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "1d20ec6a0580caf48227a275f11a8121172ca727a7efce9c233635b4041f5369",
+      "anchors_cm": {},
+      "rig": "N/A static step",
+      "calculated_tread_depth_cm": 27.419354838709676,
+      "calculated_rise_cm": 19.677419354838708,
+      "bounds_center_cm": [
+        0,
+        0,
+        0
+      ],
+      "collision_hulls": 1,
+      "pivot_override": "bounds center",
+      "normalized_yaw_degrees": 0.0,
+      "consumer": "Centered 100cm bounds; restore with placement Size/100"
+    },
+    "henhouse_tread_stretch90": {
+      "object": "SM_Henhouse_Tread_Stretch100_XRun_A",
+      "dimensions_cm": [
+        100.0,
+        100.0,
+        100.0
+      ],
+      "triangles": 220,
+      "vertices": 120,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Tread_Concrete",
+        "M_CL9_Tread_Surface"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "49d919ffa9294667cd11f9c1bc031692dd8db4cb29705341522bd39dc147cfec",
+      "anchors_cm": {},
+      "rig": "N/A static step",
+      "calculated_tread_depth_cm": 27.419354838709676,
+      "calculated_rise_cm": 19.677419354838708,
+      "bounds_center_cm": [
+        0,
+        0,
+        0
+      ],
+      "collision_hulls": 1,
+      "pivot_override": "bounds center",
+      "normalized_yaw_degrees": 90.0,
+      "consumer": "Centered 100cm bounds; restore with placement Size/100"
+    }
+  },
+  "marker_fit": true
+}

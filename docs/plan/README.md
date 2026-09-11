@@ -42,6 +42,7 @@
 | [../decisions.md](../decisions.md) | 결정과 번복의 이력. 여기 기록되지 않은 문서 간 충돌은 버그다 |
 | [../conventions.md](../conventions.md) | UE 설계 규약 (모듈·클래스·복제 방식) |
 | [../systems/](../systems/) | 시스템별 기술 설계 (캐릭터·몬스터·운반·세션 등) |
+| [../asset/README.md](../asset/README.md) | Blender 모델·리깅·애니메이션 제작 규격과 UE 납품 검수 |
 | [../reference/](../reference/) | 참고 게임(리썰컴퍼니·R.E.P.O.) 분석. 같은 문제를 저쪽은 어떻게 풀었나 |
 
 **이 폴더는 "무엇을 만드는가"다.** UE에서 어떻게 지을지는 conventions.md(규약)와

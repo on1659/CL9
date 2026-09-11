@@ -80,4 +80,34 @@ public:
 	/** 트럭 패드에서 시작 모듈의 바깥면까지의 거리 (cm) — 그 사이가 걸어 들어가는 마당이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	float EntryOffset = 1000.f;
+
+	/**
+	 * 이 목적지가 세울 수 있는 최대 층수. 1이면 단층이고, 3이면 3층까지 올라간다.
+	 * **상한일 뿐이다** — 위층은 아래층이 받쳐 주는 자리에만 설 수 있어서, 아래층이
+	 * 좁게 나온 판은 여기 적은 것보다 낮게 끝난다 (docs/plan/data/module.md 층).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="1", ClampMax="8"))
+	int32 MaxFloors = 1;
+
+	/**
+	 * 층과 층을 잇는 계단 모듈의 개수 범위. 층 사이마다 시드가 이 안에서 하나를 뽑는다 —
+	 * 그래서 같은 목적지라도 판마다 계단 수가 다르다. MaxFloors가 1이면 쓰이지 않는다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="1"))
+	int32 StairCountMin = 2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="1"))
+	int32 StairCountMax = 4;
+
+	/**
+	 * 실내 모듈에 천장을 씌우나. 끄면 위에서 맵 속이 들여다보인다 — 배치를 눈으로
+	 * 확인할 때 쓰라고 둔 스위치다 (2026-09-10, 그전에는 seg kind 이름을
+	 * `__ceiling_off__`로 바꿔서 껐다).
+	 *
+	 * **끈다고 위층이 무너지지 않는다** — 층마다 자기 바닥 판을 깔기 때문에 천장이
+	 * 없어도 2층은 그대로 밟힌다. 야외 모듈(`bOutdoor`)은 이 값과 무관하게 언제나
+	 * 천장이 없다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
+	bool bBuildCeilings = true;
 };

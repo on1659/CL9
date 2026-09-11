@@ -1,0 +1,59 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "henhouse_fence.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Fence_Wood": {
+      "vertex_color": true,
+      "roughness": 0.92,
+      "metallic": 0
+    },
+    "M_CL9_Fence_Metal": {
+      "vertex_color": true,
+      "roughness": 0.68,
+      "metallic": 0.55
+    }
+  },
+  "assets": {
+    "henhouse_fence": {
+      "object": "SM_Henhouse_Fence_250_A",
+      "dimensions_cm": [
+        250.0,
+        23.999999463558197,
+        288.0000114440918
+      ],
+      "triangles": 1128,
+      "vertices": 624,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Fence_Wood",
+        "M_CL9_Fence_Metal"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "1d963dac42adffdc8cf4dbfbbafcb8bb8dfa83a4c7dd44fec31cbbcd20c94d12",
+      "anchors_cm": {
+        "SnapLeft": [
+          -125.0,
+          0.0,
+          0.0
+        ],
+        "SnapRight": [
+          125.0,
+          0.0,
+          0.0
+        ]
+      },
+      "rig": "N/A static architecture",
+      "tile_length_cm": 250,
+      "blocks_sight": true,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        144.0
+      ],
+      "collision_hulls": 1
+    }
+  }
+}
