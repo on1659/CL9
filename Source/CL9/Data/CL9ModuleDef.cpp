@@ -24,6 +24,30 @@ void UCL9ModuleDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(FString::Printf(TEXT("Height is %.0f — an indoor module needs a ceiling to sit under."), Height));
 	}
+
+	// 소품 좌표는 회전 전 모듈 안이어야 한다 — 밖에 찍힌 소품은 옆 모듈이나 벽 속에 선다.
+	// 칸 크기는 사이트 행 값이라 여기서 모르므로 500cm 기본값으로만 거른다.
+	constexpr float AssumedCell = 500.f;
+	for (int32 SetIndex = 0; SetIndex < PropSets.Num(); ++SetIndex)
+	{
+		for (int32 PropIndex = 0; PropIndex < PropSets[SetIndex].Props.Num(); ++PropIndex)
+		{
+			const FCL9PropPlacement& Prop = PropSets[SetIndex].Props[PropIndex];
+			if (Prop.Mesh.IsNull())
+			{
+				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Props[%d] has no Mesh."), SetIndex, PropIndex));
+			}
+			if (Prop.Local.X < 0.f || Prop.Local.Y < 0.f || Prop.Local.X > Size.X * AssumedCell || Prop.Local.Y > Size.Y * AssumedCell)
+			{
+				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Props[%d] sits at (%.0f, %.0f), outside the %dx%d-cell footprint."),
+					SetIndex, PropIndex, Prop.Local.X, Prop.Local.Y, Size.X, Size.Y));
+			}
+			if (Prop.SideRule != ECL9PropSideRule::Always && Prop.Side == ECL9PropSide::None)
+			{
+				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Props[%d] has a side rule but no Side to check."), SetIndex, PropIndex));
+			}
+		}
+	}
 }
 
 uint8 UCL9ModuleDef::RotateSockets(uint8 Sockets, int32 Rotation)

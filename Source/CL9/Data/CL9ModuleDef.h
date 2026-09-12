@@ -6,6 +6,8 @@
 #include "Data/CL9DefBase.h"
 #include "CL9ModuleDef.generated.h"
 
+class UStaticMesh;
+
 /** 모듈이 배치에서 맡는 자리 (docs/plan/data/module.md 표 컬럼) */
 UENUM(BlueprintType)
 enum class ECL9ModuleType : uint8
@@ -73,6 +75,78 @@ enum class ECL9PointPurpose : uint8
 };
 ENUM_CLASS_FLAGS(ECL9PointPurpose);
 
+/** 소품이 기대는 변 — 회전 전 기준. 순서는 ECL9ModuleSide의 비트 순서(N→E→S→W)와 같다 */
+UENUM(BlueprintType)
+enum class ECL9PropSide : uint8
+{
+	None,
+	North,
+	East,
+	South,
+	West
+};
+
+/**
+ * 소품 하나를 그 변의 연결 여부로 켜고 끄는 규칙 (REPO `ModulePropSwitch` — 확률이 아니라
+ * "그 변이 이어졌는가"로 결정된다, docs/reference/repo/repo-map.md 소품 교체).
+ */
+UENUM(BlueprintType)
+enum class ECL9PropSideRule : uint8
+{
+	/** 변과 무관하게 항상 선다 */
+	Always,
+	/** 소품 발자국이 걸친 경계 칸이 전부 벽일 때만 — 벽걸이 표식·작업대처럼 벽에 기대는 것 */
+	SideClosed,
+	/** 그 경계 칸 중 하나라도 문이나 비상구일 때만 — 문 옆에만 서는 장식 */
+	SideOpen
+};
+
+/**
+ * 소품 세트 안의 배치 하나. 좌표는 **회전 전 모듈 로컬 cm**다 — 원점은 모듈 사각형의
+ * 최소 모서리(회전 전 Size 기준), Z는 그 층 바닥 판 윗면에서 잰다. 모듈이 회전해서
+ * 앉으면 생성기가 같이 돌린다 (`CL9SiteLayout::ModuleLocalToSite`).
+ */
+USTRUCT(BlueprintType)
+struct FCL9PropPlacement
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	TSoftObjectPtr<UStaticMesh> Mesh;
+
+	/** 회전 전 모듈 로컬 위치 (cm). 메시 피벗이 그 자리에 놓인다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	FVector Local = FVector::ZeroVector;
+
+	/** 회전 전 요 (도). 모듈 회전이 여기에 더해진다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	float Yaw = 0.f;
+
+	/**
+	 * 몸이 있는 소품인가. true면 이동·시야를 막고(BlockAll) 내비게이션에 올라가며, false면
+	 * 충돌 없이 그림만 그린다 — 벽걸이 표식·작업등처럼 걸리면 안 되는 것.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	bool bSolid = true;
+
+	/** SideRule이 보는 변 — None이면 규칙을 따지지 않는다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	ECL9PropSide Side = ECL9PropSide::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	ECL9PropSideRule SideRule = ECL9PropSideRule::Always;
+};
+
+/** 한 모듈에 함께 깔리는 소품 한 벌 (module.md 결정 7). 인스턴스마다 이 중 하나가 뽑힌다 */
+USTRUCT(BlueprintType)
+struct FCL9PropSet
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	TArray<FCL9PropPlacement> Props;
+};
+
 /**
  * 맵 모듈 한 종류 (docs/plan/data/module.md). **모듈은 프리팹이 아니라 이 표의 행이다** —
  * 껍데기(바닥·벽·문·천장)는 생성기가 조각 표(UCL9PieceDef)에서 뽑아 세우므로, 손으로
@@ -137,4 +211,13 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Module", meta = (Bitmask, BitmaskEnum = "/Script/CL9.ECL9PointPurpose"))
 	int32 PointPurposes = 0xB;
+
+	/**
+	 * 소품 세트들 (module.md 결정 7 — "모듈마다 소품 세트를 여러 벌 두고 매번 하나를 뽑는다").
+	 * 배치기가 모듈 인스턴스마다 자리 좌표 해시로 하나를 고르므로 시드가 같으면 모든 머신이
+	 * 같은 세트를 깐다. 비어 있으면 껍데기만 선다. 소품이 스폰 지점(칸 중심 ±130cm)과
+	 * 문 자리를 가리면 배치기가 경고한다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Module")
+	TArray<FCL9PropSet> PropSets;
 };

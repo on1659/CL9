@@ -254,6 +254,19 @@ namespace CL9SegKind
 	inline const FName& FlapIn() { static const FName Name(TEXT("flapIn")); return Name; }
 	inline const FName& Floor() { static const FName Name(TEXT("floor")); return Name; }
 	inline const FName& Ceiling() { static const FName Name(TEXT("ceiling")); return Name; }
+	/** 야외 모듈의 바닥 — 실내 바닥과 조각이 다르다(흙·자갈). 바닥처럼 기준점 아래로 자란다 */
+	inline const FName& Yard() { static const FName Name(TEXT("yard")); return Name; }
+	/** 계단 디딤판 — 바닥 종류지만 조각이 다르다(미끄럼 방지 판). 기준점 아래로 자란다 */
+	inline const FName& Tread() { static const FName Name(TEXT("tread")); return Name; }
+	/** 문·비상구 양옆에 남는 짧은 벽 토막 — 온전한 벽 조각을 눌러 넣지 않도록 종류를 나눈다 */
+	inline const FName& BarnStub() { static const FName Name(TEXT("barnStub")); return Name; }
+	inline const FName& WallStub() { static const FName Name(TEXT("wallStub")); return Name; }
+
+	/** 기준점에서 아래로 자라는 종류들 — 바닥·마당·디딤판. 나머지는 위로 자란다 */
+	inline bool GrowsDown(const FName& Kind)
+	{
+		return Kind == Floor() || Kind == Yard() || Kind == Tread();
+	}
 }
 
 namespace CL9SiteLayout
@@ -278,6 +291,19 @@ namespace CL9SiteLayout
 
 	/** 칸 하나의 중심, 사이트 로컬 좌표 */
 	FVector2D CellCenter(const FCL9SiteParams& Params, const FCL9SiteLayout& Layout, FIntPoint Cell);
+
+	/**
+	 * 회전 전 모듈 로컬 좌표(cm, 원점 = 회전 전 사각형의 최소 모서리)를 사이트 로컬 좌표로
+	 * 옮긴다. 회전은 `RotateSockets`와 같은 뜻이다 — 반시계 90° × r, 회전 전의 East가 회전
+	 * 후의 North가 된다. 소품 세트가 이 변환으로 모듈을 따라 돈다.
+	 */
+	FVector2D ModuleLocalToSite(const FCL9SiteParams& Params, const FCL9SiteLayout& Layout, const FCL9ModulePlacement& Module, FVector2D Local);
+
+	/** 회전 전 변 번호(N=0·E=1·S=2·W=3)가 회전 r 뒤에 향하는 변 — `RotateSockets`의 비트 이동과 같다 */
+	int32 RotateSide(int32 Side, int32 Rotation);
+
+	/** 칸의 그 변(N=0·E=1·S=2·W=3) 상태 */
+	ECL9GridEdge EdgeOfCell(const FCL9SiteLayout& Layout, int32 Floor, FIntPoint Cell, int32 Side);
 
 	/**
 	 * 그 용도로 쓸 수 있는 지점들의 인덱스를, **시작 모듈에서 먼 것부터** 담는다

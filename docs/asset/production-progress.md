@@ -4,6 +4,13 @@
 
 ## 현재 재개 지점
 
+- **[별도 세션 2026-09-11 저녁] CL9Art 미사용 에셋 일괄 연결 완료 — 되돌리지 말 것.** `docs/goal/wire-cl9art-assets.md`.
+  맵 조각(벽 500/125·울타리·문짝·바닥·천장·마당·디딤판)은 `DA_PieceTable`/`DA_SegKindTable`에, 소품(둥지·상자·포대·
+  여물통·작업등·작업대·표식 4·보·기둥)은 `DA_ModuleTable.PropSets`에, 시설 5종은 BP 메시 + 두 레벨 인스턴스에,
+  푸드트럭은 두 레벨의 `FoodTruck_Body/Steps` 액터(임시 위치)에, 농부 A는 `farmer_a` 행에, 냄비·작업등은 새 아이템
+  행에 연결했다. catalog.md `UE 연결` 컬럼과 decisions.md 2026-09-11 항목이 정본. 남은 미연결: `SM_Henhouse_Wall_250_A`
+  (소비처 없음), Stretch100 변형 3종(불필요), 테스트 에셋.
+
 - **[별도 세션 2026-09-11] 아이템 7행 UE 영구 연결 완료 — 되돌리지 말 것.** `DA_ItemTable`의 meat(raw/cooked/burnt)·
   cart·flashlight·headlamp·frying_pan 행 `Mesh`를 `CL9Art/Items/…` 메시로 바꿨다(자동 배율: 고기 0.89 → 60×31×30cm,
   수레 0.60 → 91×69×63cm, 손전등 0.88, 헤드램프 0.75, 프라이팬 0.99 → 60×35×8cm). Lvl_Flat 아이템 줄 PIE로 확인.

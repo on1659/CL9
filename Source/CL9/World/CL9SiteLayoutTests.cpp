@@ -230,14 +230,19 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("every box has area"), Seg.Rect.GetSize().X > 0.f && Seg.Rect.GetSize().Y > 0.f);
 	}
 
-	// 바닥은 모듈마다 한 장이고, 천장은 야외 모듈을 뺀 만큼이다
+	// 바닥은 모듈마다 한 장 — 실내는 floor, 마당은 yard — 이고, 천장은 야외 모듈을 뺀 만큼이다
 	int32 Indoor = 0;
 	for (const FCL9ModulePlacement& Module : Layout.Modules)
 	{
 		Indoor += Module.Def->bOutdoor ? 0 : 1;
 	}
-	TestEqual(TEXT("one floor slab per module"), ByKind.FindRef(CL9SegKind::Floor()), Layout.Modules.Num());
+	TestEqual(TEXT("one floor slab per module"), ByKind.FindRef(CL9SegKind::Floor()) + ByKind.FindRef(CL9SegKind::Yard()), Layout.Modules.Num());
+	TestEqual(TEXT("yards only under outdoor modules"), ByKind.FindRef(CL9SegKind::Yard()), Layout.Modules.Num() - Indoor);
 	TestEqual(TEXT("one ceiling per indoor module"), ByKind.FindRef(CL9SegKind::Ceiling()), Indoor);
+
+	// 문 양옆 토막은 온전한 벽과 종류가 다르다 — 문마다 둘씩
+	TestEqual(TEXT("two stubs per doorway"), ByKind.FindRef(CL9SegKind::BarnStub()) + ByKind.FindRef(CL9SegKind::WallStub()),
+		2 * (ByKind.FindRef(CL9SegKind::Door()) + ByKind.FindRef(CL9SegKind::FlapIn())));
 
 	// 천장 스위치를 끄면 천장만 사라지고 바닥·벽은 그대로다 (site.md bBuildCeilings)
 	{
@@ -259,6 +264,47 @@ bool FCL9SiteLayoutSegmentsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("the outer wall is sealed"), ByKind.FindRef(CL9SegKind::Barn()) + ByKind.FindRef(CL9SegKind::Wall()) > 0);
 	// 입구 하나 + 모듈을 이은 문들 (module.md 결정 3)
 	TestTrue(TEXT("there are doorways"), ByKind.FindRef(CL9SegKind::Door()) >= Layout.Modules.Num());
+
+	// 소품이 모듈을 따라 도는 변환은 소켓 회전과 같은 뜻이어야 한다 — 회전 전 East 변의
+	// 한가운데 점이 회전 r 뒤 RotateSide(East, r) 변의 한가운데로 가야 한다.
+	{
+		FCL9ModulePlacement Module;
+		Module.Def = Modules.Defs[4]; // coop_hall 3×3
+		Module.Origin = FIntPoint(2, 1);
+		const FVector2D Cell(Params.CellSize, Params.CellSize);
+		for (int32 Rotation = 0; Rotation < 4; ++Rotation)
+		{
+			Module.Rotation = Rotation;
+			Module.Size = UCL9ModuleDef::RotateSize(Module.Def->Size, Rotation);
+			const FVector2D Min = Layout.Origin + FVector2D(Module.Origin.X, Module.Origin.Y) * Cell;
+			const FVector2D Max = Min + FVector2D(Module.Size.X, Module.Size.Y) * Cell;
+			const FVector2D Mid = (Min + Max) * 0.5f;
+			const FVector2D EastMid(Module.Def->Size.X * Params.CellSize, Module.Def->Size.Y * Params.CellSize * 0.5f);
+			const FVector2D Moved = CL9SiteLayout::ModuleLocalToSite(Params, Layout, Module, EastMid);
+			const int32 Side = CL9SiteLayout::RotateSide(/*East*/ 1, Rotation);
+			const FVector2D Expected = Side == 0 ? FVector2D(Mid.X, Max.Y) : Side == 1 ? FVector2D(Max.X, Mid.Y)
+				: Side == 2 ? FVector2D(Mid.X, Min.Y) : FVector2D(Min.X, Mid.Y);
+			TestTrue(FString::Printf(TEXT("module-local East midpoint follows rotation %d"), Rotation), Moved.Equals(Expected, 1.f));
+			// 같은 회전으로 소켓을 돌리면 그 변만 켜져 있어야 한다
+			const uint8 Sockets = UCL9ModuleDef::RotateSockets(static_cast<uint8>(SockE), Rotation);
+			TestEqual(FString::Printf(TEXT("RotateSide agrees with RotateSockets at %d"), Rotation), static_cast<int32>(Sockets), 1 << Side);
+		}
+	}
+
+	// 디딤판은 바닥처럼 기준점 아래로 자라는 종류이고, 위쪽 면이 계단 곡선을 따라야 한다
+	{
+		const float Storey = FMath::Max(Params.FloorHeight, 1.f);
+		for (const FCL9SiteSeg& Seg : Segs)
+		{
+			if (Seg.Kind != CL9SegKind::Tread())
+			{
+				continue;
+			}
+			TestTrue(TEXT("tread kind grows down"), CL9SegKind::GrowsDown(Seg.Kind));
+			const float Rel = FMath::Fmod(Seg.BaseZ, Storey);
+			TestTrue(TEXT("tread top sits between the floors"), Seg.BaseZ > 0.f && (Rel > 1.f || FMath::IsNearlyEqual(Rel, 0.f, 1.f)));
+		}
+	}
 
 	// 지점은 배치된 칸 수를 넘지 않는다 — 용도가 0인 모듈은 지점을 안 낸다
 	TestTrue(TEXT("points do not outnumber cells"), Layout.Points.Num() <= CountOccupiedCells(Layout));
@@ -462,7 +508,7 @@ bool FCL9SiteLayoutFloorsTest::RunTest(const FString& Parameters)
 			float Covered = 0.f;
 			for (const FCL9SiteSeg& Seg : Segs)
 			{
-				if (Seg.Kind != CL9SegKind::Floor() || !FMath::IsNearlyEqual(Seg.BaseZ, UpperZ, 1.f))
+				if ((Seg.Kind != CL9SegKind::Floor() && Seg.Kind != CL9SegKind::Tread()) || !FMath::IsNearlyEqual(Seg.BaseZ, UpperZ, 1.f))
 				{
 					continue;
 				}

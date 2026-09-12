@@ -127,6 +127,16 @@ namespace
 		FVector PieceSize = FVector::ZeroVector;
 		int32 Tiles = 0;
 		float WorstRunFit = 1.f;
+		/** Grid 종류는 계단실 띠처럼 짧은 발자국이 늘 있어 경고를 내지 않는다 — 기록만 남긴다 */
+		bool bWarnOnFit = true;
+
+		void Note(float Fit)
+		{
+			if (FMath::Abs(Fit - 1.f) > FMath::Abs(WorstRunFit - 1.f))
+			{
+				WorstRunFit = Fit;
+			}
+		}
 	};
 
 	/** 그 종류가 쓰는 조각의 첫 변형 메시 — 실측 치수를 재려고 꺼낸다 */
@@ -350,7 +360,12 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		const UCL9SegKindDef* Kind = Registry.FindSegKind(Seg.Kind);
 		if (Kind == nullptr)
 		{
-			MissingKinds.Add(Seg.Kind);
+			// `door`는 일부러 행이 없다 — 문짝 메시로 개구부를 채우면 콜리전이 생겨 문이 막힌다.
+			// 그래서 문 자리는 문틀 없는 개구부이고, 없다고 에러를 내지 않는다 (asset-swap.md).
+			if (Seg.Kind != CL9SegKind::Door())
+			{
+				MissingKinds.Add(Seg.Kind);
+			}
 			continue;
 		}
 		const UCL9PieceDef* Piece = Registry.FindPiece(Kind->Piece, Site.Theme);
@@ -363,8 +378,8 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		const FVector2D Size = Seg.Rect.GetSize();
 		const FVector2D Center = Seg.Rect.GetCenter();
 
-		// 바닥만 기준점 아래로 자라고, 벽과 천장은 기준점 위로 자란다.
-		const bool bDownward = Seg.Kind == CL9SegKind::Floor();
+		// 바닥 종류(바닥·마당·디딤판)만 기준점 아래로 자라고, 벽과 천장은 기준점 위로 자란다.
+		const bool bDownward = CL9SegKind::GrowsDown(Seg.Kind);
 		const float Base = bDownward ? Seg.BaseZ - Kind->Height : Seg.BaseZ;
 		const float Top = bDownward ? Seg.BaseZ : Seg.BaseZ + Kind->Height;
 		const FVector Spot(Center.X, Center.Y, (Base + Top) * 0.5f);
@@ -415,14 +430,56 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 					continue;
 				}
 				FTransform Instance;
-				const float Fit = FitPieceToCell(Cell, Mesh->GetBoundingBox(), bRunAlongX, Instance);
-				if (FMath::Abs(Fit - 1.f) > FMath::Abs(Report.WorstRunFit - 1.f))
-				{
-					Report.WorstRunFit = Fit;
-				}
+				Report.Note(FitPieceToCell(Cell, Mesh->GetBoundingBox(), bRunAlongX, Instance));
 				ComponentFor(*Kind, Seg.Kind, Mesh)->AddInstance(Instance, /*bWorldSpace*/ false);
 				++Report.Tiles;
 				++Placed;
+			}
+			continue;
+		}
+
+		if (Kind->Placement == ECL9SegPlacement::Grid)
+		{
+			UStaticMesh* Lead = Piece->Variants[0].LoadSynchronous();
+			if (Lead == nullptr)
+			{
+				MissingRoles.Add(Kind->Piece);
+				continue;
+			}
+
+			// 두 평면 축 모두 `round(발자국 / 조각)`장 — 모듈 사각형은 칸의 정수배라 1.0으로 떨어지고,
+			// 계단실 띠 같은 짧은 발자국만 한 장이 눌린다. 높이는 발자국 높이(판 두께)에 맞춘다.
+			const FVector PieceSize = Lead->GetBoundingBox().GetSize();
+			const int32 CountX = FMath::Max(1, FMath::RoundToInt(Size.X / FMath::Max(PieceSize.X, 1.f)));
+			const int32 CountY = FMath::Max(1, FMath::RoundToInt(Size.Y / FMath::Max(PieceSize.Y, 1.f)));
+			const FVector2D GridCell(Size.X / CountX, Size.Y / CountY);
+
+			FTileReport& Report = Reports.FindOrAdd(Seg.Kind);
+			Report.PieceSize = PieceSize;
+			Report.bWarnOnFit = false;
+
+			for (int32 IY = 0; IY < CountY; ++IY)
+			{
+				for (int32 IX = 0; IX < CountX; ++IX)
+				{
+					const FVector GridSpot(Seg.Rect.Min.X + (IX + 0.5f) * GridCell.X, Seg.Rect.Min.Y + (IY + 0.5f) * GridCell.Y, (Base + Top) * 0.5f);
+					UStaticMesh* Mesh = PickMesh(*Piece, GridSpot);
+					if (Mesh == nullptr)
+					{
+						continue;
+					}
+					const FBox Bounds = Mesh->GetBoundingBox();
+					const FVector MeshSize = Bounds.GetSize().ComponentMax(FVector(1.f));
+					const FVector Scale(GridCell.X / MeshSize.X, GridCell.Y / MeshSize.Y, (Top - Base) / MeshSize.Z);
+					FTransform Instance;
+					Instance.SetScale3D(Scale);
+					Instance.SetLocation(GridSpot - Scale * Bounds.GetCenter());
+					Report.Note(Scale.X);
+					Report.Note(Scale.Y);
+					ComponentFor(*Kind, Seg.Kind, Mesh)->AddInstance(Instance, /*bWorldSpace*/ false);
+					++Report.Tiles;
+					++Placed;
+				}
 			}
 			continue;
 		}
@@ -440,6 +497,8 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		ComponentFor(*Kind, Seg.Kind, Mesh)->AddInstance(Instance, /*bWorldSpace*/ false);
 		++Placed;
 	}
+
+	const int32 PropsPlaced = PlaceProps(Segs, Components.Num());
 
 	for (UInstancedStaticMeshComponent* Component : KindComponents)
 	{
@@ -461,7 +520,7 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		const FTileReport& Report = Entry.Value;
 		UE_LOG(LogCL9, Log, TEXT("Site map: '%s' tiled with a %.0f x %.0f x %.0f piece — %d instances, worst run fit %.2f."),
 			*Entry.Key.ToString(), Report.PieceSize.X, Report.PieceSize.Y, Report.PieceSize.Z, Report.Tiles, Report.WorstRunFit);
-		if (Report.WorstRunFit < TileFitMin || Report.WorstRunFit > TileFitMax)
+		if (Report.bWarnOnFit && (Report.WorstRunFit < TileFitMin || Report.WorstRunFit > TileFitMax))
 		{
 			UE_LOG(LogCL9, Warning, TEXT("Site map: '%s' pieces are stretched %+.0f%% along their run — retune CellSize to this pack's module (docs/systems/asset-swap.md)."),
 				*Entry.Key.ToString(), (Report.WorstRunFit - 1.f) * 100.f);
@@ -498,4 +557,163 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		Layout.Modules.Num(), Layout.Wanted, Layout.GridSize.X, Layout.GridSize.Y, Layout.FloorCount, Params.FloorHeight, Stairs,
 		Params.bBuildCeilings ? TEXT("on") : TEXT("off"),
 		Layout.Points.Num(), Placed, KindComponents.Num());
+	UE_LOG(LogCL9, Log, TEXT("Site map props — %d instances."), PropsPlaced);
+}
+
+int32 ACL9SiteMap::PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstComponentIndex)
+{
+	// 문·비상구 자리 — 몸이 있는 소품이 여길 가리면 문이 막힌다. 층이 다르면 같은 자리라도 무관하다
+	TArray<TPair<FBox2D, float>> Gaps;
+	for (const FCL9SiteSeg& Seg : Segs)
+	{
+		if (Seg.Kind == CL9SegKind::Door() || Seg.Kind == CL9SegKind::FlapIn())
+		{
+			Gaps.Emplace(Seg.Rect, Seg.BaseZ);
+		}
+	}
+
+	// 스폰이 지점 둘레로 흔드는 폭 — GameMode의 ±(CellSize/2 − 120)과 같다. 항아리는 지점 정중앙에 선다.
+	const float Jitter = FMath::Max(Params.CellSize * 0.5f - 120.f, 0.f);
+	const float Storey = FMath::Max(Params.FloorHeight, 1.f);
+
+	// 컴포넌트는 (메시, 몸 유무)마다 하나 — 충돌 설정이 다르면 한 묶음에 넣을 수 없다
+	TMap<TPair<UStaticMesh*, bool>, UInstancedStaticMeshComponent*> Components;
+	auto ComponentFor = [this, &Components, FirstComponentIndex](UStaticMesh* Mesh, bool bSolid)
+	{
+		const TPair<UStaticMesh*, bool> Key(Mesh, bSolid);
+		if (UInstancedStaticMeshComponent* Found = Components.FindRef(Key))
+		{
+			return Found;
+		}
+		UInstancedStaticMeshComponent* Component = NewObject<UInstancedStaticMeshComponent>(
+			this, FName(*FString::Printf(TEXT("Prop_%s_%d"), bSolid ? TEXT("solid") : TEXT("deco"), FirstComponentIndex + Components.Num())));
+		Component->SetMobility(EComponentMobility::Static);
+		Component->SetStaticMesh(Mesh);
+		if (bSolid)
+		{
+			Component->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+			Component->SetCanEverAffectNavigation(true);
+		}
+		else
+		{
+			Component->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
+			Component->SetCanEverAffectNavigation(false);
+		}
+		Component->SetupAttachment(GetRootComponent());
+		Components.Add(Key, Component);
+		KindComponents.Add(Component);
+		return Component;
+	};
+
+	int32 Placed = 0;
+	TSet<FString> MissingMeshes;
+	for (int32 ModuleIndex = 0; ModuleIndex < Layout.Modules.Num(); ++ModuleIndex)
+	{
+		const FCL9ModulePlacement& Module = Layout.Modules[ModuleIndex];
+		const UCL9ModuleDef* Def = Module.Def;
+		if (Def == nullptr || Def->PropSets.Num() == 0)
+		{
+			continue;
+		}
+
+		const FBox2D Rect(
+			Layout.Origin + FVector2D(Module.Origin.X * Params.CellSize, Module.Origin.Y * Params.CellSize),
+			Layout.Origin + FVector2D((Module.Origin.X + Module.Size.X) * Params.CellSize, (Module.Origin.Y + Module.Size.Y) * Params.CellSize));
+		const float FloorZ = Module.Floor * Storey;
+
+		// 세트는 자리 좌표 해시로 뽑는다 — 변형 고르기와 같은 이유로 난수 스트림을 쓰지 않는다
+		const FVector2D Center = Rect.GetCenter();
+		const int32 SetIndex = PickVariant(FVector(Center.X, Center.Y, FloorZ), Def->PropSets.Num());
+		const FCL9PropSet& Set = Def->PropSets[SetIndex];
+
+		for (const FCL9PropPlacement& Prop : Set.Props)
+		{
+			UStaticMesh* Mesh = Prop.Mesh.LoadSynchronous();
+			if (Mesh == nullptr)
+			{
+				MissingMeshes.Add(FString::Printf(TEXT("%s/%s"), *Def->Alias.ToString(), *Prop.Mesh.ToString()));
+				continue;
+			}
+
+			const FVector2D Site = CL9SiteLayout::ModuleLocalToSite(Params, Layout, Module, FVector2D(Prop.Local.X, Prop.Local.Y));
+			FTransform Instance;
+			Instance.SetRotation(FRotator(0.f, Prop.Yaw + Module.Rotation * 90.f, 0.f).Quaternion());
+			Instance.SetLocation(FVector(Site.X, Site.Y, FloorZ + Prop.Local.Z));
+			const FBox Footprint = Mesh->GetBoundingBox().TransformBy(Instance);
+			const FBox2D Foot2D(FVector2D(Footprint.Min.X, Footprint.Min.Y), FVector2D(Footprint.Max.X, Footprint.Max.Y));
+
+			// 변 규칙 — 소품 발자국이 걸친 그 변의 경계 칸을 전부 본다 (300짜리 둥지는 두 칸에 걸친다)
+			if (Prop.SideRule != ECL9PropSideRule::Always && Prop.Side != ECL9PropSide::None)
+			{
+				const int32 Side = CL9SiteLayout::RotateSide(static_cast<int32>(Prop.Side) - 1, Module.Rotation);
+				const bool bAlongX = Side == 0 || Side == 2;
+				const int32 Fixed = Side == 0 ? Module.Origin.Y + Module.Size.Y - 1
+					: Side == 2 ? Module.Origin.Y
+					: Side == 1 ? Module.Origin.X + Module.Size.X - 1
+					: Module.Origin.X;
+				const int32 Count = bAlongX ? Module.Size.X : Module.Size.Y;
+				const int32 First = bAlongX ? Module.Origin.X : Module.Origin.Y;
+				const float Lo = bAlongX ? Foot2D.Min.X : Foot2D.Min.Y;
+				const float Hi = bAlongX ? Foot2D.Max.X : Foot2D.Max.Y;
+				const float Start = bAlongX ? Layout.Origin.X : Layout.Origin.Y;
+
+				int32 Walls = 0;
+				int32 Openings = 0;
+				for (int32 Index = 0; Index < Count; ++Index)
+				{
+					const float CellLo = Start + (First + Index) * Params.CellSize;
+					if (Hi <= CellLo || Lo >= CellLo + Params.CellSize)
+					{
+						continue;
+					}
+					const FIntPoint Cell = bAlongX ? FIntPoint(First + Index, Fixed) : FIntPoint(Fixed, First + Index);
+					const ECL9GridEdge Edge = CL9SiteLayout::EdgeOfCell(Layout, Module.Floor, Cell, Side);
+					(Edge == ECL9GridEdge::Wall ? Walls : Openings) += 1;
+				}
+				const bool bClosed = Openings == 0 && Walls > 0;
+				if ((Prop.SideRule == ECL9PropSideRule::SideClosed) != bClosed)
+				{
+					continue;
+				}
+			}
+
+			if (Prop.bSolid)
+			{
+				for (const TPair<FBox2D, float>& Gap : Gaps)
+				{
+					if (FMath::IsNearlyEqual(Gap.Value, FloorZ, 1.f) && Gap.Key.Intersect(Foot2D))
+					{
+						UE_LOG(LogCL9, Warning, TEXT("Site map: prop '%s' in module '%s' set %d (footprint %.0f..%.0f x %.0f..%.0f) covers a doorway at %.0f..%.0f x %.0f..%.0f — move it (docs/plan/data/module.md)."),
+							*Mesh->GetName(), *Def->Alias.ToString(), SetIndex, Foot2D.Min.X, Foot2D.Max.X, Foot2D.Min.Y, Foot2D.Max.Y,
+							Gap.Key.Min.X, Gap.Key.Max.X, Gap.Key.Min.Y, Gap.Key.Max.Y);
+						break;
+					}
+				}
+				for (const FCL9LevelPoint& Point : Layout.Points)
+				{
+					if (Point.Module != ModuleIndex)
+					{
+						continue;
+					}
+					// 경계가 맞닿기만 한 것(벽에 붙인 100cm 둥지가 keep-out 가장자리에 닿는 경우)은 겹침이 아니다
+					const FBox2D KeepOut(Point.Local - FVector2D(Jitter - 1.f, Jitter - 1.f), Point.Local + FVector2D(Jitter - 1.f, Jitter - 1.f));
+					if (KeepOut.Intersect(Foot2D))
+					{
+						UE_LOG(LogCL9, Warning, TEXT("Site map: prop '%s' in module '%s' set %d (footprint %.0f..%.0f x %.0f..%.0f) sits on a spawn point at (%.0f, %.0f) — keep %.0fcm clear of cell centres (docs/plan/data/module.md)."),
+							*Mesh->GetName(), *Def->Alias.ToString(), SetIndex, Foot2D.Min.X, Foot2D.Max.X, Foot2D.Min.Y, Foot2D.Max.Y, Point.Local.X, Point.Local.Y, Jitter);
+						break;
+					}
+				}
+			}
+
+			ComponentFor(Mesh, Prop.bSolid)->AddInstance(Instance, /*bWorldSpace*/ false);
+			++Placed;
+		}
+	}
+
+	for (const FString& Missing : MissingMeshes)
+	{
+		UE_LOG(LogCL9, Error, TEXT("Site map: prop mesh '%s' failed to load — skipped (DA_ModuleTable PropSets)."), *Missing);
+	}
+	return Placed;
 }

@@ -938,8 +938,8 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 			Base + FVector2D((Module.Origin.X + Module.Size.X) * Cell, (Module.Origin.Y + Module.Size.Y) * Cell));
 
 		// 바닥은 그 모듈이 선 층에 깐다. 계단 모듈은 아래층에만 깔아서 위층 쪽이
-		// 뚫린 채로 남는다 — 그 구멍이 계단실이다.
-		Add(CL9SegKind::Floor(), Rect, Module.Floor * Storey);
+		// 뚫린 채로 남는다 — 그 구멍이 계단실이다. 마당은 조각이 다르므로 종류를 나눈다.
+		Add(Module.Def->bOutdoor ? CL9SegKind::Yard() : CL9SegKind::Floor(), Rect, Module.Floor * Storey);
 
 		// 천장은 그 모듈이 차지한 가장 높은 층 위에 덮는다. 사이트가 천장을 끄면
 		// 위에서 맵 속이 들여다보인다 — 층은 자기 바닥 판을 따로 깔므로 무너지지 않는다.
@@ -954,8 +954,9 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 		}
 
 		// ---- 디딤판. 층 높이를 StepRise로 나눠 개수를 정하고, 모듈의 긴 축을 따라
-		//      한 칸씩 올라간다. 디딤판도 바닥 종류라, 조각 표를 새로 만들 필요가 없다.
-		//      폭은 문 두 짝만큼만 쓴다 — 방 전체가 경사로가 되면 계단실이 아니라 언덕이다.
+		//      한 칸씩 올라간다. 바닥처럼 기준점 아래로 자라는 종류지만 조각(미끄럼 방지 판)이
+		//      달라 `tread`로 내보낸다. 폭은 문 두 짝만큼만 쓴다 — 방 전체가 경사로가 되면
+		//      계단실이 아니라 언덕이다.
 		const FVector2D Span = Rect.GetSize();
 		const bool bAlongX = Span.X >= Span.Y;
 		const float Run = bAlongX ? Span.X : Span.Y;
@@ -983,7 +984,7 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 		for (int32 Step = 0; Step < Steps; ++Step)
 		{
 			const float A0 = RunStart + Step * Tread;
-			Add(CL9SegKind::Floor(), AcrossBox(A0, A0 + Tread, Mid - Width * 0.5f, Mid + Width * 0.5f),
+			Add(CL9SegKind::Tread(), AcrossBox(A0, A0 + Tread, Mid - Width * 0.5f, Mid + Width * 0.5f),
 				StartZ + Storey * (Step + 1) / static_cast<float>(Steps));
 		}
 
@@ -1019,7 +1020,9 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 
 	/**
 	 * 변 하나를 세운다. 문·비상구는 가운데를 DoorWidth만큼 비우고 양옆에 벽 토막을
-	 * 남긴다 — 그 빈칸에 문짝(또는 여닫이문)이 선다.
+	 * 남긴다 — 그 빈칸에 문짝(또는 여닫이문)이 선다. 토막은 온전한 벽과 종류를 나눈다
+	 * (`barnStub`·`wallStub`) — 칸 500에 문 250이면 토막이 125라 500짜리 조각을 눌러 넣게
+	 * 되는데, 종류가 다르면 조각 표가 짧은 조각을 따로 댈 수 있다 (asset-swap.md).
 	 */
 	auto AddEdge = [&](ECL9GridEdge State, FName Kind, float Along0, float Along1, float Across,
 		bool bAlongX, FVector2D Outward, float BaseZ)
@@ -1039,8 +1042,9 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 
 		const float Middle = (Along0 + Along1) * 0.5f;
 		const float Gap = FMath::Min(Params.DoorWidth, Along1 - Along0);
-		Add(Kind, Box(Along0, Middle - Gap * 0.5f), BaseZ);
-		Add(Kind, Box(Middle + Gap * 0.5f, Along1), BaseZ);
+		const FName Stub = Kind == CL9SegKind::Barn() ? CL9SegKind::BarnStub() : CL9SegKind::WallStub();
+		Add(Stub, Box(Along0, Middle - Gap * 0.5f), BaseZ);
+		Add(Stub, Box(Middle + Gap * 0.5f, Along1), BaseZ);
 		Add(State == ECL9GridEdge::Flap ? CL9SegKind::FlapIn() : CL9SegKind::Door(),
 			Box(Middle - Gap * 0.5f, Middle + Gap * 0.5f), BaseZ, Outward);
 	};
@@ -1086,6 +1090,35 @@ void CL9SiteLayout::BuildSegments(const FCL9SiteParams& Params, const FCL9SiteLa
 FVector2D CL9SiteLayout::CellCenter(const FCL9SiteParams& Params, const FCL9SiteLayout& Layout, FIntPoint Cell)
 {
 	return Layout.Origin + FVector2D((Cell.X + 0.5f) * Params.CellSize, (Cell.Y + 0.5f) * Params.CellSize);
+}
+
+FVector2D CL9SiteLayout::ModuleLocalToSite(const FCL9SiteParams& Params, const FCL9SiteLayout& Layout, const FCL9ModulePlacement& Module, FVector2D Local)
+{
+	// 회전 전 사각형의 최소 모서리를 축으로 반시계 r × 90° 돌린 뒤, 돌아간 사각형의 최소
+	// 모서리가 다시 원점에 오도록 회전 전 크기만큼 민다 — RotateSockets(East → North)와 같은 방향이다.
+	const FIntPoint Size = Module.Def != nullptr ? Module.Def->Size : Module.Size;
+	const float SpanX = Size.X * Params.CellSize;
+	const float SpanY = Size.Y * Params.CellSize;
+	FVector2D Rotated;
+	switch (((Module.Rotation % 4) + 4) % 4)
+	{
+	case 1: Rotated = FVector2D(SpanY - Local.Y, Local.X); break;
+	case 2: Rotated = FVector2D(SpanX - Local.X, SpanY - Local.Y); break;
+	case 3: Rotated = FVector2D(Local.Y, SpanX - Local.X); break;
+	default: Rotated = Local; break;
+	}
+	return Layout.Origin + FVector2D(Module.Origin.X * Params.CellSize, Module.Origin.Y * Params.CellSize) + Rotated;
+}
+
+int32 CL9SiteLayout::RotateSide(int32 Side, int32 Rotation)
+{
+	const int32 Steps = ((Rotation % 4) + 4) % 4;
+	return (Side - Steps + 4) % 4;
+}
+
+ECL9GridEdge CL9SiteLayout::EdgeOfCell(const FCL9SiteLayout& Layout, int32 Floor, FIntPoint Cell, int32 Side)
+{
+	return GetEdge(Layout, Floor, Cell, Side);
 }
 
 void CL9SiteLayout::PointsOfPurpose(const FCL9SiteLayout& Layout, ECL9PointPurpose Purpose, TArray<int32>& OutIndices)

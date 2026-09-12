@@ -20,6 +20,9 @@ ACL9Kitchen::ACL9Kitchen()
 	HeatZone->SetupAttachment(MeshComponent);
 	// 몸체 스케일에서 분리한다 — 상판을 넓히려고 액터를 늘려도 열 높이까지 같이 늘어나면 안 된다
 	HeatZone->SetUsingAbsoluteScale(true);
+	// 회전에서도 분리한다 — BeginPlay가 세계축 AABB로 열 구역을 잡으므로, 상자가 부모 요를 따라
+	// 돌면 90° 놓인 조리대의 300×120 구역이 120×300으로 되돌아간다 (docs/asset/map/kitchen.md)
+	HeatZone->SetUsingAbsoluteRotation(true);
 	HeatZone->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 	HeatZone->SetCanEverAffectNavigation(false);
 }

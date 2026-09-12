@@ -51,15 +51,24 @@ void ACL9FlapIn::Setup(const FVector& Extent, const FVector& InsideDirection, US
 	{
 		// 조각의 실제 크기와 피벗을 읽어서 개구부에 맞춘다 — 단위 큐브를 가정하면
 		// 피벗이 중심에 없는 문짝이 엉뚱한 자리에 가서 붙는다 (docs/systems/asset-swap.md).
+		// **폭만 개구부에 맞추고 두께·높이는 자연값이다** — 문짝을 개구부 높이(580)까지
+		// 늘리면 손잡이·밀대가 있는 판이 뭉개진다. 개구부 위쪽은 Body 상자가 그대로 막는다.
+		// 개구부가 어느 축으로 나 있든 문짝의 긴 축이 그 축을 따르도록 90° 돌린다.
 		Visual->SetStaticMesh(Mesh);
 		const FBox Bounds = Mesh->GetBoundingBox();
-		const FVector MeshSize = Bounds.GetSize();
-		const FVector Scale(
-			MeshSize.X > 1.f ? Extent.X * 2.f / MeshSize.X : 1.f,
-			MeshSize.Y > 1.f ? Extent.Y * 2.f / MeshSize.Y : 1.f,
-			MeshSize.Z > 1.f ? Extent.Z * 2.f / MeshSize.Z : 1.f);
+		const FVector MeshSize = Bounds.GetSize().ComponentMax(FVector(1.f));
+		const bool bGapAlongX = Extent.X >= Extent.Y;
+		const bool bMeshAlongX = MeshSize.X >= MeshSize.Y;
+		const float GapWidth = (bGapAlongX ? Extent.X : Extent.Y) * 2.f;
+		const float WidthScale = GapWidth / (bMeshAlongX ? MeshSize.X : MeshSize.Y);
+		const float HeightScale = FMath::Min(1.f, Extent.Z * 2.f / MeshSize.Z);
+		const FVector Scale = bMeshAlongX ? FVector(WidthScale, 1.f, HeightScale) : FVector(1.f, WidthScale, HeightScale);
+		const FQuat Rotation = FRotator(0.f, bGapAlongX == bMeshAlongX ? 0.f : 90.f, 0.f).Quaternion();
+		Visual->SetRelativeRotation(Rotation);
 		Visual->SetRelativeScale3D(Scale);
-		Visual->SetRelativeLocation(-(Scale * Bounds.GetCenter()));
+		// 평면은 개구부 가운데, 아래는 개구부 바닥에 앉힌다
+		const FVector Centered = -Rotation.RotateVector(Scale * Bounds.GetCenter());
+		Visual->SetRelativeLocation(FVector(Centered.X, Centered.Y, -Extent.Z - Bounds.Min.Z * HeightScale));
 	}
 
 	// 트리거는 안쪽 방향을 따라 벽을 걸친다: 안쪽은 깊게, 바깥쪽은 얕게

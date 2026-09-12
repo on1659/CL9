@@ -18,20 +18,33 @@
 
 ```
 DA_SegKindTable  (생성기 쪽 — 이 발자국엔 무엇이 서는가)
-  barn   → Piece: wall      Placement: Tile     Height: 630
-  plug   → Piece: wallHalf  Placement: Tile     Height: 630
-  wall   → Piece: fence     Placement: Tile     Height: 288
-  cage   → Piece: box       Placement: Stretch  Height: 630
-  floor  → Piece: box       Placement: Stretch  Height: 30
+  barn      → Piece: wall         Placement: Tile     Height: 580
+  barnStub  → Piece: wallQuarter  Placement: Tile     Height: 580
+  wall      → Piece: fence        Placement: Tile     Height: 288
+  wallStub  → Piece: fence        Placement: Tile     Height: 288
+  floor     → Piece: floor        Placement: Grid     Height: 30
+  yard      → Piece: yard         Placement: Grid     Height: 30
+  tread     → Piece: tread        Placement: Tile     Height: 30
+  ceiling   → Piece: ceiling      Placement: Grid     Height: 30
+  flapIn    → Piece: door         (액터 ACL9FlapIn)     Height: 580
         ↓ 역할 이름으로만 가리킨다
 DA_PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이 바뀌면 여기만 고친다
-  Alias(역할)  SubAlias(테마)   Variants
-  wall         henhouse         [ Wall_5x4_A_01, _A_02, _A_03 ]
-  wallHalf     henhouse         [ Wall_2_5x4_01, _02, _03 ]
-  fence        henhouse         [ VillageWall_TIling, VillageWall_TIling_2 ]
-  door         henhouse         [ Door_A, Door_C, Door_D, Door_E ]
+  Alias(역할)  SubAlias(테마)   Variants                       (2026-09-11부터 자체 제작 CL9Art)
+  wall         henhouse         [ SM_Henhouse_Wall_500_A ]
+  wallHalf     henhouse         [ SM_Henhouse_Wall_250_A ]     ← 아직 아무 seg kind도 안 쓴다
+  wallQuarter  henhouse         [ SM_Henhouse_Wall_125_A ]
+  fence        henhouse         [ SM_Henhouse_Fence_250_A ]
+  door         henhouse         [ SM_Henhouse_Door_A ]
+  floor        henhouse         [ SM_Henhouse_Floor_500_A ]
+  ceiling      henhouse         [ SM_Henhouse_Ceiling_500_A ]
+  yard         henhouse         [ SM_Henhouse_YardGround_500_A ]
+  tread        henhouse         [ SM_Henhouse_Tread_A ]
   box          (비움)            [ /Engine/BasicShapes/Cube ]
 ```
+
+Dreamscape Farmlands 조각을 가리키던 행은 2026-09-11에 전부 자체 제작 조각으로 바꿨다 — 그 팩은
+저장소에서 제외됐으므로(5da02ff) 팩을 가리키는 행은 클론에서 깨진다. 아래 "이번 팩 실측표"는
+그 팩의 기록으로 남겨 둔다.
 
 **조각의 치수는 어느 표에도 적지 않는다.** `ACL9SiteMap`이 메시 바운드에서 직접 읽는다 —
 손으로 옮겨 적은 숫자는 팩이 바뀌는 순간 조용히 틀린 값이 되고, 그게 이 표를 만든 이유를
@@ -42,12 +55,18 @@ DA_PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이
 
 ## 배치 모드 — 세 축을 따로 다룬다
 
-`UCL9SegKindDef.Placement`가 둘 중 하나다.
+`UCL9SegKindDef.Placement`가 셋 중 하나다.
 
 | 모드 | 무엇 | 쓰는 곳 |
 |---|---|---|
-| `Stretch` | 조각 하나를 발자국 크기로 늘린다 | 회색 상자, 바닥·천장처럼 늘어나도 티가 안 나는 면 |
-| `Tile` | 조각을 자연 크기로 깔아 나간다 | 판자·벽돌 무늬가 있는 모듈러 조각 전부 |
+| `Stretch` | 조각 하나를 발자국 크기로 늘린다. **100cm 단위 정육면체(중심 피벗)를 가정한다** | 회색 상자(`box`) |
+| `Tile` | 조각을 자연 크기로 깔아 나간다 — 길이 축 한 방향 | 판자·벽돌 무늬가 있는 벽·울타리·디딤판 |
+| `Grid` | 판 조각을 두 평면 축으로 격자 깔기 한다 — 축마다 `round(발자국/조각)`장, 높이는 발자국 높이 | 500×500 바닥·천장·마당 타일 (2026-09-11) |
+
+`Grid`는 모듈 사각형이 칸의 정수배라 맞춤이 1.0으로 떨어지고, 계단실의 위층 띠(250×1000)처럼
+짧은 발자국만 한 장이 눌린다 — 그건 늘 있는 일이라 `Grid` 종류는 맞춤 경고를 내지 않고 기록만
+남긴다. 피벗은 Tile처럼 바운드 중심으로 보정한다(바닥 조각은 윗면 피벗, 천장·마당은 바닥 피벗인데
+다 같이 맞는 이유).
 
 `Tile`이 축마다 다르게 행동하는 것이 이 규약의 핵심이다.
 
@@ -62,8 +81,9 @@ DA_PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이
 막혀 있다는 판정은 그대로다.
 
 윗단이 남는 높이를 받는 이유: 눈이 가는 아래쪽 비율을 지키는 편이 벽 전체를 눌러 놓는
-것보다 낫다. 축사 벽 630cm에 400cm 조각이면 아래 400은 제 비율 그대로 서고 위 230만
-0.58배로 눌리는데, 그 높이는 630에 있는 천장에 가려 잘 보이지 않는다.
+것보다 낫다. 축사 벽 580cm에 400cm 조각이면 아래 400은 제 비율 그대로 서고 위 180만
+0.45배로 눌린다. (벽 높이는 2026-09-11에 630 → 580으로 낮췄다 — 층 높이가 610(최고 방 550 +
+판 30+30)이라 630짜리 벽이 2층 바닥을 20cm 뚫고 나왔다. 580 = 550 + 천장 판 30.)
 
 **피벗은 신경 쓰지 않아도 된다.** 조각의 원점이 메시 중심이든 구석이든 격자 원점이든,
 바운드 중심을 기준으로 자동 보정된다. 램프(경사 슬래브)만은 기울어져 있어 쌓을 수가 없으니
@@ -147,15 +167,27 @@ LogCL9: Site map: 'barn' tiled with a 500 x 40 x 400 piece — 128 instances, wo
 | 역할 | 쓰는 seg kind | 발자국이 요구하는 것 |
 |---|---|---|
 | `wall` | `barn`(실내 벽) | 긴 벽 한 장. **길이가 `CellSize`의 약수여야 예쁘다** |
-| `fence` | `wall`(야외 모듈의 벽) | 야외 울타리. 높이 288 |
-| `door` | `flapIn`(일방향 비상구) | 문짝 한 장. 액터(`ACL9FlapIn`)라 늘려서 맞춘다 |
-| `box` | `floor` · `ceiling` | 무늬 없는 면. `Stretch` 전용 |
+| `wallQuarter` | `barnStub`(문·비상구 양옆 토막) | 칸 500에 문 250이면 125짜리 토막 — 그 길이의 벽 한 장 |
+| `fence` | `wall`(야외 모듈의 벽) · `wallStub`(야외 문 옆 토막) | 야외 울타리. 높이 288. **125짜리 울타리가 없어 토막은 0.50으로 눌리고 경고가 난다** — 알려진 상태 |
+| `door` | `flapIn`(일방향 비상구) | 문짝 한 장. 액터(`ACL9FlapIn`)가 **폭만** 개구부에 맞추고 두께·높이는 자연값으로 둔다(2026-09-11). 개구부 위쪽은 Body 상자가 막는다 |
+| `floor` | `floor`(실내 바닥) | 500×500 판. `Grid` |
+| `yard` | `yard`(야외 모듈의 바닥) | 500×500 흙·자갈 판. `Grid` |
+| `tread` | `tread`(계단 디딤판) | 디딤판 한 장. `Tile`이 계단 진행 방향에 맞춰 90° 돌린다 — 500 폭 통로에 264짜리 두 장(맞춤 0.95) |
+| `ceiling` | `ceiling` | 500×500 판. `Grid`. 양계장은 천장을 꺼 두어(site `bBuildCeilings`) 켤 때 바로 쓰인다 |
+| `box` | (없음 — 폴백) | 무늬 없는 100cm 정육면체. `Stretch` 전용 |
 
 **`door` 조각을 문틀로 쓰면 안 된다.** 문짝 메시를 개구부에 채우면 콜리전이 생겨 문이 통째로
-막힌다 — 그래서 `door` seg kind 행을 만들지 않았고, 지금 문은 문틀 없는 개구부다.
+막힌다 — 그래서 `door` seg kind 행을 만들지 않았고, 지금 문은 문틀 없는 개구부다. 생성기도
+`door` 종류가 없는 것을 에러로 세지 않는다.
+
+**문 폭은 250이다** — `door` seg kind 행이 없어서 `MeasurePieces`가 문짝을 못 읽고 기본값 250을
+쓴다. 문짝 `SM_Henhouse_Door_A`(132)와 디딤판(264 = 2×132)은 132 세계로 만들어졌고, Wall_125/250은
+250 세계로 만들어졌다 — 2026-09-11 사용자 결정으로 **250을 유지**한다(문짝은 폭 1.89×, 디딤판은
+두 장). `door` 행을 넣으면 문 폭이 132로, 토막이 184로 바뀌어 Wall_250(0.74)·Wall_125(1.47)
+어느 것도 안 맞게 되니 넣지 말 것.
 
 `wallHalf` 역할은 **지금 아무 seg kind도 안 쓴다.** 통로 마개(`plug`)가 사라졌기 때문이다.
-문 옆 벽 토막(칸 500에 문 250이면 125씩)을 채울 짧은 조각이 필요해지면 여기가 그 자리다.
+문 옆 토막은 125라 `wallQuarter`가 맡는다 — `SM_Henhouse_Wall_250_A`는 행에 있지만 소비처가 없다.
 
 `cage` 역할도 비어 있다 — 케이지 열이 사라져 seg kind 자체가 안 불린다. 모듈 안 소품으로
 되살아날 여지는 남아 있다.
@@ -243,9 +275,13 @@ LogCL9: Site map: 'barn' tiled with a 500 x 40 x 400 piece — 128 instances, wo
   높이(630cm)로 늘어나는데, 개구멍 높이를 벽과 같이 둘지는 재검토 대상이다.
 - **코너 조각을 안 쓴다.** 타일링한 벽이 모서리에서 겹칠 뿐이다. `SM_House_Corner_01`이
   그 자리를 위한 조각인데, 생성기가 "여기는 모서리"를 따로 말해 주지 않는다.
-- **바닥·천장은 늘린 회색 면이다.** 마당 전체를 500 타일로 깔면 인스턴스가 수천 개가 되고
-  야외 지형은 ⑤ 5b에서 지형으로 갈 예정이라, 무늬는 머티리얼 타일링으로 처리한다.
-- **문 옆 벽 토막이 0.25배로 눌린다** (2026-09-08 모듈 조립 재작성 이후). 칸 500cm에 문을
-  250cm 뚫으면 양옆에 125cm 토막이 남는데 500짜리 조각 한 장이 거기 들어간다. 온전한 벽은
-  1.00으로 잘 맞고 토막만 그렇다. 로그가 매번 경고를 내므로, 이 경고가 사라질 때까지는 다른
-  경고를 못 알아본다는 부작용이 있다.
+- **바닥·천장·마당은 `Grid` 타일이다** (2026-09-11). 30모듈 판에 바닥 142장·마당 15장 —
+  모듈 단위 한 장씩이라 인스턴스가 수천 개가 되지 않는다. 패드에서 입구까지 8m 마당 앞뜰은
+  아직 회색 바닥(Lvl_Henhouse `Floor`)이다.
+- **문 옆 벽 토막은 `barnStub`/`wallStub`로 분리했다** (2026-09-11). 실내는 Wall_125가 1.00으로
+  맞고, 야외 울타리 토막만 125짜리 울타리가 없어 Fence_250을 0.50으로 눌러 쓴다 — 시드마다
+  `wallStub` 경고 한 줄이 남는 게 정상이다. 그 경고 말고 다른 맞춤 경고가 뜨면 그게 문제다.
+- **소품 세트** — 모듈 표의 `PropSets`가 인스턴스마다 하나 뽑혀 깔린다 (module.md 결정 7,
+  구현 2026-09-11). 소품마다 변 조건(`SideClosed`/`SideOpen`)이 있어 벽걸이 표식·둥지는 그
+  변이 막혔을 때만 선다(REPO `ModulePropSwitch`). 몸 있는 소품이 문 자리나 스폰 지점(칸 중심
+  ±130)을 가리면 `LogCL9` 경고가 난다.

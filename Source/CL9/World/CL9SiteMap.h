@@ -64,6 +64,12 @@ private:
 	 */
 	void MeasurePieces(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry);
 
+	/**
+	 * 모듈마다 소품 세트 하나를 뽑아 깐다 (module.md 결정 7 + REPO의 변 연결 조건). 문 자리와
+	 * 스폰 지점을 몸 있는 소품이 가리면 경고한다. 놓은 인스턴스 수를 돌려준다.
+	 */
+	int32 PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstComponentIndex);
+
 	/** seg kind별로 하나씩 두는 인스턴스 컴포넌트 — 빌드 중 필요할 때 생성된다 */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UInstancedStaticMeshComponent>> KindComponents;

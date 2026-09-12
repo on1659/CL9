@@ -48,7 +48,7 @@
 | `Size` | `FIntPoint` | 격자 칸 단위 W × H |
 | `Sockets` | 4비트 마스크 | 어느 변이 열리나 — N/S/E/W (회전 전 기준). 열린 변의 경계 칸이 전부 문 후보다 |
 | `Rarity` | int 1~3 | 뽑힐 가중치 (REPO `ModuleRarity1/2/3`) |
-| `PropSets` | 배열 | 소품 배치 세트들 — 인스턴스마다 하나를 결정적으로 뽑는다 (**미구현**) |
+| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다 |
 | `Height` | float | 천장 높이 (모듈마다 다를 수 있다) |
 | `bStairs` | bool | 모듈 **안에서** 오르내리는 높이차가 있는가 — 바깥으로 전파되지 않는다 |
 | `bOutdoor` | bool | 야외 모듈인가 (마당) — 천장을 안 씌우고 벽 대신 울타리를 세운다 |
