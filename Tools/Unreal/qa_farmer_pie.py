@@ -1,7 +1,7 @@
 import unreal,json,datetime
 from pathlib import Path
 w=unreal.EditorLevelLibrary.get_pie_worlds(False)[0];pawn=unreal.GameplayStatics.get_player_pawn(w,0);pc=unreal.GameplayStatics.get_player_controller(w,0)
-body=pawn.mesh;arms=next(c for c in pawn.get_components_by_class(unreal.SkeletalMeshComponent) if c.get_name()=='FirstPersonMesh');body.set_skeletal_mesh(unreal.load_asset('/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body'));arms.set_skeletal_mesh(unreal.load_asset('/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Arms'))
+body=pawn.mesh;arms=next(c for c in pawn.get_components_by_class(unreal.SkeletalMeshComponent) if c.get_name()=='FirstPersonMesh');body.set_skeletal_mesh(unreal.load_asset('/Game/Characters/FarmerA/SK_Farmer_A_Body'));arms.set_skeletal_mesh(unreal.load_asset('/Game/Characters/FarmerA/SK_Farmer_A_Arms'))
 body.set_editor_property('override_materials',[]);arms.set_editor_property('override_materials',[])
 move=pawn.get_component_by_class(unreal.CharacterMovementComponent);move.stop_movement_immediately();pawn.set_actor_location(unreal.Vector(20000,0,1092),False,True);pc.set_control_rotation(unreal.Rotator(pitch=0,yaw=0,roll=0))
 cam=next(a for a in unreal.GameplayStatics.get_all_actors_of_class(w,unreal.SceneCapture2D) if a.get_actor_label()=='QA024_Capture');capture=cam.get_component_by_class(unreal.SceneCaptureComponent2D)

@@ -29,7 +29,7 @@ SegKindTable  (생성기 쪽 — 이 발자국엔 무엇이 서는가)
   flapIn    → Piece: door         (액터 ACL9FlapIn)     Height: 580
         ↓ 역할 이름으로만 가리킨다
 PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이 바뀌면 여기만 고친다
-  Alias(역할)  SubAlias(테마)   Variants                       (2026-09-11부터 자체 제작 CL9Art)
+  Alias(역할)  SubAlias(테마)   Variants                       (2026-09-11부터 자체 제작 메시)
   wall         henhouse         [ SM_Henhouse_Wall_500_A ]
   wallHalf     henhouse         [ SM_Henhouse_Wall_250_A ]     ← 아직 아무 seg kind도 안 쓴다
   wallQuarter  henhouse         [ SM_Henhouse_Wall_125_A ]

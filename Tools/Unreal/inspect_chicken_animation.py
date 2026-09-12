@@ -1,6 +1,6 @@
 import unreal,json
 from pathlib import Path
-folder='/Game/CL9Art/Monsters/ChickenA'
+folder='/Game/Monsters/ChickenA'
 mesh=unreal.load_asset(folder+'/SK_Chicken_A');a=unreal.load_asset(folder+'/AN_Chicken_Walk')
 print('AnimPose methods',[(n,getattr(unreal.AnimPoseExtensions,n).__doc__) for n in dir(unreal.AnimPoseExtensions) if n in ('get_anim_pose_at_time','get_bone_pose','get_anim_pose_at_frame')])
 print('AnimPoseEvaluationOptions',unreal.AnimPoseEvaluationOptions.__doc__)

@@ -14,5 +14,5 @@
 납품: `ArtSource/map/henhouse_yard/`의 ground/sign_exit/sign_feed/sign_kitchen/sign_coop 원본과
 FBX6개, ground/preview 및 sign_review/preview의 중립·야간·손전등 이미지.
 바닥1,180 tris/표식224·856·340·324 tris, 표식 두께4.4cm/중심 피벗/WallMount 앵커.
-UE `CL9Art/Maps/HenhouseYard` 임포트와 1월드 PIE 이음매·지지·표식 비충돌 검수는
+UE `Maps/Henhouse/Yard` 임포트와 1월드 PIE 이음매·지지·표식 비충돌 검수는
 [018](../iterations/018.md)에 기록했다. 실제 역할 연결/2인/LOD 전환·성능은 미완료다.

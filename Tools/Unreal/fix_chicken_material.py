@@ -1,5 +1,5 @@
 import unreal
-folder='/Game/CL9Art/Monsters/ChickenA';mat=unreal.load_asset(folder+'/M_CL9_Chicken_Vertex')
+folder='/Game/Monsters/ChickenA';mat=unreal.load_asset(folder+'/M_CL9_Chicken_Vertex')
 node=unreal.MaterialEditingLibrary.get_material_property_input_node(mat,unreal.MaterialProperty.MP_BASE_COLOR)
 print('Before BaseColor input',node)
 if node is None:

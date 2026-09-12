@@ -24,7 +24,7 @@ Blender MCP 제작 후 UE 치수/출입구·작업 공간/계단 연결·지원�
 본체630×353.5×325.1cm/5128tris/2850정점/4재질/UCX24,
 계단120×114×64cm/224tris/128정점/2재질/UCX4. 각 UV0/FBX/3조명/UE LOD3.
 원본은 `ArtSource/map/food_truck/body/food_truck.blend`, `steps/steps.blend`.
-납품 UE 경로는 `/Game/CL9Art/Maps/FoodTruck/Body`, `Steps`, 배율1.
+납품 UE 경로는 `/Game/Maps/FoodTruck/Body`, `Steps`, 배율1.
 
 본체 원점 기준 UE cm 앵커(Y 축 반전 적용):
 

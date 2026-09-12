@@ -905,7 +905,7 @@
 ## 2026-09-11
 
 - **동물 5종을 자체 제작 메시·클립으로 갈아끼움 — 종별 AnimBP 신설** (사용자 — "자연스럽게
-  움직이는 것까지"). `MonsterTable`의 chicken·goose·raccoon·pig·sheep 행이 `CL9Art/Monsters/<종>A/`의
+  움직이는 것까지"). `MonsterTable`의 chicken·goose·raccoon·pig·sheep 행이 `Monsters/<종>A/`의
   `SK_<종>_A`·스켈레톤과 `Content/Monsters/ABP_<종>_A`를 가리킨다. 새 모델은 +X 전방이라
   `MeshYawOffset`은 −90 → **0**. 배경: 09-10에 Dreamscape 팩을 용량 문제로 잘라내면서 팩의
   동물 애님 시퀀스가 디스크에서 사라져 기존 `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`의 시퀀스 플레이어가
@@ -1082,3 +1082,19 @@
   `Content/UI/UITable`(←DA_UITable). 새 표는 `SettingsTable`처럼 처음부터 접두사 없이 만든다.
   함정: `CL9DefList`는 PreSave에서 폴더를 재스캔하는데 rename 도중엔 에셋 레지스트리가 낡아 옛 경로가 저장됐다 —
   rename이 다 끝난 뒤 `save_asset(only_if_is_dirty=False)`로 한 번 더 저장해야 새 경로가 들어간다.
+  - 추가(같은 날 밤, 사용자 "번역은 어느 순간에 한 번 할 거라 기본은 한국어로만 작업하고, 번역은 신경 쓰지 말라"):
+    문구 작업은 `ko` 열만. 다른 언어 열은 비워 두고(빈 칸은 ko로 표시) 번역 패스 때 몰아서 채운다. 이날 en·ja·zh-Hans
+    186개를 초안으로 한 번 채웠다.
+
+- **`Content/CL9Art` 폴더를 없애고 자체 제작 에셋을 규약 폴더로 흩는다** (2026-09-12, 사용자 — "cl9art에 있는 것들도
+  자리에 맞게 배치 다시해줘, 원래 우리 폴더 규칙대로, 그다음에 cl9art 지워"). 189개를 에디터 move로 옮기고(참조 fix-up:
+  ItemTable·CharacterTable·MonsterTable·ModuleTable·PieceTable·BP_CL9 시설 5종·ABP_<종>_A·ABP_Unarmed·ABP_FP_Copy·
+  Lvl_Flat·Lvl_Henhouse 재저장) CL9Art를 지웠다. 대응:
+  Characters/FarmerA · Monsters/<종>A · Items/{CartA,Cookware,MeatStates,PortableLights,StandingLampA} ·
+  **시설 메시는 BP 옆** Items/{Kitchen,DeliveryCounter,ReturnJar,TruckPad,TruckPanel} · Items/Egg(SM_Egg_Raw_A) ·
+  Maps/FoodTruck · Maps/Henhouse/{Access,Door,Fence,Structure,Workbench,Yard,Props(구 HenhouseSample01)} ·
+  **새 최상위 `Tests/`**(Lvl_AssetQA01·SK_RigProbe* — 게임이 참조하지 않는 검수물). 이름 충돌은 없었다(테스트물 `_test`
+  개명 불필요). docs/asset/README.md의 임포트 목적지 규칙과 conventions.md Content 트리를 같이 고쳤다.
+  함정: 맵(.umap)은 `rename_asset`이 "INI/소스 찾기·바꾸기 필요" 확인 대화상자에 막혀 실패한다 — 복제 → 원본 삭제로
+  옮긴다. 옮긴 뒤 남은 리다이렉터는 참조 레벨(Lvl_Flat·Henhouse)을 `save_asset(only_if_is_dirty=False)`로 재저장하면 지울 수
+  있다(py에 `fixup_referencers`가 없다). Interchange 임포트 메타(`contentImportPath`)에 옛 경로 문자열이 남지만 참조가 아니다.

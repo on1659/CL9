@@ -1,6 +1,6 @@
 import unreal,json
 from pathlib import Path
-root=Path(unreal.Paths.project_dir());folder='/Game/CL9Art/Characters/FarmerA';at=unreal.AssetToolsHelpers.get_asset_tools();lib=unreal.MaterialEditingLibrary
+root=Path(unreal.Paths.project_dir());folder='/Game/Characters/FarmerA';at=unreal.AssetToolsHelpers.get_asset_tools();lib=unreal.MaterialEditingLibrary
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 assert not unreal.EditorAssetLibrary.does_asset_exist(folder+'/T_Farmer_Palette')
 t=unreal.AssetImportTask();t.filename=str(root/'ArtSource/character/farmer_a/textures/T_Farmer_Palette.png');t.destination_path=folder;t.destination_name='T_Farmer_Palette';t.automated=True;t.save=True;at.import_asset_tasks([t]);texture=unreal.load_asset(folder+'/T_Farmer_Palette');assert isinstance(texture,unreal.Texture2D)

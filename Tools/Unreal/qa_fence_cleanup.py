@@ -2,7 +2,7 @@ import unreal,json
 from pathlib import Path
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-assert '/Game/CL9Art/Tests/Lvl_AssetQA01.' in world.get_path_name()
+assert '/Game/Tests/Lvl_AssetQA01.' in world.get_path_name()
 prefix=globals().get('PREFIX','QA013_')
 out=Path(unreal.Paths.project_dir(),'docs/asset/evidence',globals().get('FIXTURE_EVIDENCE','013-fence-fixtures.json'));data=json.loads(out.read_text())
 assert not data['cleaned_up']

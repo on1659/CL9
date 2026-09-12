@@ -1,7 +1,7 @@
 """Import authored meshes onto the existing Manny Skeleton, without updating its reference pose."""
 import unreal,json,hashlib,math
 from pathlib import Path
-root=Path(unreal.Paths.project_dir());src=root/'ArtSource/character/farmer_a/export';manifest=json.loads((src/'manifest.json').read_text());folder='/Game/CL9Art/Characters/FarmerA'
+root=Path(unreal.Paths.project_dir());src=root/'ArtSource/character/farmer_a/export';manifest=json.loads((src/'manifest.json').read_text());folder='/Game/Characters/FarmerA'
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 sk=unreal.load_asset('/Game/Characters/Mannequins/Meshes/SK_Mannequin');at=unreal.AssetToolsHelpers.get_asset_tools()
 def skeleton_signature():

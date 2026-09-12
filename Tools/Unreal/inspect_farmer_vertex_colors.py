@@ -1,6 +1,6 @@
 import unreal
 from pathlib import Path
-m=unreal.load_asset('/Game/CL9Art/Characters/FarmerA/SK_Farmer_A_Body');d=m.get_editor_property('asset_import_data')
+m=unreal.load_asset('/Game/Characters/FarmerA/SK_Farmer_A_Body');d=m.get_editor_property('asset_import_data')
 print('Import data class',d.get_class().get_name())
 if isinstance(d,unreal.FbxSkeletalMeshImportData):
  for n in ['vertex_color_import_option','vertex_override_color']:print(n,d.get_editor_property(n))

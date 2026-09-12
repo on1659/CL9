@@ -111,18 +111,18 @@ CL9/
 **콘텐츠 (Content/):**
 ```
 Content/
-  ├─ Characters/       (BP_CL9Character, 마네킹 스켈레톤·ABP)
-  ├─ Items/            (아이템·시설 BP — BP_CL9Item/Cart/Kitchen/Counter/Jar/TruckPad…)
-  ├─ Monsters/         (BP_CL9Monster, 동물별 ABP)
+  ├─ Characters/       (BP_CL9Character, 마네킹 스켈레톤·ABP, FarmerA/ 자체 제작 몸·팔·클립)
+  ├─ Items/            (아이템·시설 BP — BP_CL9Item/Cart/Kitchen/Counter/Jar/TruckPad… + 그 메시·재질 폴더 CartA/Kitchen/…)
+  ├─ Monsters/         (BP_CL9Monster, 동물별 ABP, <종>A/ 자체 제작 SK·클립)
   ├─ GameMode/         (BP_CL9GameMode/GameInstance/PlayerController)
   ├─ Input/            (IMC_Gameplay/Spectate/UI, Actions/)
-  ├─ Maps/             (Lvl_Flat 테스트 맵, Lvl_Henhouse)
+  ├─ Maps/             (Lvl_Flat 테스트 맵, Lvl_Henhouse, Henhouse/·FoodTruck/ 맵 조각·소품 메시)
   ├─ Data/             (DataAsset 표 — *Table, CL9DefList/Rules/Progression. 접두사 없음 — 2026-09-12)
   ├─ UI/               (WBP_* 위젯 블루프린트, UITable)
   ├─ Effects/          (카메라 셰이크·파티클·사운드)
   ├─ Strings/          (CL9_Strings.csv 마스터 시트 + 생성물 CL9.csv — systems/localization.md)
   ├─ Localization/CL9/ (수집·번역 산출물 manifest·po·locres — 생성물, 커밋함)
-  ├─ CL9Art/           (자체 제작 에셋 — Characters/Items/Maps/Monsters/Tests, asset/README.md)
+  ├─ Tests/            (검수 레벨 Lvl_AssetQA01·리그 왕복 프로브 — 게임이 참조하지 않는 테스트물)
   └─ (벤더·템플릿) DreamscapeSeries/·AnimalVarietyPack/·FirstPerson/·Variant_Horror/·LevelPrototyping/
                        — 저장소 제외 또는 템플릿 잔재, 새 에셋을 두지 않는다
 ```
@@ -197,7 +197,8 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
 - 화면 문자열: **String Table `CL9`의 키만** 쓴다 — 코드는 `LOCTABLE("CL9", "Shop.NoMoney")`, UMG·데이터
   행은 텍스트 피커의 String Table 참조. 원문·번역은 `Content/Strings/CL9_Strings.csv`(No·Key·DevNotes·언어 열) 한 장에만 있고, `NSLOCTEXT`/직접 친
   텍스트는 금지(행은 Validate가 Broken으로 잡는다). `FText::FromString`은 플레이어 이름·숫자·줄바꿈처럼
-  번역 대상이 아닌 것에만. 키 규칙·추가 절차·번역 명령은 [systems/localization.md](systems/localization.md)
+  번역 대상이 아닌 것에만. **평소엔 `ko` 열만 채운다 — 번역은 정해진 시점에 몰아서**, 문구 작업 중엔 신경 쓰지 않는다.
+  키 규칙·추가 절차·번역 명령은 [systems/localization.md](systems/localization.md)
   (2026-09-12, 사용자 "string alias를 박아서 언어설정 바뀔때마다 싹다 바뀌어야")
 
 ### 📋 개발 중 체크리스트

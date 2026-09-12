@@ -2,7 +2,7 @@ import unreal
 editor=unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 assert not editor.is_in_play_in_editor()
 world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-assert world.get_path_name()=='/Game/CL9Art/Tests/Lvl_AssetQA01.Lvl_AssetQA01'
+assert world.get_path_name()=='/Game/Tests/Lvl_AssetQA01.Lvl_AssetQA01'
 for a in unreal.get_editor_subsystem(unreal.EditorActorSubsystem).get_all_level_actors():
     label=a.get_actor_label()
     if label=='QA_Egg_0':a.set_actor_location(unreal.Vector(200,0,24),False,False)

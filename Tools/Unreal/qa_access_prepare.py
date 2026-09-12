@@ -1,11 +1,11 @@
 PREFIX='QA017_';FIXTURE_EVIDENCE='017-access-fixtures.json'
-MESH_PATH='/Game/CL9Art/Maps/HenhouseSample01/SM_Henhouse_Wall_500_A'
+MESH_PATH='/Game/Maps/Henhouse/Props/SM_Henhouse_Wall_500_A'
 MESH_PATHS={
-    'Wall250':'/Game/CL9Art/Maps/HenhouseAccess/Wall250/SM_Henhouse_Wall_250_A',
-    'Wall125':'/Game/CL9Art/Maps/HenhouseAccess/Wall125/SM_Henhouse_Wall_125_A',
-    'TreadNatural':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_A',
-    'TreadY':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_YRun_A',
-    'TreadX':'/Game/CL9Art/Maps/HenhouseAccess/Tread/SM_Henhouse_Tread_Stretch100_XRun_A'}
+    'Wall250':'/Game/Maps/Henhouse/Access/Wall250/SM_Henhouse_Wall_250_A',
+    'Wall125':'/Game/Maps/Henhouse/Access/Wall125/SM_Henhouse_Wall_125_A',
+    'TreadNatural':'/Game/Maps/Henhouse/Access/Tread/SM_Henhouse_Tread_A',
+    'TreadY':'/Game/Maps/Henhouse/Access/Tread/SM_Henhouse_Tread_Stretch100_YRun_A',
+    'TreadX':'/Game/Maps/Henhouse/Access/Tread/SM_Henhouse_Tread_Stretch100_XRun_A'}
 width=263.9745788574219;depth=850/31
 FIXTURE_SCALES={'TreadY':(width/100,depth/100,.3),'TreadX':(depth/100,width/100,.3)}
 FIXTURES=[('Wall500',(20000,0,1000),0),('Wall250',(20375,0,1000),0),('Wall125',(20562.5,0,1000),0),

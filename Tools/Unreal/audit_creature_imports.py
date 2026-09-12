@@ -3,7 +3,7 @@ import unreal,json,hashlib,datetime
 from pathlib import Path
 root=Path(unreal.Paths.project_dir()).resolve();report={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'creatures':[]}
 for species in globals().get('SPECIES',('Chicken','Raccoon')):
-    folder=f'/Game/CL9Art/Monsters/{species}A';source=root/'ArtSource/monster'/f'{species.lower()}_a/export'
+    folder=f'/Game/Monsters/{species}A';source=root/'ArtSource/monster'/f'{species.lower()}_a/export'
     mesh=unreal.load_asset(folder+f'/SK_{species}_A');reference=json.loads((source/'blender_animation_qa.json').read_text())
     manifest=json.loads((source/'manifest.json').read_text())
     options=unreal.AnimPoseEvaluationOptions();options.optional_skeletal_mesh=mesh;options.extract_root_motion=False

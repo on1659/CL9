@@ -3,7 +3,7 @@
 Written 2026-09-11 (autogoal, HEAVY track — panel of 4 lenses + cross-exam settled the design below).
 
 ## One-line Goal
-Every mesh under `Content/CL9Art` that is not referenced by any game asset becomes consumed by the game — through
+Every mesh under `Content/CL9Art` (moved into Characters/Items/Monsters/Maps on 2026-09-12) that is not referenced by any game asset becomes consumed by the game — through
 data rows, BP/level edits, and the smallest generator changes that give the map parts and props a real consumer.
 
 ## Background / Motivation

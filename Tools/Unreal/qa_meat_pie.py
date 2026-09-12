@@ -38,5 +38,5 @@ else:
         report['worlds'].append(rec)
     (root/'docs/asset/evidence/008-meat-pie.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     assert all(len(w['items'])>=3 for w in report['worlds'])
-    assert all('/CL9Art/Items/MeatStates/' in a['mesh'] for w in report['worlds'] for a in w['items'])
+    assert all('/Items/MeatStates/' in a['mesh'] for w in report['worlds'] for a in w['items'])
     print(json.dumps(report))

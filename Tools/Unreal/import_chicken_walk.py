@@ -1,7 +1,7 @@
 """Import one baked action on the imported skeleton and recreate its vertex material."""
 import unreal,json,hashlib
 from pathlib import Path
-root=Path(unreal.Paths.project_dir()).resolve();folder='/Game/CL9Art/Monsters/ChickenA'
+root=Path(unreal.Paths.project_dir()).resolve();folder='/Game/Monsters/ChickenA'
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 mesh=unreal.load_asset(folder+'/SK_Chicken_A');skeleton=mesh.get_editor_property('skeleton')
 source=root/'ArtSource/monster/chicken_a/export/AN_Chicken_Walk.fbx'

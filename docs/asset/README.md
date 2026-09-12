@@ -40,11 +40,11 @@ ArtSource/<monster|item|map|character>/<asset_id>/
 docs/asset/<분류>/<asset_id>.md  # 제작 카드·검수 결과
 Tools/Blender/              # 재실행 가능한 제작/검사 스크립트
 Saved/BlenderMCP/           # 임시 파일·실행 로그, 납품 원본을 보관하지 않음
-Content/CL9Art/<Monsters|Items|Maps|Characters>/<AssetName>/
-                            # 신규 UE 임포트 목적지 제안
+Content/<Characters|Items|Monsters|Maps>/<AssetName>/
+                            # UE 임포트 목적지 — 규약 폴더 그대로 (2026-09-12, CL9Art 폴더 폐지)
 ```
 
-`ArtSource`와 `Content/CL9Art`는 새 제작부터 쓸 경로이며, 기존 팩을 이동하거나 이미 생성된
+`ArtSource`는 새 제작부터 쓸 경로이며, 기존 팩을 이동하거나 이미 생성된
 경로라고 가정하지 않는다. 구매 에셋은 원본 팩을 보존한다. 큰 바이너리는 커밋 전 크기와
 저장 정책을 확인하며, 별도 요청 없이 Git LFS나 저장소 제외 규칙을 바꾸지 않는다.
 

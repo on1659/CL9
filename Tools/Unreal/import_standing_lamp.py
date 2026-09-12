@@ -1,5 +1,5 @@
 SOURCE_REL='ArtSource/item/standing_lamp_a/export'
-DESTINATION='/Game/CL9Art/Items/StandingLampA'
+DESTINATION='/Game/Items/StandingLampA'
 EVIDENCE='012-standing-lamp-imports.json'
 exec(compile(open('D:/Work/unreal/CL9/Tools/Unreal/import_portable_lights.py',encoding='utf-8').read(),'import_portable_lights.py','exec'))
 # Two reviewable states for the same shader contract; no new item/gameplay row.

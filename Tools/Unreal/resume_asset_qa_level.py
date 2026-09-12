@@ -1,8 +1,8 @@
 import unreal
 import json
 from pathlib import Path
-dest='/Game/CL9Art/Tests/Lvl_AssetQA01'
-art='/Game/CL9Art/Maps/HenhouseSample01/'
+dest='/Game/Tests/Lvl_AssetQA01'
+art='/Game/Maps/Henhouse/Props/'
 editor=unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 actors=unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()

@@ -2,7 +2,7 @@
 import unreal,json,math,hashlib
 from pathlib import Path
 root=Path(unreal.Paths.project_dir());source=root/'ArtSource/character/_reference'/globals().get('SOURCE_FBX','rig_roundtrip.fbx')
-folder='/Game/CL9Art/Tests/FarmerRigRoundtrip';name=globals().get('PROBE_NAME','SK_RigProbe');path=folder+'/'+name;assert not unreal.EditorAssetLibrary.does_asset_exist(path)
+folder='/Game/Tests/FarmerRigRoundtrip';name=globals().get('PROBE_NAME','SK_RigProbe');path=folder+'/'+name;assert not unreal.EditorAssetLibrary.does_asset_exist(path)
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 t=unreal.AssetImportTask();t.filename=str(source);t.destination_path=folder;t.destination_name=name;t.automated=True;t.save=True;t.replace_existing=False
 o=unreal.FbxImportUI();o.import_mesh=True;o.import_as_skeletal=True;o.import_animations=False;o.import_materials=False;o.import_textures=False;o.create_physics_asset=False;o.automated_import_should_detect_type=False;o.mesh_type_to_import=unreal.FBXImportType.FBXIT_SKELETAL_MESH

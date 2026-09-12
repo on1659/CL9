@@ -12,11 +12,11 @@
   (소비처 없음), Stretch100 변형 3종(불필요), 테스트 에셋.
 
 - **[별도 세션 2026-09-11] 아이템 7행 UE 영구 연결 완료 — 되돌리지 말 것.** `ItemTable`의 meat(raw/cooked/burnt)·
-  cart·flashlight·headlamp·frying_pan 행 `Mesh`를 `CL9Art/Items/…` 메시로 바꿨다(자동 배율: 고기 0.89 → 60×31×30cm,
+  cart·flashlight·headlamp·frying_pan 행 `Mesh`를 `Items/…` 메시로 바꿨다(자동 배율: 고기 0.89 → 60×31×30cm,
   수레 0.60 → 91×69×63cm, 손전등 0.88, 헤드램프 0.75, 프라이팬 0.99 → 60×35×8cm). Lvl_Flat 아이템 줄 PIE로 확인.
   egg_raw는 이미 연결돼 있었고 나머지 egg 상태·pot·standing_lamp는 메시/행이 없어 그대로다.
 - **[별도 세션 2026-09-11] 동물 5종 UE 영구 연결 완료 — 재개 시 되돌리거나 다시 만들지 말 것.**
-  Claude 세션이 `MonsterTable`의 chicken/goose/raccoon/pig/sheep 행을 `CL9Art/Monsters/<종>A/`의
+  Claude 세션이 `MonsterTable`의 chicken/goose/raccoon/pig/sheep 행을 `Monsters/<종>A/`의
   SK·스켈레톤과 신규 `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제 → 타깃 스켈레톤 교체 → 시퀀스
   플레이어 8개 교체, 기준 속도 = manifest `reference_speed_cm_s`)로 연결하고 `MeshYawOffset`을 0으로 바꿨다.
   Lvl_Flat PIE에서 5종 스폰·접지·걷기, 닭 HitReact/Death 알파, 양 추격→잡기 확인. 기록: `docs/decisions.md`
@@ -25,7 +25,7 @@
   시퀀스가 디스크에서 사라져 옛 ABP_Chicken/Pig/Sheep은 빈 플레이어 상태다(참조 없음, 삭제 보류).
 
 - 진행 중 [024](iterations/024.md): 농부 A 신규 몸4100tris/팔1496tris·기존 Manny89뼈, FBX2개/UV0+UV1.
-  `ArtSource/character/farmer_a/farmer_a.blend`, UE `CL9Art/Characters/FarmerA`. 전체45필수 행 최종 완료0개 유지.
+  `ArtSource/character/farmer_a/farmer_a.blend`, UE `Characters/FarmerA`. 전체45필수 행 최종 완료0개 유지.
   원본 m 단위, cm export 복사본/root 이름 유지로 UE root scale1. 모든 뼈 참조/기존 Walk 비교 통과.
   1월드 실제 CL9 pawn 몸/팔·Unarmed/FP Copy AnimBP·이동 통과. 신규 상태 동작은 아직 없다.
   실제 렌더에서 VC가 하얗게 보여 공유18색256×8 팔레트/UV1로 변경, 최종 실제 UE 색 확인.
@@ -46,7 +46,7 @@
   다음 farmer_a 몸/팔: 현재 Manny/FPP 리그와 데이터 참조를 추출→원본 호환 확인→외형 제작. 전체 맵 배치 제외.
 
 - 최신 [022](iterations/022.md): 트럭 패드/패널 원본·FBX2개/각3렌더/UV0/각3재질/UCX1/UE LOD3.
-  `ArtSource/map/truck_parts/`, UE `CL9Art/Maps/TruckParts`, 패드784tris/400×400×20cm, 패널868tris/15×80×120cm.
+  `ArtSource/map/truck_parts/`, UE `Items/TruckPad`·`Items/TruckPanel`, 패드784tris/400×400×20cm, 패널868tris/15×80×120cm.
   1월드 실제 BP 회복 밖 미회복/이탈 초기화/5초 후 완전 회복, 패널 RPC→로컬 Shop 열림/닫힘 확인.
   UIManager 조회는 ObjectIterator에서 PIE GameInstance 소유자를 선택한다. 미지원 라이브러리 경로 재사용 금지.
   영구 연결/기존 배율·피벗 보정/경사·경계 이동/2인/LOD·성능 미완료. 게임 구매 없음.
@@ -54,7 +54,7 @@
   다음은 푸드트럭 외형 모델 제작. 전체 맵 배치/이동 차량 기능 제외, 모델 우선 유지.
 
 - 최신 [021](iterations/021.md): 납품 창구 원본/FBX/3렌더/UV0/3재질/UCX6/UE LOD3.
-  `ArtSource/map/delivery_counter/`, UE `CL9Art/Maps/DeliveryCounter`, 1,552 tris/100cm 큐브/바닥 피벗.
+  `ArtSource/map/delivery_counter/`, UE `Items/DeliveryCounter`, 1,552 tris/100cm 큐브/바닥 피벗.
   실제 Counter BP1월드 PIE 계란 줍기→납품→빈손 판매/수입 증가·중복 없음, 몸통·상판 충돌 확인.
   Stock protected 조회 대신 공개 포커스·프롬프트/액터 제거/자금 결과로 검수. 내부 배열/주문·수레 미검수.
   영구 연결/기존 인스턴스 피벗/2인/LOD·성능 미완료. 원래 BP/레벨/데이터 변경 없음.
@@ -62,7 +62,7 @@
   다음은 트럭 패드/조작 패널 소비 BP 확인→개별 파츠 제작. 전체 맵 배치 제외/모델 우선 유지.
 
 - 최신 [020](iterations/020.md): 조리대 원본/FBX/3렌더/UV0/3재질/UCX8/UE LOD3.
-  `ArtSource/map/kitchen/`, UE `CL9Art/Maps/Kitchen`, 2,608 tris/120×300×90cm/+X 정면/바닥 피벗.
+  `ArtSource/map/kitchen/`, UE `Items/Kitchen`, 2,608 tris/120×300×90cm/+X 정면/바닥 피벗.
   `handle_fit=true` 반복 적용 금지. 실제 배치 Yaw90/배율1에서 기존300×120 작업 면적 복원.
   HeatZone이 세계 AABB를 다시 회전하는 결함 발견: 검수 인스턴스 Absolute Rotation=true/세계 회전0 보정.
   최종1월드 실제 Kitchen BP의 줍기/놓기/가열 중 제거/다시 놓고 익음→탐과 상판/열 영역·구체 지지 통과.
@@ -71,7 +71,7 @@
   다음은 납품 창구 BP 치수 조회→개별 모델 제작. 전체 맵 배치 제외/모델 우선 유지.
 
 - 최신 [019](iterations/019.md): 반납 항아리 원본/FBX/3렌더/UV0/3재질/UCX17/UE LOD3.
-  `ArtSource/map/return_jar/`, UE `CL9Art/Maps/ReturnJar`, 1,980 tris/높이100cm/바닥 피벗.
+  `ArtSource/map/return_jar/`, UE `Items/ReturnJar`, 1,980 tris/높이100cm/바닥 피벗.
   1월드 실제 Jar BP에서 계란 줍기→반납/기록 증가·제거, 입구 비차단/몸통 차단/구체 내부 지지 확인.
   검수 도구 미지원 호출 수정 후 같은 PIE에서 마무리. 최종 FBX/UE 해시 일치.
   영구 연결/기존 원통 인스턴스 위치 보정/수레/2인/LOD·성능 미완료.
@@ -79,14 +79,14 @@
   실행 핸들 없음. 다음은 조리대 BP 치수 조회→상판과 HeatZone 바운드 계약에 맞춰 제작.
 
 - 최신 [018](iterations/018.md): 마당 바닥/표식4종, 원본5개/FBX6개/각3렌더/UE LOD3.
-  `ArtSource/map/henhouse_yard/`, UE `CL9Art/Maps/HenhouseYard`. 바닥1,180 tris/UCX1.
+  `ArtSource/map/henhouse_yard/`, UE `Maps/Henhouse/Yard`. 바닥1,180 tris/UCX1.
   1월드 PIE 바닥 이음매<0.0001cm/구체 정착/표식4종 비충돌 확인. 흙면·충돌면 차이0.5cm.
   표식 사료/조리 `icon_layer_fit=true` 재실행 금지. 실제 역할/색/2인/LOD 검수 미완료.
   검수7액터 정리, UE Lvl_Flat/PIE 종료, Blender `CL9_WAYFINDING_EXIT`. 실행 핸들 없음.
   다음은 반납 항아리 소비 BP 확인 → 개별 모델 제작. 전체 맵 조립 제외 유지.
 
 - 최신 [017](iterations/017.md): 짧은 벽250/125·디딤판3종, FBX5개/3렌더/UV0/UCX1/UE LOD3.
-  `ArtSource/map/henhouse_access_parts/`, UE `CL9Art/Maps/HenhouseAccess`, 792/528/220 tris.
+  `ArtSource/map/henhouse_access_parts/`, UE `Maps/Henhouse/Access`, 792/528/220 tris.
   1월드 PIE에서 기존500cm벽과 이음매<0.000004cm, 디딤판 방향별 복원/충돌 확인.
   벽 `intersection_fit/top_fit=true`, 디딤판 `marker_fit=true` 재실행 금지. 원본/UE 최신 해시 일치.
   실제 역할 선택/걷기·운반/2인/LOD 미완료. 검수6액터 정리, 데이터 변경 없음.
@@ -94,61 +94,61 @@
   다음은 마당 바닥/방·출구 표식. 전체 맵 조립 제외/모델 제작 우선 유지.
 
 - 최신 [016](iterations/016.md): 보/기둥/천장3종 + Stretch100 천장 FBX 변형, 원본/3렌더/UV0/UCX1/UE LOD3.
-  `ArtSource/map/henhouse_structure/`, UE `CL9Art/Maps/HenhouseStructure`, 508/596/792 tris.
+  `ArtSource/map/henhouse_structure/`, UE `Maps/Henhouse/Structure`, 508/596/792 tris.
   1월드 PIE에서 보 이음매0, 천장 복원500×500×30cm/이음매<0.0001cm, 회전·충돌·아래 공간 확인.
   실제 역할 연결/2인/LOD 시각·성능 미완료. 검수6액터 정리/원래 목록 확인, 데이터 변경 없음.
   UE Lvl_Flat/PIE 종료, Blender `CL9_HENHOUSE_CEILING`, 실행 핸들 없음.
   다음은 짧은 벽/계단 디딤판/마당 바닥 소비 계약 확인 → 개별 파츠 제작. 전체 맵 배치 제외 유지.
 
 - 최신 [015](iterations/015.md): 작업대 원본/FBX/3렌더/UV0/2재질/UCX12/UE LOD3.
-  `ArtSource/map/henhouse_workbench/`, UE `CL9Art/Maps/HenhouseWorkbench`, 180×75×90cm/1,212 tris.
+  `ArtSource/map/henhouse_workbench/`, UE `Maps/Henhouse/Workbench`, 180×75×90cm/1,212 tris.
   1월드 PIE에서 검수 구체가 상판에 정착, 몸체/선반 차단 및 중앙 빈 공간 비차단 확인.
   실제 CL9 아이템/모듈 연결/2인/LOD 시각·성능 미완료. 검수3액터 정리/원래 목록 확인.
   UE Lvl_Flat/PIE 종료, Blender `CL9_HENHOUSE_WORKBENCH`, 실행 핸들 없음.
   다음은 보/기둥·천장 재사용 구조 파츠. 전체 맵 배치 제외/모델 제작 우선 유지.
 
 - 최신 [014](iterations/014.md): 문짝 원본/FBX/3렌더/UV0/2재질/UCX1/UE LOD3.
-  `ArtSource/map/henhouse_door/`, UE `CL9Art/Maps/HenhouseDoor`, 131.9873×16×256.4243cm/1,120 tris.
+  `ArtSource/map/henhouse_door/`, UE `Maps/Henhouse/Door`, 131.9873×16×256.4243cm/1,120 tris.
   힌지 왼쪽 아래 피벗, 1월드 PIE 닫힘/수동90도 참고 자세에서 캡슐 차단·통과 검사.
   현재 FlapIn 회전 동작 없음/높이630cm 비균일 배율 문제로 실제 연결·애니메이션 표현 미완료.
   검수2액터 정리, UE Lvl_Flat/PIE 종료. Blender `CL9_HENHOUSE_DOOR`, 실행 핸들 없음.
   다음은 양계장 작업대 소품. 전체 맵 배치 제외/모델 제작 우선 유지.
 
 - 최신 [013](iterations/013.md): 울타리 개별 파츠 원본/FBX/3렌더/UV0/2재질/UCX1/UE LOD3.
-  `ArtSource/map/henhouse_fence/`, UE `CL9Art/Maps/HenhouseFence`, 250×24×288cm/1,128 tris.
+  `ArtSource/map/henhouse_fence/`, UE `Maps/Henhouse/Fence`, 250×24×288cm/1,128 tris.
   1월드 PIE에서 두 장500cm/틈0cm, 90·270도 회전과 line/capsule 충돌 검사 통과.
   실제 걷기/운반/2인/LOD 시각·성능/테마 연결 미완료. 검수4액터 제거 후 원래 목록 확인.
   UE Lvl_Flat/PIE 종료, Blender `CL9_HENHOUSE_FENCE`, 실행 핸들 없음.
   다음은 양계장 문짝의 실제 폭/힌지 계약 확인 → 개별 메시 제작. 전체 맵 배치 제외 유지.
 
 - 최신 [012](iterations/012.md): 스탠드 작업등 원본/FBX/앵커/UV0/2재질/4렌더와 UE 임포트/LOD3.
-  `ArtSource/item/standing_lamp_a/`, UE `CL9Art/Items/StandingLampA`, 1,552 tris.
+  `ArtSource/item/standing_lamp_a/`, UE `Items/StandingLampA`, 1,552 tris.
   Off/On 재질 파라미터0/4 확인. 실제 데이터 행이 없어 운반/조명/충돌/2인/성능은 미완료.
   Blender `CL9_STANDING_LAMP_A`, 발광0 복구, 실행 핸들 없음. 다음은 양계장 울타리 파츠.
 
 - 최신 [011](iterations/011.md): 수레 원본/FBX/UV0/2재질/앵커와 최종3렌더, UE 임포트/LOD3.
-  `ArtSource/item/cart_a/`, UE `CL9Art/Items/CartA`, 5,532 tris.
+  `ArtSource/item/cart_a/`, UE `Items/CartA`, 5,532 tris.
   1월드 적재/꺼내기 성공. 초기 지면 침투를 PIE에서 보정한 뒤 견인 연결·해제/수평 응답 확인.
   적재 바닥65.948cm 차이, 구체·메시 하단28.651cm 차이, 견인 중 Z 상승은 미통과.
   테스트 cart 행은 원복, PIE 종료. Blender `CL9_CART_A`, 실행 핸들 없음. 원본을 재생성하지 않는다.
 - 다음 제작: standing_lamp 모델. 전체 맵 조립 제외/모델 제작 우선, 위 UE 의존성은 별도 미완료 유지.
 
 - 최신 [010](iterations/010.md): 프라이팬/냄비 신규 원본/FBX/UV0/2재질/최종 3렌더, UE 임포트/LOD3.
-  `ArtSource/item/cookware/`, UE `CL9Art/Items/Cookware`, 1,120/1,804 tris.
+  `ArtSource/item/cookware/`, UE `Items/Cookware`, 1,120/1,804 tris.
   실제 1월드 팬 줍기→놓기→재획득→던지기 상태/부착 통과. 바닥 표현 간격26.022cm 미통과.
   냄비는 실제 행/기능 미구현. 그립/2인/LOD 시각·성능은 미완료. 테스트 팬 행은 원복, PIE 종료.
   Blender `CL9_COOKWARE`, 실행 핸들 없음. `handle_fit_revision=1`, `inner_wall_fit=true` 재실행 금지.
 - 다음 제작: 수레 모델. 정적 소품 비교는 `preview_static_pair.py`, 임포트/임시 행 연결은 매개변수 공용화.
 
 - 최신 [009](iterations/009.md): 손전등/헬멧형 헤드램프 원본/FBX/2재질/UV0/미리보기와 UE 임포트.
-  `ArtSource/item/portable_lights/`, UE `CL9Art/Items/PortableLights`. 1,528/2,844 tris, UE LOD3 생성.
+  `ArtSource/item/portable_lights/`, UE `Items/PortableLights`. 1,528/2,844 tris, UE LOD3 생성.
   헬멧 곡면 장식·안쪽 브래킷 수정 후 최종 4렌더 직접 확인. `trim_fit_revision=2`를 다시 실행하지 않는다.
   실제 1월드 Lvl_Flat 줍기/착용/F 우선순위·토글 상태/부착 통과. 빔/시점 간섭/정전/2인/바닥/LOD는 미완료.
   테스트용 두 행 복구, PIE 종료. Blender `CL9_PORTABLE_LIGHTS`, 실행 핸들 없음.
 - 다음 제작: 프라이팬/냄비 모델. 헬멧과 손전등은 재생성하지 않고 남은 UE 게이트를 이어간다.
 
 - 최신 [008](iterations/008.md): 고기 3상태 원본/FBX/중립·야간·손전등 제작 및 UE 임포트/LOD3 생성.
-  `ArtSource/item/meat_states/`, UE `CL9Art/Items/MeatStates`. 각2,992 tris/1재질, 3상태 바운드 동일.
+  `ArtSource/item/meat_states/`, UE `Items/MeatStates`. 각2,992 tris/1재질, 3상태 바운드 동일.
   1월드 Lvl_Flat 실제 메시/배율 확인. 구체 충돌 하단과 메시 하단14.859cm 차이로 바닥 QA 미통과.
   테스트용 meat 행 변경은 원래 메시로 복구. PIE 종료, 맵 저장/조립 변경 없음. 실행 핸들 없음.
 - [007](iterations/007.md): 양의 중립·야간·주요 자세 렌더 직접 확인까지 갱신.
@@ -163,7 +163,7 @@
   아래 '현재/다음'은 각 반복 당시 이력이며 이 체크포인트가 우선한다.
 
 - 최신 [006](iterations/006.md): 돼지 모델/24뼈/8클립 제작과 UE 임포트 확인.
-  `ArtSource/monster/pig_a/`, UE `CL9Art/Monsters/PigA`. 8,404 tris/1재질.
+  `ArtSource/monster/pig_a/`, UE `Monsters/PigA`. 8,404 tris/1재질.
   중립·야간·주요 자세, Blender 바닥/루프/접지, UE 크기·길이·발 위치 검수.
 - Blender 현재 `CL9_PIG_A`, Idle 프레임1. 실행 핸들 없음. 다음은 양 신규 모델/리그/클립.
   네 종 실제 AnimBP/2인 PIE·LOD/영상/손전등의 미완료 게이트는 유지한다.
@@ -171,7 +171,7 @@
   Pig wrapper는 자기 원본/Action만 처리한다. 기존 너구리 원본/FBX는 다시 만들지 않았다.
 
 - 최신 [005](iterations/005.md): 거위 원본/메시/20뼈 리그/10클립과 UE 임포트 완료.
-  `ArtSource/monster/goose_a/`, UE `CL9Art/Monsters/GooseA`. 9,516 tris, 1재질.
+  `ArtSource/monster/goose_a/`, UE `Monsters/GooseA`. 9,516 tris, 1재질.
   수면 눈 감기 수정, Blender 바닥/루프/지지 속도 감사 및 UE 전 프레임 발 위치 <0.000055cm 확인.
 - Blender 현재 `CL9_GOOSE_A`, Idle 1프레임. 실행 중 렌더/임포트 핸들 없음.
   원본/Action은 있으므로 재생성하지 않는다. 거위 AlertWindup만 60fps/0.55초임에 주의.
@@ -179,7 +179,7 @@
   세 종 실제 AnimBP/2인 PIE·LOD는 미완료로 유지한다. 임포트만으로 최종 완료 처리하지 않는다.
 
 - 최신 반복 [004](iterations/004.md): 닭·너구리 메시 2개와 각 8클립 UE 임포트 완료.
-  `CL9Art/Monsters/ChickenA`, `RaccoonA`. 크기/재생 길이/스켈레톤/색 입력 확인.
+  `Monsters/ChickenA`, `RaccoonA`. 크기/재생 길이/스켈레톤/색 입력 확인.
   전 프레임 발 위치 차이 닭 <0.000046cm, 너구리 <0.007582cm. 실제 AnimBP/2인 PIE는 미완료.
 - 다음 제작: 거위 전용 모델/리그·울음/수면 포함 클립. 모델 제작 우선 지시를 유지한다.
   이미 확인한 임포트를 반복하지 않는다. 원본 변경 시 해시 비교 후 재임포트한다.
@@ -215,7 +215,7 @@
 - Blender MCP 현재 원본: `ArtSource/map/henhouse_sample_01/henhouse_sample_01.blend`, `CL9_HH01_STAGE`.
   기존 파일은 보존. 별도 `ArtSource/validation/unit_axis/`에 기준 큐브 원본과 FBX 생성.
 - 최신 체크포인트: 샘플 8종+1m 큐브 임포트 완료. 치수 오차 <0.003cm, UCX 개수 일치 확인 (`evidence/001-ue-import.json`). 상자 바닥 피벗 수정, 벽/둥지 3단계 LOD 구성. 전체 QA 완료를 의미하지 않는다.
-- 검수 맵 `/Game/CL9Art/Tests/Lvl_AssetQA01` 저장. 실제 ItemTable의 날달걀 행만 새 메시로 연결했다. 원래 PIE 설정은 `evidence/001-original-pie-settings.json`에 저장했다.
+- 검수 맵 `/Game/Tests/Lvl_AssetQA01` 저장. 실제 ItemTable의 날달걀 행만 새 메시로 연결했다. 원래 PIE 설정은 `evidence/001-original-pie-settings.json`에 저장했다.
 - 2인 listen PIE 실행: 양쪽에서 날달걀 메시/1.05 배율과 바닥 접촉 확인. 마지막 관찰 당시 PIE 실행 중이므로 재개 시 실제 상태부터 확인한다.
 - 운반 테스트 **실패/미통과**: `evidence/001-pie-interactions-retry.json`의 집기 후 attachment=false. 초기 테스트 파일의 observed는 통과 판정이 아니다. 플레이어 시작 위치에 따른 집기 거리와 주문 선택 UI 상태를 진단해야 한다.
 - UE 재검수 때 행동: 실제 PIE 월드/플레이어·달걀 위치 확인 → 집기 범위 안에 테스트 시작 위치 설정 → 실제 집기/수납/투척 및 서버·클라이언트 동기화 검증. 결과를 확인하기 전에 합격으로 처리하지 않는다.

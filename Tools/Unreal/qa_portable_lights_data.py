@@ -20,7 +20,7 @@ else:
     for alias,name in globals().get('ASSETS',[('flashlight','SM_Flashlight_A'),('headlamp','SM_Headlamp_A')]):
         row=next(x for x in rows if str(x.get_editor_property('alias'))==alias)
         old=row.get_editor_property('mesh').get_path_name();assert old.startswith('/Engine/BasicShapes/')
-        records.append({'row':row.get_path_name(),'old':old,'new':globals().get('DESTINATION','/Game/CL9Art/Items/PortableLights')+'/'+name+'.'+name})
+        records.append({'row':row.get_path_name(),'old':old,'new':globals().get('DESTINATION','/Game/Items/PortableLights')+'/'+name+'.'+name})
     backup.write_text(json.dumps({'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'restored':False,'rows':records},indent=2),encoding='utf-8')
     for r in records:next(x for x in rows if x.get_path_name()==r['row']).set_editor_property('mesh',unreal.load_asset(r['new']))
     unreal.EditorAssetLibrary.save_loaded_asset(table);print('Connected '+str(len(records))+' item rows for QA')

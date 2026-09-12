@@ -5,7 +5,7 @@ root=Path(unreal.Paths.project_dir()).resolve()
 assert unreal.SystemLibrary.get_engine_version().startswith('5.8.')
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 source=root/'ArtSource/item/meat_states/export';manifest=json.loads((source/'manifest.json').read_text())
-folder='/Game/CL9Art/Items/MeatStates'
+folder='/Game/Items/MeatStates'
 at=unreal.AssetToolsHelpers.get_asset_tools();ms=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
 report={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'engine':unreal.SystemLibrary.get_engine_version(),
         'scope':'Isolated asset import/LOD/bounds. Runtime data and gameplay untested.','assets':[]}

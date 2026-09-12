@@ -23,7 +23,7 @@ else:
         if str(row.get_editor_property('alias'))!='meat':continue
         sub=str(row.get_editor_property('sub_alias'));state={'None':'Raw','cooked':'Cooked','burnt':'Burnt'}[sub]
         old=row.get_editor_property('mesh').get_path_name()
-        path='/Game/CL9Art/Items/MeatStates/SM_Meat_'+state+'_A.SM_Meat_'+state+'_A'
+        path='/Game/Items/MeatStates/SM_Meat_'+state+'_A.SM_Meat_'+state+'_A'
         assert old.startswith('/Engine/BasicShapes/'),'Unexpected current art; inspect before replacing'
         records.append({'row':row.get_path_name(),'old':old,'new':path})
     assert len(records)==3

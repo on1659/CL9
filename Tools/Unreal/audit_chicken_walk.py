@@ -1,7 +1,7 @@
 """Evaluate imported animation and compare feet to Blender's actual baked pose samples."""
 import unreal,json,hashlib
 from pathlib import Path
-root=Path(unreal.Paths.project_dir()).resolve();folder='/Game/CL9Art/Monsters/ChickenA'
+root=Path(unreal.Paths.project_dir()).resolve();folder='/Game/Monsters/ChickenA'
 mesh=unreal.load_asset(folder+'/SK_Chicken_A');a=unreal.load_asset(folder+'/AN_Chicken_Walk')
 expected=json.loads((root/'ArtSource/monster/chicken_a/export/blender_animation_qa.json').read_text())['Walk']
 options=unreal.AnimPoseEvaluationOptions();options.optional_skeletal_mesh=mesh;options.extract_root_motion=False

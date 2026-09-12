@@ -26,7 +26,7 @@ TintColor의 실제 소비/4슬롯 적용은 현재 코드에 연결이 없으�
 몸4100tris/2148정점/3재질, 팔1496tris/784정점/2재질. 몸111.35×43.05×184.4cm A포즈,
 팔111.35×40.31×57.12cm. UV0 unwrap/UV1 팔레트/최대2가중치, 5개 손가락을 각각 기존 뼈로 변형한다.
 공유18색256×8 PNG는 packed 원본과 `textures/T_Farmer_Palette.png`에 있으며 외부 서비스 의존성 없다.
-UE `/Game/CL9Art/Characters/FarmerA/`에 두 SkeletalMesh/3재질/팔레트가 있다.
+UE `/Game/Characters/FarmerA/`에 두 SkeletalMesh/3재질/팔레트가 있다.
 
 원본 표면은 새로 제작했고 Epic에서 재사용한 것은 리그 계약과 기존 로코모션이다.
 중립·야간·손전등/Walk2포즈, 기존 Skeleton 변경 없음, 실제 CL9 pawn 몸/팔 교체와
@@ -42,7 +42,7 @@ Idle은 손 내린 자연 자세로 전신 ABP가 쓰지 않는 예비)와 1인�
 두고(`Tools/Blender/farmer_hold_spec.json`: wrist·pole·fingers·curl) 손가락은 국부 Z축(실측)으로 굽힌다.
 2초 루프, 숨쉬기 0.012rad, 회전 키만(위치 키 없음) — `Tools/Blender/animate_farmer_hold.py --export`가
 `ArtSource/character/farmer_a/export/AN_Farmer_*.fbx`와 manifest `animations`를 쓰고 blend를 저장한다.
-UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin) → `/Game/CL9Art/Characters/FarmerA/Anims`,
+UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin) → `/Game/Characters/FarmerA/Anims`,
 [025 증거](../evidence/025-farmer-hold-imports.json). 미리보기 `preview/hold_*_{tp,fp}_{front,fp,hand}.png`
 (`_fp_fp.png`는 카메라 설정이 틀려 빈 화면 — 1인칭 판정은 PIE로 했다). ABP 배선과 PIE 검수는 2026-09-12
 완료 — [../../systems/animation.md](../../systems/animation.md) "Hold 상체 레이어 배선".

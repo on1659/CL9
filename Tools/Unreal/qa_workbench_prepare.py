@@ -1,5 +1,5 @@
 PREFIX='QA015_';FIXTURE_EVIDENCE='015-workbench-fixtures.json'
-MESH_PATH='/Game/CL9Art/Maps/HenhouseWorkbench/SM_Henhouse_Workbench_A'
+MESH_PATH='/Game/Maps/Henhouse/Workbench/SM_Henhouse_Workbench_A'
 FIXTURES=[('A',(20000,0,1000),0),('B',(21000,0,1000),90)]
 exec(compile(open('D:/Work/unreal/CL9/Tools/Unreal/qa_fence_prepare.py',encoding='utf-8').read(),'qa_fence_prepare.py','exec'))
 probe=sub.spawn_actor_from_class(unreal.StaticMeshActor,unreal.Vector(20000,0,1150))

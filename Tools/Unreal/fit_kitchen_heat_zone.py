@@ -3,7 +3,7 @@ import unreal,json
 from pathlib import Path
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-assert '/Game/CL9Art/Tests/Lvl_AssetQA01.' in world.get_path_name()
+assert '/Game/Tests/Lvl_AssetQA01.' in world.get_path_name()
 out=Path(unreal.Paths.project_dir(),'docs/asset/evidence/020-kitchen-fixtures.json');data=json.loads(out.read_text());assert not data['cleaned_up']
 name=next(x['name'] for x in data['fixtures'] if x['label']=='QA020_Kitchen')
 a=next(x for x in unreal.get_editor_subsystem(unreal.EditorActorSubsystem).get_all_level_actors() if x.get_name()==name)

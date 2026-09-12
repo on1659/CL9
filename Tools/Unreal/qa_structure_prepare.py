@@ -1,8 +1,8 @@
 PREFIX='QA016_';FIXTURE_EVIDENCE='016-structure-fixtures.json'
-MESH_PATH='/Game/CL9Art/Maps/HenhouseStructure/Beam/SM_Henhouse_Beam_500_A'
-MESH_PATHS={'Pillar':'/Game/CL9Art/Maps/HenhouseStructure/Pillar/SM_Henhouse_Pillar_400_A',
-    'CeilingNatural':'/Game/CL9Art/Maps/HenhouseStructure/Ceiling/SM_Henhouse_Ceiling_500_A',
-    'CeilingStretch':'/Game/CL9Art/Maps/HenhouseStructure/Ceiling/SM_Henhouse_Ceiling_Stretch100_A'}
+MESH_PATH='/Game/Maps/Henhouse/Structure/Beam/SM_Henhouse_Beam_500_A'
+MESH_PATHS={'Pillar':'/Game/Maps/Henhouse/Structure/Pillar/SM_Henhouse_Pillar_400_A',
+    'CeilingNatural':'/Game/Maps/Henhouse/Structure/Ceiling/SM_Henhouse_Ceiling_500_A',
+    'CeilingStretch':'/Game/Maps/Henhouse/Structure/Ceiling/SM_Henhouse_Ceiling_Stretch100_A'}
 FIXTURE_SCALES={'CeilingStretch':(5,5,.3)}
 FIXTURES=[('BeamA',(20000,0,1000),0),('BeamB',(20500,0,1000),0),('Beam90',(21000,1000,1000),90),
     ('Pillar',(22000,0,1000),0),('CeilingNatural',(24000,0,1600),0),('CeilingStretch',(24500,0,1615),0)]

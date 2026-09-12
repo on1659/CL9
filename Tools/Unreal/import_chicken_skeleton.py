@@ -4,7 +4,7 @@ from pathlib import Path
 root=Path(unreal.Paths.project_dir()).resolve()
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 assert unreal.SystemLibrary.get_engine_version().startswith('5.8.')
-destination='/Game/CL9Art/Monsters/ChickenA'
+destination='/Game/Monsters/ChickenA'
 source=root/'ArtSource/monster/chicken_a/export/SK_Chicken_A.fbx'
 path=destination+'/SK_Chicken_A'
 assert not unreal.EditorAssetLibrary.does_asset_exist(path),'Existing mesh: inspect before reimport'

@@ -21,7 +21,7 @@
 원본 `ArtSource/map/return_jar/return_jar.blend`, FBX `export/SM_ReturnJar_A.fbx`, 3조명은 `preview/`.
 유약/옹기/표식은 상수 Base Color라 외부 텍스처가 필요 없다. 두꺼운 입구의 최소 내부 지름58cm.
 표식 돌출로 바운드 중심이 이동해 원통 중심(Mouth/InteriorFloor 앵커)은 로컬X=-1.2cm다.
-UE `CL9Art/Maps/ReturnJar`, 치수 오차<0.000001cm/UCX17/LOD3 생성.
+UE `Items/ReturnJar`, 치수 오차<0.000001cm/UCX17/LOD3 생성.
 Blender3조명과 Native UE 에셋 이미지를 확인했다. LOD 전환·성능/2인 검수는 아직 미완료다.
 
 [019 검수](../iterations/019.md): 실제 Jar BP에서 계란 줍기/반납/목록 증가/액터 제거,

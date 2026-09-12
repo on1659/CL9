@@ -4,7 +4,7 @@ from pathlib import Path
 root=Path(unreal.Paths.project_dir()).resolve();source=root/globals().get('SOURCE_REL','ArtSource/item/portable_lights/export')
 assert unreal.SystemLibrary.get_engine_version().startswith('5.8.')
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
-m=json.loads((source/'manifest.json').read_text());folder=globals().get('DESTINATION','/Game/CL9Art/Items/PortableLights')
+m=json.loads((source/'manifest.json').read_text());folder=globals().get('DESTINATION','/Game/Items/PortableLights')
 evidence=root/'docs/asset/evidence'/globals().get('EVIDENCE','009-portable-lights-imports.json')
 oldreport=json.loads(evidence.read_text()) if evidence.exists() else None
 if globals().get('ALLOW_OWNED_REIMPORT') and oldreport:

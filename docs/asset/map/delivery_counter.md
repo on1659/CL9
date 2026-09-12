@@ -15,7 +15,7 @@ UV0/상수 재질3개/상판·몸통·다리 단순 충돌. 외부 글꼴/그림
 
 납품 실측100×100×100cm/1,552 tris/854 vertices/UV0/3상수 재질/UCX6.
 원본 `delivery_counter.blend`, `export/SM_DeliveryCounter_A.fbx`, `preview/` 중립·야간·손전등3장.
-3조명과 Native UE 에셋 이미지 확인. UE `CL9Art/Maps/DeliveryCounter`, 치수 오차<0.00002cm/LOD3.
+3조명과 Native UE 에셋 이미지 확인. UE `Items/DeliveryCounter`, 치수 오차<0.00002cm/LOD3.
 LOD 전환·성능/영구 연결/기존 인스턴스 바닥 보정/2인 검수는 미완료다.
 
 [021](../iterations/021.md)의 실제 Counter BP1월드 PIE에서 납품/액터 제거/빈손 판매/수입 증가/

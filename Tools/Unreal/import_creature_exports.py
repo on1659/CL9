@@ -31,7 +31,7 @@ def import_file(source,destination,name,skeleton=None,fps=30):
     return asset
 for species in globals().get('SPECIES',('Chicken','Raccoon')):
     source=root/'ArtSource/monster'/f'{species.lower()}_a/export'
-    manifest=json.loads((source/'manifest.json').read_text());folder=f'/Game/CL9Art/Monsters/{species}A'
+    manifest=json.loads((source/'manifest.json').read_text());folder=f'/Game/Monsters/{species}A'
     mesh=import_file(source/(manifest['mesh']+'.fbx'),folder,manifest['mesh']);assert isinstance(mesh,unreal.SkeletalMesh)
     skeleton=mesh.get_editor_property('skeleton');material_path=folder+f'/M_CL9_{species}_Vertex'
     material=unreal.load_asset(material_path) if unreal.EditorAssetLibrary.does_asset_exist(material_path) else None

@@ -1,6 +1,6 @@
 import unreal
 editor=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
-assert editor.get_editor_world().get_path_name()=='/Game/CL9Art/Tests/Lvl_AssetQA01.Lvl_AssetQA01'
+assert editor.get_editor_world().get_path_name()=='/Game/Tests/Lvl_AssetQA01.Lvl_AssetQA01'
 for a in unreal.get_editor_subsystem(unreal.EditorActorSubsystem).get_all_level_actors():
     if a.get_actor_label().startswith(('QA_BackWall','QA_Nest')):
         a.set_actor_rotation(unreal.Rotator(pitch=0,yaw=90,roll=0),False)

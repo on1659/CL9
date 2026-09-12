@@ -8,7 +8,7 @@ if unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor
     raise RuntimeError('Stop PIE before importing or saving art assets')
 root = Path(unreal.Paths.project_dir()).resolve()
 manifest = json.loads((root/'ArtSource/map/henhouse_sample_01/export/manifest.json').read_text())
-destination = '/Game/CL9Art/Maps/HenhouseSample01'
+destination = '/Game/Maps/Henhouse/Props'
 asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
 mesh_sub = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
 entries = [(v['object'],root/'ArtSource/map/henhouse_sample_01/export'/ (v['object']+'.fbx'),v) for v in manifest['assets'].values()]

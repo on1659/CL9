@@ -5,7 +5,7 @@ from pathlib import Path
 root = Path(unreal.Paths.project_dir())
 src = root / 'ArtSource/character/farmer_a/export'
 manifest = json.loads((root / 'ArtSource/character/farmer_a/manifest.json').read_text(encoding='utf-8'))
-folder = '/Game/CL9Art/Characters/FarmerA/Anims'
+folder = '/Game/Characters/FarmerA/Anims'
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 sk = unreal.load_asset('/Game/Characters/Mannequins/Meshes/SK_Mannequin')
 flag = 'Interchange.FeatureFlags.Import.FBX'
