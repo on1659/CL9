@@ -25,7 +25,7 @@
 
 | 컬럼 | 값 | 구 CCL8 상수 |
 |---|---|---|
-| `bEmitsLight` | true | |
+| ~~`bEmitsLight`~~ | **없음** — 2026-09-11 발광 폐기(빛은 손전등만), 컬럼도 제거 | |
 | `LightRadius` | 192 | `LanternDistU 64` |
 | `bLightLostInPocket` | true | |
 | `CarrierSeenRadius` | 276 | `CarrierSeenU 92` |

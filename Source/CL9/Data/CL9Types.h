@@ -19,16 +19,6 @@ enum class ECL9CarrySlot : uint8
 	Head
 };
 
-/** 발광 아이템이 빛나는 방식 (docs/systems/light.md 광원 목록) */
-UENUM(BlueprintType)
-enum class ECL9ItemLight : uint8
-{
-	/** 들고 있는 동안 전방향으로 발광 — 달걀. 정전 중에도 계속 켜져 있다 */
-	Glow,
-	/** 전방 스팟 조명, IA_Flashlight로 켜고 끈다. 정전이 오면 강제로 꺼진다 */
-	Flashlight
-};
-
 /** 아이템 종류 — Dish 아이템만 먹을 수 있고, 별도 플래그는 없다 (docs/plan/data/item/common.md 타입과 먹기) */
 UENUM(BlueprintType)
 enum class ECL9ItemType : uint8
