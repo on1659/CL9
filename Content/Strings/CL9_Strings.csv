@@ -1,187 +1,187 @@
 ﻿No,Key,DevNotes,ko,en,ja,zh-Hans
-1,Prompt.Wear,머리 장비(헤드램프)를 바라볼 때 뜨는 상호작용 안내. {0}=현재 바인딩된 키 표기(예: E),[{0}] 착용,[{0}] Wear,,
-2,Prompt.PickUp,바닥의 아이템을 바라볼 때 — 손이나 품에 집는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 줍기,[{0}] Pick up,,
-3,Prompt.Place,손에 든 것을 바닥·조리대에 내려놓는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 놓기,[{0}] Put down,,
-4,Prompt.CartRelease,밀고 있던 수레 손잡이를 놓는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 수레 놓기,[{0}] Let go of cart,,
-5,Prompt.CartLoad,손에 든 아이템을 수레에 싣는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 싣기,[{0}] Load,,
-6,Prompt.CartPull,수레 손잡이를 잡고 밀기 시작한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 수레 밀기,[{0}] Push cart,,
-7,Prompt.CounterDeliver,푸드트럭 창구에 주문 요리를 납품한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 납품,[{0}] Deliver,,
-8,Prompt.CounterSell,주문과 무관한 남은 재료·요리를 창구에서 판다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 남은 것 팔기,[{0}] Sell leftovers,,
-9,Prompt.JarReturn,빌린 항아리를 제자리에 반납한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 반납,[{0}] Return,,
-10,Prompt.TruckPanelShop,트럭 패널을 열어 장비를 산다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 장비 구매,[{0}] Buy gear,,
-11,Hud.Hp,체력. {0}=현재 HP,HP {0},HP {0},,
-12,Hud.Hand,손에 든 아이템. {0}=아이템 이름,손: {0},Hand: {0},,
-13,Hud.HandEmpty,손이 비었을 때,손: -,Hand: -,,
-14,Hud.Pocket,"품(주머니)에 넣은 것. {0}=개수, {1}=이름 목록",품 {0}: {1},Pocket {0}: {1},,
-15,Hud.PocketSep,품 목록의 이름 사이 구분자,", ",", ",,
-16,Hud.PocketEmpty,품이 비었을 때,품: -,Pocket: -,,
-17,Hud.Night,"밤 진행 중 시계. {0}=일차, {1}:{2}=시:분, {3}=정전 표시(Hud.Blackout 또는 빈칸)",{0}일차 · {1}:{2}{3},Day {0} · {1}:{2}{3},,
-18,Hud.Blackout,정전 중임을 시계 뒤에 덧붙이는 꼬리표. 앞 공백 유지, · 정전, · Blackout,,
-19,Hud.Dawn,밤이 끝나고 정산 전 새벽 단계. {0}=일차,{0}일차 · 새벽,Day {0} · Dawn,,
-20,Hud.Lobby,푸드트럭에 정차해 있는 낮(로비) 단계. {0}=일차,{0}일차 · 정차,Day {0} · Parked,,
-21,Hud.ItemWeight,바라보는 아이템의 무게. {0}=무게 값,무게 {0},Weight {0},,
-22,Hud.ItemPocketable,아이템 특성: 품에 넣을 수 있다,품에 들어감,Fits in pocket,,
-23,Hud.ItemHandOnly,아이템 특성: 손으로만 들 수 있다(품 불가),손으로만,Hands only,,
-24,Hud.ItemCartOnly,아이템 특성: 수레로만 옮길 수 있다,수레로만,Cart only,,
-25,Hud.ItemFragile,아이템 특성: 떨어뜨리면 깨진다(계란),깨지기 쉬움,Fragile,,
-26,Hud.ItemFactSep,아이템 특성들 사이 구분자, · , · ,,
-27,Hud.Head,머리에 쓴 장비. {0}=장비 이름,머리: {0},Head: {0},,
-28,Hud.HeadEmpty,머리에 아무것도 안 썼을 때,머리: -,Head: -,,
-29,Hud.OrderIngredient,"주문 재료 한 개. {0}=재료 이름, {1}=필요 수량",{0}×{1},{0}×{1},,
-30,Hud.OrderLine,"수락한 주문 한 줄. {0}=요리 이름, {1}=재료 목록, {2}=마감 일차, {3}=보상 금액",{0} · {1} · {2}일차까지 · {3} 이더,{0} · {1} · by day {2} · {3} ether,,
-31,Hud.OrderSep,주문 재료 목록의 구분자,", ",", ",,
-32,Hud.Money,"공유 자금. {0}=금액. ""이더""는 이 게임의 화폐 단위",{0} 이더,{0} ether,,
-33,Hud.PeriodToday,"정산 기간 현황 — 오늘이 정산일. {0}=기간 수입, {1}=목표액",이번 기간 {0} / 목표 {1} · 오늘 정산,This period {0} / goal {1} · settles today,,
-34,Hud.Period,"정산 기간 현황. {0}=기간 수입, {1}=목표액, {2}=정산까지 남은 일수",이번 기간 {0} / 목표 {1} · 정산까지 {2}일,This period {0} / goal {1} · {2} days to settlement,,
-35,Hud.CounterEmpty,창구에 올려둔 것이 없을 때,창구가 비어 있다,The counter is empty,,
-36,Hud.CounterTitle,창구에 올려둔 물건 목록의 제목,창구에 올린 것,On the counter,,
-37,Hud.CounterLine,"창구 목록 한 줄. {0}=이름, {1}=수량, {2}=값",{0} ×{1} · {2} 이더,{0} ×{1} · {2} ether,,
-38,Hud.CounterTotal,창구 목록 합계. {0}=금액,합 {0} 이더,Total {0} ether,,
-39,Hud.BuffNamedOne,"먹기 효과(버프) 한 줄 — 효과 하나. {0}=능력치 이름, {1}=증감(예 +40), {2}=남은 초",{0} {1} ({2}초),{0} {1} ({2}s),,
-40,Hud.BuffNamed,"버프 한 줄 — 이름만. {0}=버프 이름, {1}=남은 초",{0} ({1}초),{0} ({1}s),,
-41,Hud.BuffLine,"버프 한 줄 — 여러 효과 중 하나. {0}=능력치 이름, {1}=증감, {2}=남은 초",{0} {1} ({2}초),{0} {1} ({2}s),,
-42,Hud.NightWarn,밤 종료 직전 경고. {0}=남은 초,밤이 끝난다 · {0}초,The night is ending · {0}s,,
-43,Stat.WalkSpeed,능력치 이름: 걷기 속도,걷기,Walk,,
-44,Stat.RunSpeed,능력치 이름: 달리기 속도,달리기,Run,,
-45,Stat.CarryMult,능력치 이름: 들 수 있는 짐 무게 배율,짐 무게,Load weight,,
-46,Stat.CartMult,능력치 이름: 수레 미는 속도 배율,수레 속도,Cart speed,,
-47,Stat.JumpVelocity,능력치 이름: 점프 힘,점프,Jump,,
-48,Stat.JumpGravity,능력치 이름: 점프 중 중력,점프 중력,Jump gravity,,
-49,Stat.StaminaDrain,능력치 이름: 스태미나가 다 닳기까지 걸리는 시간,스태미나 지속,Stamina duration,,
-50,Stat.StaminaRegen,능력치 이름: 스태미나 회복 속도,스태미나 회복,Stamina recovery,,
-51,Stat.StaminaResume,능력치 이름: 탈진 뒤 다시 달릴 수 있는 회복 문턱,탈진 회복 문턱,Exhaustion recovery threshold,,
-52,Stat.AmountPlus,능력치 증가량 표기. {0}=값 (음수는 그대로 -로 나온다),+{0},+{0},,
-53,ScanLabel.NoValue,스캔 라벨 — 팔 수 없는 물건,값 없음,No value,,
-54,ScanLabel.Value,스캔 라벨 — 판매가. {0}=금액,{0} 이더,{0} ether,,
-55,Shop.Close,트럭 패널 닫기 버튼,닫기,Close,,
-56,Shop.Title,장비 구매 화면 제목 — 푸드트럭 옆 패널,트럭 패널,Truck panel,,
-57,Shop.Money,트럭 패널 — 지금 가진 돈. {0}=금액,보유 {0} 이더,You have {0} ether,,
-58,Shop.Price,장비 가격. {0}=금액,{0} 이더,{0} ether,,
-59,Shop.Owned,"장비 보유 수. {0}=가진 수, {1}=최대",{0}/{1} 보유,Owned {0}/{1},,
-60,Shop.DetailSep,장비 상세(가격·보유) 사이 구분자, · , · ,,
-61,Shop.Locked,아직 못 사는 이유 — 해금 일차 전. {0}=해금 일차,{0}일차부터,From day {0},,
-62,Shop.MaxOwned,못 사는 이유 — 이미 최대치 보유. {0}=보유 수,이미 {0}개,Already have {0},,
-63,Shop.NoMoney,못 사는 이유 — 돈 부족,잔액 부족,Not enough ether,,
-64,Shop.NotInLobby,못 사는 이유 — 트럭이 정차 중이 아님,정차 중에만,Only while parked,,
-65,Shop.NoRow,못 사는 이유 — 판매 목록에 없음,살 수 없음,Not for sale,,
-66,Shop.Rejected,"구매 거절 안내. {0}=장비 이름, {1}=이유(위 Shop.* 중 하나)",{0}: {1},{0}: {1},,
-67,OrderSelect.Title,"주문 선택 화면 제목. {0}=제시된 주문 수, {1}=골라야 하는 수",주문서 · {0}개 중 {1}개 선택,Orders · {1} of {0} chosen,,
-68,OrderSelect.HintHost,호스트에게: 주문을 고르고 확정하라는 안내,받을 주문을 누른 뒤 [확정]을 누르세요,"Tap the orders you want, then press [Confirm]",,
-69,OrderSelect.HintClient,클라이언트에게: 호스트가 고르는 중이라는 안내,호스트가 주문을 확정합니다,The host confirms the orders,,
-70,OrderSelect.Accept,"확정 버튼. {0}=고른 수, {1}=골라야 하는 수",확정 ({0}/{1}),Confirm ({0}/{1}),,
-71,OrderSelect.Ingredient,"주문 카드의 재료 한 개. {0}=재료, {1}=수량",{0}×{1},{0}×{1},,
-72,OrderSelect.CardDetail,"주문 카드 상세. {0}=재료 목록, {1}~{2}=보상 범위, {3}=마감까지 일수",{0} · 보상 {1}~{2} 이더 · 마감 {3}일,{0} · reward {1}~{2} ether · due in {3} days,,
-73,OrderSelect.IngredientSep,주문 카드 재료 목록 구분자,", ",", ",,
-74,Dawn.Close,새벽 화면 닫기 — 게임 계속,계속,Continue,,
-75,Dawn.Title,새벽 화면 제목. {0}=일차,{0}일차 새벽,Day {0} dawn,,
-76,Dawn.TitlePlain,새벽 화면 제목 — 일차 정보가 없을 때,새벽,Dawn,,
-77,Dawn.Earned,이번 기간 번 돈. {0}=금액,이번 기간 {0} 이더,This period {0} ether,,
-78,Dawn.SettleTitle,정산일 새벽 화면 제목. {0}=일차,{0}일차 정산,Day {0} settlement,,
-79,Dawn.Settle,"정산 결과. {0}=기간 수입, {1}=목표액",이번 기간 {0} / 목표 {1} 이더,This period {0} / goal {1} ether,,
-80,Dawn.Passed,정산 통과 — 다음 기간으로 이어진다,통과 — 다음 기간이 시작된다,Passed — the next period begins,,
-81,Dawn.Failed,정산 실패 — 판(런)이 끝난다. {0}=버틴 마지막 일차,미달 — 판이 끝났다. {0}일차까지 버텼다,Short — the run is over. You lasted until day {0},,
-82,Dawn.CloseFailed,정산 실패 뒤 닫기 — 새 판을 시작한다,새 판으로,New run,,
-83,Spectate.Searching,죽어서 관전 중 — 볼 동료를 찾는 중,관전 중 · 동료를 찾는 중…,Spectating · looking for a teammate…,,
-84,Spectate.Target,관전 중인 동료. {0}=플레이어 이름,관전 중 · {0},Spectating · {0},,
-85,Pause.Title,일시정지 메뉴 제목,메뉴,Menu,,
-86,Pause.Continue,메뉴 닫고 게임으로 돌아가기,계속,Continue,,
-87,Pause.Settings,설정 화면 열기,설정,Settings,,
-88,Pause.LeaveLobby,판을 나가 로비로 돌아가기,로비로 나가기,Leave to lobby,,
-89,Pause.Quit,게임 프로그램 종료,게임 종료,Quit game,,
-90,Pause.NotReady,아직 구현 안 된 항목을 눌렀을 때 안내,설정과 로비 나가기는 준비 중입니다,Settings and leaving to the lobby are not ready yet,,
-91,Spectate.Next,다음 동료로 넘기는 버튼. {0}=현재 바인딩된 키 표기(예: Tab),다음 동료 ({0}),Next teammate ({0}),,
-92,Spectate.ReturnHint,관전자에게: 트럭이 다음에 정차할 때 트럭 패드에서 부활한다,다음 정차 때 트럭 패드에서 돌아옵니다,You return at the truck pad on the next stop,,
-93,ScanLabel.Name,스캔 라벨·아이템 이름 칸의 자리표시자 (실행 중 실제 이름으로 바뀜),이름,Name,,
-94,Buff.leg_strength.Name,먹기 효과 이름 — 다리 힘(이동 속도) 증가,다리에 힘,Strong legs,,
-95,Character.farmer_a.Name,플레이어 캐릭터 이름 — 농부 A,농부 A,Farmer A,,
-96,Rules.rules.Name,규칙 데이터 행 이름 (내부용),규칙,Rules,,
-97,Equipment.frying_pan.Name,구매 장비 이름 — 프라이팬,프라이팬,Frying pan,,
-98,Item.egg.Name,아이템 — 날계란,계란,Egg,,
-99,Item.egg.cooked.Name,아이템 — 알맞게 익힌 계란,익은 계란,Cooked egg,,
-100,Item.egg.burnt.Name,아이템 — 너무 오래 익혀 탄 계란,탄 계란,Burnt egg,,
-101,Item.egg.cracked.Name,아이템 — 금이 간 계란 (한 번 더 충격 받으면 깨짐),금 간 계란,Cracked egg,,
-102,Item.egg.broken.Name,아이템 — 깨져서 못 쓰는 계란,깨진 계란,Broken egg,,
-103,Item.meat.Name,아이템 — 날고기,고기,Meat,,
-104,Item.meat.cooked.Name,아이템 — 익힌 고기,익은 고기,Cooked meat,,
-105,Item.meat.burnt.Name,아이템 — 탄 고기,탄 고기,Burnt meat,,
-106,Item.cart.Name,아이템 — 짐을 싣고 미는 수레,수레,Cart,,
-107,Item.flashlight.Name,아이템 — 손에 드는 손전등,손전등,Flashlight,,
-108,Item.headlamp.Name,아이템 — 머리에 쓰는 램프,헤드램프,Headlamp,,
-109,Item.frying_pan.Name,아이템 — 프라이팬 (조리 도구·무기),프라이팬,Frying pan,,
-110,Item.pot.Name,아이템 — 냄비 (조리 도구),냄비,Pot,,
-111,Item.standing_lamp.Name,아이템 — 세워 두는 작업등,작업등,Work lamp,,
-112,Monster.chicken.Name,동물 — 닭,닭,Chicken,,
-113,Monster.goose.Name,동물 — 거위,거위,Goose,,
-114,Monster.raccoon.Name,동물 — 너구리,너구리,Raccoon,,
-115,Monster.pig.Name,동물 — 돼지,돼지,Pig,,
-116,Monster.sheep.Name,동물 — 양,양,Sheep,,
-117,Order.omelette.Name,주문 요리 — 오믈렛,오믈렛,Omelette,,
-118,Order.fried_egg.Name,주문 요리 — 계란 프라이,계란후라이,Fried egg,,
-119,Order.meat_dish.Name,주문 요리 — 고기 요리,고기 요리,Meat dish,,
-120,SegKind.wall.Name,맵 구획 — 마당 바깥 경계 울타리,마당 경계,Yard boundary,,
-121,SegKind.barn.Name,맵 구획 — 축사 바깥벽,축사 외벽,Barn outer wall,,
-122,SegKind.cage.Name,맵 구획 — 닭장 케이지 줄,케이지 열,Cage row,,
-123,SegKind.plug.Name,맵 구획 — 통로를 막는 마개,통로 마개,Passage plug,,
-124,SegKind.truck.Name,맵 구획 — 푸드트럭 자리,트럭,Truck,,
-125,SegKind.hay.Name,맵 구획 — 건초 더미,건초,Hay,,
-126,SegKind.trough.Name,맵 구획 — 물통,물통,Trough,,
-127,SegKind.crate.Name,맵 구획 — 상자,상자,Crate,,
-128,SegKind.flapIn.Name,맵 구획 — 동물이 드나드는 개구멍 덮개,개구멍 덮개,Flap cover,,
-129,SegKind.stair.Name,맵 구획 — 계단 복도 벽,계단 복도 벽,Stair corridor wall,,
-130,SegKind.brooder.Name,맵 구획 — 병아리 보온 상자,보온 상자,Brooder box,,
-131,SegKind.floor.Name,맵 구획 — 바닥,바닥,Floor,,
-132,SegKind.ceiling.Name,맵 구획 — 천장,천장,Ceiling,,
-133,Site.henhouse.Name,습격 장소 — 양계장,양계장,Henhouse,,
-134,Site.flat.Name,습격 장소 — 테스트용 평지,평지 (테스트),Flat (test),,
-135,Pause.LobbyNotReady,메뉴에서 아직 구현 안 된 [로비로 나가기]를 눌렀을 때 안내,로비 나가기는 준비 중입니다,Leaving to the lobby is not ready yet,,
-136,Settings.Title,설정 화면 제목,설정,Settings,,
-137,Settings.Section.Keys,설정 화면 섹션 헤더 — 키 바인딩,키,Keys,,
-138,Settings.Section.Mouse,설정 화면 섹션 헤더 — 마우스,마우스,Mouse,,
-139,Settings.Section.Audio,설정 화면 섹션 헤더 — 소리,오디오,Audio,,
-140,Settings.Section.Language,설정 화면 섹션 헤더 — 언어,언어,Language,,
-141,Settings.ResetKeys,키 바인딩을 전부 기본값으로 되돌리는 버튼,키 초기화,Reset keys,,
-142,Settings.MouseSensitivity,시점 회전 감도 슬라이더 라벨,감도,Sensitivity,,
-143,Settings.Percent,슬라이더 값 표시. {0}=정수 퍼센트,{0}%,{0}%,,
-144,Settings.InvertY,마우스 위아래를 뒤집는 체크 라벨,Y축 반전,Invert Y axis,,
-145,Settings.Volume.Master,볼륨 슬라이더 — 전체,전체,Master,,
-146,Settings.Volume.Effects,볼륨 슬라이더 — 효과음,효과음,Effects,,
-147,Settings.Volume.UI,볼륨 슬라이더 — 메뉴·버튼 소리,UI,UI,,
-148,Settings.Volume.Ambience,볼륨 슬라이더 — 배경음(환경음),배경음,Ambience,,
-149,Settings.Volume.Music,볼륨 슬라이더 — 음악,음악,Music,,
-150,Settings.Volume.VO,볼륨 슬라이더 — 캐릭터 음성,음성,Voice,,
-151,Settings.PressKey,키 버튼을 눌러 새 키를 기다리는 동안 그 버튼에 뜨는 문구,키를 누르세요…,Press a key…,,
-152,Settings.CaptureHint,키를 기다리는 동안 힌트 줄. Esc는 취소 키 표기,새 키를 누르세요 — Esc 또는 5초 뒤 취소,Press a new key — Esc or wait 5 s to cancel,,
-153,Settings.KeySwapped,"새 키가 이미 다른 동작에 있어 둘을 맞바꿨다는 안내. {0}=새 키를 받은 동작 이름, {1}=그 키, {2}=키를 내준 동작 이름, {3}=그 동작이 받은 옛 키",{0}: {1} · {2}: {3},{0}: {1} · {2}: {3},,
-154,Settings.KeyRejected,쓸 수 없는 키(게임패드·휠·Esc 등)를 눌렀을 때 안내,그 키는 쓸 수 없습니다,That key can't be used,,
-155,Settings.Unbound,키가 비어 있는 동작의 키 버튼 문구,없음,None,,
-156,Input.MoveForward.Name,리바인딩 목록의 동작 이름 — 앞으로 이동,앞으로,Move forward,,
-157,Input.MoveBack.Name,동작 이름 — 뒤로 이동,뒤로,Move back,,
-158,Input.MoveLeft.Name,동작 이름 — 왼쪽 이동,왼쪽,Move left,,
-159,Input.MoveRight.Name,동작 이름 — 오른쪽 이동,오른쪽,Move right,,
-160,Input.Run.Name,동작 이름 — 달리기(스태미나 소모),달리기,Run,,
-161,Input.Jump.Name,동작 이름 — 점프,점프,Jump,,
-162,Input.PickPlace.Name,동작 이름 — 줍기·놓기·상호작용 한 키,줍기 / 놓기 / 상호작용,Pick up / put down / interact,,
-163,Input.Use.Name,동작 이름 — 든 아이템 사용(탭) / 먹기(길게),사용 / 먹기,Use / eat,,
-164,Input.Throw.Name,동작 이름 — 던지기 차징,던지기,Throw,,
-165,Input.Swap.Name,동작 이름 — 손과 품 교체,손·품 교체,Swap hand / pocket,,
-166,Input.Flashlight.Name,동작 이름 — 쓴 헤드램프 켜고 끄기,헤드램프,Headlamp,,
-167,Input.Scan.Name,동작 이름 — 시야 안 아이템 라벨 표시,스캔,Scan,,
-168,Input.Pause.Name,동작 이름 — 메뉴 열기 / 한 단계 뒤로,메뉴 / 뒤로,Menu / back,,
-169,Input.SpectateNext.Name,동작 이름 — 관전 중 다음 동료로,다음 동료 (관전),Next teammate (spectating),,
-170,Key.SpaceBar,"키 표기 — 스페이스바 (Key.* 행은 FKey 이름 그대로, 없으면 엔진 영문 표기로 대체됨)",Space,Space,,
-171,Key.LeftShift,키 표기 — 왼쪽 Shift,Shift,Shift,,
-172,Key.RightShift,키 표기 — 오른쪽 Shift,오른쪽 Shift,Right Shift,,
-173,Key.LeftControl,키 표기 — 왼쪽 Ctrl,Ctrl,Ctrl,,
-174,Key.RightControl,키 표기 — 오른쪽 Ctrl,오른쪽 Ctrl,Right Ctrl,,
-175,Key.LeftAlt,키 표기 — 왼쪽 Alt,Alt,Alt,,
-176,Key.RightAlt,키 표기 — 오른쪽 Alt,오른쪽 Alt,Right Alt,,
-177,Key.Tab,키 표기 — Tab,Tab,Tab,,
-178,Key.Enter,키 표기 — Enter,Enter,Enter,,
-179,Key.CapsLock,키 표기 — Caps Lock,Caps Lock,Caps Lock,,
-180,Key.BackSpace,키 표기 — Backspace,Backspace,Backspace,,
-181,Key.LeftMouseButton,키 표기 — 마우스 왼쪽 버튼,LMB,LMB,,
-182,Key.RightMouseButton,키 표기 — 마우스 오른쪽 버튼,RMB,RMB,,
-183,Key.MiddleMouseButton,키 표기 — 마우스 가운데(휠) 버튼,MMB,MMB,,
-184,Key.ThumbMouseButton,키 표기 — 마우스 엄지 버튼 1,M4,M4,,
-185,Key.ThumbMouseButton2,키 표기 — 마우스 엄지 버튼 2,M5,M5,,
-186,Settings.Language,언어 선택 행 라벨 (선택지 이름은 원어명이라 시트에 없음),언어,Language,,
+1,Prompt.Wear,머리 장비(헤드램프)를 바라볼 때 뜨는 상호작용 안내. {0}=현재 바인딩된 키 표기(예: E),[{0}] 착용,[{0}] Wear,[{0}] 装着,[{0}] 佩戴
+2,Prompt.PickUp,바닥의 아이템을 바라볼 때 — 손이나 품에 집는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 줍기,[{0}] Pick up,[{0}] 拾う,[{0}] 拾起
+3,Prompt.Place,손에 든 것을 바닥·조리대에 내려놓는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 놓기,[{0}] Put down,[{0}] 置く,[{0}] 放下
+4,Prompt.CartRelease,밀고 있던 수레 손잡이를 놓는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 수레 놓기,[{0}] Let go of cart,[{0}] カートを放す,[{0}] 放开推车
+5,Prompt.CartLoad,손에 든 아이템을 수레에 싣는다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 싣기,[{0}] Load,[{0}] 積む,[{0}] 装车
+6,Prompt.CartPull,수레 손잡이를 잡고 밀기 시작한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 수레 밀기,[{0}] Push cart,[{0}] カートを押す,[{0}] 推车
+7,Prompt.CounterDeliver,푸드트럭 창구에 주문 요리를 납품한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 납품,[{0}] Deliver,[{0}] 納品,[{0}] 交货
+8,Prompt.CounterSell,주문과 무관한 남은 재료·요리를 창구에서 판다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 남은 것 팔기,[{0}] Sell leftovers,[{0}] 余りを売る,[{0}] 出售剩余
+9,Prompt.JarReturn,빌린 항아리를 제자리에 반납한다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 반납,[{0}] Return,[{0}] 返却,[{0}] 归还
+10,Prompt.TruckPanelShop,트럭 패널을 열어 장비를 산다. {0}=현재 바인딩된 키 표기(예: E),[{0}] 장비 구매,[{0}] Buy gear,[{0}] 装備を買う,[{0}] 购买装备
+11,Hud.Hp,체력. {0}=현재 HP,HP {0},HP {0},HP {0},HP {0}
+12,Hud.Hand,손에 든 아이템. {0}=아이템 이름,손: {0},Hand: {0},手: {0},手中: {0}
+13,Hud.HandEmpty,손이 비었을 때,손: -,Hand: -,手: -,手中: -
+14,Hud.Pocket,"품(주머니)에 넣은 것. {0}=개수, {1}=이름 목록",품 {0}: {1},Pocket {0}: {1},ポケット {0}: {1},口袋 {0}: {1}
+15,Hud.PocketSep,품 목록의 이름 사이 구분자,", ",", ",、,、
+16,Hud.PocketEmpty,품이 비었을 때,품: -,Pocket: -,ポケット: -,口袋: -
+17,Hud.Night,"밤 진행 중 시계. {0}=일차, {1}:{2}=시:분, {3}=정전 표시(Hud.Blackout 또는 빈칸)",{0}일차 · {1}:{2}{3},Day {0} · {1}:{2}{3},{0}日目 · {1}:{2}{3},第{0}天 · {1}:{2}{3}
+18,Hud.Blackout,정전 중임을 시계 뒤에 덧붙이는 꼬리표. 앞 공백 유지, · 정전, · Blackout, · 停電, · 停电
+19,Hud.Dawn,밤이 끝나고 정산 전 새벽 단계. {0}=일차,{0}일차 · 새벽,Day {0} · Dawn,{0}日目 · 夜明け,第{0}天 · 黎明
+20,Hud.Lobby,푸드트럭에 정차해 있는 낮(로비) 단계. {0}=일차,{0}일차 · 정차,Day {0} · Parked,{0}日目 · 停車中,第{0}天 · 停车中
+21,Hud.ItemWeight,바라보는 아이템의 무게. {0}=무게 값,무게 {0},Weight {0},重さ {0},重量 {0}
+22,Hud.ItemPocketable,아이템 특성: 품에 넣을 수 있다,품에 들어감,Fits in pocket,ポケットに入る,可放入口袋
+23,Hud.ItemHandOnly,아이템 특성: 손으로만 들 수 있다(품 불가),손으로만,Hands only,手持ちのみ,仅能手持
+24,Hud.ItemCartOnly,아이템 특성: 수레로만 옮길 수 있다,수레로만,Cart only,カートのみ,仅能用推车
+25,Hud.ItemFragile,아이템 특성: 떨어뜨리면 깨진다(계란),깨지기 쉬움,Fragile,割れやすい,易碎
+26,Hud.ItemFactSep,아이템 특성들 사이 구분자, · , · , · , · 
+27,Hud.Head,머리에 쓴 장비. {0}=장비 이름,머리: {0},Head: {0},頭: {0},头部: {0}
+28,Hud.HeadEmpty,머리에 아무것도 안 썼을 때,머리: -,Head: -,頭: -,头部: -
+29,Hud.OrderIngredient,"주문 재료 한 개. {0}=재료 이름, {1}=필요 수량",{0}×{1},{0}×{1},{0}×{1},{0}×{1}
+30,Hud.OrderLine,"수락한 주문 한 줄. {0}=요리 이름, {1}=재료 목록, {2}=마감 일차, {3}=보상 금액",{0} · {1} · {2}일차까지 · {3} 이더,{0} · {1} · by day {2} · {3} ether,{0} · {1} · {2}日目まで · {3} エーテル,{0} · {1} · 第{2}天前 · {3} 以太
+31,Hud.OrderSep,주문 재료 목록의 구분자,", ",", ",、,、
+32,Hud.Money,"공유 자금. {0}=금액. ""이더""는 이 게임의 화폐 단위",{0} 이더,{0} ether,{0} エーテル,{0} 以太
+33,Hud.PeriodToday,"정산 기간 현황 — 오늘이 정산일. {0}=기간 수입, {1}=목표액",이번 기간 {0} / 목표 {1} · 오늘 정산,This period {0} / goal {1} · settles today,今期 {0} / 目標 {1} · 本日精算,本期 {0} / 目标 {1} · 今日结算
+34,Hud.Period,"정산 기간 현황. {0}=기간 수입, {1}=목표액, {2}=정산까지 남은 일수",이번 기간 {0} / 목표 {1} · 정산까지 {2}일,This period {0} / goal {1} · {2} days to settlement,今期 {0} / 目標 {1} · 精算まで{2}日,本期 {0} / 目标 {1} · 距结算 {2} 天
+35,Hud.CounterEmpty,창구에 올려둔 것이 없을 때,창구가 비어 있다,The counter is empty,窓口は空です,柜台是空的
+36,Hud.CounterTitle,창구에 올려둔 물건 목록의 제목,창구에 올린 것,On the counter,窓口に置いた物,柜台上的物品
+37,Hud.CounterLine,"창구 목록 한 줄. {0}=이름, {1}=수량, {2}=값",{0} ×{1} · {2} 이더,{0} ×{1} · {2} ether,{0} ×{1} · {2} エーテル,{0} ×{1} · {2} 以太
+38,Hud.CounterTotal,창구 목록 합계. {0}=금액,합 {0} 이더,Total {0} ether,合計 {0} エーテル,合计 {0} 以太
+39,Hud.BuffNamedOne,"먹기 효과(버프) 한 줄 — 효과 하나. {0}=능력치 이름, {1}=증감(예 +40), {2}=남은 초",{0} {1} ({2}초),{0} {1} ({2}s),{0} {1} ({2}秒),{0} {1} ({2}秒)
+40,Hud.BuffNamed,"버프 한 줄 — 이름만. {0}=버프 이름, {1}=남은 초",{0} ({1}초),{0} ({1}s),{0} ({1}秒),{0} ({1}秒)
+41,Hud.BuffLine,"버프 한 줄 — 여러 효과 중 하나. {0}=능력치 이름, {1}=증감, {2}=남은 초",{0} {1} ({2}초),{0} {1} ({2}s),{0} {1} ({2}秒),{0} {1} ({2}秒)
+42,Hud.NightWarn,밤 종료 직전 경고. {0}=남은 초,밤이 끝난다 · {0}초,The night is ending · {0}s,夜が終わる · {0}秒,黑夜即将结束 · {0}秒
+43,Stat.WalkSpeed,능력치 이름: 걷기 속도,걷기,Walk,歩行,步行
+44,Stat.RunSpeed,능력치 이름: 달리기 속도,달리기,Run,走行,奔跑
+45,Stat.CarryMult,능력치 이름: 들 수 있는 짐 무게 배율,짐 무게,Load weight,荷物の重さ,负重
+46,Stat.CartMult,능력치 이름: 수레 미는 속도 배율,수레 속도,Cart speed,カート速度,推车速度
+47,Stat.JumpVelocity,능력치 이름: 점프 힘,점프,Jump,ジャンプ,跳跃
+48,Stat.JumpGravity,능력치 이름: 점프 중 중력,점프 중력,Jump gravity,ジャンプ重力,跳跃重力
+49,Stat.StaminaDrain,능력치 이름: 스태미나가 다 닳기까지 걸리는 시간,스태미나 지속,Stamina duration,スタミナ持続,体力持续
+50,Stat.StaminaRegen,능력치 이름: 스태미나 회복 속도,스태미나 회복,Stamina recovery,スタミナ回復,体力恢复
+51,Stat.StaminaResume,능력치 이름: 탈진 뒤 다시 달릴 수 있는 회복 문턱,탈진 회복 문턱,Exhaustion recovery threshold,疲労回復のしきい値,力竭恢复阈值
+52,Stat.AmountPlus,능력치 증가량 표기. {0}=값 (음수는 그대로 -로 나온다),+{0},+{0},+{0},+{0}
+53,ScanLabel.NoValue,스캔 라벨 — 팔 수 없는 물건,값 없음,No value,値なし,无价值
+54,ScanLabel.Value,스캔 라벨 — 판매가. {0}=금액,{0} 이더,{0} ether,{0} エーテル,{0} 以太
+55,Shop.Close,트럭 패널 닫기 버튼,닫기,Close,閉じる,关闭
+56,Shop.Title,장비 구매 화면 제목 — 푸드트럭 옆 패널,트럭 패널,Truck panel,トラックパネル,餐车面板
+57,Shop.Money,트럭 패널 — 지금 가진 돈. {0}=금액,보유 {0} 이더,You have {0} ether,所持 {0} エーテル,持有 {0} 以太
+58,Shop.Price,장비 가격. {0}=금액,{0} 이더,{0} ether,{0} エーテル,{0} 以太
+59,Shop.Owned,"장비 보유 수. {0}=가진 수, {1}=최대",{0}/{1} 보유,Owned {0}/{1},{0}/{1} 所持,持有 {0}/{1}
+60,Shop.DetailSep,장비 상세(가격·보유) 사이 구분자, · , · , · , · 
+61,Shop.Locked,아직 못 사는 이유 — 해금 일차 전. {0}=해금 일차,{0}일차부터,From day {0},{0}日目から,第{0}天起
+62,Shop.MaxOwned,못 사는 이유 — 이미 최대치 보유. {0}=보유 수,이미 {0}개,Already have {0},すでに{0}個,已有 {0} 个
+63,Shop.NoMoney,못 사는 이유 — 돈 부족,잔액 부족,Not enough ether,残高不足,余额不足
+64,Shop.NotInLobby,못 사는 이유 — 트럭이 정차 중이 아님,정차 중에만,Only while parked,停車中のみ,仅限停车时
+65,Shop.NoRow,못 사는 이유 — 판매 목록에 없음,살 수 없음,Not for sale,購入不可,不可购买
+66,Shop.Rejected,"구매 거절 안내. {0}=장비 이름, {1}=이유(위 Shop.* 중 하나)",{0}: {1},{0}: {1},{0}: {1},{0}: {1}
+67,OrderSelect.Title,"주문 선택 화면 제목. {0}=제시된 주문 수, {1}=골라야 하는 수",주문서 · {0}개 중 {1}개 선택,Orders · {1} of {0} chosen,注文書 · {0}件中{1}件を選択,订单 · 从 {0} 个中选 {1} 个
+68,OrderSelect.HintHost,호스트에게: 주문을 고르고 확정하라는 안내,받을 주문을 누른 뒤 [확정]을 누르세요,"Tap the orders you want, then press [Confirm]",受ける注文を押してから[確定]を押してください,点选要接的订单，然后按[确定]
+69,OrderSelect.HintClient,클라이언트에게: 호스트가 고르는 중이라는 안내,호스트가 주문을 확정합니다,The host confirms the orders,ホストが注文を確定します,由房主确定订单
+70,OrderSelect.Accept,"확정 버튼. {0}=고른 수, {1}=골라야 하는 수",확정 ({0}/{1}),Confirm ({0}/{1}),確定 ({0}/{1}),确定 ({0}/{1})
+71,OrderSelect.Ingredient,"주문 카드의 재료 한 개. {0}=재료, {1}=수량",{0}×{1},{0}×{1},{0}×{1},{0}×{1}
+72,OrderSelect.CardDetail,"주문 카드 상세. {0}=재료 목록, {1}~{2}=보상 범위, {3}=마감까지 일수",{0} · 보상 {1}~{2} 이더 · 마감 {3}일,{0} · reward {1}~{2} ether · due in {3} days,{0} · 報酬 {1}~{2} エーテル · 期限 {3}日,{0} · 报酬 {1}~{2} 以太 · 期限 {3} 天
+73,OrderSelect.IngredientSep,주문 카드 재료 목록 구분자,", ",", ",、,、
+74,Dawn.Close,새벽 화면 닫기 — 게임 계속,계속,Continue,続ける,继续
+75,Dawn.Title,새벽 화면 제목. {0}=일차,{0}일차 새벽,Day {0} dawn,{0}日目の夜明け,第{0}天黎明
+76,Dawn.TitlePlain,새벽 화면 제목 — 일차 정보가 없을 때,새벽,Dawn,夜明け,黎明
+77,Dawn.Earned,이번 기간 번 돈. {0}=금액,이번 기간 {0} 이더,This period {0} ether,今期 {0} エーテル,本期 {0} 以太
+78,Dawn.SettleTitle,정산일 새벽 화면 제목. {0}=일차,{0}일차 정산,Day {0} settlement,{0}日目の精算,第{0}天结算
+79,Dawn.Settle,"정산 결과. {0}=기간 수입, {1}=목표액",이번 기간 {0} / 목표 {1} 이더,This period {0} / goal {1} ether,今期 {0} / 目標 {1} エーテル,本期 {0} / 目标 {1} 以太
+80,Dawn.Passed,정산 통과 — 다음 기간으로 이어진다,통과 — 다음 기간이 시작된다,Passed — the next period begins,達成 — 次の期間が始まる,达标 — 下一期开始
+81,Dawn.Failed,정산 실패 — 판(런)이 끝난다. {0}=버틴 마지막 일차,미달 — 판이 끝났다. {0}일차까지 버텼다,Short — the run is over. You lasted until day {0},未達 — 今回は終了。{0}日目まで耐えた,未达标 — 本局结束。坚持到了第{0}天
+82,Dawn.CloseFailed,정산 실패 뒤 닫기 — 새 판을 시작한다,새 판으로,New run,新しく始める,开始新的一局
+83,Spectate.Searching,죽어서 관전 중 — 볼 동료를 찾는 중,관전 중 · 동료를 찾는 중…,Spectating · looking for a teammate…,観戦中 · 仲間を探しています…,观战中 · 正在寻找队友…
+84,Spectate.Target,관전 중인 동료. {0}=플레이어 이름,관전 중 · {0},Spectating · {0},観戦中 · {0},观战中 · {0}
+85,Pause.Title,일시정지 메뉴 제목,메뉴,Menu,メニュー,菜单
+86,Pause.Continue,메뉴 닫고 게임으로 돌아가기,계속,Continue,続ける,继续
+87,Pause.Settings,설정 화면 열기,설정,Settings,設定,设置
+88,Pause.LeaveLobby,판을 나가 로비로 돌아가기,로비로 나가기,Leave to lobby,ロビーに戻る,返回大厅
+89,Pause.Quit,게임 프로그램 종료,게임 종료,Quit game,ゲーム終了,退出游戏
+90,Pause.NotReady,아직 구현 안 된 항목을 눌렀을 때 안내,설정과 로비 나가기는 준비 중입니다,Settings and leaving to the lobby are not ready yet,設定とロビーに戻るは準備中です,设置和返回大厅尚未开放
+91,Spectate.Next,다음 동료로 넘기는 버튼. {0}=현재 바인딩된 키 표기(예: Tab),다음 동료 ({0}),Next teammate ({0}),次の仲間 ({0}),下一位队友 ({0})
+92,Spectate.ReturnHint,관전자에게: 트럭이 다음에 정차할 때 트럭 패드에서 부활한다,다음 정차 때 트럭 패드에서 돌아옵니다,You return at the truck pad on the next stop,次の停車時にトラックパッドで復帰します,下次停车时在餐车平台复活
+93,ScanLabel.Name,스캔 라벨·아이템 이름 칸의 자리표시자 (실행 중 실제 이름으로 바뀜),이름,Name,名前,名称
+94,Buff.leg_strength.Name,먹기 효과 이름 — 다리 힘(이동 속도) 증가,다리에 힘,Strong legs,脚力アップ,腿部强化
+95,Character.farmer_a.Name,플레이어 캐릭터 이름 — 농부 A,농부 A,Farmer A,農夫A,农夫A
+96,Rules.rules.Name,규칙 데이터 행 이름 (내부용),규칙,Rules,ルール,规则
+97,Equipment.frying_pan.Name,구매 장비 이름 — 프라이팬,프라이팬,Frying pan,フライパン,平底锅
+98,Item.egg.Name,아이템 — 날계란,계란,Egg,卵,鸡蛋
+99,Item.egg.cooked.Name,아이템 — 알맞게 익힌 계란,익은 계란,Cooked egg,焼き卵,熟鸡蛋
+100,Item.egg.burnt.Name,아이템 — 너무 오래 익혀 탄 계란,탄 계란,Burnt egg,焦げた卵,烧焦的鸡蛋
+101,Item.egg.cracked.Name,아이템 — 금이 간 계란 (한 번 더 충격 받으면 깨짐),금 간 계란,Cracked egg,ひびの入った卵,有裂纹的鸡蛋
+102,Item.egg.broken.Name,아이템 — 깨져서 못 쓰는 계란,깨진 계란,Broken egg,割れた卵,破碎的鸡蛋
+103,Item.meat.Name,아이템 — 날고기,고기,Meat,肉,肉
+104,Item.meat.cooked.Name,아이템 — 익힌 고기,익은 고기,Cooked meat,焼いた肉,熟肉
+105,Item.meat.burnt.Name,아이템 — 탄 고기,탄 고기,Burnt meat,焦げた肉,烧焦的肉
+106,Item.cart.Name,아이템 — 짐을 싣고 미는 수레,수레,Cart,カート,推车
+107,Item.flashlight.Name,아이템 — 손에 드는 손전등,손전등,Flashlight,懐中電灯,手电筒
+108,Item.headlamp.Name,아이템 — 머리에 쓰는 램프,헤드램프,Headlamp,ヘッドランプ,头灯
+109,Item.frying_pan.Name,아이템 — 프라이팬 (조리 도구·무기),프라이팬,Frying pan,フライパン,平底锅
+110,Item.pot.Name,아이템 — 냄비 (조리 도구),냄비,Pot,鍋,锅
+111,Item.standing_lamp.Name,아이템 — 세워 두는 작업등,작업등,Work lamp,作業灯,工作灯
+112,Monster.chicken.Name,동물 — 닭,닭,Chicken,ニワトリ,鸡
+113,Monster.goose.Name,동물 — 거위,거위,Goose,ガチョウ,鹅
+114,Monster.raccoon.Name,동물 — 너구리,너구리,Raccoon,アライグマ,浣熊
+115,Monster.pig.Name,동물 — 돼지,돼지,Pig,ブタ,猪
+116,Monster.sheep.Name,동물 — 양,양,Sheep,ヒツジ,羊
+117,Order.omelette.Name,주문 요리 — 오믈렛,오믈렛,Omelette,オムレツ,煎蛋卷
+118,Order.fried_egg.Name,주문 요리 — 계란 프라이,계란후라이,Fried egg,目玉焼き,煎蛋
+119,Order.meat_dish.Name,주문 요리 — 고기 요리,고기 요리,Meat dish,肉料理,肉菜
+120,SegKind.wall.Name,맵 구획 — 마당 바깥 경계 울타리,마당 경계,Yard boundary,庭の境界,院子边界
+121,SegKind.barn.Name,맵 구획 — 축사 바깥벽,축사 외벽,Barn outer wall,鶏舎の外壁,鸡舍外墙
+122,SegKind.cage.Name,맵 구획 — 닭장 케이지 줄,케이지 열,Cage row,ケージ列,笼子排
+123,SegKind.plug.Name,맵 구획 — 통로를 막는 마개,통로 마개,Passage plug,通路の栓,通道堵塞物
+124,SegKind.truck.Name,맵 구획 — 푸드트럭 자리,트럭,Truck,トラック,餐车
+125,SegKind.hay.Name,맵 구획 — 건초 더미,건초,Hay,干し草,干草
+126,SegKind.trough.Name,맵 구획 — 물통,물통,Trough,水槽,水槽
+127,SegKind.crate.Name,맵 구획 — 상자,상자,Crate,箱,箱子
+128,SegKind.flapIn.Name,맵 구획 — 동물이 드나드는 개구멍 덮개,개구멍 덮개,Flap cover,くぐり戸のカバー,洞口挡板
+129,SegKind.stair.Name,맵 구획 — 계단 복도 벽,계단 복도 벽,Stair corridor wall,階段廊下の壁,楼梯走廊墙
+130,SegKind.brooder.Name,맵 구획 — 병아리 보온 상자,보온 상자,Brooder box,保温箱,保温箱
+131,SegKind.floor.Name,맵 구획 — 바닥,바닥,Floor,床,地板
+132,SegKind.ceiling.Name,맵 구획 — 천장,천장,Ceiling,天井,天花板
+133,Site.henhouse.Name,습격 장소 — 양계장,양계장,Henhouse,養鶏場,养鸡场
+134,Site.flat.Name,습격 장소 — 테스트용 평지,평지 (테스트),Flat (test),平地 (テスト),平地 (测试)
+135,Pause.LobbyNotReady,메뉴에서 아직 구현 안 된 [로비로 나가기]를 눌렀을 때 안내,로비 나가기는 준비 중입니다,Leaving to the lobby is not ready yet,ロビーに戻るは準備中です,返回大厅尚未开放
+136,Settings.Title,설정 화면 제목,설정,Settings,設定,设置
+137,Settings.Section.Keys,설정 화면 섹션 헤더 — 키 바인딩,키,Keys,キー,按键
+138,Settings.Section.Mouse,설정 화면 섹션 헤더 — 마우스,마우스,Mouse,マウス,鼠标
+139,Settings.Section.Audio,설정 화면 섹션 헤더 — 소리,오디오,Audio,オーディオ,音频
+140,Settings.Section.Language,설정 화면 섹션 헤더 — 언어,언어,Language,言語,语言
+141,Settings.ResetKeys,키 바인딩을 전부 기본값으로 되돌리는 버튼,키 초기화,Reset keys,キーを初期化,重置按键
+142,Settings.MouseSensitivity,시점 회전 감도 슬라이더 라벨,감도,Sensitivity,感度,灵敏度
+143,Settings.Percent,슬라이더 값 표시. {0}=정수 퍼센트,{0}%,{0}%,{0}%,{0}%
+144,Settings.InvertY,마우스 위아래를 뒤집는 체크 라벨,Y축 반전,Invert Y axis,Y軸反転,反转Y轴
+145,Settings.Volume.Master,볼륨 슬라이더 — 전체,전체,Master,全体,总音量
+146,Settings.Volume.Effects,볼륨 슬라이더 — 효과음,효과음,Effects,効果音,音效
+147,Settings.Volume.UI,볼륨 슬라이더 — 메뉴·버튼 소리,UI,UI,UI,UI
+148,Settings.Volume.Ambience,볼륨 슬라이더 — 배경음(환경음),배경음,Ambience,環境音,环境音
+149,Settings.Volume.Music,볼륨 슬라이더 — 음악,음악,Music,音楽,音乐
+150,Settings.Volume.VO,볼륨 슬라이더 — 캐릭터 음성,음성,Voice,ボイス,语音
+151,Settings.PressKey,키 버튼을 눌러 새 키를 기다리는 동안 그 버튼에 뜨는 문구,키를 누르세요…,Press a key…,キーを押してください…,请按键…
+152,Settings.CaptureHint,키를 기다리는 동안 힌트 줄. Esc는 취소 키 표기,새 키를 누르세요 — Esc 또는 5초 뒤 취소,Press a new key — Esc or wait 5 s to cancel,新しいキーを押してください — Escか5秒でキャンセル,请按新键 — Esc 或等待 5 秒取消
+153,Settings.KeySwapped,"새 키가 이미 다른 동작에 있어 둘을 맞바꿨다는 안내. {0}=새 키를 받은 동작 이름, {1}=그 키, {2}=키를 내준 동작 이름, {3}=그 동작이 받은 옛 키",{0}: {1} · {2}: {3},{0}: {1} · {2}: {3},{0}: {1} · {2}: {3},{0}: {1} · {2}: {3}
+154,Settings.KeyRejected,쓸 수 없는 키(게임패드·휠·Esc 등)를 눌렀을 때 안내,그 키는 쓸 수 없습니다,That key can't be used,そのキーは使えません,该键不可用
+155,Settings.Unbound,키가 비어 있는 동작의 키 버튼 문구,없음,None,なし,无
+156,Input.MoveForward.Name,리바인딩 목록의 동작 이름 — 앞으로 이동,앞으로,Move forward,前進,前进
+157,Input.MoveBack.Name,동작 이름 — 뒤로 이동,뒤로,Move back,後退,后退
+158,Input.MoveLeft.Name,동작 이름 — 왼쪽 이동,왼쪽,Move left,左移動,左移
+159,Input.MoveRight.Name,동작 이름 — 오른쪽 이동,오른쪽,Move right,右移動,右移
+160,Input.Run.Name,동작 이름 — 달리기(스태미나 소모),달리기,Run,走る,奔跑
+161,Input.Jump.Name,동작 이름 — 점프,점프,Jump,ジャンプ,跳跃
+162,Input.PickPlace.Name,동작 이름 — 줍기·놓기·상호작용 한 키,줍기 / 놓기 / 상호작용,Pick up / put down / interact,拾う / 置く / 操作,拾起 / 放下 / 互动
+163,Input.Use.Name,동작 이름 — 든 아이템 사용(탭) / 먹기(길게),사용 / 먹기,Use / eat,使う / 食べる,使用 / 进食
+164,Input.Throw.Name,동작 이름 — 던지기 차징,던지기,Throw,投げる,投掷
+165,Input.Swap.Name,동작 이름 — 손과 품 교체,손·품 교체,Swap hand / pocket,手とポケットを入れ替え,交换手中与口袋
+166,Input.Flashlight.Name,동작 이름 — 쓴 헤드램프 켜고 끄기,헤드램프,Headlamp,ヘッドランプ,头灯
+167,Input.Scan.Name,동작 이름 — 시야 안 아이템 라벨 표시,스캔,Scan,スキャン,扫描
+168,Input.Pause.Name,동작 이름 — 메뉴 열기 / 한 단계 뒤로,메뉴 / 뒤로,Menu / back,メニュー / 戻る,菜单 / 返回
+169,Input.SpectateNext.Name,동작 이름 — 관전 중 다음 동료로,다음 동료 (관전),Next teammate (spectating),次の仲間 (観戦),下一位队友 (观战)
+170,Key.SpaceBar,"키 표기 — 스페이스바 (Key.* 행은 FKey 이름 그대로, 없으면 엔진 영문 표기로 대체됨)",Space,Space,Space,Space
+171,Key.LeftShift,키 표기 — 왼쪽 Shift,Shift,Shift,Shift,Shift
+172,Key.RightShift,키 표기 — 오른쪽 Shift,오른쪽 Shift,Right Shift,右Shift,右Shift
+173,Key.LeftControl,키 표기 — 왼쪽 Ctrl,Ctrl,Ctrl,Ctrl,Ctrl
+174,Key.RightControl,키 표기 — 오른쪽 Ctrl,오른쪽 Ctrl,Right Ctrl,右Ctrl,右Ctrl
+175,Key.LeftAlt,키 표기 — 왼쪽 Alt,Alt,Alt,Alt,Alt
+176,Key.RightAlt,키 표기 — 오른쪽 Alt,오른쪽 Alt,Right Alt,右Alt,右Alt
+177,Key.Tab,키 표기 — Tab,Tab,Tab,Tab,Tab
+178,Key.Enter,키 표기 — Enter,Enter,Enter,Enter,Enter
+179,Key.CapsLock,키 표기 — Caps Lock,Caps Lock,Caps Lock,Caps Lock,Caps Lock
+180,Key.BackSpace,키 표기 — Backspace,Backspace,Backspace,Backspace,Backspace
+181,Key.LeftMouseButton,키 표기 — 마우스 왼쪽 버튼,LMB,LMB,LMB,LMB
+182,Key.RightMouseButton,키 표기 — 마우스 오른쪽 버튼,RMB,RMB,RMB,RMB
+183,Key.MiddleMouseButton,키 표기 — 마우스 가운데(휠) 버튼,MMB,MMB,MMB,MMB
+184,Key.ThumbMouseButton,키 표기 — 마우스 엄지 버튼 1,M4,M4,M4,M4
+185,Key.ThumbMouseButton2,키 표기 — 마우스 엄지 버튼 2,M5,M5,M5,M5
+186,Settings.Language,언어 선택 행 라벨 (선택지 이름은 원어명이라 시트에 없음),언어,Language,言語,语言

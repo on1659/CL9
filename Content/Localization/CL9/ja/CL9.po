@@ -19,7 +19,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Buff.leg_strength.Name"
 msgid "다리에 힘"
-msgstr ""
+msgstr "脚力アップ"
 
 #. Key:	Character.farmer_a.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -27,7 +27,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Character.farmer_a.Name"
 msgid "농부 A"
-msgstr ""
+msgstr "農夫A"
 
 #. Key:	Dawn.Close
 #. SourceLocation:	Strings/CL9.csv
@@ -35,7 +35,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Close"
 msgid "계속"
-msgstr ""
+msgstr "続ける"
 
 #. Key:	Dawn.CloseFailed
 #. SourceLocation:	Strings/CL9.csv
@@ -43,7 +43,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.CloseFailed"
 msgid "새 판으로"
-msgstr ""
+msgstr "新しく始める"
 
 #. Key:	Dawn.Earned
 #. SourceLocation:	Strings/CL9.csv
@@ -51,7 +51,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Earned"
 msgid "이번 기간 {0} 이더"
-msgstr ""
+msgstr "今期 {0} エーテル"
 
 #. Key:	Dawn.Failed
 #. SourceLocation:	Strings/CL9.csv
@@ -59,7 +59,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Failed"
 msgid "미달 — 판이 끝났다. {0}일차까지 버텼다"
-msgstr ""
+msgstr "未達 — 今回は終了。{0}日目まで耐えた"
 
 #. Key:	Dawn.Passed
 #. SourceLocation:	Strings/CL9.csv
@@ -67,7 +67,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Passed"
 msgid "통과 — 다음 기간이 시작된다"
-msgstr ""
+msgstr "達成 — 次の期間が始まる"
 
 #. Key:	Dawn.Settle
 #. SourceLocation:	Strings/CL9.csv
@@ -75,7 +75,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Settle"
 msgid "이번 기간 {0} / 목표 {1} 이더"
-msgstr ""
+msgstr "今期 {0} / 目標 {1} エーテル"
 
 #. Key:	Dawn.SettleTitle
 #. SourceLocation:	Strings/CL9.csv
@@ -83,7 +83,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.SettleTitle"
 msgid "{0}일차 정산"
-msgstr ""
+msgstr "{0}日目の精算"
 
 #. Key:	Dawn.Title
 #. SourceLocation:	Strings/CL9.csv
@@ -91,7 +91,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.Title"
 msgid "{0}일차 새벽"
-msgstr ""
+msgstr "{0}日目の夜明け"
 
 #. Key:	Dawn.TitlePlain
 #. SourceLocation:	Strings/CL9.csv
@@ -99,7 +99,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Dawn.TitlePlain"
 msgid "새벽"
-msgstr ""
+msgstr "夜明け"
 
 #. Key:	Equipment.frying_pan.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -107,7 +107,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Equipment.frying_pan.Name"
 msgid "프라이팬"
-msgstr ""
+msgstr "フライパン"
 
 #. Key:	Hud.Blackout
 #. SourceLocation:	Strings/CL9.csv
@@ -115,7 +115,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Blackout"
 msgid " · 정전"
-msgstr ""
+msgstr " · 停電"
 
 #. Key:	Hud.BuffLine
 #. SourceLocation:	Strings/CL9.csv
@@ -123,7 +123,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.BuffLine"
 msgid "{0} {1} ({2}초)"
-msgstr ""
+msgstr "{0} {1} ({2}秒)"
 
 #. Key:	Hud.BuffNamed
 #. SourceLocation:	Strings/CL9.csv
@@ -131,7 +131,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.BuffNamed"
 msgid "{0} ({1}초)"
-msgstr ""
+msgstr "{0} ({1}秒)"
 
 #. Key:	Hud.BuffNamedOne
 #. SourceLocation:	Strings/CL9.csv
@@ -139,7 +139,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.BuffNamedOne"
 msgid "{0} {1} ({2}초)"
-msgstr ""
+msgstr "{0} {1} ({2}秒)"
 
 #. Key:	Hud.CounterEmpty
 #. SourceLocation:	Strings/CL9.csv
@@ -147,7 +147,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.CounterEmpty"
 msgid "창구가 비어 있다"
-msgstr ""
+msgstr "窓口は空です"
 
 #. Key:	Hud.CounterLine
 #. SourceLocation:	Strings/CL9.csv
@@ -155,7 +155,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.CounterLine"
 msgid "{0} ×{1} · {2} 이더"
-msgstr ""
+msgstr "{0} ×{1} · {2} エーテル"
 
 #. Key:	Hud.CounterTitle
 #. SourceLocation:	Strings/CL9.csv
@@ -163,7 +163,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.CounterTitle"
 msgid "창구에 올린 것"
-msgstr ""
+msgstr "窓口に置いた物"
 
 #. Key:	Hud.CounterTotal
 #. SourceLocation:	Strings/CL9.csv
@@ -171,7 +171,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.CounterTotal"
 msgid "합 {0} 이더"
-msgstr ""
+msgstr "合計 {0} エーテル"
 
 #. Key:	Hud.Dawn
 #. SourceLocation:	Strings/CL9.csv
@@ -179,7 +179,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Dawn"
 msgid "{0}일차 · 새벽"
-msgstr ""
+msgstr "{0}日目 · 夜明け"
 
 #. Key:	Hud.Hand
 #. SourceLocation:	Strings/CL9.csv
@@ -187,7 +187,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Hand"
 msgid "손: {0}"
-msgstr ""
+msgstr "手: {0}"
 
 #. Key:	Hud.HandEmpty
 #. SourceLocation:	Strings/CL9.csv
@@ -195,7 +195,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.HandEmpty"
 msgid "손: -"
-msgstr ""
+msgstr "手: -"
 
 #. Key:	Hud.Head
 #. SourceLocation:	Strings/CL9.csv
@@ -203,7 +203,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Head"
 msgid "머리: {0}"
-msgstr ""
+msgstr "頭: {0}"
 
 #. Key:	Hud.HeadEmpty
 #. SourceLocation:	Strings/CL9.csv
@@ -211,7 +211,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.HeadEmpty"
 msgid "머리: -"
-msgstr ""
+msgstr "頭: -"
 
 #. Key:	Hud.Hp
 #. SourceLocation:	Strings/CL9.csv
@@ -219,7 +219,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Hp"
 msgid "HP {0}"
-msgstr ""
+msgstr "HP {0}"
 
 #. Key:	Hud.ItemCartOnly
 #. SourceLocation:	Strings/CL9.csv
@@ -227,7 +227,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemCartOnly"
 msgid "수레로만"
-msgstr ""
+msgstr "カートのみ"
 
 #. Key:	Hud.ItemFactSep
 #. SourceLocation:	Strings/CL9.csv
@@ -235,7 +235,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemFactSep"
 msgid " · "
-msgstr ""
+msgstr " · "
 
 #. Key:	Hud.ItemFragile
 #. SourceLocation:	Strings/CL9.csv
@@ -243,7 +243,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemFragile"
 msgid "깨지기 쉬움"
-msgstr ""
+msgstr "割れやすい"
 
 #. Key:	Hud.ItemHandOnly
 #. SourceLocation:	Strings/CL9.csv
@@ -251,7 +251,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemHandOnly"
 msgid "손으로만"
-msgstr ""
+msgstr "手持ちのみ"
 
 #. Key:	Hud.ItemPocketable
 #. SourceLocation:	Strings/CL9.csv
@@ -259,7 +259,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemPocketable"
 msgid "품에 들어감"
-msgstr ""
+msgstr "ポケットに入る"
 
 #. Key:	Hud.ItemWeight
 #. SourceLocation:	Strings/CL9.csv
@@ -267,7 +267,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.ItemWeight"
 msgid "무게 {0}"
-msgstr ""
+msgstr "重さ {0}"
 
 #. Key:	Hud.Lobby
 #. SourceLocation:	Strings/CL9.csv
@@ -275,7 +275,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Lobby"
 msgid "{0}일차 · 정차"
-msgstr ""
+msgstr "{0}日目 · 停車中"
 
 #. Key:	Hud.Money
 #. SourceLocation:	Strings/CL9.csv
@@ -283,7 +283,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Money"
 msgid "{0} 이더"
-msgstr ""
+msgstr "{0} エーテル"
 
 #. Key:	Hud.Night
 #. SourceLocation:	Strings/CL9.csv
@@ -291,7 +291,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Night"
 msgid "{0}일차 · {1}:{2}{3}"
-msgstr ""
+msgstr "{0}日目 · {1}:{2}{3}"
 
 #. Key:	Hud.NightWarn
 #. SourceLocation:	Strings/CL9.csv
@@ -299,7 +299,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.NightWarn"
 msgid "밤이 끝난다 · {0}초"
-msgstr ""
+msgstr "夜が終わる · {0}秒"
 
 #. Key:	Hud.OrderIngredient
 #. SourceLocation:	Strings/CL9.csv
@@ -307,7 +307,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.OrderIngredient"
 msgid "{0}×{1}"
-msgstr ""
+msgstr "{0}×{1}"
 
 #. Key:	Hud.OrderLine
 #. SourceLocation:	Strings/CL9.csv
@@ -315,7 +315,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.OrderLine"
 msgid "{0} · {1} · {2}일차까지 · {3} 이더"
-msgstr ""
+msgstr "{0} · {1} · {2}日目まで · {3} エーテル"
 
 #. Key:	Hud.OrderSep
 #. SourceLocation:	Strings/CL9.csv
@@ -323,7 +323,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.OrderSep"
 msgid ", "
-msgstr ""
+msgstr "、"
 
 #. Key:	Hud.Period
 #. SourceLocation:	Strings/CL9.csv
@@ -331,7 +331,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Period"
 msgid "이번 기간 {0} / 목표 {1} · 정산까지 {2}일"
-msgstr ""
+msgstr "今期 {0} / 目標 {1} · 精算まで{2}日"
 
 #. Key:	Hud.PeriodToday
 #. SourceLocation:	Strings/CL9.csv
@@ -339,7 +339,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.PeriodToday"
 msgid "이번 기간 {0} / 목표 {1} · 오늘 정산"
-msgstr ""
+msgstr "今期 {0} / 目標 {1} · 本日精算"
 
 #. Key:	Hud.Pocket
 #. SourceLocation:	Strings/CL9.csv
@@ -347,7 +347,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.Pocket"
 msgid "품 {0}: {1}"
-msgstr ""
+msgstr "ポケット {0}: {1}"
 
 #. Key:	Hud.PocketEmpty
 #. SourceLocation:	Strings/CL9.csv
@@ -355,7 +355,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.PocketEmpty"
 msgid "품: -"
-msgstr ""
+msgstr "ポケット: -"
 
 #. Key:	Hud.PocketSep
 #. SourceLocation:	Strings/CL9.csv
@@ -363,7 +363,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Hud.PocketSep"
 msgid ", "
-msgstr ""
+msgstr "、"
 
 #. Key:	Input.Flashlight.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -371,7 +371,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Flashlight.Name"
 msgid "헤드램프"
-msgstr ""
+msgstr "ヘッドランプ"
 
 #. Key:	Input.Jump.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -379,7 +379,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Jump.Name"
 msgid "점프"
-msgstr ""
+msgstr "ジャンプ"
 
 #. Key:	Input.MoveBack.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -387,7 +387,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.MoveBack.Name"
 msgid "뒤로"
-msgstr ""
+msgstr "後退"
 
 #. Key:	Input.MoveForward.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -395,7 +395,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.MoveForward.Name"
 msgid "앞으로"
-msgstr ""
+msgstr "前進"
 
 #. Key:	Input.MoveLeft.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -403,7 +403,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.MoveLeft.Name"
 msgid "왼쪽"
-msgstr ""
+msgstr "左移動"
 
 #. Key:	Input.MoveRight.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -411,7 +411,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.MoveRight.Name"
 msgid "오른쪽"
-msgstr ""
+msgstr "右移動"
 
 #. Key:	Input.Pause.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -419,7 +419,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Pause.Name"
 msgid "메뉴 / 뒤로"
-msgstr ""
+msgstr "メニュー / 戻る"
 
 #. Key:	Input.PickPlace.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -427,7 +427,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.PickPlace.Name"
 msgid "줍기 / 놓기 / 상호작용"
-msgstr ""
+msgstr "拾う / 置く / 操作"
 
 #. Key:	Input.Run.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -435,7 +435,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Run.Name"
 msgid "달리기"
-msgstr ""
+msgstr "走る"
 
 #. Key:	Input.Scan.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -443,7 +443,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Scan.Name"
 msgid "스캔"
-msgstr ""
+msgstr "スキャン"
 
 #. Key:	Input.SpectateNext.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -451,7 +451,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.SpectateNext.Name"
 msgid "다음 동료 (관전)"
-msgstr ""
+msgstr "次の仲間 (観戦)"
 
 #. Key:	Input.Swap.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -459,7 +459,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Swap.Name"
 msgid "손·품 교체"
-msgstr ""
+msgstr "手とポケットを入れ替え"
 
 #. Key:	Input.Throw.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -467,7 +467,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Throw.Name"
 msgid "던지기"
-msgstr ""
+msgstr "投げる"
 
 #. Key:	Input.Use.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -475,7 +475,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Input.Use.Name"
 msgid "사용 / 먹기"
-msgstr ""
+msgstr "使う / 食べる"
 
 #. Key:	Item.cart.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -483,7 +483,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.cart.Name"
 msgid "수레"
-msgstr ""
+msgstr "カート"
 
 #. Key:	Item.egg.broken.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -491,7 +491,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.egg.broken.Name"
 msgid "깨진 계란"
-msgstr ""
+msgstr "割れた卵"
 
 #. Key:	Item.egg.burnt.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -499,7 +499,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.egg.burnt.Name"
 msgid "탄 계란"
-msgstr ""
+msgstr "焦げた卵"
 
 #. Key:	Item.egg.cooked.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -507,7 +507,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.egg.cooked.Name"
 msgid "익은 계란"
-msgstr ""
+msgstr "焼き卵"
 
 #. Key:	Item.egg.cracked.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -515,7 +515,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.egg.cracked.Name"
 msgid "금 간 계란"
-msgstr ""
+msgstr "ひびの入った卵"
 
 #. Key:	Item.egg.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -523,7 +523,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.egg.Name"
 msgid "계란"
-msgstr ""
+msgstr "卵"
 
 #. Key:	Item.flashlight.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -531,7 +531,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.flashlight.Name"
 msgid "손전등"
-msgstr ""
+msgstr "懐中電灯"
 
 #. Key:	Item.frying_pan.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -539,7 +539,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.frying_pan.Name"
 msgid "프라이팬"
-msgstr ""
+msgstr "フライパン"
 
 #. Key:	Item.headlamp.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -547,7 +547,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.headlamp.Name"
 msgid "헤드램프"
-msgstr ""
+msgstr "ヘッドランプ"
 
 #. Key:	Item.meat.burnt.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -555,7 +555,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.meat.burnt.Name"
 msgid "탄 고기"
-msgstr ""
+msgstr "焦げた肉"
 
 #. Key:	Item.meat.cooked.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -563,7 +563,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.meat.cooked.Name"
 msgid "익은 고기"
-msgstr ""
+msgstr "焼いた肉"
 
 #. Key:	Item.meat.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -571,7 +571,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.meat.Name"
 msgid "고기"
-msgstr ""
+msgstr "肉"
 
 #. Key:	Item.pot.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -579,7 +579,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.pot.Name"
 msgid "냄비"
-msgstr ""
+msgstr "鍋"
 
 #. Key:	Item.standing_lamp.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -587,7 +587,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Item.standing_lamp.Name"
 msgid "작업등"
-msgstr ""
+msgstr "作業灯"
 
 #. Key:	Key.BackSpace
 #. SourceLocation:	Strings/CL9.csv
@@ -595,7 +595,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.BackSpace"
 msgid "Backspace"
-msgstr ""
+msgstr "Backspace"
 
 #. Key:	Key.CapsLock
 #. SourceLocation:	Strings/CL9.csv
@@ -603,7 +603,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.CapsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
 #. Key:	Key.Enter
 #. SourceLocation:	Strings/CL9.csv
@@ -611,7 +611,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.Enter"
 msgid "Enter"
-msgstr ""
+msgstr "Enter"
 
 #. Key:	Key.LeftAlt
 #. SourceLocation:	Strings/CL9.csv
@@ -619,7 +619,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.LeftAlt"
 msgid "Alt"
-msgstr ""
+msgstr "Alt"
 
 #. Key:	Key.LeftControl
 #. SourceLocation:	Strings/CL9.csv
@@ -627,7 +627,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.LeftControl"
 msgid "Ctrl"
-msgstr ""
+msgstr "Ctrl"
 
 #. Key:	Key.LeftMouseButton
 #. SourceLocation:	Strings/CL9.csv
@@ -635,7 +635,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.LeftMouseButton"
 msgid "LMB"
-msgstr ""
+msgstr "LMB"
 
 #. Key:	Key.LeftShift
 #. SourceLocation:	Strings/CL9.csv
@@ -643,7 +643,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.LeftShift"
 msgid "Shift"
-msgstr ""
+msgstr "Shift"
 
 #. Key:	Key.MiddleMouseButton
 #. SourceLocation:	Strings/CL9.csv
@@ -651,7 +651,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.MiddleMouseButton"
 msgid "MMB"
-msgstr ""
+msgstr "MMB"
 
 #. Key:	Key.RightAlt
 #. SourceLocation:	Strings/CL9.csv
@@ -659,7 +659,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.RightAlt"
 msgid "오른쪽 Alt"
-msgstr ""
+msgstr "右Alt"
 
 #. Key:	Key.RightControl
 #. SourceLocation:	Strings/CL9.csv
@@ -667,7 +667,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.RightControl"
 msgid "오른쪽 Ctrl"
-msgstr ""
+msgstr "右Ctrl"
 
 #. Key:	Key.RightMouseButton
 #. SourceLocation:	Strings/CL9.csv
@@ -675,7 +675,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.RightMouseButton"
 msgid "RMB"
-msgstr ""
+msgstr "RMB"
 
 #. Key:	Key.RightShift
 #. SourceLocation:	Strings/CL9.csv
@@ -683,7 +683,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.RightShift"
 msgid "오른쪽 Shift"
-msgstr ""
+msgstr "右Shift"
 
 #. Key:	Key.SpaceBar
 #. SourceLocation:	Strings/CL9.csv
@@ -691,7 +691,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.SpaceBar"
 msgid "Space"
-msgstr ""
+msgstr "Space"
 
 #. Key:	Key.Tab
 #. SourceLocation:	Strings/CL9.csv
@@ -699,7 +699,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.Tab"
 msgid "Tab"
-msgstr ""
+msgstr "Tab"
 
 #. Key:	Key.ThumbMouseButton
 #. SourceLocation:	Strings/CL9.csv
@@ -707,7 +707,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.ThumbMouseButton"
 msgid "M4"
-msgstr ""
+msgstr "M4"
 
 #. Key:	Key.ThumbMouseButton2
 #. SourceLocation:	Strings/CL9.csv
@@ -715,7 +715,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Key.ThumbMouseButton2"
 msgid "M5"
-msgstr ""
+msgstr "M5"
 
 #. Key:	Monster.chicken.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -723,7 +723,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Monster.chicken.Name"
 msgid "닭"
-msgstr ""
+msgstr "ニワトリ"
 
 #. Key:	Monster.goose.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -731,7 +731,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Monster.goose.Name"
 msgid "거위"
-msgstr ""
+msgstr "ガチョウ"
 
 #. Key:	Monster.pig.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -739,7 +739,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Monster.pig.Name"
 msgid "돼지"
-msgstr ""
+msgstr "ブタ"
 
 #. Key:	Monster.raccoon.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -747,7 +747,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Monster.raccoon.Name"
 msgid "너구리"
-msgstr ""
+msgstr "アライグマ"
 
 #. Key:	Monster.sheep.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -755,7 +755,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Monster.sheep.Name"
 msgid "양"
-msgstr ""
+msgstr "ヒツジ"
 
 #. Key:	Order.fried_egg.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -763,7 +763,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Order.fried_egg.Name"
 msgid "계란후라이"
-msgstr ""
+msgstr "目玉焼き"
 
 #. Key:	Order.meat_dish.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -771,7 +771,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Order.meat_dish.Name"
 msgid "고기 요리"
-msgstr ""
+msgstr "肉料理"
 
 #. Key:	Order.omelette.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -779,7 +779,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Order.omelette.Name"
 msgid "오믈렛"
-msgstr ""
+msgstr "オムレツ"
 
 #. Key:	OrderSelect.Accept
 #. SourceLocation:	Strings/CL9.csv
@@ -787,7 +787,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.Accept"
 msgid "확정 ({0}/{1})"
-msgstr ""
+msgstr "確定 ({0}/{1})"
 
 #. Key:	OrderSelect.CardDetail
 #. SourceLocation:	Strings/CL9.csv
@@ -795,7 +795,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.CardDetail"
 msgid "{0} · 보상 {1}~{2} 이더 · 마감 {3}일"
-msgstr ""
+msgstr "{0} · 報酬 {1}~{2} エーテル · 期限 {3}日"
 
 #. Key:	OrderSelect.HintClient
 #. SourceLocation:	Strings/CL9.csv
@@ -803,7 +803,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.HintClient"
 msgid "호스트가 주문을 확정합니다"
-msgstr ""
+msgstr "ホストが注文を確定します"
 
 #. Key:	OrderSelect.HintHost
 #. SourceLocation:	Strings/CL9.csv
@@ -811,7 +811,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.HintHost"
 msgid "받을 주문을 누른 뒤 [확정]을 누르세요"
-msgstr ""
+msgstr "受ける注文を押してから[確定]を押してください"
 
 #. Key:	OrderSelect.Ingredient
 #. SourceLocation:	Strings/CL9.csv
@@ -819,7 +819,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.Ingredient"
 msgid "{0}×{1}"
-msgstr ""
+msgstr "{0}×{1}"
 
 #. Key:	OrderSelect.IngredientSep
 #. SourceLocation:	Strings/CL9.csv
@@ -827,7 +827,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.IngredientSep"
 msgid ", "
-msgstr ""
+msgstr "、"
 
 #. Key:	OrderSelect.Title
 #. SourceLocation:	Strings/CL9.csv
@@ -835,7 +835,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,OrderSelect.Title"
 msgid "주문서 · {0}개 중 {1}개 선택"
-msgstr ""
+msgstr "注文書 · {0}件中{1}件を選択"
 
 #. Key:	Pause.Continue
 #. SourceLocation:	Strings/CL9.csv
@@ -843,7 +843,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.Continue"
 msgid "계속"
-msgstr ""
+msgstr "続ける"
 
 #. Key:	Pause.LeaveLobby
 #. SourceLocation:	Strings/CL9.csv
@@ -851,7 +851,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.LeaveLobby"
 msgid "로비로 나가기"
-msgstr ""
+msgstr "ロビーに戻る"
 
 #. Key:	Pause.LobbyNotReady
 #. SourceLocation:	Strings/CL9.csv
@@ -859,7 +859,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.LobbyNotReady"
 msgid "로비 나가기는 준비 중입니다"
-msgstr ""
+msgstr "ロビーに戻るは準備中です"
 
 #. Key:	Pause.NotReady
 #. SourceLocation:	Strings/CL9.csv
@@ -867,7 +867,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.NotReady"
 msgid "설정과 로비 나가기는 준비 중입니다"
-msgstr ""
+msgstr "設定とロビーに戻るは準備中です"
 
 #. Key:	Pause.Quit
 #. SourceLocation:	Strings/CL9.csv
@@ -875,7 +875,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.Quit"
 msgid "게임 종료"
-msgstr ""
+msgstr "ゲーム終了"
 
 #. Key:	Pause.Settings
 #. SourceLocation:	Strings/CL9.csv
@@ -883,7 +883,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.Settings"
 msgid "설정"
-msgstr ""
+msgstr "設定"
 
 #. Key:	Pause.Title
 #. SourceLocation:	Strings/CL9.csv
@@ -891,7 +891,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Pause.Title"
 msgid "메뉴"
-msgstr ""
+msgstr "メニュー"
 
 #. Key:	Prompt.CartLoad
 #. SourceLocation:	Strings/CL9.csv
@@ -899,7 +899,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.CartLoad"
 msgid "[{0}] 싣기"
-msgstr ""
+msgstr "[{0}] 積む"
 
 #. Key:	Prompt.CartPull
 #. SourceLocation:	Strings/CL9.csv
@@ -907,7 +907,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.CartPull"
 msgid "[{0}] 수레 밀기"
-msgstr ""
+msgstr "[{0}] カートを押す"
 
 #. Key:	Prompt.CartRelease
 #. SourceLocation:	Strings/CL9.csv
@@ -915,7 +915,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.CartRelease"
 msgid "[{0}] 수레 놓기"
-msgstr ""
+msgstr "[{0}] カートを放す"
 
 #. Key:	Prompt.CounterDeliver
 #. SourceLocation:	Strings/CL9.csv
@@ -923,7 +923,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.CounterDeliver"
 msgid "[{0}] 납품"
-msgstr ""
+msgstr "[{0}] 納品"
 
 #. Key:	Prompt.CounterSell
 #. SourceLocation:	Strings/CL9.csv
@@ -931,7 +931,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.CounterSell"
 msgid "[{0}] 남은 것 팔기"
-msgstr ""
+msgstr "[{0}] 余りを売る"
 
 #. Key:	Prompt.JarReturn
 #. SourceLocation:	Strings/CL9.csv
@@ -939,7 +939,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.JarReturn"
 msgid "[{0}] 반납"
-msgstr ""
+msgstr "[{0}] 返却"
 
 #. Key:	Prompt.PickUp
 #. SourceLocation:	Strings/CL9.csv
@@ -947,7 +947,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.PickUp"
 msgid "[{0}] 줍기"
-msgstr ""
+msgstr "[{0}] 拾う"
 
 #. Key:	Prompt.Place
 #. SourceLocation:	Strings/CL9.csv
@@ -955,7 +955,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.Place"
 msgid "[{0}] 놓기"
-msgstr ""
+msgstr "[{0}] 置く"
 
 #. Key:	Prompt.TruckPanelShop
 #. SourceLocation:	Strings/CL9.csv
@@ -963,7 +963,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.TruckPanelShop"
 msgid "[{0}] 장비 구매"
-msgstr ""
+msgstr "[{0}] 装備を買う"
 
 #. Key:	Prompt.Wear
 #. SourceLocation:	Strings/CL9.csv
@@ -971,7 +971,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Prompt.Wear"
 msgid "[{0}] 착용"
-msgstr ""
+msgstr "[{0}] 装着"
 
 #. Key:	Rules.rules.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -979,7 +979,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Rules.rules.Name"
 msgid "규칙"
-msgstr ""
+msgstr "ルール"
 
 #. Key:	ScanLabel.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -987,7 +987,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,ScanLabel.Name"
 msgid "이름"
-msgstr ""
+msgstr "名前"
 
 #. Key:	ScanLabel.NoValue
 #. SourceLocation:	Strings/CL9.csv
@@ -995,7 +995,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,ScanLabel.NoValue"
 msgid "값 없음"
-msgstr ""
+msgstr "値なし"
 
 #. Key:	ScanLabel.Value
 #. SourceLocation:	Strings/CL9.csv
@@ -1003,7 +1003,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,ScanLabel.Value"
 msgid "{0} 이더"
-msgstr ""
+msgstr "{0} エーテル"
 
 #. Key:	SegKind.barn.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1011,7 +1011,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.barn.Name"
 msgid "축사 외벽"
-msgstr ""
+msgstr "鶏舎の外壁"
 
 #. Key:	SegKind.brooder.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1019,7 +1019,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.brooder.Name"
 msgid "보온 상자"
-msgstr ""
+msgstr "保温箱"
 
 #. Key:	SegKind.cage.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1027,7 +1027,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.cage.Name"
 msgid "케이지 열"
-msgstr ""
+msgstr "ケージ列"
 
 #. Key:	SegKind.ceiling.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1035,7 +1035,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.ceiling.Name"
 msgid "천장"
-msgstr ""
+msgstr "天井"
 
 #. Key:	SegKind.crate.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1043,7 +1043,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.crate.Name"
 msgid "상자"
-msgstr ""
+msgstr "箱"
 
 #. Key:	SegKind.flapIn.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1051,7 +1051,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.flapIn.Name"
 msgid "개구멍 덮개"
-msgstr ""
+msgstr "くぐり戸のカバー"
 
 #. Key:	SegKind.floor.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1059,7 +1059,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.floor.Name"
 msgid "바닥"
-msgstr ""
+msgstr "床"
 
 #. Key:	SegKind.hay.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1067,7 +1067,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.hay.Name"
 msgid "건초"
-msgstr ""
+msgstr "干し草"
 
 #. Key:	SegKind.plug.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1075,7 +1075,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.plug.Name"
 msgid "통로 마개"
-msgstr ""
+msgstr "通路の栓"
 
 #. Key:	SegKind.stair.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1083,7 +1083,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.stair.Name"
 msgid "계단 복도 벽"
-msgstr ""
+msgstr "階段廊下の壁"
 
 #. Key:	SegKind.trough.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1091,7 +1091,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.trough.Name"
 msgid "물통"
-msgstr ""
+msgstr "水槽"
 
 #. Key:	SegKind.truck.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1099,7 +1099,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.truck.Name"
 msgid "트럭"
-msgstr ""
+msgstr "トラック"
 
 #. Key:	SegKind.wall.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1107,7 +1107,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,SegKind.wall.Name"
 msgid "마당 경계"
-msgstr ""
+msgstr "庭の境界"
 
 #. Key:	Settings.CaptureHint
 #. SourceLocation:	Strings/CL9.csv
@@ -1115,7 +1115,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.CaptureHint"
 msgid "새 키를 누르세요 — Esc 또는 5초 뒤 취소"
-msgstr ""
+msgstr "新しいキーを押してください — Escか5秒でキャンセル"
 
 #. Key:	Settings.InvertY
 #. SourceLocation:	Strings/CL9.csv
@@ -1123,7 +1123,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.InvertY"
 msgid "Y축 반전"
-msgstr ""
+msgstr "Y軸反転"
 
 #. Key:	Settings.KeyRejected
 #. SourceLocation:	Strings/CL9.csv
@@ -1131,7 +1131,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.KeyRejected"
 msgid "그 키는 쓸 수 없습니다"
-msgstr ""
+msgstr "そのキーは使えません"
 
 #. Key:	Settings.KeySwapped
 #. SourceLocation:	Strings/CL9.csv
@@ -1139,7 +1139,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.KeySwapped"
 msgid "{0}: {1} · {2}: {3}"
-msgstr ""
+msgstr "{0}: {1} · {2}: {3}"
 
 #. Key:	Settings.Language
 #. SourceLocation:	Strings/CL9.csv
@@ -1147,7 +1147,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Language"
 msgid "언어"
-msgstr ""
+msgstr "言語"
 
 #. Key:	Settings.MouseSensitivity
 #. SourceLocation:	Strings/CL9.csv
@@ -1155,7 +1155,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.MouseSensitivity"
 msgid "감도"
-msgstr ""
+msgstr "感度"
 
 #. Key:	Settings.Percent
 #. SourceLocation:	Strings/CL9.csv
@@ -1163,7 +1163,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Percent"
 msgid "{0}%"
-msgstr ""
+msgstr "{0}%"
 
 #. Key:	Settings.PressKey
 #. SourceLocation:	Strings/CL9.csv
@@ -1171,7 +1171,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.PressKey"
 msgid "키를 누르세요…"
-msgstr ""
+msgstr "キーを押してください…"
 
 #. Key:	Settings.ResetKeys
 #. SourceLocation:	Strings/CL9.csv
@@ -1179,7 +1179,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.ResetKeys"
 msgid "키 초기화"
-msgstr ""
+msgstr "キーを初期化"
 
 #. Key:	Settings.Section.Audio
 #. SourceLocation:	Strings/CL9.csv
@@ -1187,7 +1187,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Section.Audio"
 msgid "오디오"
-msgstr ""
+msgstr "オーディオ"
 
 #. Key:	Settings.Section.Keys
 #. SourceLocation:	Strings/CL9.csv
@@ -1195,7 +1195,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Section.Keys"
 msgid "키"
-msgstr ""
+msgstr "キー"
 
 #. Key:	Settings.Section.Language
 #. SourceLocation:	Strings/CL9.csv
@@ -1203,7 +1203,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Section.Language"
 msgid "언어"
-msgstr ""
+msgstr "言語"
 
 #. Key:	Settings.Section.Mouse
 #. SourceLocation:	Strings/CL9.csv
@@ -1211,7 +1211,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Section.Mouse"
 msgid "마우스"
-msgstr ""
+msgstr "マウス"
 
 #. Key:	Settings.Title
 #. SourceLocation:	Strings/CL9.csv
@@ -1219,7 +1219,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Title"
 msgid "설정"
-msgstr ""
+msgstr "設定"
 
 #. Key:	Settings.Unbound
 #. SourceLocation:	Strings/CL9.csv
@@ -1227,7 +1227,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Unbound"
 msgid "없음"
-msgstr ""
+msgstr "なし"
 
 #. Key:	Settings.Volume.Ambience
 #. SourceLocation:	Strings/CL9.csv
@@ -1235,7 +1235,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.Ambience"
 msgid "배경음"
-msgstr ""
+msgstr "環境音"
 
 #. Key:	Settings.Volume.Effects
 #. SourceLocation:	Strings/CL9.csv
@@ -1243,7 +1243,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.Effects"
 msgid "효과음"
-msgstr ""
+msgstr "効果音"
 
 #. Key:	Settings.Volume.Master
 #. SourceLocation:	Strings/CL9.csv
@@ -1251,7 +1251,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.Master"
 msgid "전체"
-msgstr ""
+msgstr "全体"
 
 #. Key:	Settings.Volume.Music
 #. SourceLocation:	Strings/CL9.csv
@@ -1259,7 +1259,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.Music"
 msgid "음악"
-msgstr ""
+msgstr "音楽"
 
 #. Key:	Settings.Volume.UI
 #. SourceLocation:	Strings/CL9.csv
@@ -1267,7 +1267,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.UI"
 msgid "UI"
-msgstr ""
+msgstr "UI"
 
 #. Key:	Settings.Volume.VO
 #. SourceLocation:	Strings/CL9.csv
@@ -1275,7 +1275,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Settings.Volume.VO"
 msgid "음성"
-msgstr ""
+msgstr "ボイス"
 
 #. Key:	Shop.Close
 #. SourceLocation:	Strings/CL9.csv
@@ -1283,7 +1283,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Close"
 msgid "닫기"
-msgstr ""
+msgstr "閉じる"
 
 #. Key:	Shop.DetailSep
 #. SourceLocation:	Strings/CL9.csv
@@ -1291,7 +1291,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.DetailSep"
 msgid " · "
-msgstr ""
+msgstr " · "
 
 #. Key:	Shop.Locked
 #. SourceLocation:	Strings/CL9.csv
@@ -1299,7 +1299,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Locked"
 msgid "{0}일차부터"
-msgstr ""
+msgstr "{0}日目から"
 
 #. Key:	Shop.MaxOwned
 #. SourceLocation:	Strings/CL9.csv
@@ -1307,7 +1307,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.MaxOwned"
 msgid "이미 {0}개"
-msgstr ""
+msgstr "すでに{0}個"
 
 #. Key:	Shop.Money
 #. SourceLocation:	Strings/CL9.csv
@@ -1315,7 +1315,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Money"
 msgid "보유 {0} 이더"
-msgstr ""
+msgstr "所持 {0} エーテル"
 
 #. Key:	Shop.NoMoney
 #. SourceLocation:	Strings/CL9.csv
@@ -1323,7 +1323,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.NoMoney"
 msgid "잔액 부족"
-msgstr ""
+msgstr "残高不足"
 
 #. Key:	Shop.NoRow
 #. SourceLocation:	Strings/CL9.csv
@@ -1331,7 +1331,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.NoRow"
 msgid "살 수 없음"
-msgstr ""
+msgstr "購入不可"
 
 #. Key:	Shop.NotInLobby
 #. SourceLocation:	Strings/CL9.csv
@@ -1339,7 +1339,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.NotInLobby"
 msgid "정차 중에만"
-msgstr ""
+msgstr "停車中のみ"
 
 #. Key:	Shop.Owned
 #. SourceLocation:	Strings/CL9.csv
@@ -1347,7 +1347,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Owned"
 msgid "{0}/{1} 보유"
-msgstr ""
+msgstr "{0}/{1} 所持"
 
 #. Key:	Shop.Price
 #. SourceLocation:	Strings/CL9.csv
@@ -1355,7 +1355,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Price"
 msgid "{0} 이더"
-msgstr ""
+msgstr "{0} エーテル"
 
 #. Key:	Shop.Rejected
 #. SourceLocation:	Strings/CL9.csv
@@ -1363,7 +1363,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Rejected"
 msgid "{0}: {1}"
-msgstr ""
+msgstr "{0}: {1}"
 
 #. Key:	Shop.Title
 #. SourceLocation:	Strings/CL9.csv
@@ -1371,7 +1371,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Shop.Title"
 msgid "트럭 패널"
-msgstr ""
+msgstr "トラックパネル"
 
 #. Key:	Site.flat.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1379,7 +1379,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Site.flat.Name"
 msgid "평지 (테스트)"
-msgstr ""
+msgstr "平地 (テスト)"
 
 #. Key:	Site.henhouse.Name
 #. SourceLocation:	Strings/CL9.csv
@@ -1387,7 +1387,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Site.henhouse.Name"
 msgid "양계장"
-msgstr ""
+msgstr "養鶏場"
 
 #. Key:	Spectate.Next
 #. SourceLocation:	Strings/CL9.csv
@@ -1395,7 +1395,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Spectate.Next"
 msgid "다음 동료 ({0})"
-msgstr ""
+msgstr "次の仲間 ({0})"
 
 #. Key:	Spectate.ReturnHint
 #. SourceLocation:	Strings/CL9.csv
@@ -1403,7 +1403,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Spectate.ReturnHint"
 msgid "다음 정차 때 트럭 패드에서 돌아옵니다"
-msgstr ""
+msgstr "次の停車時にトラックパッドで復帰します"
 
 #. Key:	Spectate.Searching
 #. SourceLocation:	Strings/CL9.csv
@@ -1411,7 +1411,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Spectate.Searching"
 msgid "관전 중 · 동료를 찾는 중…"
-msgstr ""
+msgstr "観戦中 · 仲間を探しています…"
 
 #. Key:	Spectate.Target
 #. SourceLocation:	Strings/CL9.csv
@@ -1419,7 +1419,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Spectate.Target"
 msgid "관전 중 · {0}"
-msgstr ""
+msgstr "観戦中 · {0}"
 
 #. Key:	Stat.AmountPlus
 #. SourceLocation:	Strings/CL9.csv
@@ -1427,7 +1427,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.AmountPlus"
 msgid "+{0}"
-msgstr ""
+msgstr "+{0}"
 
 #. Key:	Stat.CarryMult
 #. SourceLocation:	Strings/CL9.csv
@@ -1435,7 +1435,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.CarryMult"
 msgid "짐 무게"
-msgstr ""
+msgstr "荷物の重さ"
 
 #. Key:	Stat.CartMult
 #. SourceLocation:	Strings/CL9.csv
@@ -1443,7 +1443,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.CartMult"
 msgid "수레 속도"
-msgstr ""
+msgstr "カート速度"
 
 #. Key:	Stat.JumpGravity
 #. SourceLocation:	Strings/CL9.csv
@@ -1451,7 +1451,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.JumpGravity"
 msgid "점프 중력"
-msgstr ""
+msgstr "ジャンプ重力"
 
 #. Key:	Stat.JumpVelocity
 #. SourceLocation:	Strings/CL9.csv
@@ -1459,7 +1459,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.JumpVelocity"
 msgid "점프"
-msgstr ""
+msgstr "ジャンプ"
 
 #. Key:	Stat.RunSpeed
 #. SourceLocation:	Strings/CL9.csv
@@ -1467,7 +1467,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.RunSpeed"
 msgid "달리기"
-msgstr ""
+msgstr "走行"
 
 #. Key:	Stat.StaminaDrain
 #. SourceLocation:	Strings/CL9.csv
@@ -1475,7 +1475,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.StaminaDrain"
 msgid "스태미나 지속"
-msgstr ""
+msgstr "スタミナ持続"
 
 #. Key:	Stat.StaminaRegen
 #. SourceLocation:	Strings/CL9.csv
@@ -1483,7 +1483,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.StaminaRegen"
 msgid "스태미나 회복"
-msgstr ""
+msgstr "スタミナ回復"
 
 #. Key:	Stat.StaminaResume
 #. SourceLocation:	Strings/CL9.csv
@@ -1491,7 +1491,7 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.StaminaResume"
 msgid "탈진 회복 문턱"
-msgstr ""
+msgstr "疲労回復のしきい値"
 
 #. Key:	Stat.WalkSpeed
 #. SourceLocation:	Strings/CL9.csv
@@ -1499,5 +1499,5 @@ msgstr ""
 #: Strings/CL9.csv
 msgctxt "CL9,Stat.WalkSpeed"
 msgid "걷기"
-msgstr ""
+msgstr "歩行"
 
