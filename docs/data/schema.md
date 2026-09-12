@@ -1,245 +1,71 @@
-# 데이터 스키마 (DataAsset 구조)
+# 데이터 스키마 색인 — 키워드로 정본 찾기
 
-> **표별 컬럼 정의의 정본은 plan이다** — 이 문서는 컬럼 목록을 복사하지 않는다
-> (두 벌 관리가 2026-08-31 충돌 보고의 원인이었다). 여기에는 베이스 클래스 · 공용 구조체 ·
-> 에셋 생성 규칙만 둔다.
+> 이 문서는 **색인**이다. 코드·로그·에디터에서 본 이름(표 이름, 클래스, 구조체, 컬럼)을 여기서 찾아
+> 정본 문서와 헤더로 건너간다. 컬럼 정의·값·이유는 여기 적지 않는다 — 두 벌 관리가 2026-08-31 충돌
+> 보고의 원인이었다(decisions.md). 정본이 바뀌면 여기는 **이름과 링크만** 맞춘다.
 
-## 표별 정의 (정본 포인터)
+## 표 (Content/Data)
 
-| 클래스 | 정본 문서 | 파일 위치 |
+| 에셋 | 행 클래스 | 기획 정본 | 구현 정본 | 헤더 |
+|---|---|---|---|---|
+| `ItemTable` | `UCL9ItemDef` | [plan/data/item/common.md](../plan/data/item/common.md) (개별: [egg](../plan/data/item/egg.md) · [meat](../plan/data/item/meat.md) · [cart](../plan/data/item/cart.md) · [flashlight](../plan/data/item/flashlight.md) · [headlamp](../plan/data/item/headlamp.md)) | [systems/item.md](../systems/item.md) · [inventory.md](../systems/inventory.md) · [cooking.md](../systems/cooking.md) · [light.md](../systems/light.md) | `Source/CL9/Data/CL9ItemDef.h` |
+| `MonsterTable` | `UCL9MonsterDef` | [plan/data/monster/common.md](../plan/data/monster/common.md) (개별: chicken · goose · pig · raccoon · sheep) | [systems/monster.md](../systems/monster.md) · [drop.md](../systems/drop.md) · [animation.md](../systems/animation.md) | `CL9MonsterDef.h` |
+| `CharacterTable` | `UCL9CharacterDef` | [plan/data/character.md](../plan/data/character.md) | [systems/character.md](../systems/character.md) | `CL9CharacterDef.h` |
+| `MapTable` (←DA_SiteTable) | `UCL9SiteDef` | [plan/data/site.md](../plan/data/site.md) | [systems/map.md](../systems/map.md) · [light.md](../systems/light.md)(조명 3상) | `CL9SiteDef.h` |
+| `ModuleTable` | `UCL9ModuleDef` | [plan/data/module.md](../plan/data/module.md) | [systems/map.md](../systems/map.md) · [asset-swap.md](../systems/asset-swap.md)(소품 세트) | `CL9ModuleDef.h` |
+| `PieceTable` | `UCL9PieceDef` | [plan/data/segkind.md](../plan/data/segkind.md) | [systems/asset-swap.md](../systems/asset-swap.md) | `CL9PieceDef.h` |
+| `SegKindTable` | `UCL9SegKindDef` | [plan/data/segkind.md](../plan/data/segkind.md) | [systems/asset-swap.md](../systems/asset-swap.md) · [map.md](../systems/map.md) | `CL9SegKindDef.h` |
+| `OrderTable` | `UCL9OrderDef` | [plan/data/order.md](../plan/data/order.md) | [systems/order.md](../systems/order.md) | `CL9OrderDef.h` |
+| `EquipmentTable` | `UCL9EquipmentDef` | [plan/data/equipment.md](../plan/data/equipment.md) | [systems/shop.md](../systems/shop.md) · [economy.md](../systems/economy.md) | `CL9EquipmentDef.h` |
+| `BuffTable` | `UCL9BuffDef` | [plan/data/buff.md](../plan/data/buff.md) | [systems/item.md](../systems/item.md)(먹기) | `CL9BuffDef.h` |
+| `CL9Rules` (단일) | `UCL9RulesDef` | [plan/data/rules.md](../plan/data/rules.md) | [systems/balance.md](../systems/balance.md) | `CL9RulesDef.h` |
+| `CL9Progression` (단일) | `UCL9ProgressionDef` | [plan/data/progression.md](../plan/data/progression.md) | [systems/balance.md](../systems/balance.md) | `CL9ProgressionDef.h` |
+| `CL9DefList` | `UCL9DefList` | [plan/data/README.md](../plan/data/README.md) | 아래 "조회·등록" | `CL9DefRegistry.h` |
+| `SettingsTable` | `UCL9SettingsTable` | [plan/settings.md](../plan/settings.md) | [systems/settings.md](../systems/settings.md) | `Source/CL9/UI/CL9SettingsTable.h` |
+| `ShakeTable` | `UCL9ShakeTable` | — | [systems/character.md](../systems/character.md)(스태미나 셰이크) · [warning.md](../systems/warning.md) | `CL9ShakeTable.h` |
+| `UI/UITable` | `UCL9UITable` | — | [systems/ui_system.md](../systems/ui_system.md) | `Source/CL9/UI/` |
+| `SequenceTable` (미구현) | `UCL9SequenceDef` | [plan/data/sequence.md](../plan/data/sequence.md) | [systems/sequence.md](../systems/sequence.md) | — |
+
+`CL9Rules`·`CL9Progression`·`CL9DefList`만 단일 에셋이고 나머지 표는 `UCL9DefTable` 안에 행이 인라인으로 산다
+(2026-09-02). 헤더는 적지 않은 것 전부 `Source/CL9/Data/`.
+
+## 공용 타입 (모든 표가 나눠 쓰는 것)
+
+| 키워드 | 무엇 | 정본 | 헤더 |
+|---|---|---|---|
+| `UCL9DefBase` · `Alias` · `SubAlias` · `DisplayName` · `Description` · `Icon` · `Mesh` · `ActorClass` · `Gimmicks` | 모든 행의 공통 컬럼 | [plan/data/README.md](../plan/data/README.md) 공통 뼈대 · DisplayName 규칙은 [systems/localization.md](../systems/localization.md) | `CL9DefBase.h` |
+| `UCL9Gimmick` | 행마다 붙는 특수 동작(Instanced) | [systems/actor-base.md](../systems/actor-base.md) | `CL9DefBase.h` · `CL9Gimmicks.h` |
+| `FCL9ItemRef` · `FCL9ItemCount` · `FCL9CarriedItem` · `FCL9CounterItem` | 아이템 참조(Alias+SubAlias)·수량·소지·재고 | [plan/data/item/common.md](../plan/data/item/common.md) · [systems/inventory.md](../systems/inventory.md) | `CL9Types.h` |
+| `FDropItem` | 몬스터 드롭 | [systems/drop.md](../systems/drop.md) | `CL9Types.h` |
+| `FCL9StatEffect` · `FCL9ActiveEffect` · `ECL9Stat` | 먹기 효과·걸린 버프·스탯 종류 | [plan/data/item/common.md](../plan/data/item/common.md) · [plan/data/buff.md](../plan/data/buff.md) | `CL9Types.h` |
+| `FCL9SpawnEntry` · `FCL9DayOverride` | 스폰 기준값·일자별 덮어쓰기 | [plan/data/site.md](../plan/data/site.md) · [plan/data/progression.md](../plan/data/progression.md) | `CL9Types.h` |
+| `FCL9AcceptedOrder` · `FCL9SettlementResult` | 받은 주문·정산 결과 | [systems/order.md](../systems/order.md) · [economy.md](../systems/economy.md) | `CL9Types.h` |
+| `ECL9CarrySlot` · `ECL9ItemType` · `ECL9CookPhase` | 운반 슬롯·아이템 종류·조리 단계 | [plan/data/item/common.md](../plan/data/item/common.md) · [systems/cooking.md](../systems/cooking.md) | `CL9Types.h` |
+| `ECL9HoldPose` · `GripOffset` · `GripRotation` | 손에 들 때 자세·부착 오프셋 | [systems/inventory.md](../systems/inventory.md) | `CL9ItemDef.h` |
+| `ECL9UseAction` · `ECL9HitStun` | 좌클 사용·타격 | [systems/item.md](../systems/item.md) · [goal/use-action-left-click.md](../goal/use-action-left-click.md) | `CL9ItemDef.h` |
+| `ECL9NightPhase` · `ECL9Generator` · `ECL9ActorKind` · `ECL9BuyResult` | 밤 단계·맵 생성기·액터 종류·구매 결과 | [systems/raiding.md](../systems/raiding.md) · [map.md](../systems/map.md) · [actor-base.md](../systems/actor-base.md) · [shop.md](../systems/shop.md) | `CL9Types.h` |
+| `FCL9LightingPhase` | 사이트 조명 3상(로비·밤·정전) | [plan/data/site.md](../plan/data/site.md) 조명 · [systems/light.md](../systems/light.md) | `CL9SiteDef.h` |
+| `FCL9PropSet` · `FCL9PropPlacement` · `ECL9PropSide` · `ECL9PropSideRule` | 모듈 소품 세트 | [plan/data/module.md](../plan/data/module.md) · [systems/asset-swap.md](../systems/asset-swap.md) | `CL9ModuleDef.h` |
+| `ECL9SegPlacement` (Stretch·Tile·Grid) | 조각 배치 모드 | [systems/asset-swap.md](../systems/asset-swap.md) | `CL9SegKindDef.h` |
+| `FSoundEffect` | 사운드 정의 | [systems/sound.md](../systems/sound.md) | `CL9Types.h` |
+
+## 조회·등록·검사
+
+| 키워드 | 무엇 | 정본 |
 |---|---|---|
-| `UCL9ItemDef` | [../plan/data/item/common.md](../plan/data/item/common.md) (개별: egg·meat·cart·flashlight) | `Content/Data/ItemTable` (행 인라인) |
-| `UCL9MonsterDef` | [../plan/data/monster/common.md](../plan/data/monster/common.md) (개별: chicken·goose·raccoon) | `Content/Data/MonsterTable` (행 인라인) |
-| `UCL9CharacterDef` | [../plan/data/character.md](../plan/data/character.md) | `Content/Data/CharacterTable` (행 인라인) |
-| `UCL9SiteDef` | [../plan/data/site.md](../plan/data/site.md) | `Content/Data/MapTable` (행 인라인) |
-| `UCL9OrderDef` | [../plan/data/order.md](../plan/data/order.md) | `Content/Data/OrderTable` (행 인라인) |
-| `UCL9EquipmentDef` | [../plan/data/equipment.md](../plan/data/equipment.md) | `Content/Data/EquipmentTable` (행 인라인) |
-| `UCL9SequenceDef` | [../plan/data/sequence.md](../plan/data/sequence.md) | `Content/Data/SequenceTable` (미구현) |
-| `CL9Rules` (단일) | [../plan/data/rules.md](../plan/data/rules.md) | `Content/Data/CL9Rules` |
-| `CL9Progression` (단일) | [../plan/data/progression.md](../plan/data/progression.md) | `Content/Data/CL9Progression` |
+| `UCL9DefRegistry` · `FindItem` · `FindMonster` · `FindSite` · `FindOrder` · `FindEquipment` · `FindCharacter` · `FindBuff` · `FindPiece` · `FindSegKind` · `FindModule` · `GatherModules` | Alias(+SubAlias)로 행 찾기 — 경로가 아니라 이름으로 | [plan/data/README.md](../plan/data/README.md) · 헤더 `CL9DefRegistry.h` |
+| `UCL9DefList` · `RefreshFromFolder` | 표 등록 목록 — 코드에 에셋 경로를 쓰지 않는다. MCP 저장은 재스캔이 안 돼 `defs`를 다시 쓴다 | [plan/data/README.md](../plan/data/README.md) · `CL9DefRegistry.h` 주석 |
+| `Validate` · `Usable` / `Broken`(코드에선 주석의 EDefStatus 개념) · `CheckSiteReferences` | 로드 검사 — 깨진 행은 `Find*`에서 nullptr, 어느 행·컬럼인지 로그 | [systems/actor-base.md](../systems/actor-base.md) · [systems/cheats.md](../systems/cheats.md)(`cl9.list`) |
+| 부등식 A1 · A2 · A4 | 캐릭터·몬스터 속도/스태미나 관계 검사 | [plan/economy.md](../plan/economy.md) "지켜야 하는 부등식" |
+| `CL9TuningHash` (설계만, 미구현) | 멀티 접속 시 호스트·클라 표 값 대조 | [systems/session.md](../systems/session.md) |
 
-이전 판에 있던 별도 스키마(계란말이 레시피 표 · 스테이지 밸런스 표 · HP 100/속도 600 캐릭터
-표 · 늑대 몬스터 표)는 plan과 충돌해 폐기했다 (decisions.md 2026-08-31). 요리는 레시피가
-아니라 아이템의 `CookResult` 체인이고, 밸런스는 스테이지 표가 아니라 곡선 × 기준값이다.
+## 표를 만들거나 고칠 때의 규칙 (요지 — 이유는 링크)
 
----
-
-## 0. 베이스 클래스 (모든 데이터의 부모)
-
-**클래스**: `UCL9DefBase : UPrimaryDataAsset`
-(정본: [../plan/data/README.md](../plan/data/README.md) 공통 뼈대 — 2026-08-31 A3 결정)
-
-모든 게임 데이터는 이 클래스를 상속한다. **조회 키는 `Alias` + `SubAlias`다** — 파일 이름이 아니다.
-
-⚠️ **Mesh는 아이템용 (StaticMesh)** — 캐릭터/몬스터는 각 클래스에서 SkeletalMesh를 따로 정의
-
-| 컬럼 | 타입 | 필수 | 설명 | 예시 |
-|------|------|------|------|------|
-| `Alias` | FName | ✅ | 식별자 (조회 키) | `egg`, `chicken`, `henhouse` |
-| `SubAlias` | FName | | 하위 분류 (선택) | `gold`, `cooked`, `burnt` |
-| `DisplayName` | FText | ✅ | 화면 표시명 — **String Table `CL9` 참조만** (직접 친 텍스트는 Broken, [../systems/localization.md](../systems/localization.md)) | `Item.egg.Name`, `Monster.chicken.Name` |
-| `Description` | FText | | 상세 설명 — DisplayName과 같은 규칙 | `Item.egg.Desc` |
-| `Icon` | TSoftObjectPtr<UTexture2D> | ✅ | UI 아이콘 | `/Game/UI/Icons/Item_Egg` |
-| `Mesh` | TSoftObjectPtr<UStaticMesh> | | 월드 메시 **(아이템만)** | `/Game/Meshes/Items/Egg` |
-| `ActorClass` | TSoftClassPtr<AActor> | | 전용 BP. **비우면 종류별 공용 BP** | (대부분 비움) |
-| `Gimmicks` | TArray<TObjectPtr<UCL9Gimmick>> (Instanced) | | 이 종류에만 있는 특수 동작 | 깨짐, 발광 |
-
-```cpp
-// 베이스 클래스 (모든 데이터의 부모)
-// UPrimaryDataAsset이어야 Instanced 기믹이 동작한다 — DataTable 행(구조체)에서는 불가
-UCLASS()
-class UCL9DefBase : public UPrimaryDataAsset {
-  GENERATED_BODY()
-public:
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  FName Alias;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  FName SubAlias;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  FText DisplayName;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  FText Description;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  TSoftObjectPtr<UTexture2D> Icon;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  TSoftObjectPtr<UStaticMesh> Mesh;
-  
-  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
-  TSoftClassPtr<AActor> ActorClass;  // 비우면 종류별 공용 BP
-  
-  UPROPERTY(EditAnywhere, Instanced, Category="Data")
-  TArray<TObjectPtr<UCL9Gimmick>> Gimmicks;
-};
-```
-
-**SubAlias 사용 예** — 상태 변형은 별개 Alias가 아니라 SubAlias로 표현한다:
-
-```
-계란            Alias: egg                       (ItemTable의 행)
-익은 계란       Alias: egg,  SubAlias: cooked    (같은 표의 다른 행)
-탄 계란         Alias: egg,  SubAlias: burnt     (〃)
-```
-
----
-
-## 공용 구조체
-
-### FCL9ItemRef — 아이템 참조 (Alias + SubAlias 쌍)
-
-수량 없이 "어떤 아이템의 어떤 상태"만 가리킬 때 — 요리 전이 `CookResult`/`BurnResult`가
-쓴다 (plan/data/item/common.md · systems/cooking.md의 `.ItemAlias`/`.ItemSubAlias`).
-
-```cpp
-USTRUCT()
-struct FCL9ItemRef {
-  UPROPERTY(EditAnywhere)
-  FName ItemAlias;        // item/ 표에 있는 것만 참조 (로드 검사가 확인)
-
-  UPROPERTY(EditAnywhere)
-  FName ItemSubAlias;     // 상태 지정 (예: cooked) — None = 기본 상태
-};
-```
-
-### FCL9ItemCount — 아이템 참조 + 수량 (상속: FCL9ItemRef)
-
-주문 재료(`Ingredients`)와 드롭의 공통 베이스.
-
-```cpp
-USTRUCT()
-struct FCL9ItemCount : public FCL9ItemRef {
-  UPROPERTY(EditAnywhere)
-  int32 Count = 1;
-};
-```
-
-### FDropItem — 몬스터 드롭 (상속: FCL9ItemCount)
-
-```cpp
-USTRUCT()
-struct FDropItem : public FCL9ItemCount {
-  // 수량은 MinQuantity~MaxQuantity 굴림만 쓴다 — 베이스의 Count는 드롭에서 무시된다
-  UPROPERTY(EditAnywhere)
-  float DropChance = 1.0f;     // 0.0 ~ 1.0
-
-  UPROPERTY(EditAnywhere)
-  int32 MinQuantity = 1;
-
-  UPROPERTY(EditAnywhere)
-  int32 MaxQuantity = 1;
-};
-```
-
-### FCL9SpawnEntry — 스폰 기준값 (site.md)
-
-```cpp
-USTRUCT()
-struct FCL9SpawnEntry {
-  UPROPERTY(EditAnywhere)
-  FName Alias;             // MonsterAlias 또는 ItemAlias
-
-  UPROPERTY(EditAnywhere)
-  int32 MinCount = 0;
-
-  UPROPERTY(EditAnywhere)
-  int32 MaxCount = 0;      // 여기에 일자 곡선 배율이 곱해진다 (progression.md)
-};
-```
-
-### FCL9StatEffect — 먹기 효과 (plan/data/item/common.md)
-
-```cpp
-USTRUCT()
-struct FCL9StatEffect {
-  UPROPERTY(EditAnywhere)
-  ECL9Stat Stat;           // 9종 — character.md의 스탯 enum (캡슐·눈높이·HP 없음)
-
-  UPROPERTY(EditAnywhere)
-  float Amount = 0.f;
-
-  UPROPERTY(EditAnywhere)
-  float DurationSec = 0.f; // 0 = 즉시 1회
-};
-```
-
-### FSoundEffect — 사운드 정의
-
-```cpp
-USTRUCT()
-struct FSoundEffect {
-  UPROPERTY(EditAnywhere)
-  TSoftObjectPtr<USoundBase> Sound;  // 소프트 참조
-
-  UPROPERTY(EditAnywhere)
-  float Volume = 1.0f;
-
-  UPROPERTY(EditAnywhere)
-  float Pitch = 1.0f;
-};
-```
-
----
-
-## 조회 — UCL9DefRegistry
-
-```cpp
-UCL9DefRegistry              // 게임 인스턴스가 들고 있는다
-  FindItem(Alias, SubAlias)      → UCL9ItemDef*
-  FindMonster(Alias, SubAlias)   → UCL9MonsterDef*
-  FindSite / FindOrder / FindEquipment / FindCharacter / FindSequence
-```
-
-에셋 목록은 전용 목록 에셋에 등록한다. **코드에 에셋 경로를 쓰지 않는다** — 등록된 목록을
-순회한다 ([../plan/data/README.md](../plan/data/README.md)).
-
----
-
-## 데이터 에셋 생성 규칙
-
-1. **파일명**: 종류마다 표 하나 — `ItemTable.uasset`·`MonsterTable.uasset`·`MapTable.uasset`처럼 **접두사 없이**
-   (2026-09-12 사용자 — "DA 붙는 거 필요없음"). 행은 표 안에 인라인으로 산다(2026-09-02 결정)
-2. **Alias는 경로가 아니라 이름이다** — 파일을 옮기거나 이름을 바꿔도 데이터가 안 깨진다
-   ```cpp
-   FindItem("ItemTable:CL9ItemDef_0")   // ❌ 경로명
-   FindItem("egg")           // ✅ Alias
-   ```
-3. **소프트 참조 사용** (Icon, Mesh, Sound) — 하드 참조는 표를 여는 순간 모든 에셋을 올린다
-4. **화폐 값은 int** (이더 — [../plan/economy.md](../plan/economy.md)). float 가격 컬럼 금지
-5. **곡선 값은 `UCurveFloat`** — 일자별 배율은 표가 아니라 곡선 에셋으로
-
-## 로드 검사
-
-에셋 로드 시 관계 검사가 돈다 — 깨지면 어느 줄인지 로그에 찍는다:
-
-- 참조 무결성: `DropItems`·`Ingredients`·`CookResult`가 가리키는 Alias(+SubAlias)가 실제로 존재하는가
-- 부등식 목록: [../plan/economy.md](../plan/economy.md) "지켜야 하는 부등식"
-  (A1·A2·A4는 캐릭터 행마다)
-- 멀티 접속 시 `CL9TuningHash`로 호스트·클라 값 대조
-
-### 사용 가능/불가 구분 — EDefStatus
-
-검사를 통과 못 한 행은 조용히 섞이지 않는다. 레지스트리가 행마다 상태를 나눠 들고 있는다:
-
-| 상태 | 조건 | 동작 |
-|---|---|---|
-| **Usable** | 필수 필드가 차 있고 참조가 전부 해석됨 | `Find*`가 정상 반환 — 게임에서 쓴다 |
-| **Broken** | 필수 필드 누락·깨진 참조(`CookResult`가 없는 Alias/SubAlias) | 로드 시 **어느 행·어느 컬럼**인지 로그. `Find*`는 nullptr — 스폰·주문 추첨·상점 목록 어디에도 안 섞인다 |
-
-**필수 필드 집합은 Def 클래스별로 정의한다** (가상 함수) — 베이스의 ✅가 전 클래스 공통이
-아니다. 예: `UCL9SequenceDef`는 Icon·Mesh가 없어도 Usable, `UCL9ItemDef`는 Icon 필수.
-
-- `cl9.list`가 상태를 같이 표시한다 — `3: meat ✗ (Icon 미지정)`. 에디터에서 뭘 고쳐야
-  하는지 콘솔에서 바로 보인다 ([../systems/cheats.md](../systems/cheats.md)).
-- 소프트 참조는 로드 시 **경로가 해석되는지만** 검사하고, 실제 에셋 로드는 사용 시점이다.
-  런타임 로드 실패(에셋 삭제 등)는 개발 빌드에서 화면 로그 + 대체 표시(엔진 기본 메시)로
-  드러낸다 — **조용한 투명 액터를 만들지 않는다.** 시퀀스의 같은 규칙은
-  [../systems/sequence.md](../systems/sequence.md) 경계 상황 절.
-
-## 참고
-
-- 왜 DataTable이 아니라 DataAsset인가: [../plan/data/README.md](../plan/data/README.md)
-- 값이 서로 엮이는 방식: [../plan/economy.md](../plan/economy.md)
+- 파일명은 **접두사 없이** `<이름>Table` (`ItemTable`, `MapTable`) — 2026-09-12, [decisions.md](../decisions.md)
+- 새 표는 `Content/Data`에 두고 `CL9DefList`가 그것을 등록한다 — [plan/data/README.md](../plan/data/README.md)
+- 행 조회는 `Alias`(+`SubAlias`)로, 경로·파일명으로 찾지 않는다 — [plan/data/README.md](../plan/data/README.md)
+- 에셋 참조(Icon·Mesh·Sound)는 소프트 참조 — [systems/actor-base.md](../systems/actor-base.md)
+- 화면 문자열(`DisplayName`)은 String Table 참조만 — [systems/localization.md](../systems/localization.md)
+- 화폐는 int(이더), 일자별 배율은 표가 아니라 곡선(`UCurveFloat`) — [plan/economy.md](../plan/economy.md) · [plan/data/progression.md](../plan/data/progression.md)
+- 치수는 표에 적지 않고 메시 바운드에서 읽는다(맵 조각) — [systems/asset-swap.md](../systems/asset-swap.md)
+- 왜 DataTable이 아니라 DataAsset인가 — [plan/data/README.md](../plan/data/README.md)
