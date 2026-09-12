@@ -62,6 +62,80 @@
 **Priority:** P4
 **Depends on:** release
 
+## Workflow (세션 조율 — docs/goal/session-orchestration.md)
+
+### Agent Teams migration for editor-in-the-loop roles
+
+**What:** If the Agent Teams spike (session-orchestration I) runs on this Windows box, dispatch the roles the user steers by eye (WBP wiring, level placement, ABP graphs) as teammates instead of in-process subagents.
+
+**Why:** Teammates are live, addressable sessions with a shared task list — the closest built-in shape to the terminals the user runs by hand today; subagents hide 120-turn C++ work until a report.
+
+**Context:** Role files in `.claude/agents/cl9-*.md` are reusable as team members (docs: agent-teams). Enable with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; on Windows without tmux teammates are in-process, cannot run background subagents, cannot `/resume`. The lock (`.claude/hooks/cl9_lock.py`) and the hook apply unchanged. Start in `.claude/skills/cl9/SKILL.md` Dispatch phase: replace `Agent(subagent_type: cl9-<role>)` with a team spawn for `default_mode: C` roles.
+
+**Effort:** M
+**Priority:** P2
+**Depends on:** session-orchestration rollout 4 (dispatcher) + spike I recorded positive
+
+### Scripted PIE smoke per role
+
+**What:** Drive each role's PIE section (`docs/testing/pie-scenarios.md` A–L) from the `/cl9` integration step: `cl9.*` cheats via MCP + `HighResShot 1` screenshots into `.claude/runs/<slug>/pie/`, pass/fail per section recorded in `run.json`.
+
+**Why:** Today PIE verification is done by hand through MCP; a scripted pass makes the "one build, one PIE" step repeatable and gives the report evidence instead of prose.
+
+**Context:** Cheats listed in `docs/systems/cheats.md`; `Tools/Unreal/qa_*_pie.py` already script single-asset PIE checks through `run_python.py`; `SlateInspector Screenshot` is empty in PIE — use `HighResShot 1` (Saved/Screenshots/WindowsEditor). Deferred from the CEO review (3–5 files, touches MCP flows; PIE by hand works).
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** session-orchestration rollout 4
+
+### Session naming probe (`cl9-ui-1`)
+
+**What:** Find out whether a Claude Code session can set the name that `ListAgents` shows for it; if yes, `/cl9 role <name>` names the session `cl9-<role>-N`.
+
+**Why:** Session aliases were confused at least twice (cl9-5b vs cl9-2d on 09-11); role-named sessions make `ListAgents`, lock owners and SendMessage targets self-explanatory.
+
+**Context:** Names like `cl9-2d` are auto-assigned today (session `agent-name` records). Check the docs/`/rename`-style commands; if only the lead can name subagents, fall back to writing the role into the lock `owner` label and the `ListAgents` announcement message.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+
+### `Workflow` script variant of `/cl9`
+
+**What:** A `.claude/workflows/cl9-split.js` that runs triage → parallel role agents → integration as deterministic phases with resume-by-run-id.
+
+**Why:** Only if `/cl9` runs outgrow one lead context; the Workflow tool adds a phase view and resume, but requires an explicit opt-in phrase every run and uses the same in-process subagents.
+
+**Context:** Deferred from the CEO review; `run.json` + `/cl9 resume` cover resume today. Revisit after five real runs if the lead's context is the recurring failure.
+
+**Effort:** M
+**Priority:** P4
+**Depends on:** session-orchestration rollout 4
+
+### Untrack `.claude/settings.local.json`
+
+**What:** `git rm --cached .claude/settings.local.json` and add it to `.gitignore`; keep the hook and allowlist in the tracked `.claude/settings.json`.
+
+**Why:** The file is machine-local by design but is tracked today, so per-machine permission lists leak into commits and diverge.
+
+**Context:** Found during the DX review of session-orchestration (2026-09-12). One-line cleanup; do it in the same commit as the hook so the two settings files have a clear split (tracked = repo rules, local = machine allowlist).
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+
+### Friction audit of `/cl9` runs
+
+**What:** After five real `/cl9` runs, read the `.claude/runs/*/run.json` files (wall time, denials, audit violations, build count) and prune sub-commands, questions or fences nobody used.
+
+**Why:** The DX review scored measurement 8/10 because the data is recorded but no cadence reads it; a solo developer bypasses ceremony that does not pay for itself, and the tool rots.
+
+**Context:** `/cl9 status` shows the last 48 h; the audit is the same data over a longer window. Compare the dispatched wall times against the serial number recorded in the dry-run F.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** five recorded runs
+
 ## UI
 
 ### DESIGN.md via /design-consultation
