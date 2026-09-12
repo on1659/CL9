@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9ScanLabelWidget.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Animation/WidgetAnimation.h"
 #include "Components/TextBlock.h"
 #include "HAL/PlatformTime.h"
@@ -104,9 +105,9 @@ FText UCL9ScanLabelWidget::MakePriceText(const ACL9Item& Item)
 	const int32 Value = Item.GetValue();
 	if (Value <= 0)
 	{
-		return NSLOCTEXT("CL9", "HudItemNoValue", "값 없음");
+		return LOCTABLE("CL9", "ScanLabel.NoValue");
 	}
-	return FText::Format(NSLOCTEXT("CL9", "HudItemValue", "{0} 이더"), Value);
+	return FText::Format(LOCTABLE("CL9", "ScanLabel.Value"), Value);
 }
 
 FText UCL9ScanLabelWidget::MakeNameText(const ACL9ActorBase& Target)

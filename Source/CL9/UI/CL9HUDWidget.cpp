@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9HUDWidget.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -49,15 +50,15 @@ namespace
 	{
 		switch (Stat)
 		{
-		case ECL9Stat::WalkSpeed:         return NSLOCTEXT("CL9", "StatWalkSpeed", "걷기");
-		case ECL9Stat::RunSpeed:          return NSLOCTEXT("CL9", "StatRunSpeed", "달리기");
-		case ECL9Stat::CarryMult:         return NSLOCTEXT("CL9", "StatCarryMult", "짐 무게");
-		case ECL9Stat::CartMult:          return NSLOCTEXT("CL9", "StatCartMult", "수레 속도");
-		case ECL9Stat::JumpVelocity:      return NSLOCTEXT("CL9", "StatJumpVelocity", "점프");
-		case ECL9Stat::JumpGravity:       return NSLOCTEXT("CL9", "StatJumpGravity", "점프 중력");
-		case ECL9Stat::StaminaDrainTime:  return NSLOCTEXT("CL9", "StatStaminaDrain", "스태미나 지속");
-		case ECL9Stat::StaminaRegenTime:  return NSLOCTEXT("CL9", "StatStaminaRegen", "스태미나 회복");
-		case ECL9Stat::StaminaMinResume:  return NSLOCTEXT("CL9", "StatStaminaResume", "탈진 회복 문턱");
+		case ECL9Stat::WalkSpeed:         return LOCTABLE("CL9", "Stat.WalkSpeed");
+		case ECL9Stat::RunSpeed:          return LOCTABLE("CL9", "Stat.RunSpeed");
+		case ECL9Stat::CarryMult:         return LOCTABLE("CL9", "Stat.CarryMult");
+		case ECL9Stat::CartMult:          return LOCTABLE("CL9", "Stat.CartMult");
+		case ECL9Stat::JumpVelocity:      return LOCTABLE("CL9", "Stat.JumpVelocity");
+		case ECL9Stat::JumpGravity:       return LOCTABLE("CL9", "Stat.JumpGravity");
+		case ECL9Stat::StaminaDrainTime:  return LOCTABLE("CL9", "Stat.StaminaDrain");
+		case ECL9Stat::StaminaRegenTime:  return LOCTABLE("CL9", "Stat.StaminaRegen");
+		case ECL9Stat::StaminaMinResume:  return LOCTABLE("CL9", "Stat.StaminaResume");
 		}
 		return FText::GetEmpty();
 	}
@@ -89,7 +90,7 @@ namespace
 		}
 
 		const FText Number = FText::AsNumber(Value, &Options);
-		return Value > 0.f ? FText::Format(NSLOCTEXT("CL9", "StatAmountPlus", "+{0}"), Number) : Number;
+		return Value > 0.f ? FText::Format(LOCTABLE("CL9", "Stat.AmountPlus"), Number) : Number;
 	}
 }
 
@@ -256,7 +257,7 @@ void UCL9HUDWidget::RefreshHp()
 		HpBox->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	HpText->SetVisibility(ESlateVisibility::HitTestInvisible);
-	HpText->SetText(FText::Format(NSLOCTEXT("CL9", "HudHp", "HP {0}"), Hp));
+	HpText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Hp"), Hp));
 }
 
 void UCL9HUDWidget::RefreshCarry()
@@ -270,8 +271,8 @@ void UCL9HUDWidget::RefreshCarry()
 	if (HandText != nullptr)
 	{
 		HandText->SetText(PlayerState->HandItem.IsSet()
-			? FText::Format(NSLOCTEXT("CL9", "HudHand", "손: {0}"), ItemLabel(PlayerState->HandItem))
-			: NSLOCTEXT("CL9", "HudHandEmpty", "손: -"));
+			? FText::Format(LOCTABLE("CL9", "Hud.Hand"), ItemLabel(PlayerState->HandItem))
+			: LOCTABLE("CL9", "Hud.HandEmpty"));
 	}
 
 	if (PocketText != nullptr)
@@ -282,9 +283,9 @@ void UCL9HUDWidget::RefreshCarry()
 			Labels.Add(ItemLabel(Item));
 		}
 		PocketText->SetText(Labels.Num() > 0
-			? FText::Format(NSLOCTEXT("CL9", "HudPocket", "품 {0}: {1}"),
-				Labels.Num(), FText::Join(NSLOCTEXT("CL9", "HudPocketSep", ", "), Labels))
-			: NSLOCTEXT("CL9", "HudPocketEmpty", "품: -"));
+			? FText::Format(LOCTABLE("CL9", "Hud.Pocket"),
+				Labels.Num(), FText::Join(LOCTABLE("CL9", "Hud.PocketSep"), Labels))
+			: LOCTABLE("CL9", "Hud.PocketEmpty"));
 	}
 }
 
@@ -304,16 +305,16 @@ void UCL9HUDWidget::RefreshClock()
 		const int32 Remaining = FMath::CeilToInt(GameState->GetNightRemaining());
 		FNumberFormattingOptions TwoDigits;
 		TwoDigits.MinimumIntegralDigits = 2;
-		ClockText->SetText(FText::Format(NSLOCTEXT("CL9", "HudNight", "{0}일차 · {1}:{2}{3}"),
+		ClockText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Night"),
 			Day, Remaining / 60, FText::AsNumber(Remaining % 60, &TwoDigits),
-			GameState->IsBlackout() ? NSLOCTEXT("CL9", "HudBlackout", " · 정전") : FText::GetEmpty()));
+			GameState->IsBlackout() ? LOCTABLE("CL9", "Hud.Blackout") : FText::GetEmpty()));
 		break;
 	}
 	case ECL9NightPhase::Dawn:
-		ClockText->SetText(FText::Format(NSLOCTEXT("CL9", "HudDawn", "{0}일차 · 새벽"), Day));
+		ClockText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Dawn"), Day));
 		break;
 	default:
-		ClockText->SetText(FText::Format(NSLOCTEXT("CL9", "HudLobby", "{0}일차 · 정차"), Day));
+		ClockText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Lobby"), Day));
 		break;
 	}
 }
@@ -502,20 +503,20 @@ void UCL9HUDWidget::FillItemLabel(const ACL9Item& Item)
 		{
 			if (Def->Weight > 0.f)
 			{
-				Facts.Add(FText::Format(NSLOCTEXT("CL9", "HudItemWeight", "무게 {0}"), FText::AsNumber(Def->Weight)));
+				Facts.Add(FText::Format(LOCTABLE("CL9", "Hud.ItemWeight"), FText::AsNumber(Def->Weight)));
 			}
 			switch (Def->CarrySlot)
 			{
-			case ECL9CarrySlot::Pocketable: Facts.Add(NSLOCTEXT("CL9", "HudItemPocketable", "품에 들어감")); break;
-			case ECL9CarrySlot::Hand:       Facts.Add(NSLOCTEXT("CL9", "HudItemHandOnly", "손으로만")); break;
-			case ECL9CarrySlot::CartOnly:   Facts.Add(NSLOCTEXT("CL9", "HudItemCartOnly", "수레로만")); break;
+			case ECL9CarrySlot::Pocketable: Facts.Add(LOCTABLE("CL9", "Hud.ItemPocketable")); break;
+			case ECL9CarrySlot::Hand:       Facts.Add(LOCTABLE("CL9", "Hud.ItemHandOnly")); break;
+			case ECL9CarrySlot::CartOnly:   Facts.Add(LOCTABLE("CL9", "Hud.ItemCartOnly")); break;
 			}
 			if (Def->bFragile)
 			{
-				Facts.Add(NSLOCTEXT("CL9", "HudItemFragile", "깨지기 쉬움"));
+				Facts.Add(LOCTABLE("CL9", "Hud.ItemFragile"));
 			}
 		}
-		ItemInfoText->SetText(FText::Join(NSLOCTEXT("CL9", "HudItemFactSep", " · "), Facts));
+		ItemInfoText->SetText(FText::Join(LOCTABLE("CL9", "Hud.ItemFactSep"), Facts));
 		ItemInfoText->SetVisibility(Facts.Num() > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 	}
 }
@@ -529,8 +530,8 @@ void UCL9HUDWidget::RefreshHead()
 	}
 
 	HeadText->SetText(PlayerState->HeadItem.IsSet()
-		? FText::Format(NSLOCTEXT("CL9", "HudHead", "머리: {0}"), ItemLabel(PlayerState->HeadItem))
-		: NSLOCTEXT("CL9", "HudHeadEmpty", "머리: -"));
+		? FText::Format(LOCTABLE("CL9", "Hud.Head"), ItemLabel(PlayerState->HeadItem))
+		: LOCTABLE("CL9", "Hud.HeadEmpty"));
 }
 
 void UCL9HUDWidget::RefreshOrders()
@@ -557,12 +558,12 @@ void UCL9HUDWidget::RefreshOrders()
 			{
 				const UCL9ItemDef* ItemDef = Registry->FindItem(Ingredient.ItemAlias, Ingredient.ItemSubAlias);
 				const FText ItemName = (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : FText::FromName(Ingredient.ItemAlias);
-				Parts.Add(FText::Format(NSLOCTEXT("CL9", "HudOrderIngredient", "{0}×{1}"), ItemName, Ingredient.Count));
+				Parts.Add(FText::Format(LOCTABLE("CL9", "Hud.OrderIngredient"), ItemName, Ingredient.Count));
 			}
 		}
 		// 보상은 수락할 때 굴려 확정된 값이다(2026-09-06 결정) — 카드의 범위가 아니라 실제로 받을 액수를 보여준다
-		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudOrderLine", "{0} · {1} · {2}일차까지 · {3} 이더"),
-			Name, FText::Join(NSLOCTEXT("CL9", "HudOrderSep", ", "), Parts), Accepted.DeadlineDay, Accepted.Reward));
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.OrderLine"),
+			Name, FText::Join(LOCTABLE("CL9", "Hud.OrderSep"), Parts), Accepted.DeadlineDay, Accepted.Reward));
 	}
 
 	OrdersText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
@@ -578,7 +579,7 @@ void UCL9HUDWidget::RefreshMoney()
 	}
 
 	// 판 전체가 지갑 하나를 쓴다 — 호스트가 지급·차감하면 OnMoneyChanged가 모든 머신에서 발동한다
-	MoneyText->SetText(FText::Format(NSLOCTEXT("CL9", "HudMoney", "{0} 이더"), GameState->GetSharedMoney()));
+	MoneyText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Money"), GameState->GetSharedMoney()));
 }
 
 void UCL9HUDWidget::DeriveOrderScreen()
@@ -683,8 +684,8 @@ void UCL9HUDWidget::RefreshPeriod()
 	const int32 Left = SettlementDay - Day;
 	PeriodText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	PeriodText->SetText(Left == 0
-		? FText::Format(NSLOCTEXT("CL9", "HudPeriodToday", "이번 기간 {0} / 목표 {1} · 오늘 정산"), Earned, Quota)
-		: FText::Format(NSLOCTEXT("CL9", "HudPeriod", "이번 기간 {0} / 목표 {1} · 정산까지 {2}일"), Earned, Quota, Left));
+		? FText::Format(LOCTABLE("CL9", "Hud.PeriodToday"), Earned, Quota)
+		: FText::Format(LOCTABLE("CL9", "Hud.Period"), Earned, Quota, Left));
 	PeriodText->SetColorAndOpacity(FSlateColor(Earned >= Quota ? PeriodMetColor : PeriodShortColor));
 }
 
@@ -706,7 +707,7 @@ void UCL9HUDWidget::RefreshCounter()
 	const TArray<FCL9CounterItem>& Stock = Counter->GetStock();
 	if (Stock.Num() == 0)
 	{
-		CounterText->SetText(NSLOCTEXT("CL9", "HudCounterEmpty", "창구가 비어 있다"));
+		CounterText->SetText(LOCTABLE("CL9", "Hud.CounterEmpty"));
 		CounterText->SetVisibility(ESlateVisibility::HitTestInvisible);
 		return;
 	}
@@ -743,15 +744,15 @@ void UCL9HUDWidget::RefreshCounter()
 	}
 
 	TArray<FText> Lines;
-	Lines.Add(NSLOCTEXT("CL9", "HudCounterTitle", "창구에 올린 것"));
+	Lines.Add(LOCTABLE("CL9", "Hud.CounterTitle"));
 	for (const FLine& Line : Grouped)
 	{
 		const UCL9ItemDef* ItemDef = (Registry != nullptr) ? Registry->FindItem(Line.Alias, Line.SubAlias) : nullptr;
 		const FText Name = (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : FText::FromName(Line.Alias);
-		Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudCounterLine", "{0} ×{1} · {2} 이더"), Name, Line.Count, Line.Value));
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.CounterLine"), Name, Line.Count, Line.Value));
 	}
 	// 합계는 올릴 때 굴린 값의 합이다 — 실제로 받는 돈은 팔 때 목적지·일자 배율이 곱해진다(economy.md 가격식)
-	Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudCounterTotal", "합 {0} 이더"), Total));
+	Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.CounterTotal"), Total));
 
 	CounterText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
 	CounterText->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -797,12 +798,12 @@ void UCL9HUDWidget::RefreshBuffs()
 		if (Buff != nullptr && Buff->Effects.Num() == 1)
 		{
 			const ECL9Stat Stat = Buff->Effects[0].Stat;
-			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffNamedOne", "{0} {1} ({2}초)"),
+			Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.BuffNamedOne"),
 				Name, StatAmountText(Stat, Character->GetStatBonus(Stat)), Seconds));
 		}
 		else
 		{
-			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffNamed", "{0} ({1}초)"), Name, Seconds));
+			Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.BuffNamed"), Name, Seconds));
 		}
 	}
 
@@ -819,7 +820,7 @@ void UCL9HUDWidget::RefreshBuffs()
 			{
 				continue;
 			}
-			Lines.Add(FText::Format(NSLOCTEXT("CL9", "HudBuffLine", "{0} {1} ({2}초)"),
+			Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.BuffLine"),
 				StatLabel(Stat), StatAmountText(Stat, Amount), Seconds));
 		}
 	}
@@ -854,7 +855,7 @@ void UCL9HUDWidget::RefreshNightWarn(float InDeltaTime)
 		return;
 	}
 
-	NightWarnText->SetText(FText::Format(NSLOCTEXT("CL9", "HudNightWarn", "밤이 끝난다 · {0}초"),
+	NightWarnText->SetText(FText::Format(LOCTABLE("CL9", "Hud.NightWarn"),
 		FMath::CeilToInt(Remaining)));
 	NightWarnText->SetVisibility(ESlateVisibility::HitTestInvisible);
 

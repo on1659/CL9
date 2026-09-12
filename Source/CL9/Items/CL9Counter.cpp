@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9Counter.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/CL9Character.h"
@@ -25,8 +26,8 @@ FText ACL9Counter::GetPrompt(const ACL9Character* Who) const
 	const ACL9Cart* Cart = Who ? Who->GetPullingCart() : nullptr;
 	const bool bBringingSomething = Who != nullptr && (Who->GetHeldItem() != nullptr || (Cart != nullptr && Cart->HasLoadedItems()));
 	return bBringingSomething
-		? NSLOCTEXT("CL9", "CounterDeliver", "[E] 납품")
-		: NSLOCTEXT("CL9", "CounterSell", "[E] 남은 것 팔기");
+		? LOCTABLE("CL9", "Prompt.CounterDeliver")
+		: LOCTABLE("CL9", "Prompt.CounterSell");
 }
 
 bool ACL9Counter::CanInteract(const ACL9Character* Who) const

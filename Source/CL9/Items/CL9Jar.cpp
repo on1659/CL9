@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9Jar.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Engine/World.h"
 #include "Character/CL9Character.h"
 #include "GameMode/CL9GameState.h"
@@ -13,7 +14,7 @@ ACL9Jar::ACL9Jar()
 
 FText ACL9Jar::GetPrompt(const ACL9Character* Who) const
 {
-	return NSLOCTEXT("CL9", "JarReturn", "[E] 반납");
+	return LOCTABLE("CL9", "Prompt.JarReturn");
 }
 
 bool ACL9Jar::CanInteract(const ACL9Character* Who) const

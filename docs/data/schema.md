@@ -37,8 +37,8 @@
 |------|------|------|------|------|
 | `Alias` | FName | ✅ | 식별자 (조회 키) | `egg`, `chicken`, `henhouse` |
 | `SubAlias` | FName | | 하위 분류 (선택) | `gold`, `cooked`, `burnt` |
-| `DisplayName` | FText | ✅ | 화면 표시명 (현지화 대상) | "계란", "닭", "닭장" |
-| `Description` | FText | | 상세 설명 | "신선한 닭 계란" |
+| `DisplayName` | FText | ✅ | 화면 표시명 — **String Table `CL9` 참조만** (직접 친 텍스트는 Broken, [../systems/localization.md](../systems/localization.md)) | `Item.egg.Name`, `Monster.chicken.Name` |
+| `Description` | FText | | 상세 설명 — DisplayName과 같은 규칙 | `Item.egg.Desc` |
 | `Icon` | TSoftObjectPtr<UTexture2D> | ✅ | UI 아이콘 | `/Game/UI/Icons/Item_Egg` |
 | `Mesh` | TSoftObjectPtr<UStaticMesh> | | 월드 메시 **(아이템만)** | `/Game/Meshes/Items/Egg` |
 | `ActorClass` | TSoftClassPtr<AActor> | | 전용 BP. **비우면 종류별 공용 BP** | (대부분 비움) |

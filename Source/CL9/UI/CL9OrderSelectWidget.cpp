@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9OrderSelectWidget.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
@@ -130,7 +131,7 @@ void UCL9OrderSelectWidget::Rebuild()
 
 	if (TitleText != nullptr)
 	{
-		TitleText->SetText(FText::Format(NSLOCTEXT("CL9", "OrderSelectTitle", "주문서 · {0}개 중 {1}개 선택"),
+		TitleText->SetText(FText::Format(LOCTABLE("CL9", "OrderSelect.Title"),
 			GameState->OfferedOrders.Num(), GameState->OrdersRequired));
 	}
 
@@ -139,8 +140,8 @@ void UCL9OrderSelectWidget::Rebuild()
 	if (HintText != nullptr)
 	{
 		HintText->SetText(bHost
-			? NSLOCTEXT("CL9", "OrderSelectHintHost", "받을 주문을 누른 뒤 [확정]을 누르세요")
-			: NSLOCTEXT("CL9", "OrderSelectHintClient", "호스트가 주문을 확정합니다"));
+			? LOCTABLE("CL9", "OrderSelect.HintHost")
+			: LOCTABLE("CL9", "OrderSelect.HintClient"));
 	}
 
 	RefreshSelection();
@@ -176,7 +177,7 @@ void UCL9OrderSelectWidget::RefreshSelection()
 
 	if (AcceptText != nullptr)
 	{
-		AcceptText->SetText(FText::Format(NSLOCTEXT("CL9", "OrderSelectAccept", "확정 ({0}/{1})"), Selected.Num(), Required));
+		AcceptText->SetText(FText::Format(LOCTABLE("CL9", "OrderSelect.Accept"), Selected.Num(), Required));
 	}
 
 	const APlayerController* PlayerController = GetOwningPlayer();
@@ -231,11 +232,11 @@ FText UCL9OrderSelectWidget::MakeOrderDetail(FName Alias) const
 	{
 		const UCL9ItemDef* Item = Registry->FindItem(Ingredient.ItemAlias, Ingredient.ItemSubAlias);
 		const FText ItemName = (Item != nullptr && !Item->DisplayName.IsEmpty()) ? Item->DisplayName : FText::FromName(Ingredient.ItemAlias);
-		Parts.Add(FText::Format(NSLOCTEXT("CL9", "OrderIngredient", "{0}×{1}"), ItemName, Ingredient.Count));
+		Parts.Add(FText::Format(LOCTABLE("CL9", "OrderSelect.Ingredient"), ItemName, Ingredient.Count));
 	}
 
-	return FText::Format(NSLOCTEXT("CL9", "OrderCardDetail", "{0} · 보상 {1}~{2} 이더 · 마감 {3}일"),
-		FText::Join(NSLOCTEXT("CL9", "OrderIngredientSep", ", "), Parts),
+	return FText::Format(LOCTABLE("CL9", "OrderSelect.CardDetail"),
+		FText::Join(LOCTABLE("CL9", "OrderSelect.IngredientSep"), Parts),
 		Order->RewardMin, Order->RewardMax, Order->DeadlineDays);
 }
 

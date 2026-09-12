@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9TruckPanel.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Engine/World.h"
 #include "Character/CL9Character.h"
 #include "GameMode/CL9GameState.h"
@@ -12,7 +13,7 @@ ACL9TruckPanel::ACL9TruckPanel()
 
 FText ACL9TruckPanel::GetPrompt(const ACL9Character* Who) const
 {
-	return NSLOCTEXT("CL9", "TruckPanelShop", "[E] 장비 구매");
+	return LOCTABLE("CL9", "Prompt.TruckPanelShop");
 }
 
 bool ACL9TruckPanel::CanInteract(const ACL9Character* Who) const

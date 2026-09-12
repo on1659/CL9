@@ -1,0 +1,1503 @@
+﻿# CL9 English translation.
+# Fill out your copyright notice in the Description page of Project Settings.
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: CL9\n"
+"POT-Creation-Date: 2026-09-12 07:15\n"
+"PO-Revision-Date: 2026-09-12 07:15\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Key:	Buff.leg_strength.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	먹기 효과 이름 — 다리 힘(이동 속도) 증가
+#: Strings/CL9.csv
+msgctxt "CL9,Buff.leg_strength.Name"
+msgid "다리에 힘"
+msgstr "Strong legs"
+
+#. Key:	Character.farmer_a.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	플레이어 캐릭터 이름 — 농부 A
+#: Strings/CL9.csv
+msgctxt "CL9,Character.farmer_a.Name"
+msgid "농부 A"
+msgstr "Farmer A"
+
+#. Key:	Dawn.Close
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	새벽 화면 닫기 — 게임 계속
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Close"
+msgid "계속"
+msgstr "Continue"
+
+#. Key:	Dawn.CloseFailed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 실패 뒤 닫기 — 새 판을 시작한다
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.CloseFailed"
+msgid "새 판으로"
+msgstr "New run"
+
+#. Key:	Dawn.Earned
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	이번 기간 번 돈. {0}=금액
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Earned"
+msgid "이번 기간 {0} 이더"
+msgstr "This period {0} ether"
+
+#. Key:	Dawn.Failed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 실패 — 판(런)이 끝난다. {0}=버틴 마지막 일차
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Failed"
+msgid "미달 — 판이 끝났다. {0}일차까지 버텼다"
+msgstr "Short — the run is over. You lasted until day {0}"
+
+#. Key:	Dawn.Passed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 통과 — 다음 기간으로 이어진다
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Passed"
+msgid "통과 — 다음 기간이 시작된다"
+msgstr "Passed — the next period begins"
+
+#. Key:	Dawn.Settle
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 결과. {0}=기간 수입, {1}=목표액
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Settle"
+msgid "이번 기간 {0} / 목표 {1} 이더"
+msgstr "This period {0} / goal {1} ether"
+
+#. Key:	Dawn.SettleTitle
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산일 새벽 화면 제목. {0}=일차
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.SettleTitle"
+msgid "{0}일차 정산"
+msgstr "Day {0} settlement"
+
+#. Key:	Dawn.Title
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	새벽 화면 제목. {0}=일차
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.Title"
+msgid "{0}일차 새벽"
+msgstr "Day {0} dawn"
+
+#. Key:	Dawn.TitlePlain
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	새벽 화면 제목 — 일차 정보가 없을 때
+#: Strings/CL9.csv
+msgctxt "CL9,Dawn.TitlePlain"
+msgid "새벽"
+msgstr "Dawn"
+
+#. Key:	Equipment.frying_pan.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	구매 장비 이름 — 프라이팬
+#: Strings/CL9.csv
+msgctxt "CL9,Equipment.frying_pan.Name"
+msgid "프라이팬"
+msgstr "Frying pan"
+
+#. Key:	Hud.Blackout
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정전 중임을 시계 뒤에 덧붙이는 꼬리표. 앞 공백 유지
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Blackout"
+msgid " · 정전"
+msgstr " · Blackout"
+
+#. Key:	Hud.BuffLine
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	버프 한 줄 — 여러 효과 중 하나. {0}=능력치 이름, {1}=증감, {2}=남은 초
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.BuffLine"
+msgid "{0} {1} ({2}초)"
+msgstr "{0} {1} ({2}s)"
+
+#. Key:	Hud.BuffNamed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	버프 한 줄 — 이름만. {0}=버프 이름, {1}=남은 초
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.BuffNamed"
+msgid "{0} ({1}초)"
+msgstr "{0} ({1}s)"
+
+#. Key:	Hud.BuffNamedOne
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	먹기 효과(버프) 한 줄 — 효과 하나. {0}=능력치 이름, {1}=증감(예 +40), {2}=남은 초
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.BuffNamedOne"
+msgid "{0} {1} ({2}초)"
+msgstr "{0} {1} ({2}s)"
+
+#. Key:	Hud.CounterEmpty
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	창구에 올려둔 것이 없을 때
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.CounterEmpty"
+msgid "창구가 비어 있다"
+msgstr "The counter is empty"
+
+#. Key:	Hud.CounterLine
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	창구 목록 한 줄. {0}=이름, {1}=수량, {2}=값
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.CounterLine"
+msgid "{0} ×{1} · {2} 이더"
+msgstr "{0} ×{1} · {2} ether"
+
+#. Key:	Hud.CounterTitle
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	창구에 올려둔 물건 목록의 제목
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.CounterTitle"
+msgid "창구에 올린 것"
+msgstr "On the counter"
+
+#. Key:	Hud.CounterTotal
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	창구 목록 합계. {0}=금액
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.CounterTotal"
+msgid "합 {0} 이더"
+msgstr "Total {0} ether"
+
+#. Key:	Hud.Dawn
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	밤이 끝나고 정산 전 새벽 단계. {0}=일차
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Dawn"
+msgid "{0}일차 · 새벽"
+msgstr "Day {0} · Dawn"
+
+#. Key:	Hud.Hand
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	손에 든 아이템. {0}=아이템 이름
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Hand"
+msgid "손: {0}"
+msgstr "Hand: {0}"
+
+#. Key:	Hud.HandEmpty
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	손이 비었을 때
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.HandEmpty"
+msgid "손: -"
+msgstr "Hand: -"
+
+#. Key:	Hud.Head
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	머리에 쓴 장비. {0}=장비 이름
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Head"
+msgid "머리: {0}"
+msgstr "Head: {0}"
+
+#. Key:	Hud.HeadEmpty
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	머리에 아무것도 안 썼을 때
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.HeadEmpty"
+msgid "머리: -"
+msgstr "Head: -"
+
+#. Key:	Hud.Hp
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	체력. {0}=현재 HP
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Hp"
+msgid "HP {0}"
+msgstr "HP {0}"
+
+#. Key:	Hud.ItemCartOnly
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 특성: 수레로만 옮길 수 있다
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemCartOnly"
+msgid "수레로만"
+msgstr "Cart only"
+
+#. Key:	Hud.ItemFactSep
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 특성들 사이 구분자
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemFactSep"
+msgid " · "
+msgstr " · "
+
+#. Key:	Hud.ItemFragile
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 특성: 떨어뜨리면 깨진다(계란)
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemFragile"
+msgid "깨지기 쉬움"
+msgstr "Fragile"
+
+#. Key:	Hud.ItemHandOnly
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 특성: 손으로만 들 수 있다(품 불가)
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemHandOnly"
+msgid "손으로만"
+msgstr "Hands only"
+
+#. Key:	Hud.ItemPocketable
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 특성: 품에 넣을 수 있다
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemPocketable"
+msgid "품에 들어감"
+msgstr "Fits in pocket"
+
+#. Key:	Hud.ItemWeight
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	바라보는 아이템의 무게. {0}=무게 값
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.ItemWeight"
+msgid "무게 {0}"
+msgstr "Weight {0}"
+
+#. Key:	Hud.Lobby
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	푸드트럭에 정차해 있는 낮(로비) 단계. {0}=일차
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Lobby"
+msgid "{0}일차 · 정차"
+msgstr "Day {0} · Parked"
+
+#. Key:	Hud.Money
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	공유 자금. {0}=금액. \"이더\"는 이 게임의 화폐 단위
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Money"
+msgid "{0} 이더"
+msgstr "{0} ether"
+
+#. Key:	Hud.Night
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	밤 진행 중 시계. {0}=일차, {1}:{2}=시:분, {3}=정전 표시(Hud.Blackout 또는 빈칸)
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Night"
+msgid "{0}일차 · {1}:{2}{3}"
+msgstr "Day {0} · {1}:{2}{3}"
+
+#. Key:	Hud.NightWarn
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	밤 종료 직전 경고. {0}=남은 초
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.NightWarn"
+msgid "밤이 끝난다 · {0}초"
+msgstr "The night is ending · {0}s"
+
+#. Key:	Hud.OrderIngredient
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 재료 한 개. {0}=재료 이름, {1}=필요 수량
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.OrderIngredient"
+msgid "{0}×{1}"
+msgstr "{0}×{1}"
+
+#. Key:	Hud.OrderLine
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	수락한 주문 한 줄. {0}=요리 이름, {1}=재료 목록, {2}=마감 일차, {3}=보상 금액
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.OrderLine"
+msgid "{0} · {1} · {2}일차까지 · {3} 이더"
+msgstr "{0} · {1} · by day {2} · {3} ether"
+
+#. Key:	Hud.OrderSep
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 재료 목록의 구분자
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.OrderSep"
+msgid ", "
+msgstr ", "
+
+#. Key:	Hud.Period
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 기간 현황. {0}=기간 수입, {1}=목표액, {2}=정산까지 남은 일수
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Period"
+msgid "이번 기간 {0} / 목표 {1} · 정산까지 {2}일"
+msgstr "This period {0} / goal {1} · {2} days to settlement"
+
+#. Key:	Hud.PeriodToday
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	정산 기간 현황 — 오늘이 정산일. {0}=기간 수입, {1}=목표액
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.PeriodToday"
+msgid "이번 기간 {0} / 목표 {1} · 오늘 정산"
+msgstr "This period {0} / goal {1} · settles today"
+
+#. Key:	Hud.Pocket
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	품(주머니)에 넣은 것. {0}=개수, {1}=이름 목록
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.Pocket"
+msgid "품 {0}: {1}"
+msgstr "Pocket {0}: {1}"
+
+#. Key:	Hud.PocketEmpty
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	품이 비었을 때
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.PocketEmpty"
+msgid "품: -"
+msgstr "Pocket: -"
+
+#. Key:	Hud.PocketSep
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	품 목록의 이름 사이 구분자
+#: Strings/CL9.csv
+msgctxt "CL9,Hud.PocketSep"
+msgid ", "
+msgstr ", "
+
+#. Key:	Input.Flashlight.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 쓴 헤드램프 켜고 끄기
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Flashlight.Name"
+msgid "헤드램프"
+msgstr "Headlamp"
+
+#. Key:	Input.Jump.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 점프
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Jump.Name"
+msgid "점프"
+msgstr "Jump"
+
+#. Key:	Input.MoveBack.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 뒤로 이동
+#: Strings/CL9.csv
+msgctxt "CL9,Input.MoveBack.Name"
+msgid "뒤로"
+msgstr "Move back"
+
+#. Key:	Input.MoveForward.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	리바인딩 목록의 동작 이름 — 앞으로 이동
+#: Strings/CL9.csv
+msgctxt "CL9,Input.MoveForward.Name"
+msgid "앞으로"
+msgstr "Move forward"
+
+#. Key:	Input.MoveLeft.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 왼쪽 이동
+#: Strings/CL9.csv
+msgctxt "CL9,Input.MoveLeft.Name"
+msgid "왼쪽"
+msgstr "Move left"
+
+#. Key:	Input.MoveRight.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 오른쪽 이동
+#: Strings/CL9.csv
+msgctxt "CL9,Input.MoveRight.Name"
+msgid "오른쪽"
+msgstr "Move right"
+
+#. Key:	Input.Pause.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 메뉴 열기 / 한 단계 뒤로
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Pause.Name"
+msgid "메뉴 / 뒤로"
+msgstr "Menu / back"
+
+#. Key:	Input.PickPlace.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 줍기·놓기·상호작용 한 키
+#: Strings/CL9.csv
+msgctxt "CL9,Input.PickPlace.Name"
+msgid "줍기 / 놓기 / 상호작용"
+msgstr "Pick up / put down / interact"
+
+#. Key:	Input.Run.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 달리기(스태미나 소모)
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Run.Name"
+msgid "달리기"
+msgstr "Run"
+
+#. Key:	Input.Scan.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 시야 안 아이템 라벨 표시
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Scan.Name"
+msgid "스캔"
+msgstr "Scan"
+
+#. Key:	Input.SpectateNext.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 관전 중 다음 동료로
+#: Strings/CL9.csv
+msgctxt "CL9,Input.SpectateNext.Name"
+msgid "다음 동료 (관전)"
+msgstr "Next teammate (spectating)"
+
+#. Key:	Input.Swap.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 손과 품 교체
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Swap.Name"
+msgid "손·품 교체"
+msgstr "Swap hand / pocket"
+
+#. Key:	Input.Throw.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 던지기 차징
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Throw.Name"
+msgid "던지기"
+msgstr "Throw"
+
+#. Key:	Input.Use.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동작 이름 — 든 아이템 사용(탭) / 먹기(길게)
+#: Strings/CL9.csv
+msgctxt "CL9,Input.Use.Name"
+msgid "사용 / 먹기"
+msgstr "Use / eat"
+
+#. Key:	Item.cart.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 짐을 싣고 미는 수레
+#: Strings/CL9.csv
+msgctxt "CL9,Item.cart.Name"
+msgid "수레"
+msgstr "Cart"
+
+#. Key:	Item.egg.broken.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 깨져서 못 쓰는 계란
+#: Strings/CL9.csv
+msgctxt "CL9,Item.egg.broken.Name"
+msgid "깨진 계란"
+msgstr "Broken egg"
+
+#. Key:	Item.egg.burnt.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 너무 오래 익혀 탄 계란
+#: Strings/CL9.csv
+msgctxt "CL9,Item.egg.burnt.Name"
+msgid "탄 계란"
+msgstr "Burnt egg"
+
+#. Key:	Item.egg.cooked.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 알맞게 익힌 계란
+#: Strings/CL9.csv
+msgctxt "CL9,Item.egg.cooked.Name"
+msgid "익은 계란"
+msgstr "Cooked egg"
+
+#. Key:	Item.egg.cracked.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 금이 간 계란 (한 번 더 충격 받으면 깨짐)
+#: Strings/CL9.csv
+msgctxt "CL9,Item.egg.cracked.Name"
+msgid "금 간 계란"
+msgstr "Cracked egg"
+
+#. Key:	Item.egg.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 날계란
+#: Strings/CL9.csv
+msgctxt "CL9,Item.egg.Name"
+msgid "계란"
+msgstr "Egg"
+
+#. Key:	Item.flashlight.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 손에 드는 손전등
+#: Strings/CL9.csv
+msgctxt "CL9,Item.flashlight.Name"
+msgid "손전등"
+msgstr "Flashlight"
+
+#. Key:	Item.frying_pan.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 프라이팬 (조리 도구·무기)
+#: Strings/CL9.csv
+msgctxt "CL9,Item.frying_pan.Name"
+msgid "프라이팬"
+msgstr "Frying pan"
+
+#. Key:	Item.headlamp.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 머리에 쓰는 램프
+#: Strings/CL9.csv
+msgctxt "CL9,Item.headlamp.Name"
+msgid "헤드램프"
+msgstr "Headlamp"
+
+#. Key:	Item.meat.burnt.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 탄 고기
+#: Strings/CL9.csv
+msgctxt "CL9,Item.meat.burnt.Name"
+msgid "탄 고기"
+msgstr "Burnt meat"
+
+#. Key:	Item.meat.cooked.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 익힌 고기
+#: Strings/CL9.csv
+msgctxt "CL9,Item.meat.cooked.Name"
+msgid "익은 고기"
+msgstr "Cooked meat"
+
+#. Key:	Item.meat.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 날고기
+#: Strings/CL9.csv
+msgctxt "CL9,Item.meat.Name"
+msgid "고기"
+msgstr "Meat"
+
+#. Key:	Item.pot.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 냄비 (조리 도구)
+#: Strings/CL9.csv
+msgctxt "CL9,Item.pot.Name"
+msgid "냄비"
+msgstr "Pot"
+
+#. Key:	Item.standing_lamp.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아이템 — 세워 두는 작업등
+#: Strings/CL9.csv
+msgctxt "CL9,Item.standing_lamp.Name"
+msgid "작업등"
+msgstr "Work lamp"
+
+#. Key:	Key.BackSpace
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — Backspace
+#: Strings/CL9.csv
+msgctxt "CL9,Key.BackSpace"
+msgid "Backspace"
+msgstr "Backspace"
+
+#. Key:	Key.CapsLock
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — Caps Lock
+#: Strings/CL9.csv
+msgctxt "CL9,Key.CapsLock"
+msgid "Caps Lock"
+msgstr "Caps Lock"
+
+#. Key:	Key.Enter
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — Enter
+#: Strings/CL9.csv
+msgctxt "CL9,Key.Enter"
+msgid "Enter"
+msgstr "Enter"
+
+#. Key:	Key.LeftAlt
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 왼쪽 Alt
+#: Strings/CL9.csv
+msgctxt "CL9,Key.LeftAlt"
+msgid "Alt"
+msgstr "Alt"
+
+#. Key:	Key.LeftControl
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 왼쪽 Ctrl
+#: Strings/CL9.csv
+msgctxt "CL9,Key.LeftControl"
+msgid "Ctrl"
+msgstr "Ctrl"
+
+#. Key:	Key.LeftMouseButton
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 마우스 왼쪽 버튼
+#: Strings/CL9.csv
+msgctxt "CL9,Key.LeftMouseButton"
+msgid "LMB"
+msgstr "LMB"
+
+#. Key:	Key.LeftShift
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 왼쪽 Shift
+#: Strings/CL9.csv
+msgctxt "CL9,Key.LeftShift"
+msgid "Shift"
+msgstr "Shift"
+
+#. Key:	Key.MiddleMouseButton
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 마우스 가운데(휠) 버튼
+#: Strings/CL9.csv
+msgctxt "CL9,Key.MiddleMouseButton"
+msgid "MMB"
+msgstr "MMB"
+
+#. Key:	Key.RightAlt
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 오른쪽 Alt
+#: Strings/CL9.csv
+msgctxt "CL9,Key.RightAlt"
+msgid "오른쪽 Alt"
+msgstr "Right Alt"
+
+#. Key:	Key.RightControl
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 오른쪽 Ctrl
+#: Strings/CL9.csv
+msgctxt "CL9,Key.RightControl"
+msgid "오른쪽 Ctrl"
+msgstr "Right Ctrl"
+
+#. Key:	Key.RightMouseButton
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 마우스 오른쪽 버튼
+#: Strings/CL9.csv
+msgctxt "CL9,Key.RightMouseButton"
+msgid "RMB"
+msgstr "RMB"
+
+#. Key:	Key.RightShift
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 오른쪽 Shift
+#: Strings/CL9.csv
+msgctxt "CL9,Key.RightShift"
+msgid "오른쪽 Shift"
+msgstr "Right Shift"
+
+#. Key:	Key.SpaceBar
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 스페이스바 (Key.* 행은 FKey 이름 그대로, 없으면 엔진 영문 표기로 대체됨)
+#: Strings/CL9.csv
+msgctxt "CL9,Key.SpaceBar"
+msgid "Space"
+msgstr "Space"
+
+#. Key:	Key.Tab
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — Tab
+#: Strings/CL9.csv
+msgctxt "CL9,Key.Tab"
+msgid "Tab"
+msgstr "Tab"
+
+#. Key:	Key.ThumbMouseButton
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 마우스 엄지 버튼 1
+#: Strings/CL9.csv
+msgctxt "CL9,Key.ThumbMouseButton"
+msgid "M4"
+msgstr "M4"
+
+#. Key:	Key.ThumbMouseButton2
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 표기 — 마우스 엄지 버튼 2
+#: Strings/CL9.csv
+msgctxt "CL9,Key.ThumbMouseButton2"
+msgid "M5"
+msgstr "M5"
+
+#. Key:	Monster.chicken.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동물 — 닭
+#: Strings/CL9.csv
+msgctxt "CL9,Monster.chicken.Name"
+msgid "닭"
+msgstr "Chicken"
+
+#. Key:	Monster.goose.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동물 — 거위
+#: Strings/CL9.csv
+msgctxt "CL9,Monster.goose.Name"
+msgid "거위"
+msgstr "Goose"
+
+#. Key:	Monster.pig.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동물 — 돼지
+#: Strings/CL9.csv
+msgctxt "CL9,Monster.pig.Name"
+msgid "돼지"
+msgstr "Pig"
+
+#. Key:	Monster.raccoon.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동물 — 너구리
+#: Strings/CL9.csv
+msgctxt "CL9,Monster.raccoon.Name"
+msgid "너구리"
+msgstr "Raccoon"
+
+#. Key:	Monster.sheep.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	동물 — 양
+#: Strings/CL9.csv
+msgctxt "CL9,Monster.sheep.Name"
+msgid "양"
+msgstr "Sheep"
+
+#. Key:	Order.fried_egg.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 요리 — 계란 프라이
+#: Strings/CL9.csv
+msgctxt "CL9,Order.fried_egg.Name"
+msgid "계란후라이"
+msgstr "Fried egg"
+
+#. Key:	Order.meat_dish.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 요리 — 고기 요리
+#: Strings/CL9.csv
+msgctxt "CL9,Order.meat_dish.Name"
+msgid "고기 요리"
+msgstr "Meat dish"
+
+#. Key:	Order.omelette.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 요리 — 오믈렛
+#: Strings/CL9.csv
+msgctxt "CL9,Order.omelette.Name"
+msgid "오믈렛"
+msgstr "Omelette"
+
+#. Key:	OrderSelect.Accept
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	확정 버튼. {0}=고른 수, {1}=골라야 하는 수
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.Accept"
+msgid "확정 ({0}/{1})"
+msgstr "Confirm ({0}/{1})"
+
+#. Key:	OrderSelect.CardDetail
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 카드 상세. {0}=재료 목록, {1}~{2}=보상 범위, {3}=마감까지 일수
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.CardDetail"
+msgid "{0} · 보상 {1}~{2} 이더 · 마감 {3}일"
+msgstr "{0} · reward {1}~{2} ether · due in {3} days"
+
+#. Key:	OrderSelect.HintClient
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	클라이언트에게: 호스트가 고르는 중이라는 안내
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.HintClient"
+msgid "호스트가 주문을 확정합니다"
+msgstr "The host confirms the orders"
+
+#. Key:	OrderSelect.HintHost
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	호스트에게: 주문을 고르고 확정하라는 안내
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.HintHost"
+msgid "받을 주문을 누른 뒤 [확정]을 누르세요"
+msgstr "Tap the orders you want, then press [Confirm]"
+
+#. Key:	OrderSelect.Ingredient
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 카드의 재료 한 개. {0}=재료, {1}=수량
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.Ingredient"
+msgid "{0}×{1}"
+msgstr "{0}×{1}"
+
+#. Key:	OrderSelect.IngredientSep
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 카드 재료 목록 구분자
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.IngredientSep"
+msgid ", "
+msgstr ", "
+
+#. Key:	OrderSelect.Title
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문 선택 화면 제목. {0}=제시된 주문 수, {1}=골라야 하는 수
+#: Strings/CL9.csv
+msgctxt "CL9,OrderSelect.Title"
+msgid "주문서 · {0}개 중 {1}개 선택"
+msgstr "Orders · {1} of {0} chosen"
+
+#. Key:	Pause.Continue
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	메뉴 닫고 게임으로 돌아가기
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.Continue"
+msgid "계속"
+msgstr "Continue"
+
+#. Key:	Pause.LeaveLobby
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	판을 나가 로비로 돌아가기
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.LeaveLobby"
+msgid "로비로 나가기"
+msgstr "Leave to lobby"
+
+#. Key:	Pause.LobbyNotReady
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	메뉴에서 아직 구현 안 된 [로비로 나가기]를 눌렀을 때 안내
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.LobbyNotReady"
+msgid "로비 나가기는 준비 중입니다"
+msgstr "Leaving to the lobby is not ready yet"
+
+#. Key:	Pause.NotReady
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아직 구현 안 된 항목을 눌렀을 때 안내
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.NotReady"
+msgid "설정과 로비 나가기는 준비 중입니다"
+msgstr "Settings and leaving to the lobby are not ready yet"
+
+#. Key:	Pause.Quit
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	게임 프로그램 종료
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.Quit"
+msgid "게임 종료"
+msgstr "Quit game"
+
+#. Key:	Pause.Settings
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 열기
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.Settings"
+msgid "설정"
+msgstr "Settings"
+
+#. Key:	Pause.Title
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	일시정지 메뉴 제목
+#: Strings/CL9.csv
+msgctxt "CL9,Pause.Title"
+msgid "메뉴"
+msgstr "Menu"
+
+#. Key:	Prompt.CartLoad
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	손에 든 아이템을 수레에 싣는다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.CartLoad"
+msgid "[{0}] 싣기"
+msgstr "[{0}] Load"
+
+#. Key:	Prompt.CartPull
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	수레 손잡이를 잡고 밀기 시작한다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.CartPull"
+msgid "[{0}] 수레 밀기"
+msgstr "[{0}] Push cart"
+
+#. Key:	Prompt.CartRelease
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	밀고 있던 수레 손잡이를 놓는다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.CartRelease"
+msgid "[{0}] 수레 놓기"
+msgstr "[{0}] Let go of cart"
+
+#. Key:	Prompt.CounterDeliver
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	푸드트럭 창구에 주문 요리를 납품한다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.CounterDeliver"
+msgid "[{0}] 납품"
+msgstr "[{0}] Deliver"
+
+#. Key:	Prompt.CounterSell
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	주문과 무관한 남은 재료·요리를 창구에서 판다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.CounterSell"
+msgid "[{0}] 남은 것 팔기"
+msgstr "[{0}] Sell leftovers"
+
+#. Key:	Prompt.JarReturn
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	빌린 항아리를 제자리에 반납한다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.JarReturn"
+msgid "[{0}] 반납"
+msgstr "[{0}] Return"
+
+#. Key:	Prompt.PickUp
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	바닥의 아이템을 바라볼 때 — 손이나 품에 집는다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.PickUp"
+msgid "[{0}] 줍기"
+msgstr "[{0}] Pick up"
+
+#. Key:	Prompt.Place
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	손에 든 것을 바닥·조리대에 내려놓는다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.Place"
+msgid "[{0}] 놓기"
+msgstr "[{0}] Put down"
+
+#. Key:	Prompt.TruckPanelShop
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	트럭 패널을 열어 장비를 산다. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.TruckPanelShop"
+msgid "[{0}] 장비 구매"
+msgstr "[{0}] Buy gear"
+
+#. Key:	Prompt.Wear
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	머리 장비(헤드램프)를 바라볼 때 뜨는 상호작용 안내. {0}=현재 바인딩된 키 표기(예: E)
+#: Strings/CL9.csv
+msgctxt "CL9,Prompt.Wear"
+msgid "[{0}] 착용"
+msgstr "[{0}] Wear"
+
+#. Key:	Rules.rules.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	규칙 데이터 행 이름 (내부용)
+#: Strings/CL9.csv
+msgctxt "CL9,Rules.rules.Name"
+msgid "규칙"
+msgstr "Rules"
+
+#. Key:	ScanLabel.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	스캔 라벨·아이템 이름 칸의 자리표시자 (실행 중 실제 이름으로 바뀜)
+#: Strings/CL9.csv
+msgctxt "CL9,ScanLabel.Name"
+msgid "이름"
+msgstr "Name"
+
+#. Key:	ScanLabel.NoValue
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	스캔 라벨 — 팔 수 없는 물건
+#: Strings/CL9.csv
+msgctxt "CL9,ScanLabel.NoValue"
+msgid "값 없음"
+msgstr "No value"
+
+#. Key:	ScanLabel.Value
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	스캔 라벨 — 판매가. {0}=금액
+#: Strings/CL9.csv
+msgctxt "CL9,ScanLabel.Value"
+msgid "{0} 이더"
+msgstr "{0} ether"
+
+#. Key:	SegKind.barn.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 축사 바깥벽
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.barn.Name"
+msgid "축사 외벽"
+msgstr "Barn outer wall"
+
+#. Key:	SegKind.brooder.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 병아리 보온 상자
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.brooder.Name"
+msgid "보온 상자"
+msgstr "Brooder box"
+
+#. Key:	SegKind.cage.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 닭장 케이지 줄
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.cage.Name"
+msgid "케이지 열"
+msgstr "Cage row"
+
+#. Key:	SegKind.ceiling.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 천장
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.ceiling.Name"
+msgid "천장"
+msgstr "Ceiling"
+
+#. Key:	SegKind.crate.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 상자
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.crate.Name"
+msgid "상자"
+msgstr "Crate"
+
+#. Key:	SegKind.flapIn.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 동물이 드나드는 개구멍 덮개
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.flapIn.Name"
+msgid "개구멍 덮개"
+msgstr "Flap cover"
+
+#. Key:	SegKind.floor.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 바닥
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.floor.Name"
+msgid "바닥"
+msgstr "Floor"
+
+#. Key:	SegKind.hay.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 건초 더미
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.hay.Name"
+msgid "건초"
+msgstr "Hay"
+
+#. Key:	SegKind.plug.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 통로를 막는 마개
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.plug.Name"
+msgid "통로 마개"
+msgstr "Passage plug"
+
+#. Key:	SegKind.stair.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 계단 복도 벽
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.stair.Name"
+msgid "계단 복도 벽"
+msgstr "Stair corridor wall"
+
+#. Key:	SegKind.trough.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 물통
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.trough.Name"
+msgid "물통"
+msgstr "Trough"
+
+#. Key:	SegKind.truck.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 푸드트럭 자리
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.truck.Name"
+msgid "트럭"
+msgstr "Truck"
+
+#. Key:	SegKind.wall.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	맵 구획 — 마당 바깥 경계 울타리
+#: Strings/CL9.csv
+msgctxt "CL9,SegKind.wall.Name"
+msgid "마당 경계"
+msgstr "Yard boundary"
+
+#. Key:	Settings.CaptureHint
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키를 기다리는 동안 힌트 줄. Esc는 취소 키 표기
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.CaptureHint"
+msgid "새 키를 누르세요 — Esc 또는 5초 뒤 취소"
+msgstr "Press a new key — Esc or wait 5 s to cancel"
+
+#. Key:	Settings.InvertY
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	마우스 위아래를 뒤집는 체크 라벨
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.InvertY"
+msgid "Y축 반전"
+msgstr "Invert Y axis"
+
+#. Key:	Settings.KeyRejected
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	쓸 수 없는 키(게임패드·휠·Esc 등)를 눌렀을 때 안내
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.KeyRejected"
+msgid "그 키는 쓸 수 없습니다"
+msgstr "That key can't be used"
+
+#. Key:	Settings.KeySwapped
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	새 키가 이미 다른 동작에 있어 둘을 맞바꿨다는 안내. {0}=새 키를 받은 동작 이름, {1}=그 키, {2}=키를 내준 동작 이름, {3}=그 동작이 받은 옛 키
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.KeySwapped"
+msgid "{0}: {1} · {2}: {3}"
+msgstr "{0}: {1} · {2}: {3}"
+
+#. Key:	Settings.Language
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	언어 선택 행 라벨 (선택지 이름은 원어명이라 시트에 없음)
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Language"
+msgid "언어"
+msgstr "Language"
+
+#. Key:	Settings.MouseSensitivity
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	시점 회전 감도 슬라이더 라벨
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.MouseSensitivity"
+msgid "감도"
+msgstr "Sensitivity"
+
+#. Key:	Settings.Percent
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	슬라이더 값 표시. {0}=정수 퍼센트
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Percent"
+msgid "{0}%"
+msgstr "{0}%"
+
+#. Key:	Settings.PressKey
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 버튼을 눌러 새 키를 기다리는 동안 그 버튼에 뜨는 문구
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.PressKey"
+msgid "키를 누르세요…"
+msgstr "Press a key…"
+
+#. Key:	Settings.ResetKeys
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키 바인딩을 전부 기본값으로 되돌리는 버튼
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.ResetKeys"
+msgid "키 초기화"
+msgstr "Reset keys"
+
+#. Key:	Settings.Section.Audio
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 섹션 헤더 — 소리
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Section.Audio"
+msgid "오디오"
+msgstr "Audio"
+
+#. Key:	Settings.Section.Keys
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 섹션 헤더 — 키 바인딩
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Section.Keys"
+msgid "키"
+msgstr "Keys"
+
+#. Key:	Settings.Section.Language
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 섹션 헤더 — 언어
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Section.Language"
+msgid "언어"
+msgstr "Language"
+
+#. Key:	Settings.Section.Mouse
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 섹션 헤더 — 마우스
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Section.Mouse"
+msgid "마우스"
+msgstr "Mouse"
+
+#. Key:	Settings.Title
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	설정 화면 제목
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Title"
+msgid "설정"
+msgstr "Settings"
+
+#. Key:	Settings.Unbound
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	키가 비어 있는 동작의 키 버튼 문구
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Unbound"
+msgid "없음"
+msgstr "None"
+
+#. Key:	Settings.Volume.Ambience
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 배경음(환경음)
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.Ambience"
+msgid "배경음"
+msgstr "Ambience"
+
+#. Key:	Settings.Volume.Effects
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 효과음
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.Effects"
+msgid "효과음"
+msgstr "Effects"
+
+#. Key:	Settings.Volume.Master
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 전체
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.Master"
+msgid "전체"
+msgstr "Master"
+
+#. Key:	Settings.Volume.Music
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 음악
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.Music"
+msgid "음악"
+msgstr "Music"
+
+#. Key:	Settings.Volume.UI
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 메뉴·버튼 소리
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.UI"
+msgid "UI"
+msgstr "UI"
+
+#. Key:	Settings.Volume.VO
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	볼륨 슬라이더 — 캐릭터 음성
+#: Strings/CL9.csv
+msgctxt "CL9,Settings.Volume.VO"
+msgid "음성"
+msgstr "Voice"
+
+#. Key:	Shop.Close
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	트럭 패널 닫기 버튼
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Close"
+msgid "닫기"
+msgstr "Close"
+
+#. Key:	Shop.DetailSep
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	장비 상세(가격·보유) 사이 구분자
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.DetailSep"
+msgid " · "
+msgstr " · "
+
+#. Key:	Shop.Locked
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	아직 못 사는 이유 — 해금 일차 전. {0}=해금 일차
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Locked"
+msgid "{0}일차부터"
+msgstr "From day {0}"
+
+#. Key:	Shop.MaxOwned
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	못 사는 이유 — 이미 최대치 보유. {0}=보유 수
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.MaxOwned"
+msgid "이미 {0}개"
+msgstr "Already have {0}"
+
+#. Key:	Shop.Money
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	트럭 패널 — 지금 가진 돈. {0}=금액
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Money"
+msgid "보유 {0} 이더"
+msgstr "You have {0} ether"
+
+#. Key:	Shop.NoMoney
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	못 사는 이유 — 돈 부족
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.NoMoney"
+msgid "잔액 부족"
+msgstr "Not enough ether"
+
+#. Key:	Shop.NoRow
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	못 사는 이유 — 판매 목록에 없음
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.NoRow"
+msgid "살 수 없음"
+msgstr "Not for sale"
+
+#. Key:	Shop.NotInLobby
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	못 사는 이유 — 트럭이 정차 중이 아님
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.NotInLobby"
+msgid "정차 중에만"
+msgstr "Only while parked"
+
+#. Key:	Shop.Owned
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	장비 보유 수. {0}=가진 수, {1}=최대
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Owned"
+msgid "{0}/{1} 보유"
+msgstr "Owned {0}/{1}"
+
+#. Key:	Shop.Price
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	장비 가격. {0}=금액
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Price"
+msgid "{0} 이더"
+msgstr "{0} ether"
+
+#. Key:	Shop.Rejected
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	구매 거절 안내. {0}=장비 이름, {1}=이유(위 Shop.* 중 하나)
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Rejected"
+msgid "{0}: {1}"
+msgstr "{0}: {1}"
+
+#. Key:	Shop.Title
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	장비 구매 화면 제목 — 푸드트럭 옆 패널
+#: Strings/CL9.csv
+msgctxt "CL9,Shop.Title"
+msgid "트럭 패널"
+msgstr "Truck panel"
+
+#. Key:	Site.flat.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	습격 장소 — 테스트용 평지
+#: Strings/CL9.csv
+msgctxt "CL9,Site.flat.Name"
+msgid "평지 (테스트)"
+msgstr "Flat (test)"
+
+#. Key:	Site.henhouse.Name
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	습격 장소 — 양계장
+#: Strings/CL9.csv
+msgctxt "CL9,Site.henhouse.Name"
+msgid "양계장"
+msgstr "Henhouse"
+
+#. Key:	Spectate.Next
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	다음 동료로 넘기는 버튼. {0}=현재 바인딩된 키 표기(예: Tab)
+#: Strings/CL9.csv
+msgctxt "CL9,Spectate.Next"
+msgid "다음 동료 ({0})"
+msgstr "Next teammate ({0})"
+
+#. Key:	Spectate.ReturnHint
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	관전자에게: 트럭이 다음에 정차할 때 트럭 패드에서 부활한다
+#: Strings/CL9.csv
+msgctxt "CL9,Spectate.ReturnHint"
+msgid "다음 정차 때 트럭 패드에서 돌아옵니다"
+msgstr "You return at the truck pad on the next stop"
+
+#. Key:	Spectate.Searching
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	죽어서 관전 중 — 볼 동료를 찾는 중
+#: Strings/CL9.csv
+msgctxt "CL9,Spectate.Searching"
+msgid "관전 중 · 동료를 찾는 중…"
+msgstr "Spectating · looking for a teammate…"
+
+#. Key:	Spectate.Target
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	관전 중인 동료. {0}=플레이어 이름
+#: Strings/CL9.csv
+msgctxt "CL9,Spectate.Target"
+msgid "관전 중 · {0}"
+msgstr "Spectating · {0}"
+
+#. Key:	Stat.AmountPlus
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 증가량 표기. {0}=값 (음수는 그대로 -로 나온다)
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.AmountPlus"
+msgid "+{0}"
+msgstr "+{0}"
+
+#. Key:	Stat.CarryMult
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 들 수 있는 짐 무게 배율
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.CarryMult"
+msgid "짐 무게"
+msgstr "Load weight"
+
+#. Key:	Stat.CartMult
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 수레 미는 속도 배율
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.CartMult"
+msgid "수레 속도"
+msgstr "Cart speed"
+
+#. Key:	Stat.JumpGravity
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 점프 중 중력
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.JumpGravity"
+msgid "점프 중력"
+msgstr "Jump gravity"
+
+#. Key:	Stat.JumpVelocity
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 점프 힘
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.JumpVelocity"
+msgid "점프"
+msgstr "Jump"
+
+#. Key:	Stat.RunSpeed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 달리기 속도
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.RunSpeed"
+msgid "달리기"
+msgstr "Run"
+
+#. Key:	Stat.StaminaDrain
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 스태미나가 다 닳기까지 걸리는 시간
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.StaminaDrain"
+msgid "스태미나 지속"
+msgstr "Stamina duration"
+
+#. Key:	Stat.StaminaRegen
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 스태미나 회복 속도
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.StaminaRegen"
+msgid "스태미나 회복"
+msgstr "Stamina recovery"
+
+#. Key:	Stat.StaminaResume
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 탈진 뒤 다시 달릴 수 있는 회복 문턱
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.StaminaResume"
+msgid "탈진 회복 문턱"
+msgstr "Exhaustion recovery threshold"
+
+#. Key:	Stat.WalkSpeed
+#. SourceLocation:	Strings/CL9.csv
+#. DevNotes:	능력치 이름: 걷기 속도
+#: Strings/CL9.csv
+msgctxt "CL9,Stat.WalkSpeed"
+msgid "걷기"
+msgstr "Walk"
+

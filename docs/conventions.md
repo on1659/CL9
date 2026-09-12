@@ -111,13 +111,20 @@ CL9/
 **콘텐츠 (Content/):**
 ```
 Content/
-  ├─ Characters/       (스켈레톤, BP_CL9Character, 애님 BP)
-  ├─ Items/            (아이템 BP, 메시, 머티리얼)
-  ├─ Monsters/         (BP_CL9Monster, 애님 BP)
-  ├─ Maps/             (테스트 맵, 게임 맵)
-  ├─ Data/             (DataAsset 표 — 몬스터, 아이템, 주문, 장비)
-  ├─ UI/               (위젯 블루프린트)
-  └─ Effects/          (파티클, 사운드)
+  ├─ Characters/       (BP_CL9Character, 마네킹 스켈레톤·ABP)
+  ├─ Items/            (아이템·시설 BP — BP_CL9Item/Cart/Kitchen/Counter/Jar/TruckPad…)
+  ├─ Monsters/         (BP_CL9Monster, 동물별 ABP)
+  ├─ GameMode/         (BP_CL9GameMode/GameInstance/PlayerController)
+  ├─ Input/            (IMC_Gameplay/Spectate/UI, Actions/)
+  ├─ Maps/             (Lvl_Flat 테스트 맵, Lvl_Henhouse)
+  ├─ Data/             (DataAsset 표 — DA_*Table, DA_CL9DefList/Rules/Progression)
+  ├─ UI/               (WBP_* 위젯 블루프린트, DA_UITable)
+  ├─ Effects/          (카메라 셰이크·파티클·사운드)
+  ├─ Strings/          (CL9_Strings.csv 마스터 시트 + 생성물 CL9.csv — systems/localization.md)
+  ├─ Localization/CL9/ (수집·번역 산출물 manifest·po·locres — 생성물, 커밋함)
+  ├─ CL9Art/           (자체 제작 에셋 — Characters/Items/Maps/Monsters/Tests, asset/README.md)
+  └─ (벤더·템플릿) DreamscapeSeries/·AnimalVarietyPack/·FirstPerson/·Variant_Horror/·LevelPrototyping/
+                       — 저장소 제외 또는 템플릿 잔재, 새 에셋을 두지 않는다
 ```
 
 ---
@@ -187,6 +194,11 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
 - 복제 업데이트: `SetNetUpdateFrequency(20)` (20 FPS 고정)
 - 게임 시간: `GameState->GetServerWorldTimeSeconds()` 기준 — 엔진이 클라 시계 오프셋을
   동기화해주므로 공유 타임스탬프(밤 시계·정전 시각·잠금)를 클라가 그대로 해석할 수 있다
+- 화면 문자열: **String Table `CL9`의 키만** 쓴다 — 코드는 `LOCTABLE("CL9", "Shop.NoMoney")`, UMG·데이터
+  행은 텍스트 피커의 String Table 참조. 원문·번역은 `Content/Strings/CL9_Strings.csv`(No·Key·DevNotes·언어 열) 한 장에만 있고, `NSLOCTEXT`/직접 친
+  텍스트는 금지(행은 Validate가 Broken으로 잡는다). `FText::FromString`은 플레이어 이름·숫자·줄바꿈처럼
+  번역 대상이 아닌 것에만. 키 규칙·추가 절차·번역 명령은 [systems/localization.md](systems/localization.md)
+  (2026-09-12, 사용자 "string alias를 박아서 언어설정 바뀔때마다 싹다 바뀌어야")
 
 ### 📋 개발 중 체크리스트
 

@@ -59,11 +59,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FName SubAlias;
 
-	/** 현지화된 표시 이름 */
+	/** 화면 표시명 — String Table "CL9"의 키 참조여야 한다(Item.egg.Name). 직접 친 텍스트는 Validate가 Broken으로 잡는다 (docs/systems/localization.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FText DisplayName;
 
-	/** 선택적인 현지화 설명 */
+	/** 선택적 설명 — DisplayName과 같은 규칙(Item.egg.Desc) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
 	FText Description;
 
