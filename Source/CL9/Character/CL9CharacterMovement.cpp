@@ -28,7 +28,7 @@ float UCL9CharacterMovement::GetMaxSpeed() const
 		MaxSpeed = FMath::Max(MaxSpeed, 0.f);
 	}
 
-	// 카트 견인은 리플리케이트되는 플래그를 타므로 모든 머신이 같은
+	// 카트 밀기는 리플리케이트되는 플래그를 타므로 모든 머신이 같은
 	// 속도를 도출한다 (docs/plan/data/item/cart.md · systems/character.md 유효 무게 절).
 	if (CL9Owner != nullptr && CL9Owner->GetPullingCart() != nullptr)
 	{

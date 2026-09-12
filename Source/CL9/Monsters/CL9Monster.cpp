@@ -756,6 +756,36 @@ void ACL9Monster::OnShove(AActor* Shover)
 	EnterState(ECL9MonsterState::Stun);
 }
 
+void ACL9Monster::OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source)
+{
+	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
+	{
+		return;
+	}
+
+	// 피해가 먼저 — 죽으면 경직은 없다. 피해 있는 타격은 OnDamage가 HitStun 경직까지 주므로
+	// Hit 종류는 거기서 끝나고, Push는 그 위에 밀쳐냄으로 덮는다(경직 시간도 PushStun으로).
+	if (Damage > 0)
+	{
+		OnDamage(Damage, Source);
+		if (State == ECL9MonsterState::Dead || Stun != ECL9HitStun::Push)
+		{
+			return;
+		}
+	}
+	switch (Stun)
+	{
+	case ECL9HitStun::Hit:
+		OnDamage(0, Source);
+		break;
+	case ECL9HitStun::Push:
+		OnShove(Source);
+		break;
+	default:
+		break;
+	}
+}
+
 void ACL9Monster::Die(AActor* Source)
 {
 	EnterState(ECL9MonsterState::Dead);

@@ -1,8 +1,10 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Items/CL9Cart.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Character/CL9Character.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Data/CL9ItemDef.h"
 #include "GameMode/CL9GameState.h"
@@ -18,11 +20,11 @@ FText ACL9Cart::GetPrompt(const ACL9Character* Who) const
 {
 	if (Who != nullptr && Who->GetHeldItem() != nullptr)
 	{
-		return NSLOCTEXT("CL9", "CartLoad", "[E] 싣기");
+		return LOCTABLE("CL9", "Prompt.CartLoad");
 	}
 	return Who && Who->GetPullingCart() == this
-		? NSLOCTEXT("CL9", "CartRelease", "[E] 수레 놓기")
-		: NSLOCTEXT("CL9", "CartPull", "[E] 수레 끌기");
+		? LOCTABLE("CL9", "Prompt.CartRelease")
+		: LOCTABLE("CL9", "Prompt.CartPull");
 }
 
 bool ACL9Cart::CanInteract(const ACL9Character* Who) const
@@ -60,13 +62,16 @@ void ACL9Cart::Interact(ACL9Character* Who)
 		return;
 	}
 
-	// 수레를 매다는 동작 자체는 수레를 움직이지 않는다 — 제자리에 그대로 있다가
-	// 견인자가 움직이면 서 있던 자리부터 뒤따르기 시작한다 (2026-09-02 피드백).
-	HoldState = ECL9ItemHoldState::Pulled;
+	// 잡는 순간 수레가 튀지 않는다 — 다음 틱부터 미는 사람 앞자리로 스윕 이동한다
+	// (2026-09-12: 뒤에서 끌려오던 것을 앞에서 밀고 다니는 것으로 바꿈, plan/data/item/cart.md).
+	HoldState = ECL9ItemHoldState::Pushed;
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = true;
 	ApplyHoldState();
 	Puller = Who;
+	// 연결 거리에서 수레 구체와 캡슐이 스치므로, 밀리는 동안은 미는 사람을 이동 충돌에서 뺀다 —
+	// 안 그러면 매 틱 스윕이 그 캡슐에 막혀 수레가 제자리에 남는다 (2026-09-12 PIE 재현).
+	CastChecked<UPrimitiveComponent>(GetRootComponent())->IgnoreActorWhenMoving(Who, true);
 	Who->SetPullingCart(this);
 }
 
@@ -82,6 +87,7 @@ void ACL9Cart::StopPull(ACL9Character* Who)
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = false;
 	ApplyHoldState();
+	CastChecked<UPrimitiveComponent>(GetRootComponent())->IgnoreActorWhenMoving(Who, false);
 	Puller = nullptr;
 	Who->SetPullingCart(nullptr);
 }
@@ -90,33 +96,39 @@ void ACL9Cart::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// 견인, 호스트 전용: 수레는 연결 거리를 유지하며 뒤따른다 — 견인자가 그 거리를
-	// 넘어 벌어진 만큼만 움직이므로, 제자리에서 회전해도 수레가 휘둘리지 않는다.
+	// 밀기, 호스트 전용: 수레는 미는 사람 정면 연결 거리에 서고 그 사람의 yaw를 따라 돈다.
+	// 스윕으로 옮기다 막히면(벽·동물) 못 간 만큼 미는 사람을 뒤로 물려 둘이 함께 멈춘다 —
+	// 수레가 벽을 뚫거나 사람 몸속으로 들어오지 않게 하는 최소 규칙이다 (2026-09-12).
 	if (!HasAuthority() || Puller == nullptr || GetItemDef() == nullptr)
 	{
 		return;
 	}
 
-	FVector Offset = GetActorLocation() - Puller->GetActorLocation();
-	Offset.Z = 0.f;
-	const float Distance = Offset.Size();
 	const float HitchDistance = Puller->GetCapsuleComponent()->GetScaledCapsuleRadius() + GetItemDef()->Radius + 20.f;
-	if (Distance > HitchDistance && Distance > UE_KINDA_SMALL_NUMBER)
-	{
-		const FVector Towed = Puller->GetActorLocation() + Offset * (HitchDistance / Distance);
-		const FVector Target(Towed.X, Towed.Y, GetActorLocation().Z);
+	const FRotator Facing(0.f, Puller->GetActorRotation().Yaw, 0.f);
+	const FVector Ahead = Puller->GetActorLocation() + Facing.Vector() * HitchDistance;
+	const FVector Target(Ahead.X, Ahead.Y, GetActorLocation().Z);
 
-		// 막히면 벽을 타고 미끄러진다. 스윕 이동은 막히는 순간 이동 전체가 거부되므로,
-		// 그냥 두면 견인 직선 위에 벽이나 동물이 하나만 걸려도 수레가 거기 물려서
-		// 영영 따라오지 못한다 — 견인은 항상 견인자 쪽 직선으로만 밀기 때문이다
-		// (2026-09-08 PIE 재현: 빈 바닥에서는 119cm 간격을 정확히 지키다가,
-		// 스켈레탈 메시에 닿는 순간 굳어 다시는 움직이지 않았다).
-		FHitResult Hit;
-		SetActorLocation(Target, true, &Hit);
-		if (Hit.bBlockingHit)
+	FHitResult Hit;
+	SetActorLocationAndRotation(Target, Facing, true, &Hit);
+	if (Hit.bStartPenetrating)
+	{
+		// 시작부터 무언가에 묻혀 있으면(레벨에 손으로 놓은 수레가 바닥에 반경보다 낮게 있는 경우 등)
+		// 스윕은 한 발짝도 못 뗀다 — 먼저 법선 방향으로 빼낸 뒤 같은 높이에서 다시 민다.
+		AddActorWorldOffset(Hit.Normal * (Hit.PenetrationDepth + 1.f), false);
+		SetActorLocationAndRotation(FVector(Target.X, Target.Y, GetActorLocation().Z), Facing, true, &Hit);
+	}
+	if (Hit.bBlockingHit)
+	{
+		const FVector Remaining = Target - GetActorLocation();
+		FVector Back = FVector::VectorPlaneProject(Remaining, Hit.Normal);
+		Back.Z = 0.f;
+		// 벽을 따라 미끄러질 수 있는 만큼은 수레가 가고, 남은 만큼 미는 사람이 물러난다
+		SetActorLocation(GetActorLocation() + Back, true);
+		const FVector Blocked = Remaining - Back;
+		if (!Blocked.IsNearlyZero())
 		{
-			const FVector Remaining = Target - GetActorLocation();
-			SetActorLocation(GetActorLocation() + FVector::VectorPlaneProject(Remaining, Hit.Normal), true);
+			Puller->SetActorLocation(Puller->GetActorLocation() - Blocked, true);
 		}
 	}
 }

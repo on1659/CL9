@@ -22,4 +22,12 @@ void UCL9ItemDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("Value range needs 0 <= ValueMin <= ValueMax."));
 	}
+	if (HitDamage < 0)
+	{
+		OutErrors.Add(TEXT("HitDamage must be 0 or more (0 = no damage)."));
+	}
+	if (UseAction != ECL9UseAction::Swing && (HitDamage > 0 || HitStun != ECL9HitStun::None))
+	{
+		OutErrors.Add(TEXT("HitDamage/HitStun only apply when UseAction is Swing."));
+	}
 }

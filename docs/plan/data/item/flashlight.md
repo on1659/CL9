@@ -12,7 +12,7 @@
 | 컬럼 | 값 (초안) |
 |---|---|
 | `CarrySlot` | `Pocketable` — 손에 들거나, 품에 넣거나 |
-| `bEmitsLight` | 특수 — 발광(구형)이 아니라 **지향성 스포트라이트, 도달 320u(960cm)** |
+| `ActorClass` | `BP_CL9FlashItem` — **지향성 스포트라이트, 도달 320u(960cm)**, 좌클(`UseAction` `ToggleLight`) 토글 (2026-09-11: `bEmitsLight` 컬럼 대신 클래스) |
 | `bLightLostInPocket` | true — **품에 넣으면 꺼진다** (기존 규칙 그대로) |
 | `bFragile` | false (초안) |
 | `Weight` | 미정 |
@@ -46,6 +46,6 @@
 
 ## 미결
 
-- 켜짐/꺼짐 토글의 조작 위치 — 들고 있을 때 [F] (초안, [../../../systems/input.md](../../../systems/input.md))
+- 켜짐/꺼짐 토글 — 들고 있을 때 **좌클**(`IA_Use`, 행 `UseAction`=`ToggleLight`; 2026-09-12 F에서 이동, F는 헤드램프 전용 — [../../../systems/input.md](../../../systems/input.md))
 - `ValueMin/Max`·구매 가격 — 이더 눈금에서 역산
 - `Weight` — 빛을 드는 것도 짐인가 (0이면 트레이드오프가 약해진다)

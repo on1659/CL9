@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Character/CL9Character.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraShakeBase.h"
@@ -10,6 +11,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
+#include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
@@ -19,7 +21,10 @@
 #include "InputActionValue.h"
 #include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
+#include "TimerManager.h"
 #include "CL9.h"
+#include "Core/CL9InputText.h"
 #include "Core/CL9Interactable.h"
 #include "Data/CL9BuffDef.h"
 #include "Data/CL9CharacterDef.h"
@@ -30,9 +35,11 @@
 #include "Data/CL9ShakeTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameUserSettings.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
+#include "Items/CL9FlashItem.h"
 #include "Monsters/CL9Monster.h"
 
 namespace
@@ -176,7 +183,16 @@ void ACL9Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ACL9Character::ThrowEndInput);
 		EnhancedInput->BindAction(SwapAction, ETriggerEvent::Started, this, &ACL9Character::SwapInput);
 		EnhancedInput->BindAction(FlashlightAction, ETriggerEvent::Started, this, &ACL9Character::FlashlightInput);
-		EnhancedInput->BindAction(EatAction, ETriggerEvent::Started, this, &ACL9Character::EatInput);
+		EnhancedInput->BindAction(UseAction, ETriggerEvent::Started, this, &ACL9Character::UseStartInput);
+		EnhancedInput->BindAction(UseAction, ETriggerEvent::Completed, this, &ACL9Character::UseEndInput);
+
+		// 프롬프트의 "[{0}]"에 들어갈 줍기 키 — 빙의 시 한 번 읽고, 이후는 리바인딩 변경 델리게이트가 갱신한다
+		RefreshKeyText();
+		if (UEnhancedInputUserSettings* UserSettings = CL9Input::GetUserSettings(Cast<APlayerController>(GetController())))
+		{
+			UserSettings->OnSettingsChanged.AddUniqueDynamic(this, &ACL9Character::HandleUserSettingsChanged);
+			UserSettings->OnMappingContextRegistered.AddUniqueDynamic(this, &ACL9Character::HandleMappingContextRegistered);
+		}
 	}
 	else
 	{
@@ -201,8 +217,16 @@ void ACL9Character::LookInput(const FInputActionValue& Value)
 
 	if (GetController())
 	{
-		AddControllerYawInput(Axis.X);
-		AddControllerPitchInput(Axis.Y);
+		// 감도·Y축 반전은 로컬 옵션이다 — AxisConfig 감도 위에 곱하는 배율일 뿐 조준 이득이 없다 (docs/systems/settings.md)
+		float Sensitivity = 1.f;
+		float PitchSign = 1.f;
+		if (const UCL9GameUserSettings* Settings = Cast<UCL9GameUserSettings>(GEngine->GetGameUserSettings()))
+		{
+			Sensitivity = Settings->MouseSensitivity;
+			PitchSign = Settings->bInvertY ? -1.f : 1.f;
+		}
+		AddControllerYawInput(Axis.X * Sensitivity);
+		AddControllerPitchInput(Axis.Y * Sensitivity * PitchSign);
 	}
 }
 
@@ -223,16 +247,11 @@ void ACL9Character::PickPlaceInput()
 
 void ACL9Character::ThrowStartInput()
 {
-	// 빈손이면 밀친다 (④ 장비가 들어오기 전까지 프라이팬 대역); 손에 뭔가 있으면
-	// 던지기를 차징한다 (docs/systems/input.md · monster.md 반격).
+	// 손에 뭔가 있을 때만 던지기를 차징한다 (docs/systems/input.md 던지기 차징)
 	if (GetHeldItem() != nullptr)
 	{
 		LocalThrowChargeStartTime = GetWorld()->GetTimeSeconds();
 		Server_ThrowChargeStart();
-	}
-	else
-	{
-		Server_Shove();
 	}
 }
 
@@ -254,18 +273,41 @@ float ACL9Character::GetThrowChargeAlpha() const
 
 FText ACL9Character::GetFocusPrompt() const
 {
+	const FText Pattern = GetFocusPromptPattern();
+	return Pattern.IsEmpty() ? Pattern : FText::Format(Pattern, PickPlaceKeyText);
+}
+
+void ACL9Character::RefreshKeyText()
+{
+	PickPlaceKeyText = CL9Input::GetActionKeyText(Cast<APlayerController>(GetController()), PickPlaceAction);
+	// 같은 패턴이라도 키가 바뀌었으면 HUD가 다시 그려야 한다 — 다음 틱의 비교가 반드시 달라지게 비운다
+	LastFocusPrompt = FText::GetEmpty();
+}
+
+void ACL9Character::HandleUserSettingsChanged(UEnhancedInputUserSettings* Settings)
+{
+	RefreshKeyText();
+}
+
+void ACL9Character::HandleMappingContextRegistered(const UInputMappingContext* Context)
+{
+	RefreshKeyText();
+}
+
+FText ACL9Character::GetFocusPromptPattern() const
+{
 	// Server_PickPlace와 같은 순서: 착용 가능 > 주울 수 있는 아이템 > 상호작용 대상 > 놓기/해제
 	AActor* Focus = FocusedActor.Get();
 	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
 		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
 	{
-		return NSLOCTEXT("CL9", "PromptWear", "[E] 착용");
+		return LOCTABLE("CL9", "Prompt.Wear");
 	}
 	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
 		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
 		&& HeldItem == nullptr && PullingCart == nullptr)
 	{
-		return NSLOCTEXT("CL9", "PromptPickUp", "[E] 줍기");
+		return LOCTABLE("CL9", "Prompt.PickUp");
 	}
 	if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Focus); Interactable != nullptr && Interactable->CanInteract(this))
 	{
@@ -273,11 +315,11 @@ FText ACL9Character::GetFocusPrompt() const
 	}
 	if (Focus == nullptr && HeldItem != nullptr)
 	{
-		return NSLOCTEXT("CL9", "PromptPlace", "[E] 놓기");
+		return LOCTABLE("CL9", "Prompt.Place");
 	}
 	if (Focus == nullptr && PullingCart != nullptr)
 	{
-		return NSLOCTEXT("CL9", "PromptReleaseCart", "[E] 수레 놓기");
+		return LOCTABLE("CL9", "Prompt.CartRelease");
 	}
 	return FText::GetEmpty();
 }
@@ -294,14 +336,67 @@ void ACL9Character::FlashlightInput()
 
 void ACL9Character::Server_Flashlight_Implementation()
 {
-	// 착용한 헤드램프가 F를 우선 받고, 없으면 손에 든 손전등이다. 정전 이후에는
+	// F는 쓴 헤드램프만 — 든 손전등은 좌클(Server_Use)이 켠다 (2026-09-12). 정전 이후에는
 	// 손전등 자체가 켜지길 거부한다 (docs/systems/light.md).
-	ACL9Item* Lamp = (WornItem != nullptr && WornItem->IsFlashlight()) ? WornItem.Get()
-		: (HeldItem != nullptr && HeldItem->IsFlashlight()) ? HeldItem.Get()
-		: nullptr;
-	if (Lamp != nullptr)
+	if (ACL9FlashItem* Lamp = Cast<ACL9FlashItem>(WornItem.Get()))
 	{
-		Lamp->SetLightSwitch(!Lamp->IsLightOn());
+		Lamp->ToggleLight();
+	}
+}
+
+void ACL9Character::UseStartInput()
+{
+	// 길게 누르기 문턱 — 이 시간 안에 떼면 탭. 판정은 호스트가 하지만 "얼마나 눌렀나"는
+	// 입력이라 로컬에서 잰다 (던지기 차징이 호스트 시각을 쓰는 것과 달리 결과가 이산적이다).
+	constexpr float UseHoldSeconds = 0.4f;
+	GetWorldTimerManager().SetTimer(UseHoldTimer, this, &ACL9Character::UseHoldReached, UseHoldSeconds, false);
+}
+
+void ACL9Character::UseEndInput()
+{
+	if (GetWorldTimerManager().IsTimerActive(UseHoldTimer))
+	{
+		GetWorldTimerManager().ClearTimer(UseHoldTimer);
+		Server_Use(false);
+	}
+}
+
+void ACL9Character::UseHoldReached()
+{
+	Server_Use(true);
+}
+
+void ACL9Character::Server_Use_Implementation(bool bHold)
+{
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	UE_LOG(LogCL9, Verbose, TEXT("Use: hold=%d item=%s action=%d"), bHold, *GetNameSafe(HeldItem.Get()), Def ? static_cast<int32>(Def->UseAction) : -1);
+	if (Def == nullptr || IsKnockedDown())
+	{
+		return;
+	}
+
+	// 길게 누르기 = 먹기. 먹을 수 있는 건 Dish뿐이고 별도 플래그는 없다 (plan/data/item/common.md)
+	if (bHold)
+	{
+		if (Def->ItemType == ECL9ItemType::Dish)
+		{
+			HostEat();
+		}
+		return;
+	}
+	switch (Def->UseAction)
+	{
+	case ECL9UseAction::ToggleLight:
+		if (ACL9FlashItem* Lamp = Cast<ACL9FlashItem>(HeldItem.Get()))
+		{
+			Lamp->ToggleLight();
+		}
+		break;
+	case ECL9UseAction::Swing:
+		HostSwing(*Def);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -408,9 +503,9 @@ void ACL9Character::Tick(float DeltaSeconds)
 		FocusedActor = NewFocus;
 	}
 
-	// 대상이 바뀌지 않아도 프롬프트는 바뀔 수 있으므로(카트: 끌기 → 놓기)
-	// 텍스트 자체를 비교해서 달라졌을 때만 HUD에 알린다.
-	const FText Prompt = GetFocusPrompt();
+	// 대상이 바뀌지 않아도 프롬프트는 바뀔 수 있으므로(카트: 밀기 → 놓기)
+	// 원문 패턴을 비교해서 달라졌을 때만 HUD에 알린다 — 서식은 HUD가 GetFocusPrompt를 읽을 때 한 번 한다.
+	const FText Prompt = GetFocusPromptPattern();
 	if (!Prompt.EqualTo(LastFocusPrompt))
 	{
 		LastFocusPrompt = Prompt;
@@ -566,31 +661,31 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 	Thrown->OnThrown(Origin, Direction * Speed);
 }
 
-void ACL9Character::Server_Shove_Implementation()
+void ACL9Character::HostSwing(const UCL9ItemDef& Def)
 {
-	// 사거리와 회복 시간은 ④에서 실제 장비가 되기 전까지의 '프라이팬 느낌' 상수이며,
-	// 기절/넉백 수치는 여전히 몬스터 행에서 가져온다.
-	constexpr float ShoveReach = 200.f;
-	constexpr float ShoveHalfAngleDot = 0.3f;
-	constexpr float ShoveRecovery = 0.6f;
+	// 사거리·부채꼴·회복 시간은 아직 상수다(행 컬럼은 피해량과 경직 종류뿐 — 2026-09-12 결정);
+	// 경직 시간·넉백 거리는 몬스터 행에서 가져온다.
+	constexpr float SwingReach = 200.f;
+	constexpr float SwingHalfAngleDot = 0.3f;
+	constexpr float SwingRecovery = 0.6f;
 
 	const float Now = GetServerTime();
-	if (IsKnockedDown() || Now < ShoveReadyTime)
+	if (!HasAuthority() || Now < SwingReadyTime)
 	{
 		return;
 	}
-	ShoveReadyTime = Now + ShoveRecovery;
+	SwingReadyTime = Now + SwingRecovery;
 
 	// 사거리 안 정면에서 가장 가까운 몬스터 (몸체끼리 겹치므로 구체 쿼리를 쓴다)
 	const FVector Origin = GetActorLocation();
 	const FVector Forward = GetControlRotation().Vector();
 	TArray<FOverlapResult> Overlaps;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9Shove), false, this);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9Swing), false, this);
 	GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
-		FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(ShoveReach), Params);
+		FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(SwingReach), Params);
 
 	ACL9Monster* Target = nullptr;
-	float BestDot = ShoveHalfAngleDot;
+	float BestDot = SwingHalfAngleDot;
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		ACL9Monster* Monster = Cast<ACL9Monster>(Overlap.GetActor());
@@ -607,9 +702,10 @@ void ACL9Character::Server_Shove_Implementation()
 		}
 	}
 
+	UE_LOG(LogCL9, Verbose, TEXT("Swing: %d overlaps, target=%s"), Overlaps.Num(), *GetNameSafe(Target));
 	if (Target != nullptr)
 	{
-		Target->OnShove(this);
+		Target->OnStrike(Def.HitDamage, Def.HitStun, this);
 	}
 }
 
@@ -674,16 +770,6 @@ float ACL9Character::GetBuffRemaining(FName BuffAlias) const
 		}
 	}
 	return LatestEnd > 0.f ? LatestEnd - Now : 0.f;
-}
-
-void ACL9Character::EatInput()
-{
-	Server_Eat();
-}
-
-void ACL9Character::Server_Eat_Implementation()
-{
-	HostEat();
 }
 
 void ACL9Character::HostEat()
@@ -824,6 +910,12 @@ void ACL9Character::Server_Swap_Implementation()
 	CL9PlayerState->NotifyCarryChanged();
 }
 
+ECL9HoldPose ACL9Character::GetHoldPose() const
+{
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	return Def != nullptr ? Def->HoldPose : ECL9HoldPose::None;
+}
+
 void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
 {
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
@@ -838,9 +930,8 @@ void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
 	HeldItem = Item;
 	Item->SetOwner(this);
 
-	const float ForwardOffset = GetCapsuleComponent()->GetScaledCapsuleRadius() + Item->GetItemDef()->Radius + 15.f;
-	const float HandZ = Rules->CarryHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	Item->OnPickedUp(this, FVector(ForwardOffset, 0.f, HandZ));
+	// 손 소켓에 붙는다 — 위치는 행의 GripOffset이 정하고, CarryHeight는 이제 놓는 높이에만 쓰인다
+	Item->OnPickedUp(this);
 }
 
 void ACL9Character::HostWear(ACL9Item* Item)

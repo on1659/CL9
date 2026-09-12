@@ -79,8 +79,9 @@
   타격량 값이 정한다 — 원칙이 아니다.
 - 잡은 뒤 `KillCooldown` 재장전 — 연속 타격으로 3타를 순식간에 넣지 못하게 하는 장치.
   **`KillCooldown` = `RageTime` 등식은 로드 검사가 확인한다.**
-- 플레이어의 대응: 도망(속도 부등식 A1·A4가 탈출을 보증), 프라이팬 밀치기
-  (`PushStun` + `PushKnockback`).
+- 플레이어의 대응: 도망(속도 부등식 A1·A4가 탈출을 보증), 든 아이템 휘두르기(좌클 —
+  행의 `HitDamage`·`HitStun`이 `OnStrike`로 들어온다: 프라이팬 = `Push`(`PushStun` + `PushKnockback`),
+  고기 = `Hit`(`HitStunMs`); 2026-09-12, [../plan/data/item/common.md](../plan/data/item/common.md) 사용).
 
 ## 경보 (무리 반응)
 

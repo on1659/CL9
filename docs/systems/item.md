@@ -6,9 +6,16 @@
 
 ## 액터 틀
 
-- `ACL9Item : ACL9ActorBase` — 공용 액터 하나. `SetAlias(+SubAlias)` → Replicated → OnRep →
+- `ACL9Item : ACL9ActorBase` — 바탕 액터. `SetAlias(+SubAlias)` → Replicated → OnRep →
   `LoadData()`로 메시·물리 값을 표에서 읽는다 ([actor-base.md](actor-base.md)).
-  아이템 100종이어도 클래스는 하나다 (`ActorClass`를 비우면 공용 BP).
+  **행동이 같은 아이템은 클래스 하나를 공유**하고(`ActorClass`를 비우면 공용 `BP_CL9Item`),
+  행동이 다른 종류만 파생한다 — `ACL9LightItem`(빛) → `ACL9FlashItem`(손전등·헤드램프),
+  `ACL9Cart`(수레). 2026-09-11 "item - lightitem - flashitem" 결정. 파생 클래스는 `OnAcquired`/
+  `OnReleased` 훅으로 소지 변화에 반응하고, 행은 `ActorClass`로 그 클래스를 가리킨다.
+- 손에 들면 `OnPickedUp`이 소지자 전신 메시의 손 소켓 `HandGrip_R`에 액터를 붙이고 행의
+  `GripOffset`/`GripRotation`을 준다; 소유자 화면에서는 메시 컴포넌트만 1인칭 팔 소켓으로 옮겨
+  그린다. 팔 자세는 행의 `HoldPose` 범주로 ABP가 고른다 (2026-09-12) — 부착·자세 규칙의 정본은
+  [inventory.md](inventory.md), ABP 배선은 [animation.md](animation.md).
 - 물리 시뮬레이션(구르기·낙하·충돌)은 호스트가 권위 — 클라는 복제 위치 보간.
 - 깨짐 판정: 충격 속도 vs `CrackSpeed`/`BreakSpeed` — 호스트 전용, 결과는 SubAlias/상태
   Replicated.

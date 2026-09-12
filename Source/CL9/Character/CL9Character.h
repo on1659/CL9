@@ -8,15 +8,20 @@
 #include "GameFramework/Character.h"
 #include "CL9Character.generated.h"
 
+enum class ECL9HoldPose : uint8;
+
 class ACL9Cart;
 class ACL9Item;
 class ACL9PlayerState;
 class UCameraComponent;
 class UCL9CharacterDef;
 class UCL9CharacterMovement;
+class UCL9ItemDef;
 class UCL9RulesDef;
 class UCameraShakeBase;
+class UEnhancedInputUserSettings;
 class UInputAction;
+class UInputMappingContext;
 class UMaterialInterface;
 struct FInputActionValue;
 
@@ -139,6 +144,13 @@ public:
 	bool IsDead() const;
 
 	/**
+	 * 손에 든 아이템 행의 자세 범주, 빈손이면 None — 전신 ABP(ABP_Unarmed)가 상체 Hold 레이어를
+	 * 고르는 데 읽는다. HeldItem이 복제되므로 모든 머신에서 같은 값이 나온다 (docs/systems/inventory.md).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	ECL9HoldPose GetHoldPose() const;
+
+	/**
 	 * 지금 E를 한 번 누르면 무엇을 하게 될지, HUD 프롬프트("[E] 줍기" …)로 표현한 것 —
 	 * 로컬 focus에 대해 Server_PickPlace의 분기 순서를 그대로 반영하며, 없으면 비어
 	 * 있다. 표시 전용이다 (docs/systems/input.md 상호작용 프롬프트).
@@ -201,7 +213,7 @@ protected:
 	/** IA_PickPlace(E)를 처리한다 — 줍기 > 상호작용 > 놓기 순서로 호스트가 판정한다 */
 	void PickPlaceInput();
 
-	/** IA_Throw 누름을 처리한다 — 호스트가 차징 시각을 잰다 (docs/systems/input.md 던지기 차징) */
+	/** IA_Throw(G) 누름을 처리한다 — 호스트가 차징 시각을 잰다 (docs/systems/input.md 던지기 차징) */
 	void ThrowStartInput();
 
 	/** IA_Throw 뗌을 처리한다 */
@@ -210,8 +222,17 @@ protected:
 	/** IA_Swap(R)을 처리한다 — SwapTime 잠금 아래에서 손↔주머니를 교체한다 */
 	void SwapInput();
 
-	/** IA_Flashlight(F)를 처리한다 — 든 손전등을 켜고 끈다 (docs/systems/light.md) */
+	/** IA_Flashlight(F)를 처리한다 — 쓴 헤드램프를 켜고 끈다 (docs/systems/light.md) */
 	void FlashlightInput();
+
+	/** IA_Use(좌클) 누름 — 길게 누르기 타이머를 건다 (docs/systems/input.md 사용) */
+	void UseStartInput();
+
+	/** IA_Use(좌클) 뗌 — 길게 누르기가 안 걸렸으면 탭이다 */
+	void UseEndInput();
+
+	/** 길게 누르기 문턱을 넘겼다 — 먹기 요청 */
+	void UseHoldReached();
 
 	/** E 한 번 누름 — 우선순위: 주울 수 있는 아이템 > 상호작용 대상 > 놓기 (docs/systems/input.md 감지) */
 	UFUNCTION(Server, Reliable)
@@ -226,17 +247,19 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_Swap();
 
+	/**
+	 * 좌클 사용 — 호스트가 든 아이템 행으로 판정한다. 탭(bHold=false)은 행의 UseAction
+	 * (ToggleLight 손전등 켜고 끄기 / Swing 휘두르기 / None 무동작), 길게 누르기(bHold=true)는
+	 * Dish면 먹기 — 닭다리처럼 먹을 수도 휘두를 수도 있는 것을 한 키로 가르는 규칙이다
+	 * (2026-09-12 사용자: "길게 누르면 먹기, 짧게 누르면 휘두르기"). 빈손이면 아무 일도 없다.
+	 */
 	UFUNCTION(Server, Reliable)
-	void Server_Eat();
+	void Server_Use(bool bHold);
 
-	/** 로컬 입력 → 서버 판정 */
-	void EatInput();
+	/** 호스트 전용: 든 아이템을 정면으로 휘둘러 사거리·부채꼴 안 가장 가까운 몬스터에 OnStrike */
+	void HostSwing(const UCL9ItemDef& Def);
 
-	/** 빈손 좌클릭 — 몬스터를 앞으로 밀친다 (프라이팬 대역, docs/systems/input.md) */
-	UFUNCTION(Server, Reliable)
-	void Server_Shove();
-
-	/** 호스트에서 든 손전등을 켜고 끈다 (아이템 상태는 리플리케이트됨 — light.md) */
+	/** 호스트에서 쓴 헤드램프를 켜고 끈다 (아이템 상태는 리플리케이트됨 — light.md) */
 	UFUNCTION(Server, Reliable)
 	void Server_Flashlight();
 
@@ -273,21 +296,21 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> PickPlaceAction;
 
-	/** 던지기 차징 액션 (마우스 좌클릭) */
+	/** 던지기 차징 액션 (G) */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> ThrowAction;
+
+	/** 사용 액션 (마우스 좌클릭) — 든 아이템 행의 UseAction / Dish 먹기 */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> UseAction;
 
 	/** 손↔주머니 교체 액션 (R) */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SwapAction;
 
-	/** 손전등 토글 액션 (F) */
+	/** 헤드램프 토글 액션 (F) */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> FlashlightAction;
-
-	/** 먹기 액션 (G) — 손에 든 요리를 먹는다 */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> EatAction;
 
 	/** 조준이 상호작용할 대상 위에 그려지는 오버레이 — BP 자식에서 지정된다 */
 	UPROPERTY(EditAnywhere, Category="Interaction")
@@ -308,8 +331,27 @@ private:
 	/** 로컬 플레이어가 현재 조준 중인 대상 (하이라이트 기록용) */
 	TWeakObjectPtr<AActor> FocusedActor;
 
-	/** HUD에 마지막으로 전달한 프롬프트 — 텍스트가 달라질 때만 OnFocusPromptChanged가 발동한다 */
+	/** HUD에 마지막으로 전달한 프롬프트의 원문 패턴(키 서식 전) — 달라질 때만 OnFocusPromptChanged가 발동한다 */
 	FText LastFocusPrompt;
+
+	/**
+	 * 서식 전의 프롬프트 — "[{0}] 줍기"의 String Table 원문. GetFocusPrompt가 출구에서 현재 키로 채운다.
+	 * ICL9Interactable::GetPrompt도 원문 패턴을 돌려준다 (docs/systems/input.md 키 표기)
+	 */
+	FText GetFocusPromptPattern() const;
+
+	/** 줍기 키의 현재 표기(캐시) — 리바인딩이 바뀌면 유저 설정 델리게이트가 다시 채운다. 틱마다 프로필을 뒤지지 않는다 */
+	FText PickPlaceKeyText;
+
+	/** 소유 클라이언트: 키 표기를 다시 읽고, 프롬프트가 새 키로 다시 나가도록 마지막 패턴을 비운다 */
+	void RefreshKeyText();
+
+	UFUNCTION()
+	void HandleUserSettingsChanged(UEnhancedInputUserSettings* Settings);
+
+	/** 호스트는 PC BeginPlay(IMC 등록)보다 빙의가 먼저라 첫 조회가 비어 있다 — 등록이 끝나면 다시 읽는다 */
+	UFUNCTION()
+	void HandleMappingContextRegistered(const UInputMappingContext* Context);
 
 	/** 호스트 전용: 손과 주머니를 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
 	void HostDropEverything();
@@ -352,8 +394,11 @@ private:
 	/** 같은 차징에 대한 소유 클라이언트의 로컬 시각 (게이지 전용, 판정에는 쓰이지 않음); 대기 중이면 음수 */
 	float LocalThrowChargeStartTime = -1.f;
 
-	/** 다음 밀치기가 거부되는 기준이 되는 호스트 시각 (휘두른 뒤 회복 시간) */
-	float ShoveReadyTime = 0.f;
+	/** 다음 휘두르기가 거부되는 기준이 되는 호스트 시각 (휘두른 뒤 회복 시간) */
+	float SwingReadyTime = 0.f;
+
+	/** 좌클 길게 누르기 판정 타이머 (소유 클라 로컬) — 만료 전에 떼면 탭이다 */
+	FTimerHandle UseHoldTimer;
 
 	/**
 	 * 넘어짐 상태가 캐릭터를 붙들어두는 서버 시각 (0이면 일어난 상태). CartMult처럼

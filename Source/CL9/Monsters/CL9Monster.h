@@ -7,6 +7,8 @@
 #include "Core/CL9Damageable.h"
 #include "CL9Monster.generated.h"
 
+enum class ECL9HitStun : uint8;
+
 class ACL9Character;
 class UCL9MonsterDef;
 class USphereComponent;
@@ -108,6 +110,13 @@ public:
 	 * (docs/systems/monster.md 반격, docs/plan/data/monster/common.md PushStun).
 	 */
 	void OnShove(AActor* Shover);
+
+	/**
+	 * 호스트 전용: 손에 든 아이템에 맞았다 — 행의 HitDamage·HitStun(docs/plan/data/item/common.md
+	 * 사용)을 합친 것. 피해를 먼저 넣고, 죽지 않았을 때만 경직 종류대로 OnDamage의 경직 또는
+	 * OnShove의 밀쳐냄이 따라온다. 피해 0·경직 None이면 아무 일도 없다.
+	 */
+	void OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source);
 
 protected:
 	virtual void LoadData() override;

@@ -12,6 +12,50 @@
  * 액터는 메시, 물리, 소지 규칙 등 모든 걸 여기서 읽으므로, 새 아이템은
  * 새 행일 뿐 새 C++ 코드가 아니다.
  */
+/**
+ * 손에 들었을 때 팔이 취하는 자세의 범주 (docs/systems/inventory.md 손에 든 아이템). 아이템마다
+ * 클립을 따로 만들지 않고 범주로 묶는다 — 전신 ABP가 이 값으로 상체 Hold 레이어를 고르고,
+ * 1인칭 팔은 전신 포즈를 복사해 같은 자세가 된다.
+ */
+UENUM(BlueprintType)
+enum class ECL9HoldPose : uint8
+{
+	/** 자세를 바꾸지 않는다 — 손이 내려간 채 소켓에만 붙는다 */
+	None,
+	/** 한 손에 쥐는 작은 것 — 계란·고기·프라이팬. 손을 가슴 앞으로 올린다 */
+	Small,
+	/** 손전등처럼 앞을 향해 쥐는 것 — 렌즈(+X)가 시선 방향 */
+	Flashlight,
+	/** 두 손으로 앞에 드는 큰 것 — 냄비·작업등 */
+	Large
+};
+
+/**
+ * 손에 든 채 좌클(IA_Use)하면 무엇을 하는가 (docs/systems/input.md 사용). 먹기는 여기 없다 —
+ * 먹을 수 있는 건 `ItemType == Dish`뿐이고 그 행은 좌클이 곧 먹기다 (plan/data/item/common.md).
+ */
+UENUM(BlueprintType)
+enum class ECL9UseAction : uint8
+{
+	/** 아무것도 안 한다 — 달걀·냄비·작업등 */
+	None,
+	/** 들고 있는 손전등을 켜고 끈다 (헤드램프는 F) */
+	ToggleLight,
+	/** 정면으로 휘둘러 몬스터를 친다 — HitDamage·HitStun이 결과를 정한다 */
+	Swing
+};
+
+/** 휘둘러 맞았을 때 몬스터가 받는 경직의 종류 — 시간·거리 값은 몬스터 행이 갖는다 */
+UENUM(BlueprintType)
+enum class ECL9HitStun : uint8
+{
+	None,
+	/** 죽지 않는 타격의 경직 — 몬스터 행 `HitStunMs` */
+	Hit,
+	/** 밀쳐냄 — 몬스터 행 `PushStun` 경직 + `PushKnockback` 넉백 + 범인 추격 (프라이팬) */
+	Push
+};
+
 UCLASS()
 class UCL9ItemDef : public UCL9DefBase
 {
@@ -28,6 +72,22 @@ public:
 	/** 무게→속도 공식이 정해지면 이 유효 무게가 감속에 반영된다 (미결) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float Weight = 0.f;
+
+	/**
+	 * 손에 들었을 때 손 소켓(`HandGrip_R`, 없으면 `hand_r` 뼈)에서의 상대 위치 (cm). 손잡이가 메시
+	 * 원점에 있지 않은 물건(손전등 몸통, 냄비 고리)을 손바닥에 맞추는 값이다 — 2026-09-12부터
+	 * 든 아이템은 캡슐이 아니라 소지자 전신 메시의 손 소켓에 붙는다 (docs/systems/inventory.md).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
+	FVector GripOffset = FVector::ZeroVector;
+
+	/** 손 소켓에서의 상대 회전 — 손전등처럼 렌즈(+X)가 앞을 봐야 하는 물건이 쓴다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
+	FRotator GripRotation = FRotator::ZeroRotator;
+
+	/** 들었을 때 팔 자세 범주 — 전신 ABP의 상체 Hold 레이어가 읽는다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
+	ECL9HoldPose HoldPose = ECL9HoldPose::Small;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	bool bStackable = false;
@@ -73,25 +133,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	float Friction = 0.5f;
 
-	// -- 소리와 빛 --
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
-	bool bEmitsLight = false;
-
-	/** 은은한 발광이냐 켜고 끄는 손전등이냐 — bEmitsLight일 때만 읽는다 (docs/systems/light.md) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
-	ECL9ItemLight LightKind = ECL9ItemLight::Glow;
+	// -- 빛 --
+	// 빛을 내느냐는 행이 아니라 클래스가 정한다: ActorClass가 ACL9LightItem 계열이면 빛난다
+	// (item - lightitem - flashitem, 2026-09-11). 아래 값은 그 클래스가 읽는 광원 수치다.
 
 	/** 소지 중 발광 반경 / 손전등 도달 거리 (cm) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	float LightRadius = 0.f;
 
 	/** 밝기 — 포인트 라이트는 칸델라, 손전등은 빔 강도 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	float LightIntensity = 5000.f;
 
-	/** 손전등 외곽 원뿔의 반각 (도) — Glow에서는 무시된다 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(EditCondition="bEmitsLight"))
+	/** 손전등 외곽 원뿔의 반각 (도) — 발광(점광원)에서는 무시된다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	float LightConeAngle = 32.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
@@ -153,4 +208,18 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Type")
 	TArray<FName> EatBuffs;
+
+	// -- 사용 (좌클) --
+
+	/** 든 채 좌클하면 하는 일. Dish 행은 이 값과 무관하게 먹는다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
+	ECL9UseAction UseAction = ECL9UseAction::None;
+
+	/** Swing으로 맞힌 몬스터의 HP 피해 — 0이면 피해 없음 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
+	int32 HitDamage = 0;
+
+	/** Swing으로 맞힌 몬스터가 받는 경직 종류 — 피해로 죽으면 경직은 없다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
+	ECL9HitStun HitStun = ECL9HitStun::None;
 };
