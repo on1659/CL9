@@ -7,11 +7,14 @@
 #include "Engine/LocalPlayer.h"
 #include "GameMode/CL9CameraManager.h"
 #include "GameMode/CL9CheatManager.h"
+#include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameUserSettings.h"
 #include "InputMappingContext.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
 
 ACL9PlayerController::ACL9PlayerController()
 {
@@ -43,6 +46,41 @@ void ACL9PlayerController::BeginPlay()
 		if (UCL9UIManager* UIManager = UCL9UIManager::Get(this))
 		{
 			UIManager->InitForPlayer(this);
+		}
+
+		// 리바인딩 대상 IMC를 유저 설정에 등록한다 — SetupInputComponent 시점에는 유저 설정 객체가 아직 없어서
+		// (SetPlayer 끝의 ReceivedPlayer에서 만들어진다) 거기서는 조용히 실패한다. 관전 IMC는 부착 전이지만 등록은
+		// 지금 해 둬야 설정 화면에 Tab 행이 이름을 갖고 뜬다 (docs/systems/input.md 리바인딩)
+		if (const UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+		{
+			if (UEnhancedInputUserSettings* UserSettings = Subsystem->GetUserSettings())
+			{
+				TSet<UInputMappingContext*> Contexts;
+				for (UInputMappingContext* Context : DefaultMappingContexts)
+				{
+					if (Context != nullptr)
+					{
+						Contexts.Add(Context);
+					}
+				}
+				if (SpectateMappingContext != nullptr)
+				{
+					Contexts.Add(SpectateMappingContext.Get());
+				}
+				const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+				const UCL9UITable* UITable = (GameInstance != nullptr) ? GameInstance->GetUITable() : nullptr;
+				if (UITable != nullptr && UITable->UIMappingContext != nullptr)
+				{
+					Contexts.Add(UITable->UIMappingContext.Get());
+				}
+				UserSettings->RegisterInputMappingContexts(Contexts);
+			}
+		}
+
+		// 볼륨은 월드와 오디오 디바이스가 있어야 적용된다 — 여기가 첫 기회다 (docs/systems/settings.md)
+		if (const UCL9GameUserSettings* Settings = UCL9GameUserSettings::Get())
+		{
+			Settings->ApplyAudio(GetWorld());
 		}
 	}
 }
@@ -102,21 +140,16 @@ void ACL9PlayerController::PauseInput()
 		return;
 	}
 
-	// M에게 관전 화면은 "아무것도 열려 있지 않음"으로 취급된다: 일시정지가
-	// 그것을 대체하고(Screen 레이어는 배타적이다) 일시정지를 닫으면 다시 돌아온다 —
-	// 관전 플래그가 파생시키는 화면은 그 자체의 "닫힘" 상태가 없다.
+	// 한 단계 뒤로: 열린 화면이 있으면 그것을 닫는다 — 매니저의 히스토리가 바로 아래 화면(메뉴·관전)을 다시 연다
+	// (docs/systems/ui_system.md 화면 히스토리). 아무것도 없으면 메뉴를 연다.
 	const FName OpenScreen = UIManager->GetOpenScreen();
-	if (OpenScreen.IsNone() || OpenScreen == CL9UINames::Spectate)
+	if (OpenScreen.IsNone())
 	{
 		UIManager->OpenWidget(CL9UINames::Pause);
 	}
 	else
 	{
 		UIManager->CloseWidget(OpenScreen);
-		if (bSpectating)
-		{
-			UIManager->OpenWidget(CL9UINames::Spectate);
-		}
 	}
 }
 
@@ -157,7 +190,8 @@ void ACL9PlayerController::OnRep_Spectating()
 	{
 		if (bSpectating)
 		{
-			UIManager->OpenWidget(CL9UINames::Spectate);
+			// 죽음은 뿌리 화면이다 — 위에 쌓였던 메뉴·설정을 버리고 관전만 남긴다; 이후 메뉴는 그 위에 쌓인다
+			UIManager->OpenWidget(CL9UINames::Spectate, /*bResetHistory=*/true);
 		}
 		else
 		{

@@ -86,16 +86,23 @@ AudioComponent->Play();
 
 ## 볼륨 관리
 
-사운드 클래스 트리 (기본값): Master ├ Effects 0.8 ├ VO 1.0 ├ UI 1.0 ├ Ambience 0.5 └ Music 0.7
+사운드 클래스 트리와 **설계 게인**(2026-09-12 — 슬라이더 기본값이 아니라 `SoundClass.Properties.Volume`에 둔다):
+`SC_Master` 1.0 ├ `SC_Effects` 0.8 ├ `SC_VO` 1.0 ├ `SC_UI` 1.0 ├ `SC_Ambience` 0.5 └ `SC_Music` 0.7
+(`Content/Sounds/Master/`, 믹스 `MasterSoundMix`). **모든 사운드 에셋은 이 중 하나의 클래스를 가져야** 설정 화면의
+볼륨 슬라이더가 닿는다.
 
 ```cpp
-// 시스템 공용 에셋(MasterSoundMix)은 경로 하드코딩 예외 — 게임 콘텐츠는 항상 DataAsset에서
+// 설정 화면의 슬라이더 값(기본 전부 1.0)이 클래스 볼륨 위에 곱해진다 — UCL9GameUserSettings::ApplyAudio(World)
 UGameplayStatics::SetSoundMixClassOverride(World, Mix, MusicClass,
-  NewVolume, Pitch, FadeTime, /*bApplyToChildren=*/true);
-UGameplayStatics::PushSoundMixModifier(World, Mix);   // 믹스 활성화는 별도 호출
+  NewVolume, /*Pitch*/1.f, /*FadeTime*/0.1f, /*bApplyToChildren=*/true);
+UGameplayStatics::PushSoundMixModifier(World, Mix);   // 믹스 활성화는 별도 호출 — 로컬 PC BeginPlay에서 한 번
 ```
 
-슬라이더 UI는 [settings.md](settings.md).
+- 믹스·클래스 참조는 `SettingsTable`(DataAsset, `UCL9SettingsTable`)이 갖고 `BP_CL9GameInstance`가 주입한다 —
+  conventions § 5의 경로 예외는 `MasterSoundMix` 하나뿐이라 SoundClass 6개는 에셋 참조여야 한다.
+- 월드·오디오 디바이스가 없으면 `SetSoundMixClassOverride`가 조용히 return하므로 `GameInstance::Init`에서는 못 부른다.
+
+슬라이더 UI·저장은 [settings.md](settings.md).
 
 ## 참고
 

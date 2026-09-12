@@ -5,6 +5,7 @@
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ShakeTable.h"
 #include "Misc/ConfigCacheIni.h"
+#include "UI/CL9SettingsTable.h"
 #include "UI/CL9UITable.h"
 
 UCL9DefRegistry* UCL9GameInstance::CreateStandaloneRegistry(UObject* Outer)
@@ -49,5 +50,11 @@ void UCL9GameInstance::Init()
 	if (ShakeTable == nullptr)
 	{
 		UE_LOG(LogCL9, Warning, TEXT("'%s' has no shake table assigned — camera shakes stay silent."), *GetNameSafe(this));
+	}
+
+	SettingsTable = SettingsTableAsset.LoadSynchronous();
+	if (SettingsTable == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("'%s' has no settings table assigned — volume sliders reach nothing."), *GetNameSafe(this));
 	}
 }

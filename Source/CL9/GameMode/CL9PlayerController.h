@@ -48,6 +48,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="CL9|Spectate")
 	void SpectateNext();
 
+	/** 관전 화면이 "다음 동료 ({0})"의 키 표기를 채울 때 읽는다 */
+	const UInputAction* GetSpectateNextAction() const
+	{
+		return SpectateNextAction;
+	}
+
 	/** 호스트 전용: 플래그를 바꾸고 로컬 훅을 발동한다(소유 클라이언트는 OnRep이 처리한다) */
 	void HostSetSpectating(bool bNewSpectating);
 
@@ -85,7 +91,7 @@ protected:
 	virtual void SetupInputComponent() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/** M(IA_Pause) — 일시정지 화면을 열거나, 열려 있는 화면을 닫는다; 관전자는 관전 화면으로 돌아간다(docs/systems/input.md) */
+	/** M(IA_Pause) — 열린 화면이 없으면 메뉴를 열고, 있으면 한 단계 뒤로(히스토리가 아래 화면을 다시 연다 — docs/systems/ui_system.md) */
 	void PauseInput();
 
 	/** 마우스 오른쪽(IA_Scan) — UI 표의 Popup 행 "Scan"을 새로 연다 (열려 있으면 닫고 다시) */

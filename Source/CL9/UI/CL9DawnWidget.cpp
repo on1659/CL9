@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9DawnWidget.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Engine/World.h"
@@ -11,13 +12,9 @@ void UCL9DawnWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (CloseButton != nullptr)
-	{
-		CloseButton->OnClicked.AddDynamic(this, &UCL9DawnWidget::HandleCloseClicked);
-	}
 	if (CloseText != nullptr)
 	{
-		CloseText->SetText(NSLOCTEXT("CL9", "DawnClose", "계속"));
+		CloseText->SetText(LOCTABLE("CL9", "Dawn.Close"));
 	}
 
 	ShowWaiting();
@@ -73,14 +70,14 @@ void UCL9DawnWidget::ShowWaiting()
 	if (TitleText != nullptr)
 	{
 		TitleText->SetText(GameState != nullptr
-			? FText::Format(NSLOCTEXT("CL9", "DawnTitle", "{0}일차 새벽"), GameState->GetCurrentDay())
-			: NSLOCTEXT("CL9", "DawnTitlePlain", "새벽"));
+			? FText::Format(LOCTABLE("CL9", "Dawn.Title"), GameState->GetCurrentDay())
+			: LOCTABLE("CL9", "Dawn.TitlePlain"));
 	}
 	// 정산일이 아닌 새벽에는 견줄 목표가 없다 — 이번 기간에 얼마를 벌었는지만 알려 준다
 	if (ResultText != nullptr)
 	{
 		ResultText->SetText(GameState != nullptr
-			? FText::Format(NSLOCTEXT("CL9", "DawnEarned", "이번 기간 {0} 이더"), GameState->GetPeriodIncome())
+			? FText::Format(LOCTABLE("CL9", "Dawn.Earned"), GameState->GetPeriodIncome())
 			: FText::GetEmpty());
 	}
 	if (VerdictText != nullptr)
@@ -96,31 +93,26 @@ void UCL9DawnWidget::HandleSettled(int32 Day, int32 Earned, int32 Target, bool b
 	// 미달이면 1일차로 돌아가므로 나중에 조회하면 아무것도 남아 있지 않다
 	if (TitleText != nullptr)
 	{
-		TitleText->SetText(FText::Format(NSLOCTEXT("CL9", "DawnSettleTitle", "{0}일차 정산"), Day));
+		TitleText->SetText(FText::Format(LOCTABLE("CL9", "Dawn.SettleTitle"), Day));
 	}
 	if (ResultText != nullptr)
 	{
-		ResultText->SetText(FText::Format(NSLOCTEXT("CL9", "DawnSettle", "이번 기간 {0} / 목표 {1} 이더"), Earned, Target));
+		ResultText->SetText(FText::Format(LOCTABLE("CL9", "Dawn.Settle"), Earned, Target));
 	}
 	if (VerdictText != nullptr)
 	{
 		VerdictText->SetVisibility(ESlateVisibility::HitTestInvisible);
 		VerdictText->SetColorAndOpacity(FSlateColor(bPassed ? PassColor : FailColor));
 		VerdictText->SetText(bPassed
-			? NSLOCTEXT("CL9", "DawnPassed", "통과 — 다음 기간이 시작된다")
-			: FText::Format(NSLOCTEXT("CL9", "DawnFailed", "미달 — 판이 끝났다. {0}일차까지 버텼다"), Day));
+			? LOCTABLE("CL9", "Dawn.Passed")
+			: FText::Format(LOCTABLE("CL9", "Dawn.Failed"), Day));
 	}
 	if (CloseText != nullptr)
 	{
 		CloseText->SetText(bPassed
-			? NSLOCTEXT("CL9", "DawnClose", "계속")
-			: NSLOCTEXT("CL9", "DawnCloseFailed", "새 판으로"));
+			? LOCTABLE("CL9", "Dawn.Close")
+			: LOCTABLE("CL9", "Dawn.CloseFailed"));
 	}
-}
-
-void UCL9DawnWidget::HandleCloseClicked()
-{
-	CloseSelf();
 }
 
 ACL9GameState* UCL9DawnWidget::GetCL9GameState() const

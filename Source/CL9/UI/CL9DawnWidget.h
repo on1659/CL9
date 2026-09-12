@@ -41,8 +41,7 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> VerdictText;
 
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UButton> CloseButton;
+	// [닫기] 버튼은 부모 UCL9Widget의 공통 CloseButton이 CloseSelf에 배선한다 (docs/systems/ui_system.md)
 
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> CloseText;
@@ -56,9 +55,6 @@ protected:
 private:
 	UFUNCTION()
 	void HandleSettled(int32 Day, int32 Earned, int32 Target, bool bPassed);
-
-	UFUNCTION()
-	void HandleCloseClicked();
 
 	/** GameState는 construct 이후에 복제되어 들어올 수 있다 — 존재할 때까지 재시도한 뒤 구독한다 */
 	void TryWire();

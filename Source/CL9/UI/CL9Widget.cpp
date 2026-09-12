@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9Widget.h"
+#include "Components/Button.h"
 #include "UI/CL9UIManager.h"
 
 void UCL9Widget::CloseSelf()
@@ -14,6 +15,11 @@ void UCL9Widget::CloseSelf()
 void UCL9Widget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (CloseButton != nullptr)
+	{
+		CloseButton->OnClicked.AddUniqueDynamic(this, &UCL9Widget::HandleCloseClicked);
+	}
 
 	SlidePanel = SlidePanelName.IsNone() ? nullptr : GetWidgetFromName(SlidePanelName);
 	TransitionElapsed = 0.f;
@@ -56,6 +62,7 @@ void UCL9Widget::PlayOutro()
 
 	bClosing = true;
 	TransitionElapsed = 0.f;
+	OnClosing();
 
 	if (FadeTime <= 0.f)
 	{
@@ -84,4 +91,9 @@ void UCL9Widget::ApplyTransition()
 	// 들어올 때는 끝에서 부드럽게 멈추고(감속), 나갈 때는 왔던 만큼 그대로 되돌아간다
 	const float Placed = bClosing ? 1.f - SlideAlpha : 1.f - FMath::Square(1.f - SlideAlpha);
 	Panel->SetRenderTranslation(FVector2D(0.f, SlideDistance * (1.f - Placed)));
+}
+
+void UCL9Widget::HandleCloseClicked()
+{
+	CloseSelf();
 }

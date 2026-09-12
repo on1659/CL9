@@ -71,8 +71,7 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> HintText;
 
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UButton> CloseButton;
+	// [닫기] 버튼은 부모 UCL9Widget의 공통 CloseButton이 CloseSelf에 배선한다 (docs/systems/ui_system.md)
 
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> CloseText;
@@ -96,8 +95,6 @@ protected:
 	int32 CardDetailSize = 16;
 
 private:
-	UFUNCTION()
-	void HandleCloseClicked();
 
 	UFUNCTION()
 	void HandleMoneyChanged();

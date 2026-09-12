@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UI/CL9ShopWidget.h"
+#include "Internationalization/StringTableRegistry.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
@@ -18,17 +19,13 @@ void UCL9ShopWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (CloseButton != nullptr)
-	{
-		CloseButton->OnClicked.AddDynamic(this, &UCL9ShopWidget::HandleCloseClicked);
-	}
 	if (CloseText != nullptr)
 	{
-		CloseText->SetText(NSLOCTEXT("CL9", "ShopClose", "닫기"));
+		CloseText->SetText(LOCTABLE("CL9", "Shop.Close"));
 	}
 	if (TitleText != nullptr)
 	{
-		TitleText->SetText(NSLOCTEXT("CL9", "ShopTitle", "트럭 패널"));
+		TitleText->SetText(LOCTABLE("CL9", "Shop.Title"));
 	}
 	if (HintText != nullptr)
 	{
@@ -153,7 +150,7 @@ void UCL9ShopWidget::RefreshAffordability()
 	const ACL9GameState* GameState = GetCL9GameState();
 	if (MoneyText != nullptr && GameState != nullptr)
 	{
-		MoneyText->SetText(FText::Format(NSLOCTEXT("CL9", "ShopMoney", "보유 {0} 이더"), GameState->GetSharedMoney()));
+		MoneyText->SetText(FText::Format(LOCTABLE("CL9", "Shop.Money"), GameState->GetSharedMoney()));
 	}
 
 	const UCL9DefRegistry* Registry = GetRegistry();
@@ -180,18 +177,18 @@ void UCL9ShopWidget::RefreshAffordability()
 		Detail->SetColorAndOpacity(FSlateColor(bBuyable ? CardTextColor : CardLockedColor));
 
 		TArray<FText> Parts;
-		Parts.Add(FText::Format(NSLOCTEXT("CL9", "ShopPrice", "{0} 이더"), Equip->Price));
+		Parts.Add(FText::Format(LOCTABLE("CL9", "Shop.Price"), Equip->Price));
 		if (Equip->MaxOwned > 0)
 		{
 			// 몇 개까지 살 수 있는 물건이면 지금 몇 개인지가 곧 살지 말지의 판단 근거다
-			Parts.Add(FText::Format(NSLOCTEXT("CL9", "ShopOwned", "{0}/{1} 보유"),
+			Parts.Add(FText::Format(LOCTABLE("CL9", "Shop.Owned"),
 				GameState->GetOwnedCount(Alias), Equip->MaxOwned));
 		}
 		if (!bBuyable)
 		{
 			Parts.Add(MakeReasonText(Result, *Equip));
 		}
-		Detail->SetText(FText::Join(NSLOCTEXT("CL9", "ShopDetailSep", " · "), Parts));
+		Detail->SetText(FText::Join(LOCTABLE("CL9", "Shop.DetailSep"), Parts));
 	}
 }
 
@@ -200,15 +197,15 @@ FText UCL9ShopWidget::MakeReasonText(ECL9BuyResult Reason, const UCL9EquipmentDe
 	switch (Reason)
 	{
 	case ECL9BuyResult::Locked:
-		return FText::Format(NSLOCTEXT("CL9", "ShopLocked", "{0}일차부터"), Equip.UnlockDay);
+		return FText::Format(LOCTABLE("CL9", "Shop.Locked"), Equip.UnlockDay);
 	case ECL9BuyResult::MaxOwned:
-		return FText::Format(NSLOCTEXT("CL9", "ShopMaxOwned", "이미 {0}개"), Equip.MaxOwned);
+		return FText::Format(LOCTABLE("CL9", "Shop.MaxOwned"), Equip.MaxOwned);
 	case ECL9BuyResult::NotEnoughMoney:
-		return NSLOCTEXT("CL9", "ShopNoMoney", "잔액 부족");
+		return LOCTABLE("CL9", "Shop.NoMoney");
 	case ECL9BuyResult::NotInLobby:
-		return NSLOCTEXT("CL9", "ShopNotInLobby", "정차 중에만");
+		return LOCTABLE("CL9", "Shop.NotInLobby");
 	default:
-		return NSLOCTEXT("CL9", "ShopNoRow", "살 수 없음");
+		return LOCTABLE("CL9", "Shop.NoRow");
 	}
 }
 
@@ -224,11 +221,6 @@ void UCL9ShopWidget::HandleBuyClicked(FName EquipAlias)
 	}
 }
 
-void UCL9ShopWidget::HandleCloseClicked()
-{
-	CloseSelf();
-}
-
 void UCL9ShopWidget::HandleMoneyChanged()
 {
 	// 남이 사도 잔액이 줄어든다 — 그때 살 수 있는 것도 함께 바뀐다
@@ -241,7 +233,7 @@ void UCL9ShopWidget::HandleBuyRejected(FName EquipAlias, ECL9BuyResult Reason)
 	const UCL9EquipmentDef* Equip = (Registry != nullptr) ? Registry->FindEquipment(EquipAlias) : nullptr;
 	if (HintText != nullptr && Equip != nullptr)
 	{
-		HintText->SetText(FText::Format(NSLOCTEXT("CL9", "ShopRejected", "{0}: {1}"),
+		HintText->SetText(FText::Format(LOCTABLE("CL9", "Shop.Rejected"),
 			Equip->DisplayName.IsEmpty() ? FText::FromName(EquipAlias) : Equip->DisplayName,
 			MakeReasonText(Reason, *Equip)));
 	}

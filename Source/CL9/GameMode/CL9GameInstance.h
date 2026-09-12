@@ -8,6 +8,7 @@
 
 class UCL9DefList;
 class UCL9DefRegistry;
+class UCL9SettingsTable;
 class UCL9ShakeTable;
 class UCL9UITable;
 
@@ -48,6 +49,12 @@ public:
 		return ShakeTable;
 	}
 
+	/** 설정 화면·볼륨 적용이 읽는 에셋 참조 표다 (docs/systems/settings.md) — null이면 볼륨 슬라이더가 닿는 곳이 없다 */
+	const UCL9SettingsTable* GetSettingsTable() const
+	{
+		return SettingsTable;
+	}
+
 protected:
 	/** 모든 테이블 행은 이 리스트에서 로드된다 — BP_CL9GameInstance에서 지정한다 */
 	UPROPERTY(EditAnywhere, Category="Data")
@@ -61,6 +68,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="UI")
 	TSoftObjectPtr<UCL9ShakeTable> ShakeTableAsset;
 
+	/** 볼륨 믹스·사운드 클래스 참조 — BP_CL9GameInstance에서 지정한다 */
+	UPROPERTY(EditAnywhere, Category="UI")
+	TSoftObjectPtr<UCL9SettingsTable> SettingsTableAsset;
+
 private:
 	UPROPERTY()
 	TObjectPtr<UCL9DefRegistry> DefRegistry;
@@ -70,4 +81,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ShakeTable> ShakeTable;
+
+	UPROPERTY()
+	TObjectPtr<const UCL9SettingsTable> SettingsTable;
 };

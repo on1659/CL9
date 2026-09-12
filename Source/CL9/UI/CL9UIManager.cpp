@@ -36,6 +36,7 @@ void UCL9UIManager::InitForPlayer(APlayerController* PlayerController)
 		MainWidget = nullptr;
 		OpenWidgets.Empty();
 		OpenScreenName = NAME_None;
+		ScreenHistory.Empty();
 	}
 	if (MainWidget != nullptr)
 	{
@@ -62,7 +63,7 @@ void UCL9UIManager::InitForPlayer(APlayerController* PlayerController)
 	UpdateInputMode();
 }
 
-UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
+UCL9Widget* UCL9UIManager::OpenWidget(FName UIName, bool bResetHistory)
 {
 	if (UIName.IsNone() || MainWidget == nullptr)
 	{
@@ -70,6 +71,11 @@ UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
 	}
 	if (TObjectPtr<UCL9Widget>* Existing = OpenWidgets.Find(UIName))
 	{
+		if (bResetHistory && ScreenHistory.Contains(UIName))
+		{
+			ScreenHistory.Reset();
+			ScreenHistory.Add(UIName);
+		}
 		return *Existing;
 	}
 
@@ -81,16 +87,31 @@ UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
 		return nullptr;
 	}
 
-	// 전체 화면은 배타적으로 유지된다 — 기획상 한 번에 하나만 떠 있어야 한다(docs/systems/ui.md)
-	if (Row->Layer == ECL9UILayer::Screen && !OpenScreenName.IsNone())
+	if (Row->Layer == ECL9UILayer::Screen)
 	{
-		CloseWidget(OpenScreenName);
+		// 전체 화면은 배타적으로 유지된다 — 기획상 한 번에 하나만 떠 있어야 한다(docs/systems/ui.md).
+		// 이전 화면은 위젯만 사라지고 이름은 히스토리에 남아, 이 화면이 닫히면 되돌아온다.
+		if (bResetHistory)
+		{
+			ScreenHistory.Reset();
+		}
+		else if (const int32 Index = ScreenHistory.Find(UIName); Index != INDEX_NONE)
+		{
+			// 이미 아래에 있던 화면으로 되돌아가는 것이다(관전 → 메뉴 → 관전) — 그 위를 버린다
+			ScreenHistory.SetNum(Index);
+		}
+		if (!OpenScreenName.IsNone())
+		{
+			RemoveWidget(OpenScreenName);
+			OpenScreenName = NAME_None;
+		}
 	}
 
 	APlayerController* PlayerController = OwningPlayer.Get();
 	UCL9Widget* Widget = (PlayerController != nullptr) ? CreateWidget<UCL9Widget>(PlayerController, Row->WidgetClass) : nullptr;
 	if (Widget == nullptr)
 	{
+		UpdateInputMode();
 		return nullptr;
 	}
 
@@ -100,12 +121,41 @@ UCL9Widget* UCL9UIManager::OpenWidget(FName UIName)
 	if (Row->Layer == ECL9UILayer::Screen)
 	{
 		OpenScreenName = UIName;
+		ScreenHistory.Add(UIName);
 	}
 	UpdateInputMode();
 	return Widget;
 }
 
 void UCL9UIManager::CloseWidget(FName UIName)
+{
+	if (UIName != OpenScreenName)
+	{
+		// 현재 화면이 아니다 — 팝업이거나, 위에 다른 화면이 쌓인 채 상태가 꺼진 화면(메뉴 아래의 관전)
+		ScreenHistory.Remove(UIName);
+		RemoveWidget(UIName);
+		UpdateInputMode();
+		return;
+	}
+
+	RemoveWidget(UIName);
+	OpenScreenName = NAME_None;
+	if (ScreenHistory.Num() > 0 && ScreenHistory.Last() == UIName)
+	{
+		ScreenHistory.Pop();
+	}
+
+	// 한 단계 뒤로 — 바로 아래 화면을 새 인스턴스로 다시 연다(OpenWidget이 이름을 다시 쌓는다)
+	if (ScreenHistory.Num() > 0)
+	{
+		const FName Previous = ScreenHistory.Pop();
+		OpenWidget(Previous);
+		return;
+	}
+	UpdateInputMode();
+}
+
+void UCL9UIManager::RemoveWidget(FName UIName)
 {
 	TObjectPtr<UCL9Widget> Widget;
 	if (!OpenWidgets.RemoveAndCopyValue(UIName, Widget))
@@ -119,11 +169,6 @@ void UCL9UIManager::CloseWidget(FName UIName)
 		// 닫힘 판정이 애니메이션을 기다리게 만들면 여닫기 토글이 어긋난다(docs/systems/ui.md UI 애니메이션)
 		Widget->PlayOutro();
 	}
-	if (OpenScreenName == UIName)
-	{
-		OpenScreenName = NAME_None;
-	}
-	UpdateInputMode();
 }
 
 const UCL9UITable* UCL9UIManager::GetTable() const

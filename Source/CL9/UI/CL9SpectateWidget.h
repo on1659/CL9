@@ -33,6 +33,10 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> NextButton;
 
+	/** 버튼 문구 "다음 동료 ({0})" — {0}은 지금 바인딩된 관전 전환 키, 열릴 때 한 번 채운다 (docs/systems/input.md 키 표기) */
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UTextBlock> NextText;
+
 private:
 	UFUNCTION()
 	void HandleNextClicked();

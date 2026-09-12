@@ -924,3 +924,152 @@
   `Radius/바운드` 자동 배율이 크기를 맞추므로 표 값·레벨은 손대지 않았다(Lvl_Flat 아이템 줄의 손 배치
   액터도 BeginPlay에 행을 읽어 그대로 따라온다). 안 바뀐 것: egg cooked/burnt/cracked/broken(메시 미제작 —
   아직 Sphere), pot·standing_lamp(행 없음).
+
+- **손전등 광원을 메시 원점에서 렌즈 앞으로 옮김** (2026-09-11, 사용자 — "아이템 플래시 안 켜지는데 왜 그래?").
+  `ACL9Item::SetupLight`가 스포트라이트를 메시 로컬 바운드 `Max.X + 1cm`에 붙인다. 원인: 자체 제작
+  `SM_Flashlight_A`는 닫힌 몸통이라 원점에 둔 스포트라이트가 자기 그림자에 통째로 갇혔다(엔진 Cylinder
+  때는 드러나지 않던 문제). 메시 그림자를 끄는 대신 광원을 옮긴 이유는 손전등 몸통이 벽에 그림자를
+  드리우는 게 맞기 때문. 렌즈가 +X라는 제작 규약(item/portable_lights.md)에 기댄다 — 헤드램프도 같다.
+  PIE(밤)에서 줍기→F로 바닥·수레가 비치는 것 확인.
+
+- **빛은 손전등(·헤드램프)에서만 나온다 — 발광 아이템 폐기** (2026-09-11, 사용자 — "빛은 손전등만 나와야
+  되는데, 다른 아이템은 빛이 나오면 안 돼"). `DA_ItemTable`의 `egg`·`egg+cracked` 행에 켜져 있던
+  `bEmitsLight`(Glow, 192cm)를 껐다. light.md의 "발광 계란 = 정전 뒤 유일한 광원 / 소지자가
+  `CarrierSeenRadius`에서 들킨다" 설계는 **번복** — 정전 뒤 광원은 헤드램프와 스탠드 램프뿐이 된다.
+  `ECL9ItemLight::Glow` 코드 경로와 `LightRadius`·`bLightLostInPocket`·`CarrierSeenRadius` 컬럼은
+  지우지 않고 남겨 둔다(행이 꺼져 있으면 아무것도 안 한다).
+
+- **item - lightitem - flashitem 클래스 분리** (2026-09-11, 사용자 — "item - lightitem - flashitem 이런 식의
+  구조여야지"). "아이템 100종이어도 클래스는 하나" 규약을 **행동이 같은 것끼리 하나**로 고쳐 쓴다.
+  `ACL9Item`에서 조명 코드를 전부 들어내고 `OnAcquired`/`OnReleased` 훅만 남겼다. `ACL9LightItem`이
+  라이트 컴포넌트·`bLightOn` 복제·"들면 켜짐"(점광원)을, `ACL9FlashItem`이 스포트라이트·F 토글·정전
+  규칙(착용은 예외)을 맡는다. 행의 `bEmitsLight`·`LightKind`(`ECL9ItemLight`)는 삭제 — 빛을 내는지는
+  `ActorClass`가 정한다. `BP_CL9FlashItem`(부모 `ACL9FlashItem`) 신설, `flashlight`·`headlamp` 행의
+  `ActorClass`에 지정. `Lvl_Flat`·`Lvl_Henhouse`에 손으로 놓여 있던 손전등 2·헤드램프 1(Flat) /
+  손전등 1·헤드램프 1(Henhouse)은 같은 자리·같은 별칭의 `BP_CL9FlashItem`으로 갈아 놓았다.
+  PIE: 줍기→F 켜짐→F 꺼짐, `cl9.blackout`이면 꺼지고 F로 못 켬.
+
+- **CL9Art 미사용 에셋 일괄 연결 — 생성기에 `Grid`·`yard`·`tread`·토막 종류, 소품 세트, 시설 BP·농부·냄비·작업등**
+  (2026-09-11, 사용자 — "cl9art 쪽 지금 안 쓰는 거 있으면 싹 다 사용 가능하게 적용해줘", 범위는 "전부 (소품 시스템까지)").
+  명세 `docs/goal/wire-cl9art-assets.md`(HEAVY, 4관점 패널 + 교차 심문). 결정:
+  - `DA_PieceTable`의 Dreamscape 행을 자체 조각으로 교체(팩은 5da02ff로 저장소에서 빠져 클론이 깨지던 상태).
+    새 역할 `wallQuarter`·`floor`·`ceiling`·`yard`·`tread`. `wallHalf`(Wall_250)는 행만 있고 소비처 없음.
+  - **바닥·천장·마당은 새 배치 모드 `Grid`**(두 평면 축 격자 깔기), **디딤판은 `Tile`**(FitPieceToCell이 이미 회전·
+    보정), Stretch는 `box` 전용으로 그대로. 반려: 바운드 인식 Stretch — Grid가 있으면 죽은 코드고 마당 흙을 3배로 늘린다.
+  - 생성기가 야외 바닥을 `yard`, 디딤판을 `tread`, 문·비상구 양옆 토막을 `barnStub`/`wallStub`로 따로 내보낸다.
+    아래로 자라는 종류는 `CL9SegKind::GrowsDown`(floor·yard·tread). 반려: `ShortPieces` 검색 컬럼 — 토막 125에서
+    후보가 하나뿐이고 종류별 맞춤 보고를 흐린다. `door` 종류가 없는 것은 더 이상 에러가 아니다.
+  - **문 폭 250 유지**(`door` seg kind 행 없음). 문짝 Door_A(132)·디딤판(264)은 132 세계 제작물이지만 250으로
+    소비한다 — `ACL9FlapIn::Setup`이 폭만 1.89×로 맞추고 두께·높이는 자연값(개구부 위는 Body가 막음).
+  - **barn·plug·flapIn 높이 630 → 580** — 층 높이 610이라 1층 벽이 2층 바닥을 20cm 뚫었다.
+  - **소품 세트는 모듈 행 안에 인라인**(`UCL9ModuleDef.PropSets`, module.md 결정 7 그대로). 세트 추첨은 `PickVariant`
+    좌표 해시, 소품마다 `bSolid` 하나 + `Side`/`SideRule`(REPO 변 연결 조건 — 발자국이 걸친 경계 칸 전부 검사).
+    몸 있는 소품이 문 자리·스폰 지점(칸 중심 ±130, 같은 층)을 가리면 경고. 반려: 별도 PropSet 표 — 공유할 일 없이
+    DefList 재스캔 함정만 는다. 양계장 17종에 1~2세트씩 저작(둥지·상자·포대·여물통·작업등·작업대·표식 4·보·기둥).
+  - 시설 BP 5종 메시 교체(배율 1), Lvl_Flat·Lvl_Henhouse 인스턴스 z 0/배율 1/주방 Yaw 90. 주방 HeatZone 절대 회전은
+    C++ 생성자 한 줄. **푸드트럭은 패드 −X 650cm·Yaw 180(뒷문이 패드 향함)에 임시 배치** — 사용자 "배치해봐야 알 거
+    같은데", 보고 정하기로.
+  - 농부 A 몸/팔을 `farmer_a` 행에 영구 연결. `pot` 행(프라이팬 복제)과 `standing_lamp` 행 신설 — 작업등은 새
+    `ACL9LampItem`(ACL9LightItem 파생, 내려놓아도 켜짐 — 사용자 "내려두어도 불은 켜져 있어야지"). Radius 60·
+    LightRadius 800·Intensity 5000은 임시값(기획 미정).
+  - 남은 것: `wallStub`은 125짜리 울타리가 없어 0.50 경고가 정상.
+
+- **든 아이템은 손 소켓에 붙고, 행의 `HoldPose` 범주가 팔 자세를 고른다** (2026-09-12, 사용자 — "손에 소켓
+  만들어서 붙이면 안돼?", "모든 아이템들도 일괄로 손에 붙을 수 있게", 임시(권총 자세) 대신 "정석"). 캡슐 앞
+  `CarryHeight` 부착을 버리고 `ACL9Item::OnPickedUp`이 소지자 **전신 메시**의 `HandGrip_R`(마네킹 공용 소켓)에
+  붙인다 + 행의 `GripOffset`/`GripRotation`. 팔 메시가 아니라 전신인 이유: 남의 화면에서 팔 메시(OnlyOwnerSee)는
+  애니메이션이 멈춘다. 소유자 화면에서는 팔 메시가 FPWarp로 십수 cm 비틀려 있어 **메시 컴포넌트만** 팔 소켓으로
+  옮기고 `FirstPersonPrimitiveType::FirstPerson`으로 그린다(컴포넌트 부착은 복제 안 됨). 손이 허리에 내려가 있어
+  1인칭에서 안 보이는 문제는 자세로 푼다: `ECL9HoldPose` Small/Flashlight/Large 범주, 전신 클립 3 + 1인칭 팔 클립 3
+  (블렌더 두 뼈 IK, `animate_farmer_hold.py`), `ABP_Unarmed`·`ABP_FP_Copy`의 spine_01 상체 레이어. 정본은
+  docs/systems/inventory.md. 반려: 템플릿 권총 자세 차용(임시), 팔 메시 상대 위치 이동(카메라 정합 깨짐). Stretch100 변형 메시 3종은 불필요해졌다(삭제 보류).
+    `CL9.Replication.Registration` 테스트는 에디터에서 돌리면 엔진 단언(bIsPushBased)으로 에디터가 죽는다 — 이번에
+    확인(내 변경과 무관, `GetLifetimeReplicatedProps`를 직접 부르는 테스트). `CL9.Map.*` 4개는 통과.
+  - **ABP 배선은 부울 블렌드 2단으로, 행 그립 값은 1인칭 자세에서 역산** (2026-09-12 새벽, 배선·PIE 검수 세션).
+    `BlendPoses(ECL9HoldPose)`는 항목 핀 노출이 에디터 메뉴 전용(`ExposeEnumElementAsPin`, `VisibleEnumEntries`는
+    파이썬 미노출)이라 자동화로 못 만든다 → `Large? : (Flashlight? : Small)` 부울 블렌드 두 개 + `ToFloat(NOT(==None))`
+    가중치. 레이어는 `spine_01` 로컬 공간(팔 자세가 몸 기울기를 따라간다). ABP 변수는 `add_member_variable`+
+    `EdGraphPinType.import_text`로 만들었다. `GripRotation`/`GripOffset`은 손으로 맞추지 않고 PIE에서 손 소켓
+    공간의 카메라 정면·월드 위·양손 중점을 실측해 넣었다(inventory.md). 수레는 끌려오는 액터라 `HoldPose=None`
+    그대로 두고 "수레 손잡이" 자세는 만들지 않았다 — 견인 자세(팔을 뒤로)는 요청이 있을 때 별도로. 달걀(반지름
+    20cm)·작업등(1.5m)이 1인칭에서 큰 것은 자세가 아니라 크기 데이터의 문제라 손대지 않았다.
+
+
+- **밤 조명 값을 사이트 표로 옮기고, 축사 안을 "검정의 색"으로 보이게 한다** (2026-09-12, 사용자 —
+  "안에 들어가면 너무 어두워서 아예 안 보이는데 조금은 보이게", "리썰 보면 어두운데도 뭔가 보이잖아",
+  "그 값도 테이블로 세팅 가능하게"). 결정:
+  - 전역 밝기(노출·태양)는 안 올린다 — 09-07에 같은 시도(밤 0.8/1.2)를 원복한 이유 그대로, 정전이 의미를
+    잃는다. 대신 리썰컴퍼니식 **약한 청색 앰비언트**(SkyLight 0.25×, 차가운 색조) + **옅은 안개**
+    (ExponentialHeightFog 0.01, 볼류메트릭)로 "형태만 읽히는 어둠"을 만들고, 정전 행에서 둘 다 다시 끈다.
+  - 값은 `ACL9NightLighting` 액터 프로퍼티가 아니라 **`UCL9SiteDef`의 `LobbyLighting`/`NightLighting`/
+    `BlackoutLighting`**(`FCL9LightingPhase`: SunScale·SunColor·SkyScale·SkyColor·FogDensity·FogColor).
+    새 조명 표를 권했다가 사이트 표로 바꿨다 — 사용자 "사이트표가 좋아보이는데": 어둠은 사이트의 성격이고,
+    구조체 컬럼 셋이면 행이 안 부풀며, 사이트가 하나라 중복 비용이 없다. 새 표는 클래스·레지스트리·DefList
+    등록이 다 따라붙어 지금 필요 이상이다.
+  - 액터에는 `ExposureLock`·`TransitionSpeed`만 남는다(표현 액터 고유값). 안개 액터는 레벨에 놓고, 볼류메트릭
+    같은 나머지 세팅은 액터의 것을 쓴다 — 표는 밀도·색만 페이즈별로 준다.
+  - PIE 실측으로 두 가지를 더 정했다: **실내 앰비언트는 `SkyLeak`(Lumen Skylight Leaking) 컬럼**으로 넣는다 —
+    천장이 덮인 방은 루멘이 완전히 가려서 SkyLight 배율·`Cast Shadows` off로는 한 점도 안 들어왔다. 그리고
+    SkyLight를 실시간 캡처 그대로 두고 밤 `SkyScale`을 10으로 잡는다 — 캡처를 끄면(한 번 캡처) 값은 직관적이지만
+    캡처 시점이 머신마다 달라질 수 있어 접었다. 정전은 태양 0이면 하늘도 0이라 자동으로 캄캄하다.
+
+- **화면 문자열은 String Table `CL9`의 키로만 쓴다 — 코드·UMG·데이터 표 어디에도 한글을 직접 치지 않는다**
+  (2026-09-12 저녁, 사용자 — "한글을 박는게 아니라 string alias를 박아서 언어설정 바뀔때마다 싹다 바뀌어야").
+  같은 날 17:16의 "`NSLOCTEXT` 키 규칙만 두고 String Table은 안 둔다"를 뒤집는다 — 그때는 "같은 파이프라인에
+  간접층만 는다"고 봤지만, 사용자가 원한 것은 **원문이 코드 밖 한 곳에 있고 코드는 alias만 드는 것**이었다.
+  - 테이블은 `Content/Strings/CL9.csv` 한 장(`LOCTABLE_FROMFILE_GAME`, 모듈 시작 시 등록). String Table
+    `.uasset`은 반려 — 바이너리라 diff·리뷰가 안 되고 에디터 없이 못 고친다. CSV는 소스 수집기가 그대로 긁고
+    에디터 텍스트 피커에도 뜬다(엔진 소스로 확인).
+  - 키는 `영역.이름`(`Prompt.PickUp`, `Hud.Money`), 데이터 행은 `Item.egg.Name`/`.Desc`. 번역 파일이 아직
+    없어 기존 `PromptPickUp`류 86키를 지금 전부 바꿨다 — 이후로는 키 이름 변경 금지.
+  - 데이터 행의 `DisplayName`/`Description`은 **FText 컬럼을 유지**하고 값이 테이블 참조여야 한다(사용자 선택
+    2026-09-12). `UCL9DefBase::Validate`가 직접 친 텍스트를 에러로 잡아 행을 Broken으로 만든다. 반려:
+    컬럼을 없애고 Alias에서 키를 파생 — 스키마가 바뀌고 키 누락이 화면에 키 문자열로 새는 것을 검증이 못 잡는다.
+  - 로컬라이제이션 타깃 `CL9`(ko 원문·en), 런타임 전환은 `cl9.lang`(설정 화면 언어 항목의 대역). en 번역은
+    코드 작성자의 초안. 정본은 docs/systems/localization.md.
+  - 추가(같은 날 밤, 사용자 "컬럼 수정… 나라별로 바꿀 수 있게", "DevNotes에는 어떤 의미로 사용되는지"): 정본을
+    **`Content/Strings/CL9_Strings.csv` 마스터 시트 한 장**(`No,Key,DevNotes,ko,en,ja,zh-Hans`)으로 올리고, 런타임
+    `CL9.csv`와 언어별 `.po/.locres`는 `Tools/Loc/sync_strings.py --build`가 거기서 생성한다. `No`는 번호+`Key` 병기
+    (번호만 키로 쓰는 안은 코드·에셋 참조 176곳을 다시 바꾸고 읽기 어려워 반려). DevNotes는 "어디서 쓰나"가 아니라
+    "어떤 뜻·상황의 문구이고 `{0}`이 무엇인가"를 적는다 — 번역자가 그것만 보고 옮기게.
+
+- **좌클은 "든 아이템 사용", 던지기는 G, 수레는 앞에서 민다** (2026-09-12 낮, 사용자 — "우리 좌버튼으로 던지는거 없애자
+  이거좀 에바임", "좌버튼누르면 아이템에 따라 다르게 동작하게하자", "타격시 hp피해량은 int(0이면 없는거), 경직타입을
+  넣을수있게해서 enum으로 세팅하게하자", 수레는 "잡으면 밀고 다니자"). 결정:
+  - 새 `IA_Use`(좌클) → `Server_Use(bHold)`: **탭**은 행 `UseAction`(`None`/`ToggleLight`/`Swing`), **길게 누르기(0.4초)**는
+    `ItemType == Dish`면 먹기(먹을 수 있는 건 Dish뿐이라는 기존 규칙을 따르고 별도 `Eat` 값을 두지 않는다). 익은 고기가
+    Dish이면서 무기라 한 키로 둘 다 되게 한 것 — 사용자 "길게누르면 먹기, 짧게누르면 휘두르기". 빈손은 무동작 — 옛 빈손 밀치기
+    (`Server_Shove`, "④ 장비 전까지 대역")는 프라이팬 행이 이어받았다. `IA_Eat`(G)은 삭제, `IA_Throw`는 G로, F는
+    헤드램프 전용. 정본은 docs/systems/input.md.
+  - 타격 컬럼은 `HitDamage`(int, 0=없음)·`HitStun`(`None`/`Hit`=`HitStunMs`/`Push`=`PushStun`+넉백+추격) 둘뿐 —
+    시간·거리는 몬스터 행이 갖고, 사거리 200cm·회복 0.6초는 상수로 남긴다(요청 전까지 컬럼화하지 않음). 몬스터엔
+    `OnStrike(Damage, Stun, Source)` 하나로 들어가고 피해가 먼저, 죽으면 경직 없음. 반려: 아이템별 클래스 파생 —
+    행 값으로 충분하고 "행동이 같은 아이템은 클래스 하나" 원칙과 맞다.
+  - 수레 `Pulled`→`Pushed`: 연결 거리(캡슐+수레 반경+20cm) 정면에 서서 미는 사람 yaw를 따라 스윕 이동, 막히면 못 간
+    만큼 미는 사람을 물린다. "견인은 순간이동 없음"(09-02) 규칙은 밀기로 대체. 반려: 수레를 캡슐에 부착 — 벽을 뚫는다.
+  - 문구: `Prompt.CartPull` "[E] 수레 밀기"/"Push cart" 등 수레 4건 시트 수정(`CL9_Strings.csv` → sync).
+
+- **옵션 시스템·키 리바인딩·화면 스택** (2026-09-12 밤, 사용자 — "설정에서 단축키를 바꿀 수 있어야 돼… [E] 이런 식으로
+  박혀 있더라고, {0} 해서 단축키를 바꾸면 같이 적용", "옵션 시스템도 같이 만들어야 돼 / plan, system 등 모든 문서도",
+  "레이어가 쌓이면 한 번에 닫히는 게 아니라 하나씩 뒤로… X 버튼도… 공통 기능은 전부 UCL9Widget에서"). 4관점
+  패널(엔진·UX·YAGNI·다국어)+교차 심문을 UE 5.8 소스로 확인해 결정. 정본은 docs/plan/settings.md(무엇을 여나)·
+  docs/systems/settings.md(저장·적용·화면)·input.md 리바인딩·ui_system.md 화면 히스토리, 명세는 docs/goal/settings-and-key-rebinding.md.
+  - 키는 엔진 `UEnhancedInputUserSettings` 그대로(서브클래스 없음), 나머지(감도·Y반전·볼륨 6개)는 `UCL9GameUserSettings`.
+    IMC 3개 등록은 `ACL9PlayerController::BeginPlay` — `SetupInputComponent`·`AddMappingContext(bNotifyUserSettings)`는
+    유저 설정이 아직 없는 시점이라 첫 PC에서 조용히 실패한다(반려). `MapPlayerKey`는 Slot·장치 명시(아니면 중복 추가).
+  - 프롬프트 키 표기는 `{0}` 서식 + 시트 `Key.<FKey>` 행, 없으면 엔진 영문 폴백 — "키 파생 반려"(같은 날)의 명문화된
+    예외(폴백이 있어 키 문자열이 새지 않는다). 엔진 `GetDisplayName` 직접 사용은 ko 번역이 뒤섞여 반려.
+  - 충돌은 **알리고 맞바꾼다**(사용자), 전 행 한 그룹(IMC별 그룹은 필요해질 때). 캡처는 `IInputProcessor`(UMG
+    `NativeOnKeyDown`은 SButton이 먼저 먹어 반려), 취소는 **Esc 또는 5초 무입력**(사용자) — Esc는 프리프로세서가
+    소비해 PIE 정지와 안 겹치므로 2026-09-05 "Esc는 게임 키 아님"의 유일한 예외. IMC에는 여전히 Esc 행 없음.
+  - 볼륨 슬라이더 기본은 전부 1.0, 설계 게인(0.8/0.5/0.7)은 SoundClass에 — 80%로 보이는 기본값은 플레이어가 100%로
+    "고친다". `TMap` 볼륨·`Settings.Volume.<클래스>` 파생 키는 반려(라벨은 `LOCTABLE` 리터럴이어야 시트 검사가 잡는다).
+    `SettingsTable` DataAsset은 참조 전용(믹스+클래스 6)으로 유지 — 경로 예외는 MasterSoundMix뿐.
+  - 저장은 **변경 확정 즉시**(닫을 때 저장 반려 — PlayOutro 비가상·NativeDestruct는 페이드 뒤·서버가 화면을 밀어낼 수
+    있다). `ApplySettings()`류는 부르지 않는다(PIE에서 에디터 품질까지 바꾼다).
+  - 전면 화면은 **이름 스택**(위젯은 하나만 살아 있음): M/[X]/`CloseSelf` = 한 단계 뒤로. `PauseInput`의 관전 특례를
+    스택이 대신하고, [계속]으로 닫을 때 관전 화면이 안 돌아오던 공백을 함께 메운다. `UCL9Widget`에 공통 `CloseButton`
+    (Optional)과 `OnClosing()` 훅. 반려: 설정에서 `OpenWidget(Pause)` 하드코딩, `ReturnScreen` 필드.
+  - 리셋은 [키 초기화] 하나(전체 리셋·행 우클릭 반려), 선택은 세그먼트(◀▶·드롭다운 반려), 언어 라벨은 원어명(String
+    Table 예외). `cl9.resetkeys` 치트 신설. `Pause.NotReady`는 뜻이 바뀌어 `Pause.LobbyNotReady` 새 키.
+  - "esc 같은 공통 기능"은 뒤로 가기 키 = M(IA_Pause)으로 해석했다 — Esc를 UI 키로 되살리지 않는다.

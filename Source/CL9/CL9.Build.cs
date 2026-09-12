@@ -14,6 +14,7 @@ public class CL9 : ModuleRules
 			"Engine",
 			"InputCore",
 			"EnhancedInput",
+			"GameplayTags",
 			"NavigationSystem",
 			"PhysicsCore",
 			"UMG",

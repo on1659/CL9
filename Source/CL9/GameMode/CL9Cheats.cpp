@@ -8,13 +8,21 @@
 #include "CoreMinimal.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTagContainer.h"
 #include "HAL/IConsoleManager.h"
+#include "Internationalization/Culture.h"
+#include "Internationalization/Internationalization.h"
+#include "Internationalization/TextLocalizationManager.h"
+#include "Misc/ConfigCacheIni.h"
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9SiteDef.h"
+#include "Core/CL9InputText.h"
 #include "GameMode/CL9CheatManager.h"
 #include "GameMode/CL9GameInstance.h"
+#include "GameMode/CL9GameUserSettings.h"
 #include "GameMode/CL9PlayerController.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
 #include "World/CL9SiteMap.h"
 
 #if !UE_BUILD_SHIPPING
@@ -244,6 +252,45 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		RouteCL9Cheat(TEXT("list"), Args, World, true);
+	}));
+
+/**
+ * cl9.lang [ko|en] — 언어를 지금 바꾸고 GameUserSettings.ini [Internationalization] Culture에
+ * 남긴다(엔진이 다음 실행 때 그 키를 읽는다). 설정 화면의 언어 항목과 같은 함수를 부르는 콘솔 입구다 —
+ * 에디터/PIE 미리보기 분기도 거기 있다 (docs/systems/localization.md).
+ */
+static FAutoConsoleCommand GCL9CheatLang(
+	TEXT("cl9.lang"),
+	TEXT("cl9.lang [culture] — prints the current language, or switches to ko/en now and remembers it (local)."),
+	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
+	{
+		if (!Args.IsValidIndex(0))
+		{
+			UE_LOG(LogCL9, Log, TEXT("cl9.lang: current language '%s'."), *FInternationalization::Get().GetCurrentLanguage()->GetName());
+			return;
+		}
+		UCL9GameUserSettings::ApplyLanguage(Args[0]);
+	}));
+
+/**
+ * cl9.resetkeys — 키 리바인딩을 기본값으로 되돌리고 저장한다. 프롬프트가 "[{0}]"로 현재 키를 찍으므로
+ * 개발 중 "왜 [F] 줍기지?"가 생기면 이것 (docs/systems/settings.md 개발 중 알아둘 것). 로컬 전용.
+ */
+static FAutoConsoleCommandWithWorld GCL9CheatResetKeys(
+	TEXT("cl9.resetkeys"),
+	TEXT("cl9.resetkeys — resets every rebound key to the IMC default and saves (local)."),
+	FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+	{
+		UEnhancedInputUserSettings* UserSettings = CL9Input::GetUserSettings(World ? World->GetFirstPlayerController() : nullptr);
+		if (UserSettings == nullptr)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("cl9.resetkeys: no local player with input user settings."));
+			return;
+		}
+		FGameplayTagContainer FailureReason;
+		UserSettings->ResetKeyProfileIdToDefault(UserSettings->GetActiveKeyProfileId(), FailureReason);
+		UserSettings->SaveSettings();
+		UE_LOG(LogCL9, Log, TEXT("cl9.resetkeys: key profile reset to defaults%s."), FailureReason.IsEmpty() ? TEXT("") : *FString::Printf(TEXT(" (%s)"), *FailureReason.ToStringSimple()));
 	}));
 
 #endif

@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "CL9Widget.generated.h"
 
+class UButton;
+
 /**
  * UI 테이블이 여는 모든 CL9 위젯의 베이스 클래스다(docs/systems/ui_system.md).
  * 자신의 테이블 행 이름을 알고 있어서 스스로를 닫을 수 있고,
@@ -43,6 +45,18 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	/**
+	 * 닫히기 시작하는 순간 한 번 — 페이드 뒤에 오는 NativeDestruct보다 먼저 정리해야 하는 것(설정 화면의
+	 * 키 캡처 프리프로세서)이 여기에 건다. 매니저가 어떤 경로로 닫든(M·X·서버가 다른 화면을 엶) 불린다.
+	 */
+	virtual void OnClosing()
+	{
+	}
+
+	/** 공통 [X] — WBP에 이 이름의 버튼이 있으면 CloseSelf(히스토리 한 단계 뒤로)에 자동 배선된다 (docs/systems/ui_system.md) */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UButton> CloseButton;
+
 	/** 열리고 닫힐 때 밝아지고 어두워지는 시간(초) — 0이면 즉시 (docs/systems/ui.md) */
 	UPROPERTY(EditAnywhere, Category="CL9|UI")
 	float FadeTime = 0.3f;
@@ -63,6 +77,9 @@ protected:
 	FName SlidePanelName;
 
 private:
+	UFUNCTION()
+	void HandleCloseClicked();
+
 	/** 지금 경과 시간에 맞춰 투명도와 패널 위치를 찍는다 */
 	void ApplyTransition();
 
