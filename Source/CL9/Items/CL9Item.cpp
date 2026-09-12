@@ -4,8 +4,7 @@
 #include "Character/CL9Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
-#include "Components/PointLightComponent.h"
-#include "Components/SpotLightComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -16,7 +15,6 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9Types.h"
 #include "GameMode/CL9GameInstance.h"
-#include "GameMode/CL9GameState.h"
 
 namespace
 {
@@ -50,7 +48,6 @@ void ACL9Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACL9Item, HoldState);
-	DOREPLIFETIME(ACL9Item, bLightOn);
 	DOREPLIFETIME(ACL9Item, Value);
 	DOREPLIFETIME(ACL9Item, CookAlpha);
 	DOREPLIFETIME(ACL9Item, CookPhase);
@@ -127,95 +124,8 @@ void ACL9Item::LoadData()
 		}
 	}
 
-	SetupLight();
-
 	// 시뮬레이션 방식(물리냐 단순 바운스냐)은 행이 결정한다 — 다시 적용해 준다
 	ApplyHoldState();
-}
-
-bool ACL9Item::IsFlashlight() const
-{
-	return ItemDef != nullptr && ItemDef->bEmitsLight && ItemDef->LightKind == ECL9ItemLight::Flashlight;
-}
-
-void ACL9Item::SetupLight()
-{
-	// 행의 조명 필드가 여기서 실제 컴포넌트로 바뀐다 — 발광(달걀)은 점광원으로, 손전등은
-	// 앞을 향한 스포트라이트로 (docs/systems/light.md). 한 번만 만들어지며, SubAlias
-	// 재로드(조리됨/균열)가 일어나도 같은 컴포넌트를 그대로 쓴다.
-	if (LightComponent != nullptr || ItemDef == nullptr || !ItemDef->bEmitsLight)
-	{
-		return;
-	}
-
-	if (ItemDef->LightKind == ECL9ItemLight::Flashlight)
-	{
-		USpotLightComponent* Spot = NewObject<USpotLightComponent>(this, TEXT("ItemLight"));
-		Spot->SetOuterConeAngle(ItemDef->LightConeAngle);
-		Spot->SetInnerConeAngle(FMath::Max(0.f, ItemDef->LightConeAngle - 8.f));
-		Spot->SetAttenuationRadius(FMath::Max(ItemDef->LightRadius, 100.f));
-		LightComponent = Spot;
-	}
-	else
-	{
-		UPointLightComponent* Point = NewObject<UPointLightComponent>(this, TEXT("ItemLight"));
-		Point->SetAttenuationRadius(FMath::Max(ItemDef->LightRadius, 50.f));
-		LightComponent = Point;
-	}
-
-	LightComponent->SetIntensity(ItemDef->LightIntensity);
-	LightComponent->SetupAttachment(MeshComponent);
-	LightComponent->SetVisibility(false);
-	LightComponent->RegisterComponent();
-	UpdateLightVisibility();
-}
-
-void ACL9Item::SetLightSwitch(bool bOn)
-{
-	if (!HasAuthority() || !IsFlashlight())
-	{
-		return;
-	}
-
-	// 정전은 손전등의 천적이다 — 정전 중에는 켤 수 없다 (light.md).
-	// 착용한 램프는 착용자 본인의 장비라 정전의 영향을 받지 않는다.
-	const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
-	if (bOn && !IsWorn() && CL9GameState != nullptr && CL9GameState->IsBlackout())
-	{
-		return;
-	}
-
-	if (bLightOn != bOn)
-	{
-		bLightOn = bOn;
-		OnRep_LightOn();
-	}
-}
-
-void ACL9Item::OnRep_LightOn()
-{
-	UpdateLightVisibility();
-}
-
-void ACL9Item::UpdateLightVisibility()
-{
-	if (LightComponent == nullptr)
-	{
-		return;
-	}
-
-	// 모든 머신이 같은 결과를 도출한다: 스위치가 켜져 있으면 켜지되, 손전등이라면
-	// 정전을 뺀다 (발광은 계속 켜져 있다 — 남는 쪽은 발광이다, light.md).
-	bool bVisible = bLightOn;
-	if (bVisible && IsFlashlight() && !IsWorn())
-	{
-		const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
-		if (CL9GameState != nullptr && CL9GameState->IsBlackout())
-		{
-			bVisible = false;
-		}
-	}
-	LightComponent->SetVisibility(bVisible);
 }
 
 bool ACL9Item::CanBePickedUp() const
@@ -227,9 +137,9 @@ bool ACL9Item::CanBePickedUp() const
 		&& ItemDef->CarrySlot != ECL9CarrySlot::CartOnly;
 }
 
-void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation)
+void ACL9Item::OnPickedUp(ACL9Character* Holder)
 {
-	if (!HasAuthority())
+	if (!HasAuthority() || Holder == nullptr)
 	{
 		return;
 	}
@@ -239,16 +149,26 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation
 	bAtRest = true;
 	ApplyHoldState();
 
-	// 발광은 소지되는 순간 켜지고, 손전등은 꺼진 채로 시작해 소지자가 직접
-	// 토글해야 한다 (docs/systems/light.md).
-	if (ItemDef != nullptr && ItemDef->bEmitsLight)
-	{
-		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
-		OnRep_LightOn();
-	}
+	OnAcquired();
 
-	AttachToComponent(Holder->GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	SetActorRelativeLocation(RelativeLocation);
+	// 전신 메시의 손에 붙는다 — 팔 메시(OnlyOwnerSee)는 남의 화면에서는 애니메이션이 돌지 않아
+	// 소켓이 기준 포즈에 멈춰 있으므로, 어느 화면에서든 움직이는 전신 메시가 기준이다. 팔 메시는
+	// 전신 포즈를 복사(ABP_FP_Copy)하니 자기 화면에서도 같은 자리다 (docs/systems/inventory.md).
+	// 소켓은 마네킹 스켈레톤이 이미 갖고 있는 `HandGrip_R`(손바닥 앞으로 +X) — 농부 A도 같은
+	// 뼈대라 그대로 쓴다. 없는 뼈대면 `hand_r` 뼈에 직접 붙는다.
+	USkeletalMeshComponent* Body = Holder->GetMesh();
+	static const FName GripSocket(TEXT("HandGrip_R"));
+	static const FName HandBone(TEXT("hand_r"));
+	const FName Socket = Body->DoesSocketExist(GripSocket) ? GripSocket : HandBone;
+	AttachToComponent(Body, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+	SetActorRelativeLocation(ItemDef != nullptr ? ItemDef->GripOffset : FVector::ZeroVector);
+	SetActorRelativeRotation(ItemDef != nullptr ? ItemDef->GripRotation : FRotator::ZeroRotator);
+}
+
+void ACL9Item::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	UpdateFirstPersonView();
 }
 
 void ACL9Item::OnWorn(ACL9Character* Wearer)
@@ -263,12 +183,7 @@ void ACL9Item::OnWorn(ACL9Character* Wearer)
 	bAtRest = true;
 	ApplyHoldState();
 
-	// 손에 든 손전등과 시작 방식이 같다: 착용자가 토글하기 전까지는 꺼져 있다
-	if (ItemDef != nullptr && ItemDef->bEmitsLight)
-	{
-		bLightOn = (ItemDef->LightKind == ECL9ItemLight::Glow);
-		OnRep_LightOn();
-	}
+	OnAcquired();
 
 	// 카메라는 소유자의 시선을 온전히 따라간다. 다른 머신에서는 몸통과 함께
 	// 요(yaw)만 돌아간다(피치 추종은 나중 단계). 눈 바로 위에 자리한다.
@@ -306,12 +221,7 @@ void ACL9Item::OnPlaced(const FVector& WorldLocation)
 	bAtRest = false;
 	ApplyHoldState();
 
-	// 내려놓은 아이템은 불이 꺼진다 — 발광은 소지 중일 때만 빛나고, 손전등은 꺼진다
-	if (bLightOn)
-	{
-		bLightOn = false;
-		OnRep_LightOn();
-	}
+	OnReleased();
 }
 
 void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
@@ -328,11 +238,7 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 	bAtRest = false;
 	ApplyHoldState();
 
-	if (bLightOn)
-	{
-		bLightOn = false;
-		OnRep_LightOn();
-	}
+	OnReleased();
 
 	if (SphereComponent->IsSimulatingPhysics())
 	{
@@ -343,22 +249,6 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 void ACL9Item::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	// 켜진 손전등은 모든 머신에서 정전 여부를 매 틱 확인해서, 정전이 시작되는
-	// 순간 빛이 꺼지게 한다 — 반납은 그 순간을 앞당길 수 있으므로 고정 타이머로는
-	// 틀린다 (docs/systems/light.md). 호스트는 스위치도 꺼서 이 상태를 유지시킨다.
-	if (bLightOn && IsFlashlight() && !IsWorn())
-	{
-		UpdateLightVisibility();
-		if (HasAuthority())
-		{
-			const ACL9GameState* CL9GameState = GetWorld() ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
-			if (CL9GameState != nullptr && CL9GameState->IsBlackout())
-			{
-				bLightOn = false;
-			}
-		}
-	}
 
 	// 시뮬레이션은 호스트 전용이며 권위를 가진다 — 클라이언트는 복제된 이동값을
 	// 보간할 뿐이다 (docs/systems/item.md 액터 틀).
@@ -446,6 +336,7 @@ void ACL9Item::ApplyHoldState()
 
 	// 착용한 램프는 착용자 눈앞에 있다 — 다른 사람에게만 보인다
 	MeshComponent->SetOwnerNoSee(HoldState == ECL9ItemHoldState::Worn);
+	UpdateFirstPersonView();
 
 	// 실제 물리는 호스트에서 자유 상태인 아이템에만 돌아간다 (2026-09-03 결정) —
 	// 클라이언트는 복제된 이동을 렌더링할 뿐이고, 그 외 모든 상태는 부착돼 있다.
@@ -461,6 +352,44 @@ void ACL9Item::ApplyHoldState()
 	{
 		// 테이블의 Gravity 열이 월드 중력을 대체한다 (Tick에서 주입됨)
 		SphereComponent->SetEnableGravity(false);
+	}
+}
+
+void ACL9Item::UpdateFirstPersonView()
+{
+	// 1인칭 팔은 별도 FOV·스케일(FirstPersonFieldOfView·FirstPersonScale)로 그려진다. 손에 든
+	// 아이템을 월드 공간 그대로 두면 소유자 화면에서 팔과 어긋난 자리에 뜨므로, 소유자 본인이
+	// 들고 있는 동안만 팔과 같은 1인칭 프리미티브로 그린다. 남의 화면·바닥에서는 월드 공간이다.
+	ACL9Character* Holder = Cast<ACL9Character>(GetOwner());
+	const bool bInLocalHand = HoldState == ECL9ItemHoldState::Held && Holder != nullptr && Holder->IsLocallyControlled();
+	const EFirstPersonPrimitiveType Wanted = bInLocalHand ? EFirstPersonPrimitiveType::FirstPerson : EFirstPersonPrimitiveType::None;
+	if (MeshComponent->FirstPersonPrimitiveType != Wanted)
+	{
+		MeshComponent->SetFirstPersonPrimitiveType(Wanted);
+	}
+
+	// 1인칭 팔은 전신 포즈를 복사한 뒤 컨트롤 릭(CtrlRig_FPWarp)으로 카메라에 맞게 비틀어서 손 위치가
+	// 전신의 손과 십수 cm 어긋난다. 액터는 전신 손에 붙어 복제되지만(남의 화면 기준), 소유자 본인
+	// 화면에서는 **메시 컴포넌트만** 팔 메시의 같은 소켓으로 옮겨 팔에 정확히 들려 보이게 한다 —
+	// 컴포넌트 부착은 복제되지 않으므로 다른 머신에는 영향이 없다.
+	static const FName GripSocket(TEXT("HandGrip_R"));
+	static const FName HandBone(TEXT("hand_r"));
+	USkeletalMeshComponent* Arms = bInLocalHand ? Holder->GetFirstPersonMesh() : nullptr;
+	if (Arms != nullptr && Arms->GetSkeletalMeshAsset() != nullptr)
+	{
+		if (MeshComponent->GetAttachParent() != Arms)
+		{
+			const FName Socket = Arms->DoesSocketExist(GripSocket) ? GripSocket : HandBone;
+			MeshComponent->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+			MeshComponent->SetRelativeLocation(ItemDef != nullptr ? ItemDef->GripOffset : FVector::ZeroVector);
+			MeshComponent->SetRelativeRotation(ItemDef != nullptr ? ItemDef->GripRotation : FRotator::ZeroRotator);
+		}
+	}
+	else if (MeshComponent->GetAttachParent() != SphereComponent)
+	{
+		MeshComponent->AttachToComponent(SphereComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		MeshComponent->SetRelativeLocation(FVector::ZeroVector);
+		MeshComponent->SetRelativeRotation(FRotator::ZeroRotator);
 	}
 }
 

@@ -9,7 +9,6 @@
 
 class ACL9Character;
 class UCL9ItemDef;
-class ULightComponent;
 class UPhysicalMaterial;
 class USphereComponent;
 class UStaticMeshComponent;
@@ -22,17 +21,18 @@ enum class ECL9ItemHoldState : uint8
 	Held,
 	/** 수레 짐칸에 실린 상태 — 물리는 꺼지지만 여전히 조준하고 집을 수 있다 */
 	OnCart,
-	/** 견인되는 중(수레 그 자체) — 물리는 꺼지지만 조준은 가능하고, 무엇에도 부착되지 않는다 */
-	Pulled,
+	/** 밀려 다니는 중(수레 그 자체) — 물리는 꺼지지만 조준은 가능하고, 무엇에도 부착되지 않는다 */
+	Pushed,
 	/** 캐릭터 머리에 착용된 상태(Head 운반 슬롯) — 시점을 따라가며 손은 계속 비어 있다 */
 	Worn
 };
 
 /**
- * 모든 아이템이 공유하는 하나의 액터(docs/systems/item.md). 아이템 종류가 백 개여도
- * 클래스는 하나다 — 메시·물리·운반 규칙이 전부 테이블 행에서 나오고, 상태 변화(조리됨,
- * 균열, 파손)는 새 액터를 스폰하는 대신 SubAlias를 바꿔치기해서 표현한다. 물리 시뮬레이션과
- * 모든 판정은 호스트가 쥐고 있고, 클라이언트는 복제된 이동값을 보간할 뿐이다.
+ * 모든 아이템의 바탕 액터(docs/systems/item.md). 메시·물리·운반 규칙이 전부 테이블 행에서
+ * 나오고, 상태 변화(조리됨, 균열, 파손)는 새 액터를 스폰하는 대신 SubAlias를 바꿔치기해서
+ * 표현한다. 물리 시뮬레이션과 모든 판정은 호스트가 쥐고 있고, 클라이언트는 복제된 이동값을
+ * 보간할 뿐이다. 행동이 다른 종류(빛나는 것, 수레)는 파생 클래스로 갈라지고, 행의
+ * ActorClass가 그 클래스를 가리킨다 — item · lightitem · flashitem (2026-09-11).
  */
 UCLASS(abstract)
 class ACL9Item : public ACL9ActorBase
@@ -106,8 +106,14 @@ public:
 		return HoldState == ECL9ItemHoldState::Free;
 	}
 
-	/** 호스트 전용: 소지자의 캡슐에 주어진 상대 위치로 부착한다 */
-	void OnPickedUp(ACL9Character* Holder, const FVector& RelativeLocation);
+	/**
+	 * 호스트 전용: 소지자 전신 메시의 손 소켓(`HandGrip_R`, 없으면 `hand_r`)에 행의 GripOffset/
+	 * GripRotation으로 부착한다. 팔 메시는 전신 포즈를 복사하므로 자기 화면에서도 같은 손에 들려
+	 * 보이고, 소유자 화면에서는 팔과 같은 1인칭 렌더 공간(FOV·스케일)으로 그린다.
+	 */
+	void OnPickedUp(ACL9Character* Holder);
+
+	virtual void OnRep_Owner() override;
 
 	/**
 	 * 호스트 전용: 착용자의 머리에 씌운다(Head 운반 슬롯 — docs/plan/data/item/headlamp.md).
@@ -137,32 +143,18 @@ public:
 		return MeshComponent;
 	}
 
-	/** 이 아이템의 조명 스위치가 켜져 있는 동안 true (발광: 소지 중이면 켜짐, 손전등: 토글로 켜짐) */
-	bool IsLightOn() const
-	{
-		return bLightOn;
-	}
-
-	/** 행이 이 아이템에 토글식 손전등 기능을 부여했으면 true (docs/systems/light.md) */
-	bool IsFlashlight() const;
-
-	/** 호스트 전용: 손전등을 켜고 끈다 — 정전 중에는 거부된다 (light.md) */
-	void SetLightSwitch(bool bOn);
-
 protected:
 	virtual void LoadData() override;
 
+	/**
+	 * 호스트 전용 훅: 누군가의 손에 들리거나 머리에 씌워진 직후(부착 전) / 내려놓거나
+	 * 던져져 세상으로 돌아간 직후. 파생 클래스가 소지 여부에 따르는 상태(빛)를 여기서 바꾼다.
+	 */
+	virtual void OnAcquired() {}
+	virtual void OnReleased() {}
+
 	UFUNCTION()
 	void OnRep_HoldState();
-
-	UFUNCTION()
-	void OnRep_LightOn();
-
-	/** 행으로부터 점광원/스포트라이트를 만든다 (로드 시 한 번만) */
-	void SetupLight();
-
-	/** 이 머신에서의 실효 조명 표시 여부를 반영한다 (정전은 손전등을 강제로 끈다) */
-	void UpdateLightVisibility();
 
 	/** 호스트, 물리 행 전용: 실제 충돌로부터 충격 판정을 내린다 */
 	UFUNCTION()
@@ -171,13 +163,12 @@ protected:
 	/** 이 머신에서 현재 소지 상태에 따른 충돌/시뮬레이션 부수 효과를 적용한다 */
 	void ApplyHoldState();
 
+	/** 소유자 본인 화면에서만 손에 든 아이템을 1인칭 팔과 같은 렌더 공간으로 옮긴다 */
+	void UpdateFirstPersonView();
+
 	/** 수레 서브클래스와 공유하는 상태 — 수레는 자기만의 견인 전이를 따로 처리한다 */
 	UPROPERTY(ReplicatedUsing=OnRep_HoldState)
 	ECL9ItemHoldState HoldState = ECL9ItemHoldState::Free;
-
-	/** 조명 스위치 상태(호스트가 기록) — 발광은 소지 여부를 따르고, 손전등은 토글을 따른다 */
-	UPROPERTY(ReplicatedUsing=OnRep_LightOn)
-	bool bLightOn = false;
 
 	/** 호스트 전용 시뮬레이션 상태 — 클라이언트는 복제된 이동만 본다 */
 	FVector SimVelocity = FVector::ZeroVector;
@@ -194,10 +185,6 @@ private:
 	/** 행에서 가져온 시각 메시 — 실제 에셋이 들어오기 전까지는 충돌 반지름에 맞춰 자동으로 크기가 조정된다 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
-
-	/** bEmitsLight일 때 행으로부터 만들어지는 점광원(발광) 또는 스포트라이트(손전등) — 아니면 null */
-	UPROPERTY()
-	TObjectPtr<ULightComponent> LightComponent;
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ItemDef> ItemDef;

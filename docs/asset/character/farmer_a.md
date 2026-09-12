@@ -33,6 +33,21 @@ UE `/Game/CL9Art/Characters/FarmerA/`에 두 SkeletalMesh/3재질/팔레트가 �
 Unarmed/FP Copy AnimBP·이동, 팔레트 적용 후 실제 UE 화면의 색을 확인했다.
 `TintColor` 입력은 재질에 있고 실제4슬롯 소비 연결은 아직 없다.
 
+## 025 Hold 클립 (2026-09-12)
+
+행의 `HoldPose` 범주별 상체 자세 8클립: 전신 `AN_Farmer_HoldSmall/Flashlight/Large/Idle`(가슴 앞, 팔꿈치 굽힘 —
+Idle은 손 내린 자연 자세로 전신 ABP가 쓰지 않는 예비)와 1인칭 팔 `AN_Farmer_FPHoldSmall/Flashlight/Large/Idle`
+(눈높이 근처, 게임 팔 FOV 70 안 — FPHoldIdle은 빈손일 때 두 손이 화면 아래 양쪽에 보이는 리썰컴퍼니식 자세,
+손목 z 1.39m·앞 0.42m). 두 뼈 IK로 손목을 목표에
+두고(`Tools/Blender/farmer_hold_spec.json`: wrist·pole·fingers·curl) 손가락은 국부 Z축(실측)으로 굽힌다.
+2초 루프, 숨쉬기 0.012rad, 회전 키만(위치 키 없음) — `Tools/Blender/animate_farmer_hold.py --export`가
+`ArtSource/character/farmer_a/export/AN_Farmer_*.fbx`와 manifest `animations`를 쓰고 blend를 저장한다.
+UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin) → `/Game/CL9Art/Characters/FarmerA/Anims`,
+[025 증거](../evidence/025-farmer-hold-imports.json). 미리보기 `preview/hold_*_{tp,fp}_{front,fp,hand}.png`
+(`_fp_fp.png`는 카메라 설정이 틀려 빈 화면 — 1인칭 판정은 PIE로 했다). ABP 배선과 PIE 검수는 2026-09-12
+완료 — [../../systems/animation.md](../../systems/animation.md) "Hold 상체 레이어 배선".
+아직 없는 것: 줍기/놓기/던지기 동작, 손가락 접촉(물건 크기별 그립), 걷기 중 팔 흔들림.
+
 다음 필수: 어깨/고관절·손가락의 운반 범위 변형 검수, Carry/Use/피격·넘어짐 등 상태 클립,
 1인칭 카메라/FOV·팔 절단면/그립,4슬롯·2인 표현,LOD·성능,영구 데이터 연결.
 [024 증거](../iterations/024.md). 첫 몸/팔 외형과 호환 검수이며 전체 캐릭터 완료가 아니다.

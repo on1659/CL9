@@ -13,7 +13,22 @@
 |---|---|---|---|
 | `CarrySlot` | enum | `Hand` 손 전용 / `Pocketable` 품에 넣을 수 있음 / `CartOnly` 수레만 / `Head` 머리에 쓴다(주우면 착용, 손은 빈다 — [headlamp.md](headlamp.md), 2026-09-05) | `Pocketable` |
 | `Weight` | float | 무게 — 들었을 때의 감속이 여기서 계산된다 | **미정** |
+| `GripOffset` | Vector | 손에 들었을 때 손 소켓 `HandGrip_R` 기준 상대 위치(cm) — 손잡이가 메시 원점에 없는 물건용. 두 손 물건(냄비·작업등)은 양손 중점 (12.3, −5.4, 17.3) | (0,0,0) |
+| `GripRotation` | Rotator | 손 소켓 기준 상대 회전 — 손전등은 렌즈(+X)가 카메라 정면을 보도록 (−17.8, 136.8, 69.3), 두 손 물건은 똑바로 서도록 (1.6, 81.6, 51.8). 1인칭 Hold 자세의 손 방향에서 역산한 값 ([../../../systems/inventory.md](../../../systems/inventory.md)) | (0,0,0) |
+| `HoldPose` | enum | 들었을 때 팔 자세 범주 — `Small` 한 손(달걀·고기·팬) / `Flashlight` 앞을 향해 쥠(손전등·헤드램프) / `Large` 두 손(냄비·작업등) / `None` 자세 없음(수레 — 앞에서 미는 액터라 손에 들지 않는다) | `Small` |
 | `bStackable` | bool | 겹치나 | false |
+
+## 사용 (좌클) — 2026-09-12
+
+| 컬럼 | 타입 | 뜻 | 기본값 |
+|---|---|---|---|
+| `UseAction` | enum `ECL9UseAction` | 든 채 좌클을 **탭**하면 하는 일 — `None` 무동작 / `ToggleLight` 든 손전등 켜고 끄기 / `Swing` 정면으로 휘둘러 몬스터 타격. **먹기는 좌클 길게 누르기(0.4초)**이고 `Dish` 행만 먹힌다(별도 플래그 없음) — 익은 고기는 탭이면 휘두르고 길게 누르면 먹는다 | `None` |
+| `HitDamage` | int | `Swing`으로 맞힌 몬스터의 HP 피해 — **0이면 피해 없음**. 죽으면 경직은 없다 | 0 |
+| `HitStun` | enum `ECL9HitStun` | `Swing`으로 맞힌 몬스터의 경직 종류 — `None` / `Hit`(몬스터 행 `HitStunMs`) / `Push`(몬스터 행 `PushStun` 경직 + `PushKnockback` 넉백 + 범인 추격). 시간·거리 값은 몬스터 행이 갖는다 | `None` |
+
+사거리 200cm·정면 부채꼴·회복 0.6초는 아직 상수다(컬럼 아님). 현재 값: 프라이팬 `Swing`/0/`Push`,
+고기(생·익·탄) `Swing`/0/`Hit`, 손전등 `ToggleLight`, 나머지 `None`. `Swing`이 아닌 행에 피해·경직 값이 있으면
+로드 검사가 깨진 행으로 잡는다.
 
 **품에 넣으면 빛만 잃고 들키는 건 그대로다.** 손과 품을 바꾸는 데 1.2초가 걸린다
 ([../rules.md](../rules.md)의 `SwapTime`).
@@ -53,7 +68,7 @@
 
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
-| `bEmitsLight` | bool | 들면 빛나나 |
+| `ActorClass` | class | 빛을 내려면 `BP_CL9FlashItem`(스포트, 좌클 토글) — 2026-09-11 클래스 분리 전에는 `bEmitsLight`+`LightKind` 컬럼이었다 |
 | `LightRadius` | float | 발광 반경 (cm) |
 | `bLightLostInPocket` | bool | 품에 넣으면 빛을 잃나 |
 | `CarrierSeenRadius` | float | 발광 소지자가 정전 때 보이는 거리 (cm) |
@@ -155,7 +170,7 @@
 
 - **먹기 효과 값** — 어떤 요리가 어떤 스탯을 얼마나 움직이나. **4i(2026-09-07)에서 구현은 들어갔고
   값은 여전히 초안이다**: `egg`+`cooked`에 `RunSpeed +60 / 15초` 하나만 넣어 검증했다(달리기 654 기준 +9%).
-  나머지 요리의 값과, 어떤 요리를 `Dish`로 볼지는 미정 — 지금은 익은 계란만 `Dish`다
+  나머지 요리의 값과, 어떤 요리를 `Dish`로 볼지는 미정 — 지금은 익은 계란·익은 고기가 `Dish`다
 - **무게 값과 무게→감속 환산식** — 지친 운반 속도가 탈출 부등식의 항이라, 식이 정해지면
   최대 무게 기준으로 로드 검사에 들어가야 한다
 - 요리 체인이 계란 말고 어디까지 가나 — 꿀·버터 같은 재료는 목적지가 생겨야 정해진다

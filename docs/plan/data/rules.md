@@ -73,7 +73,7 @@
 | `ThrowMinSpeed` | 600 | 차징 0일 때 (cm/s) | `ThrowMinU 200` |
 | `ThrowMaxSpeed` | 1680 | 만충일 때 (cm/s) | `ThrowMaxU 560` |
 | `ThrowChargeTime` | 0.85 | 만충까지 (초) | `ThrowChargeT` |
-| `CarryHeight` | 120 | 손 높이 (cm) | `CarryHeightU 40` |
+| `CarryHeight` | 120 | 놓는 높이 (cm) — 든 물건 자체는 손 소켓에 붙는다(2026-09-12, [../../systems/inventory.md](../../systems/inventory.md)) | `CarryHeightU 40` |
 | `PickRadius` | 120 | 줍기 사거리 (cm) | `PickRadiusU 40` |
 
 `SwapTime` 1.2초는 의도된 값이다 — 운반 마찰이 이 게임의 축이다.

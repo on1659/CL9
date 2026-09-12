@@ -1,0 +1,62 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "clips": [
+    {
+      "name": "AN_Farmer_HoldSmall",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_HoldSmall.AN_Farmer_HoldSmall",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "fd953463b89e4bc298b760a09c34dccb588a1dbfc6ff137a59ad8cb05023e3f6"
+    },
+    {
+      "name": "AN_Farmer_FPHoldSmall",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_FPHoldSmall.AN_Farmer_FPHoldSmall",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "9b2d265cf6f211185218e56337bae59b0839897d331c2a93f59140b7205d7cc6"
+    },
+    {
+      "name": "AN_Farmer_HoldFlashlight",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_HoldFlashlight.AN_Farmer_HoldFlashlight",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "02654290b16d25f2b7c10b0e405c6ab25f9e7928a96c4c4d74f2a546beb12087"
+    },
+    {
+      "name": "AN_Farmer_FPHoldFlashlight",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_FPHoldFlashlight.AN_Farmer_FPHoldFlashlight",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "b9b79dadc7de80180c6ecaed4ac3f67150e5407af1ecb574c9e045d9d93f5b3c"
+    },
+    {
+      "name": "AN_Farmer_HoldLarge",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_HoldLarge.AN_Farmer_HoldLarge",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "47d159a9d2ccd19602de844236d6d55512a29d77474803e36c1b91d6ee3e97fa"
+    },
+    {
+      "name": "AN_Farmer_FPHoldLarge",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_FPHoldLarge.AN_Farmer_FPHoldLarge",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "3316c775e87a49a8a373c64430c4690a35968f1bad4e2dbbde5c671d3e9246b0"
+    },
+    {
+      "name": "AN_Farmer_HoldIdle",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_HoldIdle.AN_Farmer_HoldIdle",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "5f159bb2fcadf06716280f8916c060919fdb4f042a2ec9685c37f1d853537a36"
+    },
+    {
+      "name": "AN_Farmer_FPHoldIdle",
+      "path": "/Game/CL9Art/Characters/FarmerA/Anims/AN_Farmer_FPHoldIdle.AN_Farmer_FPHoldIdle",
+      "seconds": 2.5,
+      "frames": 60,
+      "sha256": "e43a342d955714cfb801233f1b9475298af19997e3ea89031041f0252b88ea23"
+    }
+  ]
+}

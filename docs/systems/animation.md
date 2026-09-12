@@ -79,8 +79,27 @@
 
 - **팔 전용 메시 + 팔 전용 AnimBP**를 풀바디와 별도로 둔다 (표준 FPS 관행) — 카메라에는
   팔 메시만, 타인에게는 풀바디만 보이게 Owner See / Owner No See로 분리.
-- 든 오브젝트는 팔 메시의 손 소켓에 부착 — 줍기·던지기·교체·손전등 토글의 1인칭 애님이
-  여기 산다.
+- 든 오브젝트는 **전신 메시의 손 소켓 `HandGrip_R`**에 부착하고(2026-09-12 구현 — 팔 메시가
+  아니라 전신인 이유는 [inventory.md](inventory.md)), 팔 메시는 FP Copy로 같은 포즈를 따라간다.
+  줍기·던지기·교체·손전등 토글의 1인칭 애님과 Hold 자세 클립이 여기 산다. Hold 자세는 범주별
+  (`ECL9HoldPose` Small/Flashlight/Large) 전신 클립 + 1인칭 팔 클립 한 쌍으로 2026-09-12에 들어갔다 —
+  [inventory.md](inventory.md) "들면 팔이 올라온다". 줍기·던지기 동작 클립은 아직 없다.
+- **Hold 상체 레이어 배선** (2026-09-12, ABP_Unarmed·ABP_FP_Copy 동일 구조): 기존 포즈 체인 사이에
+  `본별 레이어드 블렌딩`(`spine_01`, 로컬 공간, BlendDepth 0)을 끼운다 — 전신은 `Slot(DefaultSlot)` →
+  레이어 → `ControlRig(발 IK)`, 팔은 `CopyPoseFromMesh` → 레이어 → `ControlRig(FPWarp)`. 레이어의
+  블렌드 포즈는 **부울 블렌드 2단**: `HoldPose == Large ? HoldLarge : (HoldPose == Flashlight ?
+  HoldFlashlight : HoldSmall)` (팔은 `FPHold*` 클립), 전신의 가중치는 `ToFloat(NOT(HoldPose == None))`.
+  **팔 ABP는 가중치 1 고정 + `HoldPose == None ? FPHoldIdle : (위 체인)` 한 단을 더 둔다** (2026-09-12 낮,
+  사용자 "idle에서도 손이 화면에 보여야 한다 — 리썰컴퍼니처럼 오른쪽 아래"): 빈손에서도 두 손이 화면 아래
+  양쪽에 보인다. 전신(남이 보는 것)은 빈손이면 템플릿 Idle(손 내림) 그대로.
+  `BlendPoses(ECL9HoldPose)` 노드를 안 쓴 이유: 항목 핀 노출(`ExposeEnumElementAsPin`)이 에디터
+  컨텍스트 메뉴 전용이라 MCP/파이썬으로 만들 수 없다 — 부울 블렌드는 모양이 고정이라 자동화가 된다.
+  ABP 변수 `HoldPose`(ECL9HoldPose)는 EventGraph가 매 틱 `Cast To CL9Character → GetHoldPose`로
+  채운다(전신은 `SetIsFalling` 뒤, 팔은 `BlueprintUpdateAnimation → TryGetPawnOwner`). 변수 생성은
+  `BlueprintEditorLibrary.add_member_variable` + `EdGraphPinType.import_text('(PinCategory="byte",
+  PinSubCategoryObject="/Script/CL9.ECL9HoldPose")')`(MCP `add_variable`은 프리미티브만 받는다).
+  PIE(Lvl_Flat) 확인: 손전등·달걀·냄비·작업등 모두 두 ABP의 `HoldPose`가 행 값과 일치하고 아이템이
+  화면 하단(x 0.55~0.64, y 0.75~0.89)에 들어온다. 카메라·팔 메시 상대 위치는 건드리지 않았다.
 - 데이터 연결: `UCL9CharacterDef`에 팔 메시·팔 AnimBP 컬럼 추가 필요 (미결 — 1c에서).
 
 ## 몽타주 사용처
