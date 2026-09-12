@@ -3,7 +3,7 @@ import unreal,json,hashlib,datetime
 from pathlib import Path
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 root=Path(unreal.Paths.project_dir());out=root/'docs/asset/evidence/024-character-contract.json';assert not out.exists()
-row=unreal.load_object(None,'/Game/Data/DA_CharacterTable.DA_CharacterTable:CL9CharacterDef_0');assert row
+row=unreal.load_object(None,'/Game/Data/CharacterTable.CharacterTable:CL9CharacterDef_0');assert row
 fields={}
 for key in ['alias','skeletal_mesh','skeleton','anim_bp','arms_mesh','arms_anim_bp','tint_color','capsule_radius','capsule_half_height','eye_height']:
  value=row.get_editor_property(key);fields[key]=value.get_path_name() if hasattr(value,'get_path_name') else str(value)

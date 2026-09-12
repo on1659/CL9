@@ -107,7 +107,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Senses")
 	float SightDark = 0.f;
 
-	/** 청각 값은 이 하나뿐이다 — 소음 반경은 액션 쪽(DA_CL9Rules)에서 온다 */
+	/** 청각 값은 이 하나뿐이다 — 소음 반경은 액션 쪽(CL9Rules)에서 온다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Senses")
 	float HearRadius = 0.f;
 

@@ -63,7 +63,7 @@ UCL9DefBase : UPrimaryDataAsset
 
 그래서 행은 구조체가 아니라 **UObject**다. 배치는 2026-09-02에 엑셀형으로 확정했다
 (decisions.md): **종류별 테이블 에셋 하나(`UCL9DefTable`)가 인라인 행들을 품는다** —
-`DA_ItemTable`을 열면 전 아이템 행이 한 화면에 보이고, 행 추가는 Rows 배열의 `+`다.
+`ItemTable`을 열면 전 아이템 행이 한 화면에 보이고, 행 추가는 Rows 배열의 `+`다.
 행이 UObject라 Instanced 기믹은 그대로 동작한다. 독립 에셋 행도 여전히 읽힌다
 (단일 규칙 에셋 등).
 

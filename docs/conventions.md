@@ -54,8 +54,8 @@ Item->SetAlias("egg");  // 데이터에서 읽은 Alias
 #define ROUND1_TARGET_MONEY 1500
 
 // ✅ DataAsset에서 읽기 (필수)
-float NightLength = Rules->NightLength;                        // DA_CL9Rules
-int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // DA_CL9Progression (곡선)
+float NightLength = Rules->NightLength;                        // CL9Rules
+int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // CL9Progression (곡선)
 ```
 
 ### 체크리스트
@@ -117,8 +117,8 @@ Content/
   ├─ GameMode/         (BP_CL9GameMode/GameInstance/PlayerController)
   ├─ Input/            (IMC_Gameplay/Spectate/UI, Actions/)
   ├─ Maps/             (Lvl_Flat 테스트 맵, Lvl_Henhouse)
-  ├─ Data/             (DataAsset 표 — DA_*Table, DA_CL9DefList/Rules/Progression)
-  ├─ UI/               (WBP_* 위젯 블루프린트, DA_UITable)
+  ├─ Data/             (DataAsset 표 — *Table, CL9DefList/Rules/Progression. 접두사 없음 — 2026-09-12)
+  ├─ UI/               (WBP_* 위젯 블루프린트, UITable)
   ├─ Effects/          (카메라 셰이크·파티클·사운드)
   ├─ Strings/          (CL9_Strings.csv 마스터 시트 + 생성물 CL9.csv — systems/localization.md)
   ├─ Localization/CL9/ (수집·번역 산출물 manifest·po·locres — 생성물, 커밋함)

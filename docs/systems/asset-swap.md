@@ -17,7 +17,7 @@
 조각 표가 정한다.
 
 ```
-DA_SegKindTable  (생성기 쪽 — 이 발자국엔 무엇이 서는가)
+SegKindTable  (생성기 쪽 — 이 발자국엔 무엇이 서는가)
   barn      → Piece: wall         Placement: Tile     Height: 580
   barnStub  → Piece: wallQuarter  Placement: Tile     Height: 580
   wall      → Piece: fence        Placement: Tile     Height: 288
@@ -28,7 +28,7 @@ DA_SegKindTable  (생성기 쪽 — 이 발자국엔 무엇이 서는가)
   ceiling   → Piece: ceiling      Placement: Grid     Height: 30
   flapIn    → Piece: door         (액터 ACL9FlapIn)     Height: 580
         ↓ 역할 이름으로만 가리킨다
-DA_PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이 바뀌면 여기만 고친다
+PieceTable    (에셋 쪽 — 그 역할은 어느 메시인가)   ← 팩이 바뀌면 여기만 고친다
   Alias(역할)  SubAlias(테마)   Variants                       (2026-09-11부터 자체 제작 CL9Art)
   wall         henhouse         [ SM_Henhouse_Wall_500_A ]
   wallHalf     henhouse         [ SM_Henhouse_Wall_250_A ]     ← 아직 아무 seg kind도 안 쓴다

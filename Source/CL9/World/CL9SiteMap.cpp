@@ -301,7 +301,7 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	Registry.GatherModules(Site.Theme, ModuleDefs);
 	if (ModuleDefs.Num() == 0 && Seed != 0)
 	{
-		UE_LOG(LogCL9, Error, TEXT("Site map: stage '%s' has no module rows — nothing to assemble (DA_ModuleTable)."), *Site.Theme.ToString());
+		UE_LOG(LogCL9, Error, TEXT("Site map: stage '%s' has no module rows — nothing to assemble (ModuleTable)."), *Site.Theme.ToString());
 	}
 
 	// 한 층의 높이 = 가장 높은 방의 천장 + 천장 판 + 바닥 판. 판 두께는 조각 표에서
@@ -508,11 +508,11 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 
 	for (const FName& Kind : MissingKinds)
 	{
-		UE_LOG(LogCL9, Error, TEXT("Site map: seg kind '%s' has no usable row — its boxes were skipped (DA_SegKindTable)."), *Kind.ToString());
+		UE_LOG(LogCL9, Error, TEXT("Site map: seg kind '%s' has no usable row — its boxes were skipped (SegKindTable)."), *Kind.ToString());
 	}
 	for (const FName& MissingRole : MissingRoles)
 	{
-		UE_LOG(LogCL9, Error, TEXT("Site map: theme '%s' has no usable piece for role '%s' — its boxes were skipped (DA_PieceTable)."),
+		UE_LOG(LogCL9, Error, TEXT("Site map: theme '%s' has no usable piece for role '%s' — its boxes were skipped (PieceTable)."),
 			*Site.Theme.ToString(), *MissingRole.ToString());
 	}
 	for (const TPair<FName, FTileReport>& Entry : Reports)
@@ -713,7 +713,7 @@ int32 ACL9SiteMap::PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstCompon
 
 	for (const FString& Missing : MissingMeshes)
 	{
-		UE_LOG(LogCL9, Error, TEXT("Site map: prop mesh '%s' failed to load — skipped (DA_ModuleTable PropSets)."), *Missing);
+		UE_LOG(LogCL9, Error, TEXT("Site map: prop mesh '%s' failed to load — skipped (ModuleTable PropSets)."), *Missing);
 	}
 	return Placed;
 }

@@ -8,15 +8,15 @@
 
 | 클래스 | 정본 문서 | 파일 위치 |
 |---|---|---|
-| `UCL9ItemDef` | [../plan/data/item/common.md](../plan/data/item/common.md) (개별: egg·meat·cart·flashlight) | `Content/Data/Items/DA_Item_*` |
-| `UCL9MonsterDef` | [../plan/data/monster/common.md](../plan/data/monster/common.md) (개별: chicken·goose·raccoon) | `Content/Data/Monsters/DA_Monster_*` |
-| `UCL9CharacterDef` | [../plan/data/character.md](../plan/data/character.md) | `Content/Data/Characters/DA_Character_*` |
-| `UCL9SiteDef` | [../plan/data/site.md](../plan/data/site.md) | `Content/Data/Sites/DA_Site_*` |
-| `UCL9OrderDef` | [../plan/data/order.md](../plan/data/order.md) | `Content/Data/Orders/DA_Order_*` |
-| `UCL9EquipmentDef` | [../plan/data/equipment.md](../plan/data/equipment.md) | `Content/Data/Equipment/DA_Equip_*` |
-| `UCL9SequenceDef` | [../plan/data/sequence.md](../plan/data/sequence.md) | `Content/Data/Sequences/DA_Seq_*` |
-| `DA_CL9Rules` (단일) | [../plan/data/rules.md](../plan/data/rules.md) | `Content/Data/DA_CL9Rules` |
-| `DA_CL9Progression` (단일) | [../plan/data/progression.md](../plan/data/progression.md) | `Content/Data/DA_CL9Progression` |
+| `UCL9ItemDef` | [../plan/data/item/common.md](../plan/data/item/common.md) (개별: egg·meat·cart·flashlight) | `Content/Data/ItemTable` (행 인라인) |
+| `UCL9MonsterDef` | [../plan/data/monster/common.md](../plan/data/monster/common.md) (개별: chicken·goose·raccoon) | `Content/Data/MonsterTable` (행 인라인) |
+| `UCL9CharacterDef` | [../plan/data/character.md](../plan/data/character.md) | `Content/Data/CharacterTable` (행 인라인) |
+| `UCL9SiteDef` | [../plan/data/site.md](../plan/data/site.md) | `Content/Data/MapTable` (행 인라인) |
+| `UCL9OrderDef` | [../plan/data/order.md](../plan/data/order.md) | `Content/Data/OrderTable` (행 인라인) |
+| `UCL9EquipmentDef` | [../plan/data/equipment.md](../plan/data/equipment.md) | `Content/Data/EquipmentTable` (행 인라인) |
+| `UCL9SequenceDef` | [../plan/data/sequence.md](../plan/data/sequence.md) | `Content/Data/SequenceTable` (미구현) |
+| `CL9Rules` (단일) | [../plan/data/rules.md](../plan/data/rules.md) | `Content/Data/CL9Rules` |
+| `CL9Progression` (단일) | [../plan/data/progression.md](../plan/data/progression.md) | `Content/Data/CL9Progression` |
 
 이전 판에 있던 별도 스키마(계란말이 레시피 표 · 스테이지 밸런스 표 · HP 100/속도 600 캐릭터
 표 · 늑대 몬스터 표)는 plan과 충돌해 폐기했다 (decisions.md 2026-08-31). 요리는 레시피가
@@ -80,9 +80,9 @@ public:
 **SubAlias 사용 예** — 상태 변형은 별개 Alias가 아니라 SubAlias로 표현한다:
 
 ```
-계란            Alias: egg                       (DA_Item_Egg)
-익은 계란       Alias: egg,  SubAlias: cooked    (DA_Item_Egg_Cooked)
-탄 계란         Alias: egg,  SubAlias: burnt     (DA_Item_Egg_Burnt)
+계란            Alias: egg                       (ItemTable의 행)
+익은 계란       Alias: egg,  SubAlias: cooked    (같은 표의 다른 행)
+탄 계란         Alias: egg,  SubAlias: burnt     (〃)
 ```
 
 ---
@@ -200,10 +200,11 @@ UCL9DefRegistry              // 게임 인스턴스가 들고 있는다
 
 ## 데이터 에셋 생성 규칙
 
-1. **파일명**: `DA_Category_Name.uasset` — `DA_Item_Egg`, `DA_Monster_Chicken`
+1. **파일명**: 종류마다 표 하나 — `ItemTable.uasset`·`MonsterTable.uasset`·`MapTable.uasset`처럼 **접두사 없이**
+   (2026-09-12 사용자 — "DA 붙는 거 필요없음"). 행은 표 안에 인라인으로 산다(2026-09-02 결정)
 2. **Alias는 경로가 아니라 이름이다** — 파일을 옮기거나 이름을 바꿔도 데이터가 안 깨진다
    ```cpp
-   FindItem("DA_Item_Egg")   // ❌ 경로명
+   FindItem("ItemTable:CL9ItemDef_0")   // ❌ 경로명
    FindItem("egg")           // ✅ Alias
    ```
 3. **소프트 참조 사용** (Icon, Mesh, Sound) — 하드 참조는 표를 여는 순간 모든 에셋을 올린다

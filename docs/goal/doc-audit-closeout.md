@@ -68,13 +68,13 @@ UI session already committed `4913fe4`, which calls into the uncommitted buff co
 | `docs/reference/takeaways.md` | Already corrected (sections 1 and 5) — do not redo |
 | `Source/CL9/Data/CL9CharacterDef.h` | `StaminaMinResume` default and comment |
 | `docs/decisions.md` | Authority for the 1.0 decision — read only, never edit |
-| `Content/Data/DA_BuffTable.uasset` · `DA_CL9DefList` · `DA_ItemTable` | Buff assets to commit |
+| `Content/Data/BuffTable.uasset` · `CL9DefList` · `ItemTable` | Buff assets to commit |
 
 ## Must-Preserve
 - `docs/decisions.md` stays append-only.
 - The map session's uncommitted files stay out of every commit — always `git add <path>`,
   never `-a` or `-A`.
-- Changing the C++ default must not change any data asset. `DA_CharacterTable` already
+- Changing the C++ default must not change any data asset. `CharacterTable` already
   carries the intended value; the header default only affects newly created rows.
 - Line endings stay LF. Writing docs from Python must pass `newline=''` — the default
   translates LF to CRLF on Windows and rewrites whole files.

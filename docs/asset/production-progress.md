@@ -5,18 +5,18 @@
 ## 현재 재개 지점
 
 - **[별도 세션 2026-09-11 저녁] CL9Art 미사용 에셋 일괄 연결 완료 — 되돌리지 말 것.** `docs/goal/wire-cl9art-assets.md`.
-  맵 조각(벽 500/125·울타리·문짝·바닥·천장·마당·디딤판)은 `DA_PieceTable`/`DA_SegKindTable`에, 소품(둥지·상자·포대·
-  여물통·작업등·작업대·표식 4·보·기둥)은 `DA_ModuleTable.PropSets`에, 시설 5종은 BP 메시 + 두 레벨 인스턴스에,
+  맵 조각(벽 500/125·울타리·문짝·바닥·천장·마당·디딤판)은 `PieceTable`/`SegKindTable`에, 소품(둥지·상자·포대·
+  여물통·작업등·작업대·표식 4·보·기둥)은 `ModuleTable.PropSets`에, 시설 5종은 BP 메시 + 두 레벨 인스턴스에,
   푸드트럭은 두 레벨의 `FoodTruck_Body/Steps` 액터(임시 위치)에, 농부 A는 `farmer_a` 행에, 냄비·작업등은 새 아이템
   행에 연결했다. catalog.md `UE 연결` 컬럼과 decisions.md 2026-09-11 항목이 정본. 남은 미연결: `SM_Henhouse_Wall_250_A`
   (소비처 없음), Stretch100 변형 3종(불필요), 테스트 에셋.
 
-- **[별도 세션 2026-09-11] 아이템 7행 UE 영구 연결 완료 — 되돌리지 말 것.** `DA_ItemTable`의 meat(raw/cooked/burnt)·
+- **[별도 세션 2026-09-11] 아이템 7행 UE 영구 연결 완료 — 되돌리지 말 것.** `ItemTable`의 meat(raw/cooked/burnt)·
   cart·flashlight·headlamp·frying_pan 행 `Mesh`를 `CL9Art/Items/…` 메시로 바꿨다(자동 배율: 고기 0.89 → 60×31×30cm,
   수레 0.60 → 91×69×63cm, 손전등 0.88, 헤드램프 0.75, 프라이팬 0.99 → 60×35×8cm). Lvl_Flat 아이템 줄 PIE로 확인.
   egg_raw는 이미 연결돼 있었고 나머지 egg 상태·pot·standing_lamp는 메시/행이 없어 그대로다.
 - **[별도 세션 2026-09-11] 동물 5종 UE 영구 연결 완료 — 재개 시 되돌리거나 다시 만들지 말 것.**
-  Claude 세션이 `DA_MonsterTable`의 chicken/goose/raccoon/pig/sheep 행을 `CL9Art/Monsters/<종>A/`의
+  Claude 세션이 `MonsterTable`의 chicken/goose/raccoon/pig/sheep 행을 `CL9Art/Monsters/<종>A/`의
   SK·스켈레톤과 신규 `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제 → 타깃 스켈레톤 교체 → 시퀀스
   플레이어 8개 교체, 기준 속도 = manifest `reference_speed_cm_s`)로 연결하고 `MeshYawOffset`을 0으로 바꿨다.
   Lvl_Flat PIE에서 5종 스폰·접지·걷기, 닭 HitReact/Death 알파, 양 추격→잡기 확인. 기록: `docs/decisions.md`
@@ -215,7 +215,7 @@
 - Blender MCP 현재 원본: `ArtSource/map/henhouse_sample_01/henhouse_sample_01.blend`, `CL9_HH01_STAGE`.
   기존 파일은 보존. 별도 `ArtSource/validation/unit_axis/`에 기준 큐브 원본과 FBX 생성.
 - 최신 체크포인트: 샘플 8종+1m 큐브 임포트 완료. 치수 오차 <0.003cm, UCX 개수 일치 확인 (`evidence/001-ue-import.json`). 상자 바닥 피벗 수정, 벽/둥지 3단계 LOD 구성. 전체 QA 완료를 의미하지 않는다.
-- 검수 맵 `/Game/CL9Art/Tests/Lvl_AssetQA01` 저장. 실제 DA_ItemTable의 날달걀 행만 새 메시로 연결했다. 원래 PIE 설정은 `evidence/001-original-pie-settings.json`에 저장했다.
+- 검수 맵 `/Game/CL9Art/Tests/Lvl_AssetQA01` 저장. 실제 ItemTable의 날달걀 행만 새 메시로 연결했다. 원래 PIE 설정은 `evidence/001-original-pie-settings.json`에 저장했다.
 - 2인 listen PIE 실행: 양쪽에서 날달걀 메시/1.05 배율과 바닥 접촉 확인. 마지막 관찰 당시 PIE 실행 중이므로 재개 시 실제 상태부터 확인한다.
 - 운반 테스트 **실패/미통과**: `evidence/001-pie-interactions-retry.json`의 집기 후 attachment=false. 초기 테스트 파일의 observed는 통과 판정이 아니다. 플레이어 시작 위치에 따른 집기 거리와 주문 선택 UI 상태를 진단해야 한다.
 - UE 재검수 때 행동: 실제 PIE 월드/플레이어·달걀 위치 확인 → 집기 범위 안에 테스트 시작 위치 설정 → 실제 집기/수납/투척 및 서버·클라이언트 동기화 검증. 결과를 확인하기 전에 합격으로 처리하지 않는다.

@@ -80,7 +80,7 @@ Track: **HEAVY** — new system + screen + UI navigation change; a 4-perspective
 | Source/CL9/GameMode/CL9Cheats.cpp | `cl9.resetkeys`, `cl9.lang` via ApplyLanguage |
 | Config/DefaultEngine.ini, Config/DefaultInput.ini, Config/Localization/CL9_Gather.ini | settings class, gather path |
 | Content/Input/Actions/IA_* , IMC_Gameplay/UI/Spectate | PlayerMappableKeySettings |
-| Content/UI/WBP_Settings (new), WBP_Pause, WBP_Spectate, UITable (asset, ex-DA_UITable) | screen assets, [설정] wiring, `NextText`, `Settings` row |
+| Content/UI/WBP_Settings (new), WBP_Pause, WBP_Spectate, UITable (asset, ex-UITable) | screen assets, [설정] wiring, `NextText`, `Settings` row |
 | Content/Sounds/Master/* (new), Content/GameMode/BP_CL9GameInstance, SettingsTable (new asset, no DA_ prefix — cl9-37 rename) | audio assets + injection |
 | Content/Strings/CL9_Strings.csv + generated Localization | strings |
 | docs/plan/settings.md (new), docs/plan/README.md, docs/systems/{settings,input,localization,ui,ui_system,sound,cheats}.md, docs/plan/build-order.md, docs/decisions.md | documentation |

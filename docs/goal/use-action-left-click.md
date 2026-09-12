@@ -14,7 +14,7 @@ User (2026-09-12): "우리 좌버튼으로 던지는거 없애자 이거좀 에�
   3. Empty hand → nothing (old empty-hand shove removed; the frying pan is the real shover now).
 - Item row columns (`UCL9ItemDef`, category "Use"): `ECL9UseAction UseAction = None` (`None / ToggleLight / Swing`), `int32 HitDamage = 0` (0 = no HP damage), `ECL9HitStun HitStun = None` (`None / Hit` = monster `HitStunMs` / `Push` = monster `PushStun` + knockback + revenge as `OnShove`).
 - `HostSwing`: reuse `Server_Shove` targeting (sphere reach 200 cm, forward cone dot 0.3, recovery 0.6 s — constants unchanged) → `ACL9Monster::OnStrike(HitDamage, HitStun, Source)`: apply HP damage first (may kill → death path, no stun); if still alive apply the stun kind. Non-lethal damage with `HitStun::Hit` stuns once (no double stun from `OnDamage`).
-- DA_ItemTable values: flashlight `ToggleLight`; frying_pan `Swing`, HitDamage 0, HitStun Push (today's shove feel); meat raw/cooked/burnt `Swing`, HitDamage 0, HitStun Hit (cooked meat is a Dish: tap swings, hold eats); egg×5 / pot / standing_lamp / cart / headlamp `None`. Dish rows (egg+cooked, meat+cooked if Dish) eat via LMB by type.
+- ItemTable values: flashlight `ToggleLight`; frying_pan `Swing`, HitDamage 0, HitStun Push (today's shove feel); meat raw/cooked/burnt `Swing`, HitDamage 0, HitStun Hit (cooked meat is a Dish: tap swings, hold eats); egg×5 / pot / standing_lamp / cart / headlamp `None`. Dish rows (egg+cooked, meat+cooked if Dish) eat via LMB by type.
 - Cart: `ECL9ItemHoldState::Pulled` → `Pushed`. While pushed the cart sits **in front** of the pusher at hitch distance (capsule radius + cart radius + 20 cm), yaw = pusher yaw, moved each host tick with a sweep; if the sweep is blocked the pusher is moved back by the remaining delta so walls stop the pair. Grab/release/load/unload/CartMult/prompts unchanged.
 - Docs: input.md (IA table + key layout), inventory.md 조작 table, plan/data/item/common.md (3 columns), plan/data/item/cart.md (push), plan/data/item/flashlight.md + headlamp.md + systems/light.md (F → headlamp only, LMB toggles flashlight), systems/monster.md (player response = swing by item row), decisions.md.
 
@@ -44,7 +44,7 @@ User (2026-09-12): "우리 좌버튼으로 던지는거 없애자 이거좀 에�
 | Source/CL9/Monsters/CL9Monster.h/.cpp | `OnStrike(Damage, Stun, Source)` composed from `OnDamage`/`OnShove` |
 | Content/Input/IMC_Gameplay, Actions/IA_Use (new), IA_Throw (G), IA_Eat (delete) | key mapping |
 | Content/Characters/… BP_CL9Character | `UseAction` property set, `EatAction` gone |
-| Content/Data/DA_ItemTable | row values |
+| Content/Data/ItemTable | row values |
 | docs/systems/input.md, inventory.md, light.md, monster.md, item.md; docs/plan/data/item/common.md, cart.md, flashlight.md, headlamp.md; docs/decisions.md | documentation |
 
 ## Must-Preserve

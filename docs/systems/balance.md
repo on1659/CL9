@@ -20,9 +20,9 @@ plan이 정의한 세 에셋을 그대로 쓴다 — 별도의 "스테이지 설
 
 | 에셋 | 내용 | 정본 |
 |---|---|---|
-| `DA_CL9Rules` | 소리·죽음·밤 시계·운반 마찰 — 게임에 하나 | [../plan/data/rules.md](../plan/data/rules.md) |
-| `DA_CL9Progression` | 일자 곡선 6종 · 주문 N/M · 일자 덮어쓰기 · 정산 | [../plan/data/progression.md](../plan/data/progression.md) |
-| `DA_Site_*` (`UCL9SiteDef`) | 목적지별 맵 생성·몬스터/아이템 기준값·밤 시계 덮어쓰기 | [../plan/data/site.md](../plan/data/site.md) |
+| `CL9Rules` | 소리·죽음·밤 시계·운반 마찰 — 게임에 하나 | [../plan/data/rules.md](../plan/data/rules.md) |
+| `CL9Progression` | 일자 곡선 6종 · 주문 N/M · 일자 덮어쓰기 · 정산 | [../plan/data/progression.md](../plan/data/progression.md) |
+| `MapTable` (`UCL9SiteDef` 행) | 목적지별 맵 생성·몬스터/아이템 기준값·밤 시계 덮어쓰기 | [../plan/data/site.md](../plan/data/site.md) |
 
 곡선은 전부 `UCurveFloat`이다 — 에디터에서 그래프로 만진다.
 
@@ -97,7 +97,7 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
 
 `DayOverrides` 배열로 특정 일자를 손으로 잡는다 — 1일차는 튜토리얼처럼
 (목적지 하나·주문 하나·정전 없음·몬스터 적게). 컬럼은 progression.md의 `FCL9DayOverride`.
-구현(4b): `MonsterCountMult`·`DangerMult`(0 = 곡선)·`bNoBlackout`만 먼저 — DA_CL9Progression 1일차
+구현(4b): `MonsterCountMult`·`DangerMult`(0 = 곡선)·`bNoBlackout`만 먼저 — CL9Progression 1일차
 행은 `bNoBlackout`만 켰다(`cl9.blackout`은 여전히 강제 발동).
 
 ## 네트워크·상태

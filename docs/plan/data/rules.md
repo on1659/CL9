@@ -1,4 +1,4 @@
-# 규칙 — `DA_CL9Rules`
+# 규칙 — `CL9Rules`
 
 **게임에 하나뿐인 에셋이다.** 소리 · 죽음 처리 · 밤 시계 · 운반 마찰 —
 캐릭터마다 다를 수 없는 값이 여기 있다.
@@ -96,7 +96,7 @@
 남은 양과 탈진 래치 해제 시점이 안 읽힌다. 운반 흔들림은 여전히 바 없이 흔들림만이다.
 
 **셰이크는 규칙 컬럼이 아니라 셰이크 표에서 읽는다** (2026-09-05 결정 — 앞으로 흔들림이
-늘 때 규칙에 컬럼을 늘리지 않고 표에 행만 추가한다). `UCL9ShakeTable`(`DA_ShakeTable`,
+늘 때 규칙에 컬럼을 늘리지 않고 표에 행만 추가한다). `UCL9ShakeTable`(`ShakeTable`,
 `UCL9UITable`과 같은 모양)의 `Rows`에 이름→`FCL9ShakeInfo{ Shake, StartAt }`로 등록하고,
 캐릭터가 `CL9ShakeNames::Stamina` 행을 조회한다. 스케일 = (StartAt−Stamina)/StartAt, 0에서 만충.
 

@@ -19,7 +19,7 @@ probe=sub.spawn_actor_from_class(unreal.StaticMeshActor,unreal.Vector(20080,0,11
 sm=probe.static_mesh_component;sm.set_mobility(unreal.ComponentMobility.MOVABLE)
 sm.set_static_mesh(unreal.load_asset('/Engine/BasicShapes/Sphere'));probe.set_actor_scale3d(unreal.Vector(.2,.2,.2))
 sm.set_collision_profile_name('PhysicsActor');sm.set_enable_gravity(True);sm.set_simulate_physics(True)
-rows=unreal.load_asset('/Game/Data/DA_ItemTable').get_editor_property('rows')
+rows=unreal.load_asset('/Game/Data/ItemTable').get_editor_property('rows')
 data['egg_rows']=[{'path':row.get_path_name(),'sub_alias':str(row.get_editor_property('sub_alias')),
     'cook_time':row.get_editor_property('cook_time'),'burn_time':row.get_editor_property('burn_time'),
     'mesh':row.get_editor_property('mesh').get_path_name(),'radius':row.get_editor_property('radius')}

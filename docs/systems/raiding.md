@@ -51,13 +51,13 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 - 리스폰 없음 — 사살하면 그 밤에는 줄어든다 (사살 경보 `KillAlarmRadius`가 대가다)
 
 **구현 (4b, 2026-09-05)**: 위 두 스폰 모두 `ACL9GameMode::SpawnNightPopulation` — 목적지 행
-(`DA_SiteTable` henhouse)의 기준값 × `DA_CL9Progression` 곡선. 좌표는 생성기가 없어 평지
+(`MapTable` henhouse)의 기준값 × `CL9Progression` 곡선. 좌표는 생성기가 없어 평지
 스탠드인(트럭 패드 앵커 원환, 몬스터 900~2400cm · 재료 400~1800cm, `ThreatActMinRadius` 안 회피).
 밤 스폰분은 로비 복귀 때 철거된다(들고 나온 것은 남는다). 상세 [balance.md](balance.md).
 
 ## 소리 규칙
 
-몬스터가 듣는 소음 반경은 `DA_CL9Rules`의 값이다 ([../plan/data/rules.md](../plan/data/rules.md)).
+몬스터가 듣는 소음 반경은 `CL9Rules`의 값이다 ([../plan/data/rules.md](../plan/data/rules.md)).
 
 - **걷기는 어그로 0이다** — 걸으면 안 들킨다는 게 기본 안전 수단이다 (예외: 거위 `WakeRadius`).
 - 달리기 390 / 조용한 줍기 150 / 시끄러운 줍기 390 / 밀치기 255 / 미끼 330 (cm)

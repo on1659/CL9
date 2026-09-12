@@ -5,7 +5,7 @@
 공통 컬럼은 [README.md](README.md) 참조. 재생 메커니즘은
 [../../systems/sequence.md](../../systems/sequence.md).
 
-> **현재는 구현하지 않음 — 문서만 사전 작성.** `UCL9SequenceDef` 클래스도 `DA_SequenceTable`
+> **현재는 구현하지 않음 — 문서만 사전 작성.** `UCL9SequenceDef` 클래스도 `SequenceTable`
 > 애셋도 아직 없다. 표를 실제로 만들 때 이 문서가 명세가 된다 (2026-09-09 확인).
 
 ---

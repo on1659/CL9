@@ -12,7 +12,7 @@ managers=[m for m in unreal.ObjectIterator(unreal.CL9UIManager) if m.get_outer()
 assert len(managers)==1
 manager=managers[0];assert not manager.is_open('Shop')
 assert ps.hp==ps.max_hp and ps.max_hp>1
-heal_time=unreal.load_asset('/Game/Data/DA_CL9Rules').get_editor_property('truck_pad_heal_time');assert heal_time>2
+heal_time=unreal.load_asset('/Game/Data/CL9Rules').get_editor_property('truck_pad_heal_time');assert heal_time>2
 out=Path(unreal.Paths.project_dir(),'docs/asset/evidence/022-truck-pie.json');assert not out.exists()
 r={'engine':unreal.SystemLibrary.get_engine_version(),'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'world_count':len(worlds),
  'level':w.get_path_name(),'status':'running','phase':'damage','heal_time':heal_time,'checks':[],

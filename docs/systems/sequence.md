@@ -11,7 +11,7 @@
 - **UE 표준 Level Sequence + `ULevelSequencePlayer`.** 시퀀서로 에셋을 만들고 코드에서 튼다.
 - **시퀀스는 표현이다.** "언제 틀지"는 호스트가 판정하고, 재생은 각 머신이 로컬로 한다.
 - **데이터 주도.** 코드에 시퀀스 에셋 경로를 쓰지 않는다 — `UCL9SequenceDef` 표에서
-  Alias로 조회한다 (`Content/Data/Sequences/DA_Seq_*`).
+  Alias로 조회한다 (`Content/Data/SequenceTable` — 미구현).
 
 ## 재생 흐름
 

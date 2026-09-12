@@ -1,7 +1,7 @@
 import unreal,json
 from pathlib import Path
 out={'engine':unreal.SystemLibrary.get_engine_version(),'tables':{}}
-for table_name,wanted in [('DA_PieceTable','door'),('DA_SegKindTable','flapIn')]:
+for table_name,wanted in [('PieceTable','door'),('SegKindTable','flapIn')]:
     table=unreal.load_asset('/Game/Data/'+table_name);rows=[]
     for row in table.get_editor_property('rows'):
         if str(row.get_editor_property('alias'))!=wanted:continue

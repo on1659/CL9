@@ -1,4 +1,4 @@
-# 일자 진행 — `DA_CL9Progression`
+# 일자 진행 — `CL9Progression`
 
 **"몇 일차에 닭이 몇 마리인지"를 정하는 자리다.** 게임에 하나뿐인 에셋이다.
 
@@ -120,7 +120,7 @@ FCL9DayOverride
 ## 구현 상태 (4b, 2026-09-05)
 
 `UCL9ProgressionDef`(Source/CL9/Data) — 레지스트리에 규칙처럼 **단일** 행으로 등록된다
-(`DA_CL9Progression`, Content/Data). 들어간 컬럼: `MonsterCountCurve`·`DangerCurve`·`ItemCountCurve`·
+(`CL9Progression`, Content/Data). 들어간 컬럼: `MonsterCountCurve`·`DangerCurve`·`ItemCountCurve`·
 `NightLengthCurve` + `DayOverrides{Day, MonsterCountMult, DangerMult, bNoBlackout}`. 곡선은
 `FRuntimeFloatCurve`다 — 에셋 디테일에서 **그래프로 끌거나** 외부 `UCurveFloat`를 가리킬 수 있다.
 빈 곡선은 1.0, 마지막 키 뒤는 마지막 값 유지(위 "10일 이후" 규칙). 주문서 N/M(`OrdersOfferedPerDay` 3

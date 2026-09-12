@@ -2,7 +2,7 @@
 
 2026-09-11 · 제작 중. UE 전체 QA 미통과.
 
-실제 `DA_ItemTable`의 egg/None, cooked, burnt, cracked, broken을 대상으로 한다.
+실제 `ItemTable`의 egg/None, cooked, burnt, cracked, broken을 대상으로 한다.
 날것은 기존 `SM_Egg_Raw_A`를 이어 쓴다. 익은 것은 껍질을 벗긴 삶은 달걀과 노른자 단면,
 탄 것은 숯색과 크게 갈라진 표면, 균열은 굵은 가지 모양 금, 파손은 한쪽이 열린 껍데기와 내용물이다.
 프라이 형태는 현행 Radius=21 구체 충돌에서 과도하게 떠 보이므로 이 묶음에는 사용하지 않는다.

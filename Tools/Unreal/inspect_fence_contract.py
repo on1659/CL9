@@ -1,14 +1,14 @@
 """Read current piece and segment contracts; no asset mutations."""
 import unreal,json
 out={'engine':unreal.SystemLibrary.get_engine_version(),'tables':{}}
-for table_name in ['DA_PieceTable','DA_SegKindTable']:
+for table_name in ['PieceTable','SegKindTable']:
     table=unreal.load_asset('/Game/Data/'+table_name)
     rows=[]
     for row in table.get_editor_property('rows'):
         alias=str(row.get_editor_property('alias'))
         if alias not in ['fence','wall']:continue
         entry={'alias':alias,'path':row.get_path_name()}
-        if table_name=='DA_PieceTable':
+        if table_name=='PieceTable':
             entry['sub_alias']=str(row.get_editor_property('sub_alias'));entry['variants']=[]
             for mesh in row.get_editor_property('variants'):
                 if mesh:

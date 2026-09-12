@@ -89,7 +89,7 @@ Engine facts (UE 5.8 source) that fix the design:
 | `Source/CL9/UI/*.cpp`, `Items/*.cpp`, `Character/CL9Character.cpp` | 86 `NSLOCTEXT` sites → `LOCTABLE` |
 | `Source/CL9/Data/CL9DefBase.cpp` | `Validate`: DisplayName/Description must be table references |
 | `Source/CL9/Core/CL9Cheats.cpp` (or where `REGISTER_CL9_CHEAT` lives) | `cl9.lang` |
-| `Content/Data/DA_*Table.uasset`, `Content/UI/WBP_*.uasset` | text → table references (editor script) |
+| `Content/Data/*Table.uasset`, `Content/UI/WBP_*.uasset` | text → table references (editor script) |
 | `Tools/Unreal/convert_text_to_string_table.py` | one-shot converter (new) |
 | `Config/Localization/CL9*.ini`, `Config/DefaultEditor.ini`, `Config/DefaultGame.ini` | target + cultures + staging |
 | `Content/Localization/CL9/**` | gathered manifest/archives/locres (new, committed) |
@@ -99,7 +99,7 @@ Engine facts (UE 5.8 source) that fix the design:
 - `FText::Format` argument order/count at every converted site (the `{0}`… placeholders move into the CSV unchanged).
 - `UCL9DefBase` column names and types — `DisplayName`/`Description` stay FText (user decision); no schema change.
 - Registry behaviour: a Broken row is excluded exactly as before (schema.md `EDefStatus`), only the reason set grows.
-- Peer sessions own `CL9Character.cpp`, `CL9Item.*`, `DA_ItemTable` and the running editor (cl9-5b / cl9-2d) —
+- Peer sessions own `CL9Character.cpp`, `CL9Item.*`, `ItemTable` and the running editor (cl9-5b / cl9-2d) —
   those files are edited only after coordinating; asset conversion runs only with the editor closed or through the
   owning session.
 

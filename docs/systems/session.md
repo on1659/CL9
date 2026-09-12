@@ -172,7 +172,7 @@ float NightStart/End/BlackoutServerTime  // 밤 시계 — 클라가 서버시�
   `EnterLobby`(새벽→로비, 일차+1). 클라는 복제된 Phase에서 화면을 파생한다.
 - 표현 훅 `OnNightPhaseChanged`(BlueprintAssignable) + 게터 `GetNightRemaining`·`IsBlackout`·
   `GetPhase`·`GetCurrentDay`. 조명(5c `ACL9NightLighting` — [light.md](light.md))과 HUD가 구독한다.
-- 전이 검증 치트: `cl9.night`(로비면 시작, 밤이면 종료). 시계 값은 `DA_CL9Rules`에서 읽는다
+- 전이 검증 치트: `cl9.night`(로비면 시작, 밤이면 종료). 시계 값은 `CL9Rules`에서 읽는다
   (`NightLength`·`DarkBase`·`DarkAccel`·`DarkMin` — [../plan/data/rules.md](../plan/data/rules.md) 밤).
 - 4a(2026-09-05)가 얹은 것: **전멸**(생존자 0, `HandlePlayerDeath`)도 `EndNight`로 들어오고,
   `EnterLobby`는 `ReviveDead()`로 죽은 전원을 트럭 패드 위에 만HP로 세운 뒤 로비 페이즈로

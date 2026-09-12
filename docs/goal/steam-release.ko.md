@@ -441,7 +441,7 @@ AppID, Steam 오버레이가 뜨고 두 PC가 Steam 중계망으로 연결되도
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9PlayerState.{h,cpp} | bIsReady, SlotIndex, GetSlotColor() |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9PlayerController.{h,cpp} | Server_SetReady / Server_Depart; IA_LobbyAction / IA_CopyCode 라우팅 |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9GameInstance.{h,cpp} | NetworkError / TravelError → 타이틀 |
-| D:\Work\unreal\CL9\Source\CL9\UI\CL9TitleWidget, CL9JoinCodeWidget, CL9NoticeWidget, CL9RosterWidget .{h,cpp}; D:\Work\unreal\CL9\Content\UI\WBP_Title, WBP_JoinCode, WBP_Notice, WBP_Roster, WBP_Pause, DA_UITable.uasset | Title(Screen) / JoinCode(Popup) / Notice(Popup, 모달 + 토스트) / Roster(HUD, 표시 전용) 행; Pause [로비로 나가기] 배선 |
+| D:\Work\unreal\CL9\Source\CL9\UI\CL9TitleWidget, CL9JoinCodeWidget, CL9NoticeWidget, CL9RosterWidget .{h,cpp}; D:\Work\unreal\CL9\Content\UI\WBP_Title, WBP_JoinCode, WBP_Notice, WBP_Roster, WBP_Pause, UITable.uasset | Title(Screen) / JoinCode(Popup) / Notice(Popup, 모달 + 토스트) / Roster(HUD, 표시 전용) 행; Pause [로비로 나가기] 배선 |
 | D:\Work\unreal\CL9\Content\Input\Actions\IA_LobbyAction, IA_CopyCode; D:\Work\unreal\CL9\Content\Input\IMC_Gameplay.uasset | Enter = 역할별 준비/출발, C = 코드 복사 (Lobby 페이즈에서만) |
 | D:\Work\unreal\CL9\Content\Maps\Lvl_Title.umap | 새 타이틀 레벨 (GameDefaultMap) |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9CheatManager.{h,cpp}, CL9Cheats.cpp | cl9.host / cl9.join / cl9.leave / cl9.session |
@@ -565,7 +565,7 @@ CCL8의 실패를 거꾸로 반복하는 것이다.
 | 게임 시작 | `ACL9GameMode::StartNight()`(phase == Lobby 가드) | 예 — 출발이 부른다 |
 | 플레이어별 복제 상태 + HUD 훅 | `ACL9PlayerState`(Hp, 소지, `OnRep_*` + HUD 델리게이트) | 예 — `bIsReady`, `SlotIndex`가 같은 형태를 따른다 |
 | Server RPC 패턴 | `Server_AcceptOrders`, `Server_CL9Cheat`(WithValidation) | 예 — `Server_SetReady`, `Server_SelectCharacter` |
-| 화면 | `UCL9UIManager::OpenWidget(FName)` + `DA_UITable` 행, `CL9UINames` | 예 — Title / ModeSelect / JoinCode / Connecting 행; 로스터는 HUD 레이어 |
+| 화면 | `UCL9UIManager::OpenWidget(FName)` + `UITable` 행, `CL9UINames` | 예 — Title / ModeSelect / JoinCode / Connecting 행; 로스터는 HUD 레이어 |
 | def 표 → 해시 | `UCL9DefRegistry::Init(DefList)` | 예 — 거기서 한 번 계산 |
 | 치트 | `UCL9CheatManager`, `CL9Cheats.cpp`, `AllowCheats` 오버라이드 | 예 — `cl9.host/join/leave/session` |
 | 전송 | 엔진 `OnlineSubsystemSteam` 1.2 + `SteamSockets`(SDK 1.64) | 예 — 커스텀 없음 |
@@ -1361,7 +1361,7 @@ DESIGN.md 없음(갭 → `/design-consultation` 권장, TODO). 사실상의 시�
   타이틀이 도착 때 보여 줌
   - 근거: 1/2패스; 디자인 음성 지적 4/5 — 메시지 표면 하나, `OpenLevel`을 넘는
     운반체
-  - 파일: Content/UI/WBP_Notice, DA_UITable, Source/CL9/GameMode/CL9GameInstance.{h,cpp},
+  - 파일: Content/UI/WBP_Notice, UITable, Source/CL9/GameMode/CL9GameInstance.{h,cpp},
     Source/CL9/UI/CL9NoticeWidget.{h,cpp}
   - 검증: S6 호스트 종료 → 타이틀이 Notice 표시 → 확인; 호스트에게 참가/이탈
     토스트
@@ -1370,7 +1370,7 @@ DESIGN.md 없음(갭 → `/design-consultation` 권장, TODO). 사실상의 시�
   대기; 호스트 행은 준비 없음), 막힌 이유를 말하는 상태 줄, 키 힌트 줄; phase
   Lobby에서 HUD가 열고 Night에 닫음; 솔로 변형 "혼자 · Enter: 출발"
   - 근거: 1/2/7패스; 디자인 음성 지적 1/3/8
-  - 파일: Content/UI/WBP_Roster, DA_UITable, Source/CL9/UI/CL9RosterWidget.{h,cpp}
+  - 파일: Content/UI/WBP_Roster, UITable, Source/CL9/UI/CL9RosterWidget.{h,cpp}
   - 검증: 스모크 스크립트 스크린샷; 47자 이름으로 S2; 솔로 런은 코드 안 보임
 - [ ] **D3 (P2, 사람: ~2시간 / CC: ~15분)** — W3 — `JoinCode` Popup: 여섯 칸, 자동
   대문자, 알파벳 필터, [붙여넣기], 상태 줄 상태, 연결 중 내용으로 전환(20초 타이머,

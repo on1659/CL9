@@ -72,7 +72,7 @@
 - **데이터**: `UCL9EquipmentDef`(Source/CL9/Data) — `Price` · `UnlockDay` · `MaxOwned` · `bPhysicalProp` ·
   `Slot`(Kitchen/Carryable) · `bUsableAsTool` · `ItemDef`(실물이 될 아이템 행). 이름·아이콘·전용 BP는 베이스 컬럼을
   쓴다. 로드 검사가 `ItemDef`가 실제 아이템 행인지 확인한다 — 끊어져 있으면 사도 실물이 안 나온다.
-  에셋은 `DA_EquipmentTable`(Content/Data).
+  에셋은 `EquipmentTable`(Content/Data).
 - **판정**: `ACL9GameState::CanBuy(alias)` → `ECL9BuyResult`(Ok/NoRow/**NotInLobby**/Locked/MaxOwned/
   NotEnoughMoney). **GameMode가 아니라 GameState에 둔다** (2026-09-07) — 클라이언트에는 GameMode가
   없어서, 거기 두면 클라의 구매 화면이 버튼을 끄지도 이유를 적지도 못한다. 호스트의 실제 구매

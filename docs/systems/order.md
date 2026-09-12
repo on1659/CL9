@@ -68,8 +68,8 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
 ## 구현 상태 (4c 2026-09-05 · 4e 2026-09-06)
 
 - **데이터**: `UCL9OrderDef`(Source/CL9/Data) — Ingredients·RewardMin/Max·DeadlineDays·FailPenaltyRate·
-  MinDay/MaxDay/Weight (Gimmicks는 베이스). 에셋 `DA_OrderTable`(Content/Data) 행 omelette·fried_egg·
-  meat_dish. 로드 검사가 재료 alias+sub가 아이템 행인지 확인한다. N/M은 `DA_CL9Progression`의
+  MinDay/MaxDay/Weight (Gimmicks는 베이스). 에셋 `OrderTable`(Content/Data) 행 omelette·fried_egg·
+  meat_dish. 로드 검사가 재료 alias+sub가 아이템 행인지 확인한다. N/M은 `CL9Progression`의
   `OrdersOfferedPerDay`(3)·`OrdersRequiredPerDay`(2).
 - **추첨**: `ACL9GameMode::OfferOrders` — 게임 시작(StartPlay)·로비 진입·`cl9.day` 때 호스트가
   MinDay/MaxDay로 거른 뒤 Weight 가중 무작위(중복 없음)로 N개. 결과는 `GameState.OfferedOrders`

@@ -42,12 +42,12 @@ sun.get_component_by_class(unreal.DirectionalLightComponent).set_mobility(unreal
 for i,y in enumerate((-65,65)):
     start=actors.spawn_actor_from_class(unreal.PlayerStart,unreal.Vector(110,y,100))
     start.set_actor_label('QA_PlayerStart_'+str(i))
-eggdef=unreal.load_asset('/Game/Data/DA_ItemTable').get_editor_property('rows')[0]
+eggdef=unreal.load_asset('/Game/Data/ItemTable').get_editor_property('rows')[0]
 assert str(eggdef.get_editor_property('alias'))=='egg'
 assert str(eggdef.get_editor_property('sub_alias'))=='None'
 old_mesh=str(eggdef.get_editor_property('mesh'))
 eggdef.set_editor_property('mesh',unreal.load_asset(art+'SM_Egg_Raw_A'))
-assert unreal.EditorAssetLibrary.save_asset('/Game/Data/DA_ItemTable')
+assert unreal.EditorAssetLibrary.save_asset('/Game/Data/ItemTable')
 for i,location in enumerate([(260,0,24),(1300,-100,67)]):
     egg=actors.spawn_actor_from_class(unreal.load_class(None,'/Game/Items/BP_CL9Item.BP_CL9Item_C'),unreal.Vector(*location))
     egg.set_actor_label('QA_Egg_'+str(i))
@@ -55,7 +55,7 @@ for i,location in enumerate([(260,0,24),(1300,-100,67)]):
     egg.set_editor_property('sub_alias','None')
 assert editor.save_current_level()
 unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).set_level_viewport_camera_info(unreal.Vector(70,-50,156),unreal.Rotator(pitch=-4,yaw=0,roll=0))
-result={'level':dest,'old_egg_mesh':old_mesh,'new_egg_mesh':art+'SM_Egg_Raw_A','data_row':'DA_ItemTable.rows[0]',
+result={'level':dest,'old_egg_mesh':old_mesh,'new_egg_mesh':art+'SM_Egg_Raw_A','data_row':'ItemTable.rows[0]',
         'actors':len(actors.get_all_level_actors()),'engine':unreal.SystemLibrary.get_engine_version()}
 Path(unreal.Paths.project_dir(),'docs/asset/evidence/001-qa-level.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
 print(result)

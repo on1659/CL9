@@ -75,7 +75,7 @@ autonomous run with per-step user verification skipped ("개발하고 확인 스
 | Source/CL9/GameMode/CL9PlayerState.h/.cpp | replicated Hp |
 | Source/CL9/Data/CL9CharacterDef.h | KnockdownTime column |
 | Source/CL9/GameMode/CL9CheatManager.h/.cpp | cl9.hitmonster |
-| Content/Data/DA_MonsterTable | goose + raccoon rows (editor/MCP) |
+| Content/Data/MonsterTable | goose + raccoon rows (editor/MCP) |
 | Content/Monsters/ABP_Fox | raccoon stand-in locomotion (editor/MCP) |
 | docs/plan/data/monster/raccoon.md | draft values recorded |
 | docs/plan/data/character.md, docs/decisions.md | KnockdownTime, choices log |

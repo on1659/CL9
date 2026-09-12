@@ -21,7 +21,7 @@
 |---|---|---|
 | UE5 마네킹 (Manny/Quinn) + 애님 (Walk/Jog/Jump/Attack/Death/HitReact) | `Content/Characters/Mannequins/` | 1c 임시 캐릭터 메시 — 계획 그대로 |
 | FPP 팔 (ABP_FP + 컨트롤릭) | `Content/FirstPerson/Anims/` | 1인칭 손 뷰모델의 출발점 |
-| 동물 5종 자체 제작 SK + 클립 (닭·거위·너구리·돼지·양) | `Content/CL9Art/Monsters/<종>A/` | 2026-09-11 연결 — `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제·종별 스켈레톤), `DA_MonsterTable` 행이 가리킴. 제작 기록은 [docs/asset/monster/](../asset/monster/README.md), 결정은 decisions.md 2026-09-11 |
+| 동물 5종 자체 제작 SK + 클립 (닭·거위·너구리·돼지·양) | `Content/CL9Art/Monsters/<종>A/` | 2026-09-11 연결 — `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제·종별 스켈레톤), `MonsterTable` 행이 가리킴. 제작 기록은 [docs/asset/monster/](../asset/monster/README.md), 결정은 decisions.md 2026-09-11 |
 | (구) Dreamscape 닭·돼지·양 SK | `Content/DreamscapeSeries/.../Chars/` | 09-10 팩 축소로 애님 시퀀스가 사라져 **더 이상 쓰지 않는다** — `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`은 빈 플레이어인 채 남아 있음 |
 | Farmlands 환경 (농장 건물·지형·폴리지) + Horror 조명 깜빡임 | `DreamscapeFarmlands/` · `Variant_Horror/` | 5a 맵·light.md 참고 |
 

@@ -431,7 +431,7 @@
 - **표 구조: 행별 에셋 → 테이블 에셋의 인라인 행** (사용자 피드백 — "엑셀처럼 한 표에서
   행 추가"). "종류 하나 = DataAsset 하나"(8-31 A3 계열)를 번복한다. `UCL9DefTable` 에셋
   하나가 `Rows`(Instanced `UCL9DefBase` 배열)를 품고, 행 추가는 그 배열에 +다 —
-  `DA_ItemTable`을 열면 전 아이템이 한 화면에 보인다. UDataTable을 기각했던 근거(Instanced
+  `ItemTable`을 열면 전 아이템이 한 화면에 보인다. UDataTable을 기각했던 근거(Instanced
   기믹이 구조체 행에서 불가)는 그대로 유효하고, 인라인 행은 UObject라 기믹이 살아 있다.
   독립 에셋 행도 레지스트리가 여전히 받는다(규칙 에셋 등). DefList 자동 스캔은 테이블을
   줍는다.
@@ -491,7 +491,7 @@
   `StaminaShakeStart` 두 컬럼을 버리고 `UCL9ShakeTable`(FName → {셰이크 에셋, 발동 문턱})을
   신설한다 — UI 표와 같은 모양이고, 흔들림이 늘어도(운반·착지·피격) 규칙 에셋에 컬럼이 늘지
   않고 표에 행만 추가된다. 진폭·주파수는 여전히 셰이크 에셋 안에서 튜닝한다(표에 강도 컬럼을
-  두지 않는다). 에셋은 `Content/Effects/DA_ShakeTable`, 주입은 BP_CL9GameInstance.
+  두지 않는다). 에셋은 `Content/Effects/ShakeTable`, 주입은 BP_CL9GameInstance.
 
 - **스태미나 표시 번복: 흔들림 + HUD 바 병행** (사용자 지시 — "흔들림도 있고 UI 표시도
   필요해"). rules.md의 "스태미나는 바 없이 화면 흔들림으로만"을 스태미나에 한해 번복한다.
@@ -552,7 +552,7 @@
   F는 쓴 램프 우선, PlayerState `HeadItem` 미러. 벗기·타인 화면 피치 추종·가격은 미결.
 
 - **4b 일자 진행 곡선 구현** (build-order ④ 4b). 정본 두 층 그대로 — 목적지(`UCL9SiteDef`,
-  DA_SiteTable `henhouse`: 닭 8~12·거위 0~1·계란 16~20·고기 8~12) × 일자 곡선(`UCL9ProgressionDef`
+  MapTable `henhouse`: 닭 8~12·거위 0~1·계란 16~20·고기 8~12) × 일자 곡선(`UCL9ProgressionDef`
   단일 에셋). 구현 결정: ① 곡선은 별도 `UCurveFloat` 에셋 대신 **`FRuntimeFloatCurve` 인라인**
   (같은 그래프 편집, 외부 곡선 참조도 가능, 에셋 수 절약). ② 밤 시작 스폰은 맵 생성기 전까지
   **평지 스탠드인**: 트럭 패드(없으면 PlayerStart)를 앵커로 몬스터 900~2400cm·재료 400~1800cm
@@ -562,7 +562,7 @@
   ⑤ 1일차 덮어쓰기: 정전 없음. 곡선 초안 값은 progression.md 그대로. 미구현: ValueCurve·
   QuotaCurve(4e), 주문서 컬럼(4c), ForcedSite(4g).
 
-- **4c 주문서 구현 — 게임플레이 절반** (build-order ④ 4c). `UCL9OrderDef`(DA_OrderTable: omelette·
+- **4c 주문서 구현 — 게임플레이 절반** (build-order ④ 4c). `UCL9OrderDef`(OrderTable: omelette·
   fried_egg·meat_dish 초안 값) + 진행 에셋의 N/M(3·2). 로비마다(게임 시작·로비 진입·cl9.day) 호스트가
   MinDay/MaxDay 필터 → Weight 가중 무중복 추첨으로 N개를 제시하고, **호스트 컨트롤러만** 정확히 M개를
   확정한다(`AcceptOrders(indices)` Server RPC — 클라 요청은 거부). 수락 주문은 `AcceptedOrders{alias,
@@ -577,7 +577,7 @@
   이 값 하나로 조정하고, 위젯은 1080p·배율 1.0 기준으로 만든다 (ui_system.md 구조).
 
 - **돼지·양을 몬스터 표에 올림 — 시스템 검증용** (2026-09-05, 사용자 — "몬스터 시스템이 잘 돌아가는지 봐야
-  되니까"). 기획에 없는 종이지만 보유 팩에 풀셋이 있어 `DA_MonsterTable`에 `pig`·`sheep` 행(값은 닭 복사)과
+  되니까"). 기획에 없는 종이지만 보유 팩에 풀셋이 있어 `MonsterTable`에 `pig`·`sheep` 행(값은 닭 복사)과
   `ABP_Pig`·`ABP_Sheep`(ABP_Chicken 복제 → 스켈레톤·애님 교체)을 추가했다. 목적은 "새 종 = 행 + AnimBP"
   틀의 실증이지 기획 편입이 아니다 — 역할·값은 미결([pig.md](plan/data/monster/pig.md)·
   [sheep.md](plan/data/monster/sheep.md)). 같이 `ABP_Fox`에 여우 팩의 휴식·기상 쌍을 연결해 너구리도 8종
@@ -679,7 +679,7 @@
 
 - **맵 조각은 메시가 아니라 "역할"을 가리킨다 — 조각 표를 따로 뺀다** (2026-09-07, 사용자: "나중에 또 모델
   새로 사면 바꿔야 되거든", "여러 테마의 맵을 만들 거라 그거까지 고려해서"). `UCL9SegKindDef`의 `Mesh` 컬럼을
-  역할 이름 `Piece`로 바꾸고, 실제 메시는 새 표 `UCL9PieceDef`(`DA_PieceTable`)가 **역할 × 테마**로 갖는다
+  역할 이름 `Piece`로 바꾸고, 실제 메시는 새 표 `UCL9PieceDef`(`PieceTable`)가 **역할 × 테마**로 갖는다
   (`Alias`=역할, `SubAlias`=테마, 테마 칸이 빈 행은 공용 폴백). 목적지 행에 `Theme` 컬럼이 붙었다.
   **에셋 팩 교체 = 조각 표 + 격자 숫자, C++ 0줄**이 목표다 — 전문은 systems/asset-swap.md.
   테마 차원을 "나중에"로 미루지 않고 지금 넣은 이유: 키가 이미 `UCL9DefBase`의 `Alias`/`SubAlias`라 추가 코드가
@@ -837,7 +837,7 @@
   리썰과 반대였다 — 그 서술을 여기서 정정한다.
 
 - **천장을 켜고 끄는 것을 표 컬럼으로 뺀다** (2026-09-10, 사용자: "천장도 테이블에 넣을지 말지
-  세팅하게 해줘"). `UCL9SiteDef.bBuildCeilings`. 그전에는 `DA_SegKindTable`의 `ceiling` 행
+  세팅하게 해줘"). `UCL9SiteDef.bBuildCeilings`. 그전에는 `SegKindTable`의 `ceiling` 행
   이름을 `__ceiling_off__`로 바꿔서 껐는데(`b166eb9`), 그러면 레지스트리가 "천장 종류가 없다"고
   매번 에러를 찍었고 그게 진짜 결손과 구분되지 않았다. 행 이름은 `ceiling`으로 되돌리고
   스위치만 껐다 — 레지스트리의 필수 종류 검사도 이 값을 따라간다.
@@ -905,7 +905,7 @@
 ## 2026-09-11
 
 - **동물 5종을 자체 제작 메시·클립으로 갈아끼움 — 종별 AnimBP 신설** (사용자 — "자연스럽게
-  움직이는 것까지"). `DA_MonsterTable`의 chicken·goose·raccoon·pig·sheep 행이 `CL9Art/Monsters/<종>A/`의
+  움직이는 것까지"). `MonsterTable`의 chicken·goose·raccoon·pig·sheep 행이 `CL9Art/Monsters/<종>A/`의
   `SK_<종>_A`·스켈레톤과 `Content/Monsters/ABP_<종>_A`를 가리킨다. 새 모델은 +X 전방이라
   `MeshYawOffset`은 −90 → **0**. 배경: 09-10에 Dreamscape 팩을 용량 문제로 잘라내면서 팩의
   동물 애님 시퀀스가 디스크에서 사라져 기존 `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`의 시퀀스 플레이어가
@@ -920,7 +920,7 @@
   `LookAround` 연결(지금은 로코모션이 대신), 거위 `AlertWindup`(상태 없음), 사용자 육안 검수.
 
 - **아이템 7행도 자체 제작 메시로 연결** (2026-09-11, 사용자 — "아이템들도 몬스터처럼 배치해줘").
-  `DA_ItemTable`의 meat 3상태·cart·flashlight·headlamp·frying_pan `Mesh` 컬럼만 바꿨다 — `CL9Item::LoadData`의
+  `ItemTable`의 meat 3상태·cart·flashlight·headlamp·frying_pan `Mesh` 컬럼만 바꿨다 — `CL9Item::LoadData`의
   `Radius/바운드` 자동 배율이 크기를 맞추므로 표 값·레벨은 손대지 않았다(Lvl_Flat 아이템 줄의 손 배치
   액터도 BeginPlay에 행을 읽어 그대로 따라온다). 안 바뀐 것: egg cooked/burnt/cracked/broken(메시 미제작 —
   아직 Sphere), pot·standing_lamp(행 없음).
@@ -933,7 +933,7 @@
   PIE(밤)에서 줍기→F로 바닥·수레가 비치는 것 확인.
 
 - **빛은 손전등(·헤드램프)에서만 나온다 — 발광 아이템 폐기** (2026-09-11, 사용자 — "빛은 손전등만 나와야
-  되는데, 다른 아이템은 빛이 나오면 안 돼"). `DA_ItemTable`의 `egg`·`egg+cracked` 행에 켜져 있던
+  되는데, 다른 아이템은 빛이 나오면 안 돼"). `ItemTable`의 `egg`·`egg+cracked` 행에 켜져 있던
   `bEmitsLight`(Glow, 192cm)를 껐다. light.md의 "발광 계란 = 정전 뒤 유일한 광원 / 소지자가
   `CarrierSeenRadius`에서 들킨다" 설계는 **번복** — 정전 뒤 광원은 헤드램프와 스탠드 램프뿐이 된다.
   `ECL9ItemLight::Glow` 코드 경로와 `LightRadius`·`bLightLostInPocket`·`CarrierSeenRadius` 컬럼은
@@ -952,7 +952,7 @@
 - **CL9Art 미사용 에셋 일괄 연결 — 생성기에 `Grid`·`yard`·`tread`·토막 종류, 소품 세트, 시설 BP·농부·냄비·작업등**
   (2026-09-11, 사용자 — "cl9art 쪽 지금 안 쓰는 거 있으면 싹 다 사용 가능하게 적용해줘", 범위는 "전부 (소품 시스템까지)").
   명세 `docs/goal/wire-cl9art-assets.md`(HEAVY, 4관점 패널 + 교차 심문). 결정:
-  - `DA_PieceTable`의 Dreamscape 행을 자체 조각으로 교체(팩은 5da02ff로 저장소에서 빠져 클론이 깨지던 상태).
+  - `PieceTable`의 Dreamscape 행을 자체 조각으로 교체(팩은 5da02ff로 저장소에서 빠져 클론이 깨지던 상태).
     새 역할 `wallQuarter`·`floor`·`ceiling`·`yard`·`tread`. `wallHalf`(Wall_250)는 행만 있고 소비처 없음.
   - **바닥·천장·마당은 새 배치 모드 `Grid`**(두 평면 축 격자 깔기), **디딤판은 `Tile`**(FitPieceToCell이 이미 회전·
     보정), Stretch는 `box` 전용으로 그대로. 반려: 바운드 인식 Stretch — Grid가 있으면 죽은 코드고 마당 흙을 3배로 늘린다.
@@ -1073,3 +1073,12 @@
   - 리셋은 [키 초기화] 하나(전체 리셋·행 우클릭 반려), 선택은 세그먼트(◀▶·드롭다운 반려), 언어 라벨은 원어명(String
     Table 예외). `cl9.resetkeys` 치트 신설. `Pause.NotReady`는 뜻이 바뀌어 `Pause.LobbyNotReady` 새 키.
   - "esc 같은 공통 기능"은 뒤로 가기 키 = M(IA_Pause)으로 해석했다 — Esc를 UI 키로 되살리지 않는다.
+
+- **데이터 에셋 이름에서 `DA_` 접두사를 뗀다 — `DA_SiteTable`은 `MapTable`** (2026-09-12, 사용자 — "모든 테이블 앞에
+  DA 붙는 거 지워줘 필요없음, DA_SiteTable은 MapTable로"). 에디터 rename(참조 fix-up: `CL9DefList`·`BP_CL9GameInstance`)
+  + 문서·Tools 스크립트·코드 주석 일괄 치환. C++은 에셋을 소프트 참조로만 받아 로직 변경 없음. 대응표:
+  BuffTable · CL9DefList · CL9Progression · CL9Rules · CharacterTable · EquipmentTable · ItemTable · ModuleTable ·
+  MonsterTable · OrderTable · PieceTable · SegKindTable · ShakeTable(Effects→Data 이동분) · **MapTable**(←DA_SiteTable) ·
+  `Content/UI/UITable`(←DA_UITable). 새 표는 `SettingsTable`처럼 처음부터 접두사 없이 만든다.
+  함정: `CL9DefList`는 PreSave에서 폴더를 재스캔하는데 rename 도중엔 에셋 레지스트리가 낡아 옛 경로가 저장됐다 —
+  rename이 다 끝난 뒤 `save_asset(only_if_is_dirty=False)`로 한 번 더 저장해야 새 경로가 들어간다.

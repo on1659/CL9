@@ -4,8 +4,8 @@ from pathlib import Path
 root=Path(unreal.Paths.project_dir()).resolve();backup=root/'docs/asset/evidence'/globals().get('BACKUP','009-light-data-backup.json')
 assert not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor()
 assert not unreal.EditorLoadingAndSavingUtils.get_dirty_map_packages()
-assert '/Game/Data/DA_ItemTable' not in [p.get_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()]
-table=unreal.load_asset('/Game/Data/DA_ItemTable');rows=table.get_editor_property('rows')
+assert '/Game/Data/ItemTable' not in [p.get_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()]
+table=unreal.load_asset('/Game/Data/ItemTable');rows=table.get_editor_property('rows')
 if globals().get('MODE')=='restore':
     b=json.loads(backup.read_text())
     for r in b['rows']:

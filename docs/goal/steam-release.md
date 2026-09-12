@@ -500,7 +500,7 @@ W3 → W4 → W5 are sequential. W4 needs W0's AppID.
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9PlayerState.{h,cpp} | bIsReady, SlotIndex, GetSlotColor() |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9PlayerController.{h,cpp} | Server_SetReady / Server_Depart; IA_LobbyAction / IA_CopyCode routing |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9GameInstance.{h,cpp} | NetworkError / TravelError → title |
-| D:\Work\unreal\CL9\Source\CL9\UI\CL9TitleWidget, CL9JoinCodeWidget, CL9NoticeWidget, CL9RosterWidget .{h,cpp}; D:\Work\unreal\CL9\Content\UI\WBP_Title, WBP_JoinCode, WBP_Notice, WBP_Roster, WBP_Pause, DA_UITable.uasset | Title (Screen) / JoinCode (Popup) / Notice (Popup, modal + toast) / Roster (HUD, display-only) rows; Pause [로비로 나가기] wiring |
+| D:\Work\unreal\CL9\Source\CL9\UI\CL9TitleWidget, CL9JoinCodeWidget, CL9NoticeWidget, CL9RosterWidget .{h,cpp}; D:\Work\unreal\CL9\Content\UI\WBP_Title, WBP_JoinCode, WBP_Notice, WBP_Roster, WBP_Pause, UITable.uasset | Title (Screen) / JoinCode (Popup) / Notice (Popup, modal + toast) / Roster (HUD, display-only) rows; Pause [로비로 나가기] wiring |
 | D:\Work\unreal\CL9\Content\Input\Actions\IA_LobbyAction, IA_CopyCode; D:\Work\unreal\CL9\Content\Input\IMC_Gameplay.uasset | Enter = 준비/출발 by role, C = copy code (Lobby phase only) |
 | D:\Work\unreal\CL9\Content\Maps\Lvl_Title.umap | new title level (GameDefaultMap) |
 | D:\Work\unreal\CL9\Source\CL9\GameMode\CL9CheatManager.{h,cpp}, CL9Cheats.cpp | cl9.host / cl9.join / cl9.leave / cl9.session |
@@ -635,7 +635,7 @@ network round trip — the exact CCL8 failure in reverse.
 | Game start | `ACL9GameMode::StartNight()` (guards phase == Lobby) | Yes — 출발 calls it |
 | Per-player replicated state + HUD hooks | `ACL9PlayerState` (Hp, carry, `OnRep_*` + HUD delegates) | Yes — `bIsReady`, `SlotIndex` follow the same shape |
 | Server RPC pattern | `Server_AcceptOrders`, `Server_CL9Cheat` (WithValidation) | Yes — `Server_SetReady`, `Server_SelectCharacter` |
-| Screens | `UCL9UIManager::OpenWidget(FName)` + `DA_UITable` rows, `CL9UINames` | Yes — Title / ModeSelect / JoinCode / Connecting rows; roster in HUD layer |
+| Screens | `UCL9UIManager::OpenWidget(FName)` + `UITable` rows, `CL9UINames` | Yes — Title / ModeSelect / JoinCode / Connecting rows; roster in HUD layer |
 | Def tables → hash | `UCL9DefRegistry::Init(DefList)` | Yes — hash computed there once |
 | Cheats | `UCL9CheatManager`, `CL9Cheats.cpp`, `AllowCheats` override | Yes — `cl9.host/join/leave/session` |
 | Transport | Engine `OnlineSubsystemSteam` 1.2 + `SteamSockets` (SDK 1.64) | Yes — nothing custom |
@@ -1447,11 +1447,11 @@ HUD zone map in ui.md, slot `TintColor` in plan/data/character.md.
 ## Implementation Tasks (design phase)
 - [ ] **D1 (P1, human: ~2h / CC: ~15min)** — W3 — `Notice` Popup row + widget (modal one line + [확인]; toast mode auto-hide 3 s with `UI_Confirm`); `UCL9GameInstance::PendingNotice` shown by the title on arrival
   - Surfaced by: Pass 1/2; design voice findings 4/5 — one message surface, a carrier across `OpenLevel`
-  - Files: Content/UI/WBP_Notice, DA_UITable, Source/CL9/GameMode/CL9GameInstance.{h,cpp}, Source/CL9/UI/CL9NoticeWidget.{h,cpp}
+  - Files: Content/UI/WBP_Notice, UITable, Source/CL9/GameMode/CL9GameInstance.{h,cpp}, Source/CL9/UI/CL9NoticeWidget.{h,cpp}
   - Verify: S6 host quit → title shows the Notice → 확인; join/leave toasts on the host
 - [ ] **D2 (P1, human: ~3h / CC: ~20min)** — W3 — `Roster` HUD-layer row, display-only: code + "C: 코드 복사", 4 rows (number · TintColor dot · name clipped 14 · ready ✓ / 대기; host row without ready), status line naming the blocker, key hint line; opened by HUD on phase Lobby, closed on Night; solo variant "혼자 · Enter: 출발"
   - Surfaced by: Pass 1/2/7; design voice findings 1/3/8
-  - Files: Content/UI/WBP_Roster, DA_UITable, Source/CL9/UI/CL9RosterWidget.{h,cpp}
+  - Files: Content/UI/WBP_Roster, UITable, Source/CL9/UI/CL9RosterWidget.{h,cpp}
   - Verify: smoke script screenshots; S2 with a 47-char name; solo run shows no code
 - [ ] **D3 (P2, human: ~2h / CC: ~15min)** — W3 — `JoinCode` Popup: six cells, auto-uppercase, alphabet filter, [붙여넣기], status line states, swaps to Connecting content (20 s timer, 취소) and **back with the code kept** on any code-path failure, Enter/Esc
   - Surfaced by: Pass 2/6; design voice findings 4/9

@@ -1,6 +1,6 @@
 # 고기 — 날것 / 익음 / 탐
 
-실제 DA_ItemTable meat/None, cooked, burnt의 3행, Radius=30cm를 따른다.
+실제 ItemTable meat/None, cooked, burnt의 3행, Radius=30cm를 따른다.
 둥글고 두꺼운 고깃덩이와 짧게 돌출된 두 갈래 뼈로 된 독립 신규 소품이다.
 날것은 붉은 살과 넓은 지방 무늬, 익음은 황갈색 표면과 짙은 구이 자국,
 탐은 검은 표면과 불규칙한 갈색 균열로 구분한다. 외부 이미지/구매 자산을 사용하지 않는다.

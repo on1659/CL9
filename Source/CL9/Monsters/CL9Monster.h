@@ -45,7 +45,7 @@ enum class ECL9MonsterState : uint8
  * 액터는 TurnRate/TurnDrag 아래에서 그 경로를 따라 조향한다 — 넓고 느리게
  * 도는 것이 코너를 무기로 만드는 핵심이다(2026-09-02 경로 방식 확정).
  *
- * 감각(3d): SightIn/SightOut 히스테리시스와 벽 트레이스를 쓰는 시야, DA_CL9Rules의
+ * 감각(3d): SightIn/SightOut 히스테리시스와 벽 트레이스를 쓰는 시야, CL9Rules의
  * 달리기 소음, 근접도가 모두 하나의 감지 게이지로 모인다. 게이지가 가득 찼을 때
  * 시야가 있으면 Chase, 없으면 Investigate로 간다.
  */

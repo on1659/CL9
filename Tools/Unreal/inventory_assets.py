@@ -16,8 +16,8 @@ mcp.rpc('initialize', {'protocolVersion':'2025-11-25','capabilities':{},
     'clientInfo':{'name':'CL9Inventory','version':'1'}})
 mcp.rpc('notifications/initialized', request_id=None)
 inventory = {}
-for category in ['Item','Monster','Character','Piece','Module','Site','Equipment']:
-    path = f'/Game/Data/DA_{category}Table.DA_{category}Table'
+for category in ['Item','Monster','Character','Piece','Module','Map','Equipment']:
+    path = f'/Game/Data/{category}Table.{category}Table'
     rows = call('get_properties',instance={'refPath':path},properties=['rows'])['rows']
     inventory[category] = []
     for row in rows:

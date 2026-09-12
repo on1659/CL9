@@ -8,15 +8,15 @@ data rows, BP/level edits, and the smallest generator changes that give the map 
 
 ## Background / Motivation
 `docs/asset/catalog.md` lists 45 delivered assets; only 12 (items, monsters, egg) are permanently wired. A grep of the
-uasset import tables shows 33 CL9Art assets with zero referencers outside `CL9Art`. Worse, `DA_PieceTable` still
+uasset import tables shows 33 CL9Art assets with zero referencers outside `CL9Art`. Worse, `PieceTable` still
 points at Dreamscape Farmlands meshes that commit `5da02ff` removed from the repository — the henhouse map is broken
 for any clone. The user asked: "지금 안 쓰는 거 있으면 싹 다 사용 가능하게 적용해줘" and chose the full scope
 including the prop placement system (module.md decision 7, previously 미구현).
 
 ## In-scope
-- **A. Piece / seg-kind data (theme `henhouse`)** — `DA_PieceTable`: `wall`→Wall_500, `wallHalf`→Wall_250,
+- **A. Piece / seg-kind data (theme `henhouse`)** — `PieceTable`: `wall`→Wall_500, `wallHalf`→Wall_250,
   new `wallQuarter`→Wall_125, `fence`→Fence_250, `door`→Door_A, new `floor`→Floor_500, new `ceiling`→Ceiling_500,
-  new `yard`→YardGround_500, new `tread`→Tread_A. `DA_SegKindTable`: `floor`/`ceiling` Piece→own role, Placement
+  new `yard`→YardGround_500, new `tread`→Tread_A. `SegKindTable`: `floor`/`ceiling` Piece→own role, Placement
   `Grid`; new `yard` (Piece yard, Grid, H 30, blocks sight), new `tread` (Piece tread, **Tile**, H 30), new
   `barnStub` (Piece wallQuarter, Tile, same H as barn), new `wallStub` (Piece fence, Tile, 288);
   `barn`/`plug`/`flapIn` Height 630→**580** (user decision 2026-09-11).
@@ -40,9 +40,9 @@ including the prop placement system (module.md decision 7, previously 미구현)
   `Lvl_Flat` (5) and `Lvl_Henhouse` (pad, jar) re-grounded at z 0 / scale 1 / kitchen yaw 90; food truck body+steps
   as StaticMeshActors on the pad's −X side, yaw 180 (steps toward the pad), body centre ≈ pad.X − 650 — **provisional:
   the user will judge the spot visually** ("배치해봐야 알 거 같은데"); panel stays where it is.
-- **E. Farmer A** — `DA_CharacterTable.farmer_a` SkeletalMesh→SK_Farmer_A_Body, ArmsMesh→SK_Farmer_A_Arms
+- **E. Farmer A** — `CharacterTable.farmer_a` SkeletalMesh→SK_Farmer_A_Body, ArmsMesh→SK_Farmer_A_Arms
   (Skeleton/ABPs unchanged).
-- **F. Items** — `DA_ItemTable` rows `pot` (copy of frying_pan: Hand, Radius 30, no physics, Mesh SM_Pot_A) and
+- **F. Items** — `ItemTable` rows `pot` (copy of frying_pan: Hand, Radius 30, no physics, Mesh SM_Pot_A) and
   `standing_lamp` (Hand, Radius 60, no physics, LightRadius 800, Intensity 5000 — values provisional, plan says
   미정) with `ActorClass` = new `BP_CL9LampItem` (parent `ACL9LampItem : ACL9LightItem`, the other session's
   2026-09-11 light-item class split): spawns lit and stays lit when placed/thrown (user: "내려두어도 불은 켜져
@@ -107,7 +107,7 @@ including the prop placement system (module.md decision 7, previously 미구현)
 | `Source/CL9/Data/CL9ItemDef.h`, `Items/CL9Item.cpp` | `bLitWhenFree` |
 | `Source/CL9/Items/CL9Kitchen.cpp` | HeatZone absolute rotation |
 | `Source/CL9/Data/CL9DefRegistry.cpp` | Needed seg-kind list |
-| `Content/Data/DA_PieceTable, DA_SegKindTable, DA_ModuleTable, DA_ItemTable, DA_CharacterTable` | data rows |
+| `Content/Data/PieceTable, SegKindTable, ModuleTable, ItemTable, CharacterTable` | data rows |
 | `Content/Items/BP_CL9Kitchen/Counter/Jar/TruckPad/TruckPanel` | mesh swaps |
 | `Content/Maps/Lvl_Flat.umap, Lvl_Henhouse.umap` | instance fixes, truck actors |
 | `docs/asset/catalog.md`, `docs/systems/asset-swap.md`, `docs/plan/data/module.md`, `docs/decisions.md`, `docs/asset/production-progress.md` | records |

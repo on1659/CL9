@@ -45,7 +45,7 @@ map_parts=[
 ('henhouse_sign','방/출구 표식',None),('henhouse_ground','마당/기반 바닥',None),
 ('henhouse_workbench','작업실/사무실 가구',None)]
 for id,alias,sample in map_parts:
-    add(id,'map',alias,'DA_PieceTable + DA_ModuleTable + map/henhouse_sample_01.md',
+    add(id,'map',alias,'PieceTable + ModuleTable + map/henhouse_sample_01.md',
         'N/A: 정적 조립; 문 실제 열림 기능 소비처 확인' if 'door' in id else 'N/A: 정적 환경',
         '샘플 있음' if sample else '미제작', 'ArtSource/map/henhouse_sample_01/' if sample else '—',
         next='샘플 UE 왕복 → 표면/충돌/LOD → 실제 모듈 배치' if sample else '제작 카드 → 치수/소비처 확인 → 제작')

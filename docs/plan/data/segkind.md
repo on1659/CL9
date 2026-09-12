@@ -118,7 +118,7 @@
 ## 메시를 직접 가리키지 않는다
 
 이 표의 행은 **역할 이름**만 말하고, 그 역할이 어느 메시인지는 조각 표(`UCL9PieceDef`,
-`DA_PieceTable`)가 테마별로 갖는다. 그래서 에셋 팩을 갈아 끼울 때 이 표는 손대지 않는다 —
+`PieceTable`)가 테마별로 갖는다. 그래서 에셋 팩을 갈아 끼울 때 이 표는 손대지 않는다 —
 전문은 [../../systems/asset-swap.md](../../systems/asset-swap.md).
 
 조각의 치수도 컬럼이 아니다. `ACL9SiteMap`이 메시 바운드에서 직접 읽는다 — 손으로 옮겨 적은
@@ -136,10 +136,10 @@
 ## 구현 상태 (2026-09-06, ⑤ 5a 선행)
 
 `UCL9SegKindDef`(Source/CL9/Data) — 고유 컬럼은 `Piece`·`Placement`·`Height`·`BaseZMode`·`bBlocksSight`, `ActorClass`는
-공통 베이스(`UCL9DefBase`) 컬럼을 그대로 쓴다 (`CollisionProfile`·`MinimapColor`는 첫 소비처와 함께). 에셋 `DA_SegKindTable`(Content/Data).
+공통 베이스(`UCL9DefBase`) 컬럼을 그대로 쓴다 (`CollisionProfile`·`MinimapColor`는 첫 소비처와 함께). 에셋 `SegKindTable`(Content/Data).
 
 **2026-09-07 (5b): 메시를 직접 가리키던 `Mesh` 컬럼을 역할 이름 `Piece`로 바꿨다.** 실제 메시는 조각
-표(`UCL9PieceDef` / `DA_PieceTable`)가 역할×테마로 갖는다 — 전문은
+표(`UCL9PieceDef` / `PieceTable`)가 역할×테마로 갖는다 — 전문은
 [../../systems/asset-swap.md](../../systems/asset-swap.md). 상속받은 `Mesh` 컬럼은 이제 이 표에서 안 쓰므로
 전 행에서 비워 뒀다(아이템 행은 계속 쓴다).
 
