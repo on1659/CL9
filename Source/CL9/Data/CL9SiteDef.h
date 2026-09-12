@@ -8,6 +8,54 @@
 #include "CL9SiteDef.generated.h"
 
 /**
+ * 밤 페이즈 하나의 조명 세팅 (docs/systems/light.md 렌더 세팅). 태양·하늘은 레벨에
+ * 배치된 라이트의 원래 값에 **곱하는 배율**이고, 안개는 절대값이다 — 배율 1·색 흰색·
+ * 안개 0이면 레벨을 손대지 않는 것과 같다. ACL9NightLighting이 페이즈에 맞춰 이 값으로
+ * 보간해 간다.
+ */
+USTRUCT(BlueprintType)
+struct FCL9LightingPhase
+{
+	GENERATED_BODY()
+
+	/** 태양(DirectionalLight) 밝기 배율 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0"))
+	float SunScale = 1.f;
+
+	/** 태양 색에 곱하는 색조 — 흰색이면 원래 색, 밤엔 달빛 청색 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor SunColor = FLinearColor::White;
+
+	/**
+	 * 하늘(SkyLight) 밝기 배율. 레벨의 SkyLight는 실시간 캡처라 하늘 자체가 태양을 따라
+	 * 어두워진다 — 그래서 밤엔 1보다 훨씬 큰 값(양계장 10)이 정상이다. 태양이 0이면(정전)
+	 * 배율이 얼마든 하늘도 0이다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0"))
+	float SkyScale = 1.f;
+
+	/** 하늘 색에 곱하는 색조 — "검정의 색"이다. 차가운 청색이면 어두워도 형태가 읽힌다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor SkyColor = FLinearColor::White;
+
+	/**
+	 * 닫힌 실내로 새어 드는 하늘빛의 비율 (Lumen "Skylight Leaking", 0~1). 루멘은 천장이
+	 * 덮인 방을 완전한 검정으로 만들기 때문에, 이 값이 0이면 SkyScale을 아무리 올려도
+	 * 축사 안은 캄캄하다. 1이면 하늘빛이 벽을 무시하고 실내에 고르게 깔린다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0", ClampMax="1.0"))
+	float SkyLeak = 0.f;
+
+	/** 안개(ExponentialHeightFog) 밀도 — 0이면 안개 없음. 손전등 빔이 공기 중에 보이게 하는 값 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0"))
+	float FogDensity = 0.f;
+
+	/** 안개 산란색 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor FogColor = FLinearColor::Black;
+};
+
+/**
  * 목적지 행 하나 (docs/plan/data/site.md). 사이트는 기준값을 준다 — 어떤
  * 동물과 재료가 몇 마리/몇 개 있는지 — 그리고 일자 커브(UCL9ProgressionDef)가
  * 밤이 시작될 때 그 값에 곱해진다. 맵 생성기를 위한 격자 컬럼들은
@@ -20,6 +68,8 @@ class UCL9SiteDef : public UCL9DefBase
 	GENERATED_BODY()
 
 public:
+	UCL9SiteDef();
+
 	virtual void Validate(TArray<FString>& OutErrors) const override;
 
 	/** 여기 사는 동물들 — 기준 마리수이며, MonsterCountCurve가 굴림값을 조정한다 (site.md 서식 동물) */
@@ -110,4 +160,19 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	bool bBuildCeilings = true;
+
+	// -- 조명 (docs/systems/light.md). 어둠은 사이트의 성격이다 — 축사의 밤과 다른 목적지의
+	//    밤이 다르게 보인다. 값은 레벨 라이트에 곱하는 배율이라 레벨을 바꿔도 그대로 쓴다.
+
+	/** 로비·새벽 — 밤과 밤 사이의 어스름한 저녁 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lighting")
+	FCL9LightingPhase LobbyLighting;
+
+	/** 밤 — 습격 시간대. 손전등 밖은 형태만 겨우 읽히는 정도 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lighting")
+	FCL9LightingPhase NightLighting;
+
+	/** 정전 뒤 — 손전등의 카운터. 여기서 앰비언트를 끄기 때문에 밤 값을 올려도 정전은 캄캄하다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lighting")
+	FCL9LightingPhase BlackoutLighting;
 };

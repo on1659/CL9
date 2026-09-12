@@ -4,25 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Data/CL9SiteDef.h"
 #include "Data/CL9Types.h"
 #include "CL9NightLighting.generated.h"
 
 class ADirectionalLight;
+class AExponentialHeightFog;
 class ASkyLight;
 class UPostProcessComponent;
 class ACL9GameState;
 
 /**
  * 로컬에서 어둠을 그려내는 렌더러(build-order 5c, 앞당겨 구현 — docs/systems/light.md).
- * 순전히 표현 담당이다: 게임 스테이트의 밤 단계를 구독해서 밤이 되면 레벨의 태양/하늘을
- * 어둡게 만들고(자동 노출이 그 어둠을 되돌리지 못하도록 수동 노출 고정도 함께 건다).
- * 레벨마다 인스턴스 하나만 존재하며, 복제된 단계 값을 기준으로 모든 머신에서 똑같이
- * 동작한다 — 여기 있는 어떤 것도 권위 있는 판정이 아니다(몬스터의 시야 판정은 화면
- * 밝기가 아니라 값으로 이루어진다 — docs/systems/monster.md).
+ * 순전히 표현 담당이다: 게임 스테이트의 밤 단계를 구독해서 밤이 되면 레벨의 태양/하늘/
+ * 안개를 사이트 행의 조명 세팅으로 옮긴다(자동 노출이 그 어둠을 되돌리지 못하도록 수동
+ * 노출 고정도 함께 건다). 레벨마다 인스턴스 하나만 존재하며, 복제된 단계 값을 기준으로
+ * 모든 머신에서 똑같이 동작한다 — 여기 있는 어떤 것도 권위 있는 판정이 아니다(몬스터의
+ * 시야 판정은 화면 밝기가 아니라 값으로 이루어진다 — docs/systems/monster.md).
  *
- * 기준값은 BeginPlay 시점에 맵에 배치된 라이트의 원래 값에서 뽑아내고, 아래 단계별
- * 항목들은 그 기준값에 곱해지는 배율이라서 리빌드 없이 에디터에서 튜닝할 수 있다
- * (build-order 원칙 3).
+ * 페이즈별 값은 이 액터가 아니라 **사이트 표**(UCL9SiteDef::LobbyLighting/NightLighting/
+ * BlackoutLighting)에 있다 — 어둠은 사이트의 성격이라서다 (2026-09-12). 기준값은 BeginPlay
+ * 시점에 맵에 배치된 라이트의 원래 값에서 뽑아내고, 표의 배율이 그 위에 곱해지므로 표를
+ * 고치는 데 리빌드가 필요 없다 (build-order 원칙 3).
  */
 UCLASS()
 class ACL9NightLighting : public AActor
@@ -36,34 +39,6 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
-	// -- 로비(밤과 밤 사이의 휴식 지점 — 완전한 낮이 아니라 어스름한 저녁) --
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Lobby", meta=(ClampMin="0.0"))
-	float LobbySunScale = 0.35f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Lobby", meta=(ClampMin="0.0"))
-	float LobbySkyScale = 0.5f;
-
-	// -- 밤(습격 시간대 — 거의 암흑이라 손전등이 중요해진다 — docs/systems/light.md) --
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Night", meta=(ClampMin="0.0"))
-	float NightSunScale = 0.05f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Night", meta=(ClampMin="0.0"))
-	float NightSkyScale = 0.1f;
-
-	/** 밤이 되면 태양 라이트가 옮겨가는 달빛 색조 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Night")
-	FLinearColor NightSunColor = FLinearColor(0.35f, 0.45f, 0.75f, 1.f);
-
-	// -- 블랙아웃(오늘 밤의 블랙아웃 시점을 지난 뒤 — 손전등에 대한 카운터) --
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Blackout", meta=(ClampMin="0.0"))
-	float BlackoutSunScale = 0.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="CL9 Night|Blackout", meta=(ClampMin="0.0"))
-	float BlackoutSkyScale = 0.03f;
-
 	/**
 	 * 씬을 고정시키는 노출값(자동 노출의 min=max로 설정) — 이렇게 해야 라이트를
 	 * 어둡게 낮췄을 때 눈이 다시 적응해 밝아지는 대신 화면이 실제로 어두워진다
@@ -85,31 +60,34 @@ private:
 	UFUNCTION()
 	void OnNightPhaseChanged(ECL9NightPhase NewPhase);
 
-	/** 레벨의 태양/하늘을 찾아 원래 밝기 값을 낮 기준값으로 기록한다 */
+	/** 레벨의 태양/하늘/안개를 찾아 원래 값을 낮 기준값으로 기록한다 */
 	void ResolveLights();
 
 	/** 단계 델리게이트를 바인딩하고 현재 단계를 즉시 적용한다(중간 참가에도 안전) */
 	bool TryBindGameState();
 
-	/** 단계(그리고 밤 중 블랙아웃 여부)로부터 목표 상태값을 채운다 */
-	void SelectTarget(ECL9NightPhase Phase, bool bBlackout, float& OutSun, float& OutSky, FLinearColor& OutColor) const;
+	/** 현재 사이트 행의 페이즈 세팅을 고른다 — 사이트 행이 없으면 기준값 그대로(배율 1·안개 0) */
+	FCL9LightingPhase SelectTarget(ECL9NightPhase Phase, bool bBlackout) const;
 
-	/** 현재 보간된 값을 라이트 컴포넌트에 반영한다 */
+	/** 현재 보간된 값을 라이트·안개 컴포넌트에 반영한다 */
 	void ApplyToLights() const;
 
 	TWeakObjectPtr<ADirectionalLight> Sun;
 	TWeakObjectPtr<ASkyLight> Sky;
+	TWeakObjectPtr<AExponentialHeightFog> Fog;
 	TWeakObjectPtr<ACL9GameState> BoundGameState;
 
-	/** BeginPlay 시점에 기록한 원래 밝기 값 — 배율들은 이 값에 곱해진다 */
+	/** BeginPlay 시점에 기록한 원래 값 — 표의 배율들은 이 값에 곱해진다 */
 	float BaselineSunIntensity = 0.f;
-	float BaselineSkyIntensity = 0.f;
 	FLinearColor BaselineSunColor = FLinearColor::White;
+	float BaselineSkyIntensity = 0.f;
+	FLinearColor BaselineSkyColor = FLinearColor::White;
 
-	/** 보간되고 있는 현재 상태값 */
-	float CurrentSunScale = 1.f;
-	float CurrentSkyScale = 1.f;
-	FLinearColor CurrentSunColor = FLinearColor::White;
+	/** 보간되고 있는 현재 상태값 (사이트 행과 같은 단위 — 배율·색조·안개 절대값) */
+	FCL9LightingPhase Current;
 
 	bool bLightsReady = false;
+
+	/** 사이트 행을 못 찾았다는 경고는 한 번만 */
+	mutable bool bWarnedNoSite = false;
 };

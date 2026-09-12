@@ -2,11 +2,15 @@
 
 #include "World/CL9NightLighting.h"
 #include "CL9.h"
+#include "Data/CL9DefRegistry.h"
+#include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -68,6 +72,11 @@ void ACL9NightLighting::ResolveLights()
 		Sky = *It;
 		break;
 	}
+	for (TActorIterator<AExponentialHeightFog> It(World); It; ++It)
+	{
+		Fog = *It;
+		break;
+	}
 
 	if (Sun.IsValid() && Sun->GetLightComponent() != nullptr)
 	{
@@ -82,15 +91,21 @@ void ACL9NightLighting::ResolveLights()
 	if (Sky.IsValid() && Sky->GetLightComponent() != nullptr)
 	{
 		BaselineSkyIntensity = Sky->GetLightComponent()->Intensity;
+		BaselineSkyColor = Sky->GetLightComponent()->GetLightColor();
 	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("NightLighting: no SkyLight in the level — sky stays as-is."));
 	}
 
-	CurrentSunScale = 1.f;
-	CurrentSkyScale = 1.f;
-	CurrentSunColor = BaselineSunColor;
+	// 안개는 없어도 된다 — 표의 안개 값이 갈 곳이 없을 뿐이다. 볼류메트릭 여부 같은
+	// 나머지 세팅은 레벨에 놓인 액터의 것을 그대로 쓴다.
+	if (!Fog.IsValid())
+	{
+		UE_LOG(LogCL9, Log, TEXT("NightLighting: no ExponentialHeightFog in the level — the site's fog settings have nowhere to go."));
+	}
+
+	Current = FCL9LightingPhase();
 	bLightsReady = true;
 }
 
@@ -111,12 +126,7 @@ bool ACL9NightLighting::TryBindGameState()
 	CL9GameState->OnNightPhaseChanged.AddDynamic(this, &ACL9NightLighting::OnNightPhaseChanged);
 
 	// 현재 단계로 즉시 맞춰서 중간 참가자에게도 곧바로 올바르게 보이도록 한다.
-	float Sun_ = 0.f, SkyV = 0.f;
-	FLinearColor Color = BaselineSunColor;
-	SelectTarget(CL9GameState->GetPhase(), CL9GameState->IsBlackout(), Sun_, SkyV, Color);
-	CurrentSunScale = Sun_;
-	CurrentSkyScale = SkyV;
-	CurrentSunColor = Color;
+	Current = SelectTarget(CL9GameState->GetPhase(), CL9GameState->IsBlackout());
 	ApplyToLights();
 	return true;
 }
@@ -126,23 +136,35 @@ void ACL9NightLighting::OnNightPhaseChanged(ECL9NightPhase /*NewPhase*/)
 	// Tick이 단계를 직접 읽어가므로, 이 함수는 그저 즉각적인 반응을 보장할 뿐이다.
 }
 
-void ACL9NightLighting::SelectTarget(ECL9NightPhase Phase, bool bBlackout, float& OutSun, float& OutSky, FLinearColor& OutColor) const
+FCL9LightingPhase ACL9NightLighting::SelectTarget(ECL9NightPhase Phase, bool bBlackout) const
 {
+	// 사이트 행은 각 머신의 레지스트리에 있고, 어느 행인지는 게임 스테이트가 복제한다
+	// (conventions § 정적 표는 로컬, 런타임 상태만 복제).
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9SiteDef* Site = (Registry != nullptr && BoundGameState.IsValid()) ? Registry->FindSite(BoundGameState->GetCurrentSiteAlias()) : nullptr;
+	if (Site == nullptr)
+	{
+		// 별칭이 아직 비어 있는 것은 사이트가 정해지기 전(로비 진입 직후)이라 정상이다 —
+		// 이름이 있는데 행이 없을 때만 경고한다.
+		const FName Alias = BoundGameState.IsValid() ? BoundGameState->GetCurrentSiteAlias() : NAME_None;
+		if (!Alias.IsNone() && !bWarnedNoSite)
+		{
+			bWarnedNoSite = true;
+			UE_LOG(LogCL9, Warning, TEXT("NightLighting: no site row for '%s' — lights stay at their authored values."), *Alias.ToString());
+		}
+		return FCL9LightingPhase();
+	}
+
 	switch (Phase)
 	{
 	case ECL9NightPhase::Night:
-		OutSun = bBlackout ? BlackoutSunScale : NightSunScale;
-		OutSky = bBlackout ? BlackoutSkyScale : NightSkyScale;
-		OutColor = NightSunColor;
-		break;
+		return bBlackout ? Site->BlackoutLighting : Site->NightLighting;
 
 	case ECL9NightPhase::Dawn:
 	case ECL9NightPhase::Lobby:
 	default:
-		OutSun = LobbySunScale;
-		OutSky = LobbySkyScale;
-		OutColor = BaselineSunColor;
-		break;
+		return Site->LobbyLighting;
 	}
 }
 
@@ -150,12 +172,25 @@ void ACL9NightLighting::ApplyToLights() const
 {
 	if (Sun.IsValid() && Sun->GetLightComponent() != nullptr)
 	{
-		Sun->GetLightComponent()->SetIntensity(BaselineSunIntensity * CurrentSunScale);
-		Sun->GetLightComponent()->SetLightColor(CurrentSunColor);
+		Sun->GetLightComponent()->SetIntensity(BaselineSunIntensity * Current.SunScale);
+		Sun->GetLightComponent()->SetLightColor(BaselineSunColor * Current.SunColor);
 	}
 	if (Sky.IsValid() && Sky->GetLightComponent() != nullptr)
 	{
-		Sky->GetLightComponent()->SetIntensity(BaselineSkyIntensity * CurrentSkyScale);
+		Sky->GetLightComponent()->SetIntensity(BaselineSkyIntensity * Current.SkyScale);
+		Sky->GetLightComponent()->SetLightColor(BaselineSkyColor * Current.SkyColor);
+	}
+	if (Fog.IsValid() && Fog->GetComponent() != nullptr)
+	{
+		Fog->GetComponent()->SetFogDensity(Current.FogDensity);
+		Fog->GetComponent()->SetFogInscatteringColor(Current.FogColor);
+	}
+	// 루멘이 닫힌 방을 완전한 검정으로 만드는 것을 표의 비율만큼 풀어 준다 — 노출 고정과
+	// 같은 포스트프로세스 컴포넌트에 얹는다.
+	if (ExposureControl != nullptr)
+	{
+		ExposureControl->Settings.bOverride_LumenSkylightLeaking = true;
+		ExposureControl->Settings.LumenSkylightLeaking = Current.SkyLeak;
 	}
 }
 
@@ -168,21 +203,21 @@ void ACL9NightLighting::Tick(float DeltaSeconds)
 		return;
 	}
 
-	float TargetSun = 0.f, TargetSky = 0.f;
-	FLinearColor TargetColor = BaselineSunColor;
-	SelectTarget(BoundGameState->GetPhase(), BoundGameState->IsBlackout(), TargetSun, TargetSky, TargetColor);
+	const FCL9LightingPhase Target = SelectTarget(BoundGameState->GetPhase(), BoundGameState->IsBlackout());
 
 	if (TransitionSpeed <= 0.f)
 	{
-		CurrentSunScale = TargetSun;
-		CurrentSkyScale = TargetSky;
-		CurrentSunColor = TargetColor;
+		Current = Target;
 	}
 	else
 	{
-		CurrentSunScale = FMath::FInterpTo(CurrentSunScale, TargetSun, DeltaSeconds, TransitionSpeed);
-		CurrentSkyScale = FMath::FInterpTo(CurrentSkyScale, TargetSky, DeltaSeconds, TransitionSpeed);
-		CurrentSunColor = FMath::CInterpTo(CurrentSunColor, TargetColor, DeltaSeconds, TransitionSpeed);
+		Current.SunScale = FMath::FInterpTo(Current.SunScale, Target.SunScale, DeltaSeconds, TransitionSpeed);
+		Current.SunColor = FMath::CInterpTo(Current.SunColor, Target.SunColor, DeltaSeconds, TransitionSpeed);
+		Current.SkyScale = FMath::FInterpTo(Current.SkyScale, Target.SkyScale, DeltaSeconds, TransitionSpeed);
+		Current.SkyColor = FMath::CInterpTo(Current.SkyColor, Target.SkyColor, DeltaSeconds, TransitionSpeed);
+		Current.SkyLeak = FMath::FInterpTo(Current.SkyLeak, Target.SkyLeak, DeltaSeconds, TransitionSpeed);
+		Current.FogDensity = FMath::FInterpTo(Current.FogDensity, Target.FogDensity, DeltaSeconds, TransitionSpeed);
+		Current.FogColor = FMath::CInterpTo(Current.FogColor, Target.FogColor, DeltaSeconds, TransitionSpeed);
 	}
 
 	ApplyToLights();

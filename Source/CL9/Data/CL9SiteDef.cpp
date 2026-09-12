@@ -2,6 +2,32 @@
 
 #include "Data/CL9SiteDef.h"
 
+UCL9SiteDef::UCL9SiteDef()
+{
+	// 새 행의 출발값 = light.md의 어둠 톤 (2026-09-12 PIE로 맞춘 값). 로비는 어스름, 밤은
+	// 달빛 청색의 약한 앰비언트 + 옅은 안개(리썰컴퍼니식 "검정의 색"), 정전은 앰비언트를 끈다.
+	// 밤 SkyScale이 큰 이유는 헤더의 설명대로 — 실시간 캡처 하늘이 태양을 따라 어두워진다.
+	LobbyLighting.SunScale = 0.35f;
+	LobbyLighting.SkyScale = 0.5f;
+	LobbyLighting.SkyLeak = 1.f;
+
+	NightLighting.SunScale = 0.05f;
+	NightLighting.SunColor = FLinearColor(0.35f, 0.45f, 0.75f, 1.f);
+	NightLighting.SkyScale = 10.f;
+	NightLighting.SkyColor = FLinearColor(0.55f, 0.7f, 1.f, 1.f);
+	NightLighting.SkyLeak = 1.f;
+	NightLighting.FogDensity = 0.01f;
+	NightLighting.FogColor = FLinearColor(0.02f, 0.03f, 0.06f, 1.f);
+
+	BlackoutLighting.SunScale = 0.f;
+	BlackoutLighting.SunColor = NightLighting.SunColor;
+	BlackoutLighting.SkyScale = 0.f;
+	BlackoutLighting.SkyColor = NightLighting.SkyColor;
+	BlackoutLighting.SkyLeak = 0.f;
+	BlackoutLighting.FogDensity = 0.01f;
+	BlackoutLighting.FogColor = FLinearColor::Black;
+}
+
 void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 {
 	Super::Validate(OutErrors);
