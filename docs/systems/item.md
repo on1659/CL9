@@ -16,9 +16,19 @@
   `GripOffset`/`GripRotation`을 준다; 소유자 화면에서는 메시 컴포넌트만 1인칭 팔 소켓으로 옮겨
   그린다. 팔 자세는 행의 `HoldPose` 범주로 ABP가 고른다 (2026-09-12) — 부착·자세 규칙의 정본은
   [inventory.md](inventory.md), ABP 배선은 [animation.md](animation.md).
-- 물리 시뮬레이션(구르기·낙하·충돌)은 호스트가 권위 — 클라는 복제 위치 보간.
+- **핫바 칸에 넣으면(비활성) 액터는 파괴되고 데이터만 남는다** — 꺼낼 때 `ACL9GameMode::SpawnItem(…, PresetValue)`
+  로 다시 스폰하고 `HostSetValue`로 굴린 값을 되돌린다(칸 전환은 가격을 다시 굴리지 않는다, 2026-09-13).
+  행이 바뀌면 다시 굴리는 규칙(아래 "상태 = SubAlias")은 그대로다.
+- **몸체는 보통 반경 구(`Radius`)이고 메시는 그 구에 맞춰 자동 스케일된다.** 행의 `bMeshIsBody`가 켜진 물건(수레)은
+  이 분기를 타지 않는다 — 로드 때 메시가 루트이자 물리 몸체가 되고(임포트한 UCX 심플 콜리전, 실물 크기, 구는 콜리전
+  없이 메시 아래로), `Mass`를 질량으로, 행의 `Friction`·`Restitution`을 물리 재질로 준다. 이런 물건은 손에 들리지 않는다.
+  힘·깨우기·시뮬 on/off는 전부 `ACL9Item::GetBody()`(= 루트 프리미티브)를 거친다 (2026-09-13 수레 물리).
+- 물리 시뮬레이션(구르기·낙하·충돌)은 호스트가 권위 — 클라는 복제된 물리 상태를 보간한다. **클라 코드는 시뮬레이션을
+  켜고 끄지 않는다**: 엔진이 복제된 `bRepPhysics`에 맞춰 켜고 끈다(`SyncReplicatedPhysicsSimulation`). 클라가 꺼 버리면
+  복제 목표가 시뮬레이션하지 않는 바디에 버려져 아이템이 얼어붙는다(엔진 `FPhysicsReplication::ApplyRigidBodyState`).
+  루트를 메시로 바꾼 직후에도 같은 동기화를 한 번 더 맞춘다.
 - 깨짐 판정: 충격 속도 vs `CrackSpeed`/`BreakSpeed` — 호스트 전용, 결과는 SubAlias/상태
-  Replicated.
+  Replicated. 수레 짐칸 안이라고 예외가 없다.
 
 ## 상태 = SubAlias
 
@@ -43,7 +53,7 @@ egg → egg+cooked → egg+burnt      (열원 위 시간 — cooking.md)
 
 ## 참고
 
-- 운반(손·품·수레): [inventory.md](inventory.md)
+- 운반(핫바·수레): [inventory.md](inventory.md)
 - 드롭: [drop.md](drop.md)
 - 요리 상태 전이: [cooking.md](cooking.md)
 - 조명(발광·손전등): [light.md](light.md)

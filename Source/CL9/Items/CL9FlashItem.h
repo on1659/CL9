@@ -25,6 +25,8 @@ public:
 
 protected:
 	virtual ULightComponent* MakeLightComponent() override;
+	/** 렌즈 앞 — 메시 로컬 바운드 +X 끝에서 1cm 앞 (docs/systems/light.md) */
+	virtual FVector GetLightOrigin() const override;
 	virtual bool ShouldLightBeVisible() const override;
 	virtual void OnAcquired() override;
 

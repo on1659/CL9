@@ -39,8 +39,10 @@ public:
 	 * 호스트 전용: 아이템 하나를 스폰하고 표준 데이터 경로
 	 * (SetAlias → replication → LoadData)를 거치게 한다. 행의 ActorClass 컬럼을
 	 * 존중한다 — 설정돼 있으면 전용 BP를, 아니면 공용 아이템 BP를 쓴다(docs/plan/data/README.md 규칙 2).
+	 * PresetValue가 0 이상이면 행에서 굴린 값 대신 그 값을 쓴다 — 핫바 칸에서 꺼내 다시 스폰할 때
+	 * 개체의 가격을 보존하는 경로다(docs/systems/inventory.md). 음수면 새로 굴린다.
 	 */
-	ACL9Item* SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform);
+	ACL9Item* SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform, int32 PresetValue = -1);
 
 	/** 호스트 전용: 몬스터 하나를 표준 데이터 경로로 스폰한다 — 아이템과 동일한 ActorClass 규칙을 따른다 */
 	ACL9Monster* SpawnMonster(FName MonsterAlias, FName MonsterSubAlias, const FTransform& Transform);

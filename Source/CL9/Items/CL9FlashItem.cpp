@@ -14,15 +14,17 @@ ULightComponent* ACL9FlashItem::MakeLightComponent()
 	Spot->SetOuterConeAngle(Def->LightConeAngle);
 	Spot->SetInnerConeAngle(FMath::Max(0.f, Def->LightConeAngle - 8.f));
 	Spot->SetAttenuationRadius(FMath::Max(Def->LightRadius, 100.f));
+	return Spot;
+}
 
+FVector ACL9FlashItem::GetLightOrigin() const
+{
 	// 광원은 렌즈 앞에서 나와야 한다 — 메시 원점(몸통 한가운데)에 두면 닫힌 메시가
 	// 스포트라이트를 통째로 자기 그림자에 가둬 빛이 한 줄기도 안 나온다
 	// (2026-09-11 SM_Flashlight_A로 실측). 메시 로컬 바운드의 +X 끝에서 살짝 앞이다.
-	if (const UStaticMesh* Mesh = GetMeshComponent()->GetStaticMesh())
-	{
-		Spot->SetRelativeLocation(FVector(Mesh->GetBoundingBox().Max.X + 1.f, 0.f, 0.f));
-	}
-	return Spot;
+	// 메시가 손 소켓·1인칭 팔 소켓으로 옮겨 가도 렌즈와 같이 움직인다 (2026-09-13 렌즈 발원).
+	const UStaticMesh* Mesh = GetMeshComponent()->GetStaticMesh();
+	return Mesh != nullptr ? FVector(Mesh->GetBoundingBox().Max.X + 1.f, 0.f, 0.f) : FVector::ZeroVector;
 }
 
 void ACL9FlashItem::OnAcquired()

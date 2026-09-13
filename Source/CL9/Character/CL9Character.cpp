@@ -36,6 +36,7 @@
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameUserSettings.h"
+#include "GameMode/CL9PlayerController.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
@@ -46,6 +47,12 @@ namespace
 {
 	/** focus 후보가 되려면 최소한 이만큼은 시야 안(조준 방향과의 내적)에 들어와 있어야 한다 */
 	constexpr float FocusMinAimDot = 0.3f;
+
+	/** 휠 전환 사이 최소 간격, 초 단위 — Axis Triggered가 겹쳐 와도 한 노치에 한 칸만 넘긴다 (입력 처리 상수, 밸런스 값이 아니다) */
+	constexpr float SlotScrollDebounce = 0.1f;
+
+	/** 복제되는 "서버 시각" 필드의 비어 있음 값 — 서버 시각은 0 이상이라 음수면 "아직 없음/대기 중 아님"이다 */
+	constexpr float ServerTimeNever = -1000.f;
 }
 
 ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
@@ -112,6 +119,9 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, CharacterAlias);
 	DOREPLIFETIME(ACL9Character, HeldItem);
 	DOREPLIFETIME(ACL9Character, PullingCart);
+	DOREPLIFETIME(ACL9Character, SwingStartServerTime);
+	DOREPLIFETIME(ACL9Character, SwingWindupServerTime);
+	DOREPLIFETIME(ACL9Character, EatStartServerTime);
 	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
 	DOREPLIFETIME(ACL9Character, WornItem);
 	DOREPLIFETIME(ACL9Character, ActiveEffects);
@@ -179,12 +189,30 @@ void ACL9Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInput->BindAction(PickPlaceAction, ETriggerEvent::Started, this, &ACL9Character::PickPlaceInput);
-		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Started, this, &ACL9Character::ThrowStartInput);
-		EnhancedInput->BindAction(ThrowAction, ETriggerEvent::Completed, this, &ACL9Character::ThrowEndInput);
-		EnhancedInput->BindAction(SwapAction, ETriggerEvent::Started, this, &ACL9Character::SwapInput);
+		EnhancedInput->BindAction(DropAction, ETriggerEvent::Started, this, &ACL9Character::DropStartInput);
+		EnhancedInput->BindAction(DropAction, ETriggerEvent::Completed, this, &ACL9Character::DropEndInput);
+		// 숫자키 — 배열 순서가 칸 번호다. 휠은 Axis1D라 값이 있는 프레임마다 Triggered가 온다
+		for (int32 Slot = 0; Slot < SlotActions.Num(); ++Slot)
+		{
+			if (SlotActions[Slot] != nullptr)
+			{
+				EnhancedInput->BindAction(SlotActions[Slot], ETriggerEvent::Started, this, &ACL9Character::SlotInput, Slot);
+			}
+		}
+		EnhancedInput->BindAction(SlotScrollAction, ETriggerEvent::Triggered, this, &ACL9Character::SlotScrollInput);
 		EnhancedInput->BindAction(FlashlightAction, ETriggerEvent::Started, this, &ACL9Character::FlashlightInput);
 		EnhancedInput->BindAction(UseAction, ETriggerEvent::Started, this, &ACL9Character::UseStartInput);
 		EnhancedInput->BindAction(UseAction, ETriggerEvent::Completed, this, &ACL9Character::UseEndInput);
+		// 우클은 탭(스캔)/길게(먹기)를 캐릭터가 가른다 — PC는 RequestScan()만 내준다 (2026-09-13)
+		if (ScanAction != nullptr)
+		{
+			EnhancedInput->BindAction(ScanAction, ETriggerEvent::Started, this, &ACL9Character::ScanStartInput);
+			EnhancedInput->BindAction(ScanAction, ETriggerEvent::Completed, this, &ACL9Character::ScanEndInput);
+		}
+		else
+		{
+			UE_LOG(LogCL9, Error, TEXT("'%s': ScanAction is not set — right-click scan and eat are dead (BP_CL9Character.ScanAction → IA_Scan)."), *GetNameSafe(this));
+		}
 
 		// 프롬프트의 "[{0}]"에 들어갈 줍기 키 — 빙의 시 한 번 읽고, 이후는 리바인딩 변경 델리게이트가 갱신한다
 		RefreshKeyText();
@@ -232,11 +260,13 @@ void ACL9Character::LookInput(const FInputActionValue& Value)
 
 void ACL9Character::RunInputStart()
 {
+	bRunHeld = true;
 	GetCL9CharacterMovement()->SetWantsToRun(true);
 }
 
 void ACL9Character::RunInputEnd()
 {
+	bRunHeld = false;
 	GetCL9CharacterMovement()->SetWantsToRun(false);
 }
 
@@ -245,20 +275,65 @@ void ACL9Character::PickPlaceInput()
 	Server_PickPlace();
 }
 
-void ACL9Character::ThrowStartInput()
+void ACL9Character::DropStartInput()
 {
-	// 손에 뭔가 있을 때만 던지기를 차징한다 (docs/systems/input.md 던지기 차징)
-	if (GetHeldItem() != nullptr)
+	// 활성 칸이 비었으면 놓을 것도 던질 것도 없다 — RPC를 보내지 않는다
+	if (GetHeldItem() == nullptr)
+	{
+		return;
+	}
+
+	// 달리기 키 + 놓기 키 = 던지기 차징. 조합은 고정이고 놓기 키만 리바인딩된다 (docs/systems/input.md 던지기 차징).
+	// 차징 시각은 호스트가 잰다 — 로컬 시각은 HUD 게이지용이다.
+	if (bRunHeld)
 	{
 		LocalThrowChargeStartTime = GetWorld()->GetTimeSeconds();
 		Server_ThrowChargeStart();
+		return;
 	}
+	Server_Drop();
 }
 
-void ACL9Character::ThrowEndInput()
+void ACL9Character::DropEndInput()
 {
+	// 차징 없이 눌렀던 G(즉시 놓기)의 뗌은 아무 일도 아니다
+	if (LocalThrowChargeStartTime < 0.f)
+	{
+		return;
+	}
 	LocalThrowChargeStartTime = -1.f;
 	Server_ThrowRelease();
+}
+
+void ACL9Character::SlotInput(int32 Slot)
+{
+	// 잠금 판정은 호스트가 다시 한다 — 여기서는 헛 RPC만 거른다
+	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (CL9PlayerState == nullptr || !CL9PlayerState->Slots.IsValidIndex(Slot) || !CanSwitchSlot())
+	{
+		return;
+	}
+	Server_SelectSlot(static_cast<uint8>(Slot));
+}
+
+void ACL9Character::SlotScrollInput(const FInputActionValue& Value)
+{
+	// 마우스 휠 축: 한 노치가 ±1.0이고 위가 +다. 아래(−) = 다음 칸(오른쪽), 위(+) = 이전 칸.
+	const float Axis = Value.Get<float>();
+	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	const int32 SlotCount = CL9PlayerState ? CL9PlayerState->Slots.Num() : 0;
+	if (FMath::IsNearlyZero(Axis) || SlotCount <= 1 || !CanSwitchSlot())
+	{
+		return;
+	}
+
+	const float Now = GetWorld()->GetTimeSeconds();
+	if (LastSlotScrollTime >= 0.f && Now - LastSlotScrollTime < SlotScrollDebounce)
+	{
+		return;
+	}
+	LastSlotScrollTime = Now;
+	Server_ScrollSlot(Axis < 0.f ? 1 : -1);
 }
 
 float ACL9Character::GetThrowChargeAlpha() const
@@ -296,7 +371,8 @@ void ACL9Character::HandleMappingContextRegistered(const UInputMappingContext* C
 
 FText ACL9Character::GetFocusPromptPattern() const
 {
-	// Server_PickPlace와 같은 순서: 착용 가능 > 주울 수 있는 아이템 > 상호작용 대상 > 놓기/해제
+	// Server_PickPlace와 같은 순서: 착용 가능 > 주울 수 있는 아이템 > 상호작용 대상 > 미는 수레 놓기.
+	// "놓기" 프롬프트는 없다 — 놓기는 E가 아니라 G이고, 들고만 있을 때는 프롬프트가 비어 있다 (2026-09-13 사용자).
 	AActor* Focus = FocusedActor.Get();
 	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
 		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
@@ -304,8 +380,7 @@ FText ACL9Character::GetFocusPromptPattern() const
 		return LOCTABLE("CL9", "Prompt.Wear");
 	}
 	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
-		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
-		&& HeldItem == nullptr && PullingCart == nullptr)
+		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head && CanPickUpItem())
 	{
 		return LOCTABLE("CL9", "Prompt.PickUp");
 	}
@@ -313,20 +388,11 @@ FText ACL9Character::GetFocusPromptPattern() const
 	{
 		return Interactable->GetPrompt(this);
 	}
-	if (Focus == nullptr && HeldItem != nullptr)
-	{
-		return LOCTABLE("CL9", "Prompt.Place");
-	}
 	if (Focus == nullptr && PullingCart != nullptr)
 	{
 		return LOCTABLE("CL9", "Prompt.CartRelease");
 	}
 	return FText::GetEmpty();
-}
-
-void ACL9Character::SwapInput()
-{
-	Server_Swap();
 }
 
 void ACL9Character::FlashlightInput()
@@ -336,7 +402,7 @@ void ACL9Character::FlashlightInput()
 
 void ACL9Character::Server_Flashlight_Implementation()
 {
-	// F는 쓴 헤드램프만 — 든 손전등은 좌클(Server_Use)이 켠다 (2026-09-12). 정전 이후에는
+	// F는 쓴 헤드램프만 — 든 손전등은 좌클(Server_UseStart)이 켠다 (2026-09-12). 정전 이후에는
 	// 손전등 자체가 켜지길 거부한다 (docs/systems/light.md).
 	if (ACL9FlashItem* Lamp = Cast<ACL9FlashItem>(WornItem.Get()))
 	{
@@ -346,58 +412,105 @@ void ACL9Character::Server_Flashlight_Implementation()
 
 void ACL9Character::UseStartInput()
 {
-	// 길게 누르기 문턱 — 이 시간 안에 떼면 탭. 판정은 호스트가 하지만 "얼마나 눌렀나"는
-	// 입력이라 로컬에서 잰다 (던지기 차징이 호스트 시각을 쓰는 것과 달리 결과가 이산적이다).
-	constexpr float UseHoldSeconds = 0.4f;
-	GetWorldTimerManager().SetTimer(UseHoldTimer, this, &ACL9Character::UseHoldReached, UseHoldSeconds, false);
+	// 누름·뗌을 그대로 호스트에 넘긴다 — 무엇을 할지(대기·토글·무동작)는 호스트가 든 행으로 정한다
+	Server_UseStart();
 }
 
 void ACL9Character::UseEndInput()
 {
-	if (GetWorldTimerManager().IsTimerActive(UseHoldTimer))
+	// 대기 중이었는지는 호스트만 안다(칸 전환으로 취소됐을 수 있다) — 뗌은 항상 보낸다
+	Server_UseRelease();
+}
+
+void ACL9Character::ScanStartInput()
+{
+	// 문턱은 규칙 표의 UseHoldTime — 이 시간 안에 떼면 탭(스캔), 넘기면 먹기. 표가 없으면 타이머가 안 걸려 늘 탭이다
+	bEatHoldReached = false;
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules != nullptr && Rules->UseHoldTime > 0.f)
 	{
-		GetWorldTimerManager().ClearTimer(UseHoldTimer);
-		Server_Use(false);
+		GetWorldTimerManager().SetTimer(EatHoldTimer, this, &ACL9Character::EatHoldReached, Rules->UseHoldTime, false);
 	}
 }
 
-void ACL9Character::UseHoldReached()
+void ACL9Character::ScanEndInput()
 {
-	Server_Use(true);
+	GetWorldTimerManager().ClearTimer(EatHoldTimer);
+	if (bEatHoldReached)
+	{
+		return;
+	}
+	// 탭 — 스캔은 표현이라 PC(HUD 응답)가 맡는다. 문턱까지 기다렸다 떼는 순간 나가므로 최대 UseHoldTime만큼 늦을 수 있다
+	if (ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController()))
+	{
+		PC->RequestScan();
+	}
 }
 
-void ACL9Character::Server_Use_Implementation(bool bHold)
+void ACL9Character::EatHoldReached()
+{
+	bEatHoldReached = true;
+	// 활성 칸이 Dish가 아니면 호스트가 조용히 무시한다 — 여기서 걸러도 되지만 판정은 호스트 것이다
+	if (GetHeldItem() != nullptr)
+	{
+		Server_Eat();
+	}
+}
+
+void ACL9Character::Server_UseStart_Implementation()
 {
 	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
-	UE_LOG(LogCL9, Verbose, TEXT("Use: hold=%d item=%s action=%d"), bHold, *GetNameSafe(HeldItem.Get()), Def ? static_cast<int32>(Def->UseAction) : -1);
+	UE_LOG(LogCL9, Verbose, TEXT("UseStart: item=%s action=%d"), *GetNameSafe(HeldItem.Get()), Def ? static_cast<int32>(Def->UseAction) : -1);
 	if (Def == nullptr || IsKnockedDown())
 	{
 		return;
 	}
 
-	// 길게 누르기 = 먹기. 먹을 수 있는 건 Dish뿐이고 별도 플래그는 없다 (plan/data/item/common.md)
-	if (bHold)
-	{
-		if (Def->ItemType == ECL9ItemType::Dish)
-		{
-			HostEat();
-		}
-		return;
-	}
 	switch (Def->UseAction)
 	{
 	case ECL9UseAction::ToggleLight:
+		// 손전등은 대기가 없다 — 누르는 순간 켜고 끈다 (2026-09-13 기본값)
 		if (ACL9FlashItem* Lamp = Cast<ACL9FlashItem>(HeldItem.Get()))
 		{
 			Lamp->ToggleLight();
 		}
 		break;
 	case ECL9UseAction::Swing:
-		HostSwing(*Def);
+		// 공격 대기 — 무한이고 떼는 순간 휘두른다. 대기 시간은 결과에 영향이 없다 (리썰 삽 방식, 밸런스 열 없음)
+		SwingWindupServerTime = GetServerTime();
 		break;
 	default:
 		break;
 	}
+}
+
+void ACL9Character::Server_UseRelease_Implementation()
+{
+	// 대기 중이 아니면(애초에 Swing이 아니었거나 칸 전환·놓기로 취소됐다) 뗌은 아무 일도 아니다
+	if (SwingWindupServerTime < 0.f)
+	{
+		return;
+	}
+	HostCancelSwingWindup();
+
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	if (Def == nullptr || Def->UseAction != ECL9UseAction::Swing || IsKnockedDown())
+	{
+		return;
+	}
+	HostSwing(*Def);
+}
+
+void ACL9Character::Server_Eat_Implementation()
+{
+	// 먹을 수 있는 건 Dish뿐이고 별도 플래그는 없다 (plan/data/item/common.md). 프라이팬을 들고 우클을 오래
+	// 누르는 건 흔한 일이라 거절 로그는 남기지 않는다 — HostEat의 "refused" 로그는 치트 경로 몫이다.
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	if (Def == nullptr || Def->ItemType != ECL9ItemType::Dish)
+	{
+		return;
+	}
+	HostEat();
 }
 
 AActor* ACL9Character::ResolveFocus() const
@@ -417,7 +530,7 @@ AActor* ACL9Character::ResolveFocus() const
 		ObjectParams, FCollisionShape::MakeSphere(Rules->PickRadius), QueryParams);
 
 	const FVector AimDirection = GetControlRotation().Vector();
-	const bool bHandsBusy = HeldItem != nullptr || PullingCart != nullptr;
+	const bool bCanPickUp = CanPickUpItem();
 	AActor* BestItem = nullptr;
 	float BestItemDot = -2.f;
 	AActor* BestInteractable = nullptr;
@@ -426,7 +539,7 @@ AActor* ACL9Character::ResolveFocus() const
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		AActor* Actor = Overlap.GetActor();
-		// 끌고 있는 카트도 유효한 대상이다 — 그것을 조준하면 놓거나 싣는다.
+		// 밀고 있는 수레도 유효한 대상이다 — 그것을 조준하면 놓는다.
 		if (Actor == nullptr || Actor == HeldItem)
 		{
 			continue;
@@ -439,9 +552,9 @@ AActor* ACL9Character::ResolveFocus() const
 
 		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp())
 		{
-			// Head 슬롯 아이템은 머리에 착용하므로 손이 막혀 있어도 상관없다 — 대신 머리가 비어 있어야 한다
+			// Head 슬롯 아이템은 머리에 착용하므로 핫바가 꽉 차거나 잠겨 있어도 상관없다 — 대신 머리가 비어 있어야 한다
 			const bool bWearable = Item->GetItemDef()->CarrySlot == ECL9CarrySlot::Head;
-			const bool bCanTake = bWearable ? (WornItem == nullptr) : !bHandsBusy;
+			const bool bCanTake = bWearable ? (WornItem == nullptr) : bCanPickUp;
 			if (bCanTake && AimDot > BestItemDot)
 			{
 				BestItem = Actor;
@@ -566,17 +679,6 @@ void ACL9Character::SetFocusHighlight(AActor* Target, bool bOn) const
 
 void ACL9Character::Server_PickPlace_Implementation()
 {
-	const UCL9RulesDef* Rules = GetRules();
-	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (Rules == nullptr || CL9PlayerState == nullptr)
-	{
-		return;
-	}
-	if (CL9PlayerState->IsSwapLocked(GetServerTime()))
-	{
-		return;
-	}
-
 	// 키 하나에 대상 하나: 조준이 가리키는 게 무엇이든 — 호스트는 같은
 	// resolver를 다시 실행할 뿐 클라이언트를 신뢰하지 않는다 (docs/systems/input.md).
 	AActor* Focus = ResolveFocus();
@@ -585,24 +687,16 @@ void ACL9Character::Server_PickPlace_Implementation()
 	if (ACL9Item* Wearable = Cast<ACL9Item>(Focus); Wearable != nullptr && Wearable->CanBePickedUp()
 		&& Wearable->GetItemDef()->CarrySlot == ECL9CarrySlot::Head && WornItem == nullptr)
 	{
-		if (ACL9Cart* BedCart = Cast<ACL9Cart>(Wearable->GetAttachParentActor()))
-		{
-			BedCart->RemoveLoadedItem(Wearable);
-		}
 		HostWear(Wearable);
 		return;
 	}
 
+	// 수레 짐칸 안의 아이템도 바닥의 것과 똑같이 여기로 온다 — 짐칸의 짐은 부착이 아니라 짐칸 위에 놓인 자유 아이템이다.
 	if (ACL9Item* Item = Cast<ACL9Item>(Focus); Item != nullptr && Item->CanBePickedUp()
-		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head
-		&& HeldItem == nullptr && PullingCart == nullptr)
+		&& Item->GetItemDef()->CarrySlot != ECL9CarrySlot::Head && CanPickUpItem())
 	{
-		// 카트 짐칸에서 아이템을 꺼내는 것도 바닥에서 줍는 것과 같은 키 입력이다.
-		if (ACL9Cart* BedCart = Cast<ACL9Cart>(Item->GetAttachParentActor()))
-		{
-			BedCart->RemoveLoadedItem(Item);
-		}
-		HostPickUp(Item, Rules);
+		// 활성 칸이 비었으면 거기, 아니면 첫 빈 칸 — 그리고 그 칸이 활성이 된다 (리썰 규칙)
+		HostPickUp(Item, FindPickUpSlot());
 		return;
 	}
 	if (ICL9Interactable* Interactable = Cast<ICL9Interactable>(Focus); Interactable != nullptr && Interactable->CanInteract(this))
@@ -611,13 +705,9 @@ void ACL9Character::Server_PickPlace_Implementation()
 		return;
 	}
 
-	// 아무것도 조준하지 않음: 손에 뭔가 있으면 내려놓고, 빈손이면 끌던
-	// 카트를 놓는다 (뒤따르는 카트를 조준해도 마찬가지로 놓는다).
-	if (HeldItem != nullptr)
-	{
-		HostPlaceHeld(Rules);
-	}
-	else if (PullingCart != nullptr)
+	// 아무것도 조준하지 않음: 끌던 카트를 놓는다 (뒤따르는 카트를 조준해도 마찬가지로 놓는다).
+	// 손의 물건을 놓는 것은 E가 아니라 G(Server_Drop)다.
+	if (PullingCart != nullptr)
 	{
 		PullingCart->StopPull(this);
 	}
@@ -625,8 +715,7 @@ void ACL9Character::Server_PickPlace_Implementation()
 
 void ACL9Character::Server_ThrowChargeStart_Implementation()
 {
-	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (HeldItem == nullptr || CL9PlayerState == nullptr || CL9PlayerState->IsSwapLocked(GetServerTime()))
+	if (HeldItem == nullptr)
 	{
 		return;
 	}
@@ -653,12 +742,101 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 	const float Clearance = GetCapsuleComponent()->GetScaledCapsuleRadius() + (HeldItem->GetItemDef() ? HeldItem->GetItemDef()->Radius : 20.f) + 10.f;
 	const FVector Origin = GetActorLocation() + FVector(0.f, 0.f, EyeOffset) + Direction * Clearance;
 
+	// 던진 칸은 비고 활성 칸 번호는 그대로다 — 다른 칸으로 자동 전환하지 않는다
+	HostCancelSwingWindup();
 	ACL9Item* Thrown = HeldItem;
 	HeldItem = nullptr;
-	CL9PlayerState->HandItem = FCL9CarriedItem();
-	CL9PlayerState->NotifyCarryChanged();
+	HostClearActiveSlot();
 	Thrown->SetOwner(nullptr);
 	Thrown->OnThrown(Origin, Direction * Speed);
+}
+
+void ACL9Character::Server_SelectSlot_Implementation(uint8 Slot)
+{
+	const UCL9RulesDef* Rules = GetRules();
+	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (Rules == nullptr || CL9PlayerState == nullptr || !CL9PlayerState->Slots.IsValidIndex(Slot)
+		|| Slot == CL9PlayerState->ActiveSlot || !CanSwitchSlot())
+	{
+		return;
+	}
+	HostSelectSlot(Slot, Rules);
+}
+
+void ACL9Character::Server_ScrollSlot_Implementation(int32 Direction)
+{
+	const UCL9RulesDef* Rules = GetRules();
+	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	const int32 SlotCount = CL9PlayerState ? CL9PlayerState->Slots.Num() : 0;
+	if (Rules == nullptr || SlotCount <= 1 || Direction == 0 || !CanSwitchSlot())
+	{
+		return;
+	}
+	// 양 끝은 순환한다 — 호스트의 ActiveSlot에서 한 칸만 옮기므로 클라 사본이 늦어도 노치마다 한 칸씩 간다
+	const int32 Step = Direction < 0 ? -1 : 1;
+	HostSelectSlot((static_cast<int32>(CL9PlayerState->ActiveSlot) + Step + SlotCount) % SlotCount, Rules);
+}
+
+void ACL9Character::Server_Drop_Implementation()
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr || HeldItem == nullptr)
+	{
+		return;
+	}
+
+	// 옛 E 놓기 규칙 그대로: 캡슐 앞, 손 높이(CarryHeight)에 살며시. 놓은 칸은 비고 활성 칸 번호는 그대로다.
+	const float ItemRadius = HeldItem->GetItemDef() ? HeldItem->GetItemDef()->Radius : 20.f;
+	const float ForwardOffset = GetCapsuleComponent()->GetScaledCapsuleRadius() + ItemRadius + 25.f;
+	const float HandZ = Rules->CarryHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const FVector DropLocation = GetActorLocation() + GetActorForwardVector() * ForwardOffset + FVector(0.f, 0.f, HandZ);
+
+	ThrowChargeStartTime = -1.f;
+	HostCancelSwingWindup();
+	ACL9Item* Placed = HeldItem;
+	HeldItem = nullptr;
+	HostClearActiveSlot();
+	Placed->SetOwner(nullptr);
+	Placed->OnPlaced(DropLocation);
+}
+
+int32 ACL9Character::GetActiveSlot() const
+{
+	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
+	return CL9PlayerState != nullptr ? CL9PlayerState->ActiveSlot : 0;
+}
+
+bool ACL9Character::CanSwitchSlot() const
+{
+	// 수레는 두 손으로 민다 — 미는 동안은 칸을 뒤적일 수 없다. 두 손 아이템(냄비·작업등, HoldPose Large)도
+	// 같다: 리썰의 twoHanded 규칙 — 들고 있는 동안 전환·줍기 불가 (docs/systems/inventory.md 잠금).
+	if (PullingCart != nullptr)
+	{
+		return false;
+	}
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	return Def == nullptr || Def->HoldPose != ECL9HoldPose::Large;
+}
+
+bool ACL9Character::CanPickUpItem() const
+{
+	// 줍기는 칸 전환을 겸한다(주운 칸이 활성이 된다) — 전환 잠금이 그대로 줍기 잠금이고, 꽉 차면 못 줍는다
+	return CanSwitchSlot() && FindPickUpSlot() != INDEX_NONE;
+}
+
+int32 ACL9Character::FindPickUpSlot() const
+{
+	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
+	if (CL9PlayerState == nullptr)
+	{
+		return INDEX_NONE;
+	}
+	const int32 Active = CL9PlayerState->ActiveSlot;
+	if (CL9PlayerState->Slots.IsValidIndex(Active) && !CL9PlayerState->Slots[Active].IsSet())
+	{
+		return Active;
+	}
+	return CL9PlayerState->FindEmptySlot();
 }
 
 void ACL9Character::HostSwing(const UCL9ItemDef& Def)
@@ -675,6 +853,7 @@ void ACL9Character::HostSwing(const UCL9ItemDef& Def)
 		return;
 	}
 	SwingReadyTime = Now + SwingRecovery;
+	SwingStartServerTime = Now;
 
 	// 사거리 안 정면에서 가장 가까운 몬스터 (몸체끼리 겹치므로 구체 쿼리를 쓴다)
 	const FVector Origin = GetActorLocation();
@@ -834,80 +1013,123 @@ void ACL9Character::HostEat()
 		}
 	}
 
-	// 먹은 것은 사라진다
+	// 먹은 것은 사라진다 — 판정은 여기서 끝이고, 먹기 클립(0.6초)은 이 시각을 복제받은 ABP가 뒤따라 그린다
+	EatStartServerTime = Now;
 	HostConsumeHeldItem();
 }
 
-void ACL9Character::Server_Swap_Implementation()
+void ACL9Character::HostStowHeld()
 {
-	const UCL9RulesDef* Rules = GetRules();
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (Rules == nullptr || CL9PlayerState == nullptr)
-	{
-		return;
-	}
-	const float Now = GetServerTime();
-	if (CL9PlayerState->IsSwapLocked(Now))
+	if (!HasAuthority() || HeldItem == nullptr || CL9PlayerState == nullptr)
 	{
 		return;
 	}
 
-	// 손은 배타적이다: 카트를 끌고 있으면 손이 그걸로 차 있으므로 끄는 도중에는
-	// 주머니를 뒤적일 수 없다 (2026-09-02 상호작용 통합).
-	if (PullingCart != nullptr)
+	// 비활성 칸은 데이터로만 존재한다 — 액터를 숨겨 두는 대신 파괴하고 다시 꺼낼 때 리스폰한다
+	// (복제 비용이 없고 상태가 단순하다, 2026-09-01 확정). 값은 여기서 붙잡아 재스폰 때 되돌린다.
+	if (CL9PlayerState->Slots.IsValidIndex(CL9PlayerState->ActiveSlot))
+	{
+		FCL9CarriedItem& Stowed = CL9PlayerState->Slots[CL9PlayerState->ActiveSlot];
+		Stowed.ItemAlias = HeldItem->GetAlias();
+		Stowed.ItemSubAlias = HeldItem->GetSubAlias();
+		Stowed.Value = HeldItem->GetValue();
+	}
+	// 차징 중이던 던지기·공격 대기는 대상이 사라진다
+	ThrowChargeStartTime = -1.f;
+	HostCancelSwingWindup();
+	HeldItem->Destroy();
+	HeldItem = nullptr;
+}
+
+void ACL9Character::HostSelectSlot(int32 Slot, const UCL9RulesDef* Rules)
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr || Rules == nullptr || !CL9PlayerState->Slots.IsValidIndex(Slot))
 	{
 		return;
 	}
 
-	const bool bHandFull = HeldItem != nullptr;
-	if (bHandFull)
-	{
-		const UCL9ItemDef* HeldDef = HeldItem->GetItemDef();
-		if (HeldDef == nullptr || HeldDef->CarrySlot != ECL9CarrySlot::Pocketable)
-		{
-			return;
-		}
-	}
+	HostStowHeld();
+	CL9PlayerState->ActiveSlot = static_cast<uint8>(Slot);
 
-	FCL9CarriedItem Outgoing;
-	const bool bTakeOut = CL9PlayerState->PocketItems.Num() > 0;
-	if (!bHandFull && !bTakeOut)
-	{
-		return;
-	}
-	if (bTakeOut)
-	{
-		Outgoing = CL9PlayerState->PocketItems.Pop();
-	}
-
-	if (bHandFull)
-	{
-		// 주머니에 넣은 아이템은 데이터로만 존재한다 — 액터는 여기서 사라지고
-		// 다시 꺼낼 때 리스폰된다 (docs/systems/inventory.md, 2026-09-01 확정).
-		FCL9CarriedItem& Pocketed = CL9PlayerState->PocketItems.AddDefaulted_GetRef();
-		Pocketed.ItemAlias = HeldItem->GetAlias();
-		Pocketed.ItemSubAlias = HeldItem->GetSubAlias();
-		HeldItem->Destroy();
-		HeldItem = nullptr;
-		CL9PlayerState->HandItem = FCL9CarriedItem();
-	}
-
-	if (bTakeOut)
+	// 복사해 둔다 — HostPickUp이 같은 칸을 다시 쓴다
+	const FCL9CarriedItem Chosen = CL9PlayerState->Slots[Slot];
+	if (Chosen.IsSet())
 	{
 		if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
 		{
+			// 손 높이에서 스폰해 곧바로 손 소켓에 붙인다 — 값은 칸에 저장된 것을 그대로 (다시 굴리지 않는다)
 			const FTransform HandTransform(GetActorLocation() + FVector(0.f, 0.f, Rules->CarryHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
-			if (ACL9Item* TakenOut = GameMode->SpawnItem(Outgoing.ItemAlias, Outgoing.ItemSubAlias, HandTransform))
+			if (ACL9Item* TakenOut = GameMode->SpawnItem(Chosen.ItemAlias, Chosen.ItemSubAlias, HandTransform, Chosen.Value))
 			{
-				HostPickUp(TakenOut, Rules);
+				// HostPickUp이 갱신 알림을 보낸다
+				HostPickUp(TakenOut, Slot);
+				return;
 			}
 		}
+		// 행이 사라진 등 스폰 실패 — 유령 데이터를 남기지 않는다 (SpawnItem이 이미 Error 로그를 남겼다)
+		CL9PlayerState->Slots[Slot] = FCL9CarriedItem();
 	}
-
-	CL9PlayerState->SwapLockUntil = Now + Rules->SwapTime;
-	// 주머니에 넣는 경로의 손/주머니 갱신을 커버한다; 꺼내는 경로도 HostPickUp을
-	// 통해 다시 호출되지만 무해한 중복 갱신일 뿐이다.
 	CL9PlayerState->NotifyCarryChanged();
+}
+
+void ACL9Character::HostClearActiveSlot()
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr)
+	{
+		return;
+	}
+	if (CL9PlayerState->Slots.IsValidIndex(CL9PlayerState->ActiveSlot))
+	{
+		CL9PlayerState->Slots[CL9PlayerState->ActiveSlot] = FCL9CarriedItem();
+	}
+	CL9PlayerState->NotifyCarryChanged();
+}
+
+float ACL9Character::GetSwingElapsed() const
+{
+	return GetServerTime() - SwingStartServerTime;
+}
+
+float ACL9Character::GetSwingWindupElapsed() const
+{
+	// 클라의 서버 시각 추정이 조금 앞설 수 있어 0 아래로 내려가지 않게 — "-1 = 대기 아님"이 흐려지지 않는다
+	return SwingWindupServerTime < 0.f ? -1.f : FMath::Max(0.f, GetServerTime() - SwingWindupServerTime);
+}
+
+float ACL9Character::GetEatElapsed() const
+{
+	return GetServerTime() - EatStartServerTime;
+}
+
+float ACL9Character::GetAimPitch() const
+{
+	// 소유자는 컨트롤 회전을 직접 읽는다 — GetBaseAimRotation은 카메라 시점(POV)을 돌려주는데 거기에는 스태미나
+	// 셰이크가 섞여 팔이 떨린다. 남의 폰은 GetBaseAimRotation이 호스트에서는 그 컨트롤러의 시점을, 클라에서는
+	// 복제된 RemoteViewPitch(바이트 압축)를 준다.
+	const float Pitch = IsLocallyControlled() ? GetControlRotation().Pitch : GetBaseAimRotation().Pitch;
+	return FMath::Clamp(FRotator::NormalizeAxis(Pitch), -90.f, 90.f);
+}
+
+bool ACL9Character::IsRunning() const
+{
+	const UCL9CharacterMovement* Movement = GetCL9CharacterMovement();
+	return Movement != nullptr && Movement->IsRunning();
+}
+
+float ACL9Character::GetGroundSpeed() const
+{
+	return GetVelocity().Size2D();
+}
+
+void ACL9Character::HostCancelSwingWindup()
+{
+	if (HasAuthority())
+	{
+		SwingWindupServerTime = ServerTimeNever;
+	}
 }
 
 ECL9HoldPose ACL9Character::GetHoldPose() const
@@ -916,22 +1138,33 @@ ECL9HoldPose ACL9Character::GetHoldPose() const
 	return Def != nullptr ? Def->HoldPose : ECL9HoldPose::None;
 }
 
-void ACL9Character::HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules)
+void ACL9Character::HostPickUp(ACL9Item* Item, int32 Slot)
 {
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (CL9PlayerState == nullptr || Item->GetItemDef() == nullptr)
+	if (!HasAuthority() || CL9PlayerState == nullptr || Item == nullptr || Item->GetItemDef() == nullptr
+		|| !CL9PlayerState->Slots.IsValidIndex(Slot))
 	{
 		return;
 	}
 
-	CL9PlayerState->HandItem.ItemAlias = Item->GetAlias();
-	CL9PlayerState->HandItem.ItemSubAlias = Item->GetSubAlias();
-	CL9PlayerState->NotifyCarryChanged();
+	// 활성 칸이 차 있는데 다른 칸으로 줍는 경우: 손의 것을 먼저 데이터로 넣는다 — 주운 칸이 활성이 된다 (리썰 규칙)
+	if (HeldItem != nullptr)
+	{
+		HostStowHeld();
+	}
+
+	// UI를 위한 미러(값 포함), 월드를 위한 액터 (docs/systems/inventory.md 상태 모델)
+	FCL9CarriedItem& Mirror = CL9PlayerState->Slots[Slot];
+	Mirror.ItemAlias = Item->GetAlias();
+	Mirror.ItemSubAlias = Item->GetSubAlias();
+	Mirror.Value = Item->GetValue();
+	CL9PlayerState->ActiveSlot = static_cast<uint8>(Slot);
 	HeldItem = Item;
 	Item->SetOwner(this);
 
 	// 손 소켓에 붙는다 — 위치는 행의 GripOffset이 정하고, CarryHeight는 이제 놓는 높이에만 쓰인다
 	Item->OnPickedUp(this);
+	CL9PlayerState->NotifyCarryChanged();
 }
 
 void ACL9Character::HostWear(ACL9Item* Item)
@@ -951,27 +1184,6 @@ void ACL9Character::HostWear(ACL9Item* Item)
 	Item->OnWorn(this);
 }
 
-void ACL9Character::HostPlaceHeld(const UCL9RulesDef* Rules)
-{
-	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (CL9PlayerState == nullptr || HeldItem == nullptr)
-	{
-		return;
-	}
-
-	const float ItemRadius = HeldItem->GetItemDef() ? HeldItem->GetItemDef()->Radius : 20.f;
-	const float ForwardOffset = GetCapsuleComponent()->GetScaledCapsuleRadius() + ItemRadius + 25.f;
-	const float HandZ = Rules->CarryHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	const FVector DropLocation = GetActorLocation() + GetActorForwardVector() * ForwardOffset + FVector(0.f, 0.f, HandZ);
-
-	ACL9Item* Placed = HeldItem;
-	HeldItem = nullptr;
-	CL9PlayerState->HandItem = FCL9CarriedItem();
-	CL9PlayerState->NotifyCarryChanged();
-	Placed->SetOwner(nullptr);
-	Placed->OnPlaced(DropLocation);
-}
-
 void ACL9Character::SetPullingCart(ACL9Cart* Cart)
 {
 	if (!HasAuthority())
@@ -988,31 +1200,10 @@ void ACL9Character::HostConsumeHeldItem()
 		return;
 	}
 
+	HostCancelSwingWindup();
 	HeldItem->Destroy();
 	HeldItem = nullptr;
-	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
-	{
-		CL9PlayerState->HandItem = FCL9CarriedItem();
-		CL9PlayerState->NotifyCarryChanged();
-	}
-}
-
-ACL9Item* ACL9Character::HostTakeHeldItem()
-{
-	if (!HasAuthority() || HeldItem == nullptr)
-	{
-		return nullptr;
-	}
-
-	ACL9Item* Taken = HeldItem;
-	HeldItem = nullptr;
-	Taken->SetOwner(nullptr);
-	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
-	{
-		CL9PlayerState->HandItem = FCL9CarriedItem();
-		CL9PlayerState->NotifyCarryChanged();
-	}
-	return Taken;
+	HostClearActiveSlot();
 }
 
 bool ACL9Character::IsCarryingAnything() const
@@ -1022,7 +1213,7 @@ bool ACL9Character::IsCarryingAnything() const
 		return true;
 	}
 	const ACL9PlayerState* CL9PlayerState = GetPlayerState<ACL9PlayerState>();
-	return CL9PlayerState != nullptr && (CL9PlayerState->IsHandFull() || CL9PlayerState->PocketItems.Num() > 0);
+	return CL9PlayerState != nullptr && CL9PlayerState->HasAnyCarriedItem();
 }
 
 void ACL9Character::OnDamage(int32 Amount, AActor* Source)
@@ -1123,24 +1314,36 @@ void ACL9Character::HostDropEverything()
 			Sideways * FMath::FRandRange(120.f, 240.f));
 	};
 
-	const bool bHadCarry = (HeldItem != nullptr) || CL9PlayerState->PocketItems.Num() > 0;
+	const bool bHadCarry = (HeldItem != nullptr) || CL9PlayerState->HasAnyCarriedItem();
+	const bool bActiveSpilledAsActor = HeldItem != nullptr;
 
 	if (HeldItem != nullptr)
 	{
 		ACL9Item* Dropped = HeldItem;
 		HeldItem = nullptr;
-		CL9PlayerState->HandItem = FCL9CarriedItem();
 		Dropped->SetOwner(nullptr);
 		Spill(Dropped);
 	}
+	ThrowChargeStartTime = -1.f;
+	HostCancelSwingWindup();
 
-	while (CL9PlayerState->PocketItems.Num() > 0 && GameMode != nullptr)
+	// 네 칸 전부 흘린다 — 비활성 칸은 데이터뿐이라 저장된 값 그대로 다시 스폰해 흘린다. 활성 칸 번호는 그대로 둔다.
+	for (int32 Slot = 0; Slot < CL9PlayerState->Slots.Num(); ++Slot)
 	{
-		const FCL9CarriedItem Pocketed = CL9PlayerState->PocketItems.Pop();
-		if (ACL9Item* Spawned = GameMode->SpawnItem(Pocketed.ItemAlias, Pocketed.ItemSubAlias, FTransform(GetActorLocation())))
+		FCL9CarriedItem& Stowed = CL9PlayerState->Slots[Slot];
+		if (!Stowed.IsSet())
 		{
-			Spill(Spawned);
+			continue;
 		}
+		const bool bAlreadySpilled = Slot == CL9PlayerState->ActiveSlot && bActiveSpilledAsActor;
+		if (!bAlreadySpilled && GameMode != nullptr)
+		{
+			if (ACL9Item* Spawned = GameMode->SpawnItem(Stowed.ItemAlias, Stowed.ItemSubAlias, FTransform(GetActorLocation()), Stowed.Value))
+			{
+				Spill(Spawned);
+			}
+		}
+		Stowed = FCL9CarriedItem();
 	}
 
 	if (bHadCarry)

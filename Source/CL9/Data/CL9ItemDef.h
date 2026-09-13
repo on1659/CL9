@@ -32,16 +32,16 @@ enum class ECL9HoldPose : uint8
 
 /**
  * 손에 든 채 좌클(IA_Use)하면 무엇을 하는가 (docs/systems/input.md 사용). 먹기는 여기 없다 —
- * 먹을 수 있는 건 `ItemType == Dish`뿐이고 그 행은 좌클이 곧 먹기다 (plan/data/item/common.md).
+ * 먹을 수 있는 건 `ItemType == Dish`뿐이고 그건 우클 길게(`UseHoldTime`)다 (plan/data/item/common.md, 2026-09-13).
  */
 UENUM(BlueprintType)
 enum class ECL9UseAction : uint8
 {
 	/** 아무것도 안 한다 — 달걀·냄비·작업등 */
 	None,
-	/** 들고 있는 손전등을 켜고 끈다 (헤드램프는 F) */
+	/** 들고 있는 손전등을 누르는 순간 켜고 끈다 (헤드램프는 F) */
 	ToggleLight,
-	/** 정면으로 휘둘러 몬스터를 친다 — HitDamage·HitStun이 결과를 정한다 */
+	/** 누르면 공격 대기, 떼면 정면으로 휘둘러 몬스터를 친다 — HitDamage·HitStun이 결과를 정한다(대기 시간 무관) */
 	Swing
 };
 
@@ -63,6 +63,13 @@ class UCL9ItemDef : public UCL9DefBase
 
 public:
 	virtual void Validate(TArray<FString>& OutErrors) const override;
+
+	/**
+	 * 처음 주웠을 때 조작 힌트("[좌클] 살짝 누르기 — …")를 띄울 종류인가 — 좌클에 반응하거나(`UseAction`) 먹을 수
+	 * 있는(`Dish`) 것만. 달걀처럼 들고 놓는 게 전부인 것에는 설명할 게 없다. 본 적 있음은 `UCL9GameUserSettings`가
+	 * `Alias`별로 기억한다 (2026-09-13 사용자: "설명이 필요해 보이는 것만, 종류별 한 번").
+	 */
+	bool HasUseHint() const;
 
 	// -- 소지 --
 
@@ -96,13 +103,13 @@ public:
 
 	/**
 	 * 놓인 아이템은 실제 호스트 물리를 탄다 — 구르고, 미끄러지고, 자연스럽게
-	 * 멈춘다 (2026-09-03 결정). 꺼두면 단순 바운스 시뮬레이션으로 대체된다
-	 * (카트는 이 옵션을 꺼둔다 — 카트의 구형 바디가 마차 전체를 굴려버리기 때문이다).
+	 * 멈춘다 (2026-09-03 결정). 꺼두면 단순 바운스 시뮬레이션으로 대체된다.
+	 * 수레도 켠다 — bMeshIsBody로 메시가 몸체가 되므로 구가 마차째 굴러가던 문제가 없다 (2026-09-13).
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	bool bPhysicsEnabled = true;
 
-	/** 충돌 반지름 (cm) */
+	/** 충돌 반지름 (cm) — bMeshIsBody 행은 판정에 쓰지 않는다(메시 콜리전이 몸체) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	float Radius = 20.f;
 
@@ -132,6 +139,52 @@ public:
 	/** 바닥에 닿을 때의 수평 감쇠 0..1 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	float Friction = 0.5f;
+
+	// -- 수레(물리 몸체) — bMeshIsBody가 켜진 행만 읽는다 (docs/plan/data/item/cart.md). 자리표시 기본값이고 값은 balance가 정한다 --
+
+	/**
+	 * 메시 콜리전(임포트한 UCX 심플 콜리전)이 곧 물리 몸체다 — 반경 구도, 구에 맞추는 자동 스케일도 쓰지 않고
+	 * 로드 때 메시가 루트가 된다. 이런 물건은 손에 들리지 않는다(수레). 아래 열들은 이 값이 true일 때만 뜻이 있다.
+	 * 메시에는 소켓 GripSocket(손잡이 중심)·CargoSocket(적재 판정 상자 중심)이 있어야 한다 — 로드 검사가 확인한다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	bool bMeshIsBody = false;
+
+	/** 질량 (kg) — 0이면 엔진이 콜리전 부피로 계산한다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float Mass = 0.f;
+
+	/** 손잡이 스프링 (1/s²) — 손잡이 가속 = PushSpring × (목표점 − 손잡이)[cm]. 질량과 무관하다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float PushSpring = 0.f;
+
+	/** 손잡이 감쇠 (1/s) — 손잡이와 미는 사람의 **상대** 속도에 곱한다(같은 속도로 걸으면 처지지 않는다) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float PushDamping = 0.f;
+
+	/** yaw 스프링 (1/s²) — 밀리는 방향(손잡이→짐칸)이 미는 사람의 yaw를 향하도록, 오차(rad)에 비례한 각가속 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float PushYawSpring = 0.f;
+
+	/** yaw 감쇠 (1/s) — 수레의 yaw 각속도에 곱한다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float PushYawDamping = 0.f;
+
+	/** 미는 사람 캡슐 표면에서 손잡이 목표점까지 (cm) — 걷기 시작의 처짐(≈ 캐릭터 가속도 ÷ PushSpring)보다 커야 캡슐이 손잡이에 닿지 않는다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float GripDistance = 0.f;
+
+	/** 손잡이가 목표점에서 이보다 벌어지면(수평, 또는 미는 사람 캡슐 중심과의 높이 차) 손을 놓친다 (cm) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	float GripBreakDistance = 0.f;
+
+	/** 소켓 CargoSocket을 중심으로 하는 적재 판정 상자의 반폭 (cm) — 이 상자와 겹치는 자유 상태 아이템이 곧 실린 것 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Cart")
+	FVector CargoExtent = FVector::ZeroVector;
+
+	/** bMeshIsBody 메시가 갖춰야 하는 소켓 이름 — 손잡이 중심(`Grip`) / 적재 판정 상자 중심(`Cargo`) */
+	static const FName GripSocket;
+	static const FName CargoSocket;
 
 	// -- 빛 --
 	// 빛을 내느냐는 행이 아니라 클래스가 정한다: ActorClass가 ACL9LightItem 계열이면 빛난다
@@ -211,7 +264,7 @@ public:
 
 	// -- 사용 (좌클) --
 
-	/** 든 채 좌클하면 하는 일. Dish 행은 이 값과 무관하게 먹는다 */
+	/** 든 채 좌클을 누르면(그리고 떼면) 하는 일. 먹기는 이 값과 무관하게 Dish 행을 우클 길게 누르는 것이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
 	ECL9UseAction UseAction = ECL9UseAction::None;
 

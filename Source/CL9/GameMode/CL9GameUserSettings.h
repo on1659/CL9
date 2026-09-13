@@ -55,6 +55,21 @@ public:
 	float VOVolume = 1.f;
 
 	/**
+	 * 첫 줍기 조작 힌트를 이미 본 아이템 종류(`Alias`, SubAlias 무시) — 종류별 한 번만 띄운다 (docs/systems/ui.md 힌트).
+	 * 설정과 같은 파일에 머신 단위로 남으므로 재접속·PIE 재시작 뒤에도 유지된다 (2026-09-13 사용자: "내 PC 로컬 설정").
+	 */
+	UPROPERTY(Config)
+	TArray<FName> SeenItemHints;
+
+	/** 그 종류의 힌트를 이미 봤나 — HUD가 줍는 순간 묻는다 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool HasSeenItemHint(FName ItemAlias) const;
+
+	/** 그 종류의 힌트를 봤다고 기록하고 바로 저장한다 — 이미 있으면 아무 일도 없다 */
+	UFUNCTION(BlueprintCallable, Category="CL9")
+	void MarkItemHintSeen(FName ItemAlias);
+
+	/**
 	 * 볼륨 6개를 믹스 오버라이드로 적용한다 — 월드와 오디오 디바이스가 있어야 하므로 로컬 PlayerController의
 	 * BeginPlay와 슬라이더 변경 시에 부른다(GameInstance::Init에서는 조용히 아무 일도 안 한다).
 	 */

@@ -199,7 +199,7 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatBuy(
 
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatEat(
 	TEXT("cl9.eat"),
-	TEXT("cl9.eat — eats the dish in hand (stands in for IA_Eat; host ruling)."),
+	TEXT("cl9.eat — eats the dish in the active hotbar slot (stands in for the long left-click; host ruling)."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		RouteCL9Cheat(TEXT("eat"), Args, World, false);

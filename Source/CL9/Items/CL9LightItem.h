@@ -38,6 +38,16 @@ protected:
 	/** 행으로부터 라이트 컴포넌트를 만든다 — 파생 클래스가 종류(점광원/스포트)를 정한다 */
 	virtual ULightComponent* MakeLightComponent();
 
+	/**
+	 * 빛의 발원점 — 메시 컴포넌트 로컬 좌표(스케일 전). 라이트는 메시의 자식이라 메시가 어디로 옮겨 가든
+	 * (바닥·전신 손 소켓·소유자 화면의 1인칭 팔 소켓) 이 자리에서 메시 +X를 향해 빛난다. 기본은 메시 원점
+	 * (발광 점광원), 손전등은 렌즈 앞이다.
+	 */
+	virtual FVector GetLightOrigin() const
+	{
+		return FVector::ZeroVector;
+	}
+
 	/** 이 머신에서 실제로 빛을 그릴지 — 파생 클래스가 정전 같은 조건을 덧붙인다 */
 	virtual bool ShouldLightBeVisible() const
 	{
@@ -58,7 +68,11 @@ private:
 	UPROPERTY(ReplicatedUsing=OnRep_LightOn)
 	bool bLightOn = false;
 
-	/** 행이 로드될 때 한 번 만들어지는 라이트 — SubAlias 재로드에도 같은 컴포넌트를 쓴다 */
+	/**
+	 * 행이 로드될 때 한 번 만들어지는 라이트 — SubAlias 재로드에도 같은 컴포넌트를 쓴다. 루트(구)가 아니라
+	 * **메시 컴포넌트의 자식**이다 (2026-09-13, 사용자 "발원지가 손전등이어야 한다"): 소유자 화면에서
+	 * ACL9Item::UpdateFirstPersonView가 메시만 1인칭 팔 소켓으로 옮기므로, 구에 붙어 있으면 빛이 손과 어긋난다.
+	 */
 	UPROPERTY()
 	TObjectPtr<ULightComponent> LightComponent;
 };

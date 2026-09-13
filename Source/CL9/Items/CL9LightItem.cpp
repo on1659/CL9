@@ -31,9 +31,15 @@ void ACL9LightItem::LoadData()
 	}
 
 	LightComponent->SetIntensity(GetItemDef()->LightIntensity);
-	LightComponent->SetupAttachment(GetMeshComponent());
 	LightComponent->SetVisibility(false);
 	LightComponent->RegisterComponent();
+
+	// 라이트는 메시의 자식이다 — 소유자 화면에서 메시가 1인칭 팔 소켓으로 옮겨 가면(UpdateFirstPersonView) 빛도
+	// 따라가고, 방향은 언제나 메시 +X다. 발원점은 메시 로컬 오프셋이라 메시 스케일(반경 맞춤)을 그대로 탄다 —
+	// 1인칭 렌더 스케일(FirstPersonScale 0.6)은 그리기에만 걸리고 월드 트랜스폼은 건드리지 않으므로, 라이트의
+	// 월드 위치와 화면의 렌즈는 카메라에서 같은 시선 위에 놓인다.
+	LightComponent->AttachToComponent(GetMeshComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	LightComponent->SetRelativeLocation(GetLightOrigin());
 	UpdateLightVisibility();
 }
 

@@ -79,18 +79,27 @@ public:
 	/** 호스트 전용, 카트가 연결/분리될 때 카트가 호출한다 */
 	void SetPullingCart(ACL9Cart* Cart);
 
-	/** 호스트 전용: 든 아이템을 파괴하고 미러를 비운다 (항아리 반납이 이걸 먹는다) */
+	/** 지금 손에 들린 핫바 칸 번호(0부터) — PlayerState.ActiveSlot의 읽기 창구 */
+	UFUNCTION(BlueprintPure, Category="Carry")
+	int32 GetActiveSlot() const;
+
+	/**
+	 * 칸 전환(휠·숫자키)과 줍기가 허용되는 상태인가 — 활성 칸에 두 손 아이템(`HoldPose` Large)이
+	 * 들려 있거나 수레를 미는 중이면 false (docs/systems/inventory.md 잠금). 판정은 호스트가 같은
+	 * 함수로 다시 하고, 클라에서는 프롬프트·입력 걸러내기의 보조로만 쓴다.
+	 */
+	UFUNCTION(BlueprintPure, Category="Carry")
+	bool CanSwitchSlot() const;
+
+	/** 호스트 전용: 든 아이템을 파괴하고 활성 칸을 비운다 (항아리 반납·먹기가 이걸 먹는다) */
 	void HostConsumeHeldItem();
 
-	/** 호스트 전용: 든 아이템을 미러에서 떼어내고 액터를 넘긴다 (카트 적재용) */
-	ACL9Item* HostTakeHeldItem();
-
-	/** 손, 주머니, 카트 중 무엇이든 하나라도 있으면 — 빈손이면 DeaggroRadius에서 추격을 놓는다 */
+	/** 핫바 어느 칸이든, 또는 카트 중 하나라도 있으면 — 빈손이면 DeaggroRadius에서 추격을 놓는다 */
 	bool IsCarryingAnything() const;
 
 	/**
 	 * 호스트 전용 (docs/systems/character.md 피격·넘어짐·죽음): HP 감소, 넘어짐,
-	 * 손+주머니 흘림. HP가 0이 되면 그날 밤 내내 쓰러진 채로 있으며 죽음 처리를
+	 * 핫바 네 칸 전부 흘림. HP가 0이 되면 그날 밤 내내 쓰러진 채로 있으며 죽음 처리를
 	 * 게임 모드로 넘긴다 (전멸 체크, SpectateDelay 이후 관전).
 	 */
 	virtual void OnDamage(int32 Amount, AActor* Source) override;
@@ -151,6 +160,63 @@ public:
 	ECL9HoldPose GetHoldPose() const;
 
 	/**
+	 * 마지막 휘두르기(HostSwing)로부터 지난 서버 초 — ABP가 이 값으로 휘두르기 클립을 시퀀스 평가기에
+	 * 태운다(클립 길이 안이면 재생 중). 시작 시각이 복제되므로 모든 머신이 같은 시점을 보고, 애님은
+	 * 판정(즉시)과 무관한 표현이다 (docs/systems/animation.md 상태→애님). 휘두른 적 없으면 큰 값.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetSwingElapsed() const;
+
+	/**
+	 * 좌클을 누른 채 공격 대기 중이면 대기를 시작한 뒤 지난 서버 초, 대기 중이 아니면 -1 — ABP가 대기 자세
+	 * (`AN_Farmer_SwingWindup` 루프)를 켜는 데 읽는다. 대기는 무한이고 떼는 순간 휘두른다 (docs/systems/inventory.md 사용).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetSwingWindupElapsed() const;
+
+	/**
+	 * 마지막으로 먹은(HostEat) 뒤 지난 서버 초 — ABP가 먹기 클립(`AN_Farmer_Eat` 0.6초)을 태운다. 판정은 먹는 순간
+	 * 끝났고 애니는 뒤따르는 표현이라 먹는 동안 칸 전환도 막지 않는다. 먹은 적 없으면 큰 값(1000 이상).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetEatElapsed() const;
+
+	/**
+	 * 시선 피치(도, -90..90 — 위가 양수). 소유자는 컨트롤 피치, 남의 화면에서는 복제된 `RemoteViewPitch`
+	 * (ACharacter 기본, `GetBaseAimRotation`)다. 두 ABP가 Hold 레이어 뒤 `Transform (Modify) Bone`(spine_03)에
+	 * 이 값 × 비율을 넣어 상체·팔이 시선을 따르게 한다 — 그래서 손의 손전등이 아래를 보면 바닥을 비추고,
+	 * 남의 화면에서도 손이 기울어진다 (docs/systems/character.md 시점, 2026-09-13).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetAimPitch() const;
+
+	/**
+	 * 달리기 속도로 실제 움직이는 중 — CMC `IsRunning()` 위임. 달리기 플래그는 예측 무브에만 실리므로 소유자와
+	 * 호스트에서만 참이 나오고 남의 클라에서는 항상 거짓이다 — 1인칭 팔(소유자 전용)의 `AN_Farmer_FPRun`
+	 * 분기용이지 전신 로코모션용이 아니다(그쪽은 속도로 고른다).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool IsRunning() const;
+
+	/** 수평 이동 속도(cm/s) — 로코모션 PlayRate = 이 값 ÷ 클립 기준 속도 (docs/systems/animation.md 재생 배율) */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetGroundSpeed() const;
+
+	/** 좌클 액션 — HUD 첫 줍기 힌트가 "[{0}] 살짝 누르기"의 키 표기를 읽는다 (docs/systems/ui.md 힌트) */
+	UFUNCTION(BlueprintPure, Category="Input")
+	const UInputAction* GetUseAction() const
+	{
+		return UseAction;
+	}
+
+	/** 우클 액션 — 힌트의 "[{1}] 꾹 누르기 — 먹기" 키 표기용 */
+	UFUNCTION(BlueprintPure, Category="Input")
+	const UInputAction* GetScanAction() const
+	{
+		return ScanAction;
+	}
+
+	/**
 	 * 지금 E를 한 번 누르면 무엇을 하게 될지, HUD 프롬프트("[E] 줍기" …)로 표현한 것 —
 	 * 로컬 focus에 대해 Server_PickPlace의 분기 순서를 그대로 반영하며, 없으면 비어
 	 * 있다. 표시 전용이다 (docs/systems/input.md 상호작용 프롬프트).
@@ -204,37 +270,55 @@ protected:
 	/** IA_Look을 처리한다 */
 	void LookInput(const FInputActionValue& Value);
 
-	/** IA_Run 누름을 처리한다 — 속도가 아니라 이동 플래그만 설정한다 */
+	/** IA_Run 누름을 처리한다 — 속도가 아니라 이동 플래그만 설정하고, 던지기 조합(달리기 키 + 놓기 키)용 플래그를 기록한다 */
 	void RunInputStart();
 
 	/** IA_Run 뗌을 처리한다 */
 	void RunInputEnd();
 
-	/** IA_PickPlace(E)를 처리한다 — 줍기 > 상호작용 > 놓기 순서로 호스트가 판정한다 */
+	/** IA_PickPlace(E)를 처리한다 — 착용 > 줍기 > 상호작용 > 수레 놓기 순서로 호스트가 판정한다 */
 	void PickPlaceInput();
 
-	/** IA_Throw(G) 누름을 처리한다 — 호스트가 차징 시각을 잰다 (docs/systems/input.md 던지기 차징) */
-	void ThrowStartInput();
+	/**
+	 * IA_Drop(G) 누름 — 달리기 키가 눌려 있으면 던지기 차징 시작(호스트가 차징 시각을 잰다,
+	 * docs/systems/input.md 던지기 차징), 아니면 즉시 앞에 놓는다.
+	 */
+	void DropStartInput();
 
-	/** IA_Throw 뗌을 처리한다 */
-	void ThrowEndInput();
+	/** IA_Drop 뗌 — 차징 중이었으면 던진다. 차징 중 달리기 키를 먼저 떼도 차징은 유지된다 */
+	void DropEndInput();
 
-	/** IA_Swap(R)을 처리한다 — SwapTime 잠금 아래에서 손↔주머니를 교체한다 */
-	void SwapInput();
+	/** IA_Slot1..4(숫자키) — 그 번호 칸을 활성으로 (docs/systems/inventory.md 칸 전환) */
+	void SlotInput(int32 Slot);
+
+	/**
+	 * IA_SlotScroll(마우스 휠, Axis1D) — 아래(−)는 다음 칸, 위(+)는 이전 칸, 양 끝은 순환.
+	 * Triggered는 값이 있는 프레임마다 오므로 부호만 보고 한 번에 한 칸씩, 짧은 디바운스로 겹침을 거른다.
+	 */
+	void SlotScrollInput(const FInputActionValue& Value);
 
 	/** IA_Flashlight(F)를 처리한다 — 쓴 헤드램프를 켜고 끈다 (docs/systems/light.md) */
 	void FlashlightInput();
 
-	/** IA_Use(좌클) 누름 — 길게 누르기 타이머를 건다 (docs/systems/input.md 사용) */
+	/** IA_Use(좌클) 누름 — 호스트에 사용 시작을 알린다: Swing이면 공격 대기, ToggleLight면 즉시 토글 (docs/systems/input.md 사용) */
 	void UseStartInput();
 
-	/** IA_Use(좌클) 뗌 — 길게 누르기가 안 걸렸으면 탭이다 */
+	/** IA_Use(좌클) 뗌 — 대기 중이었으면 이 순간 휘두른다. 탭이면 대기 한 틱 뒤 바로 타격이라 "평범한 공격"이 된다 */
 	void UseEndInput();
 
-	/** 길게 누르기 문턱을 넘겼다 — 먹기 요청 */
-	void UseHoldReached();
+	/**
+	 * IA_Scan(우클) 누름 — `CL9Rules.UseHoldTime` 로컬 타이머를 건다. 판정은 호스트가 하지만 "얼마나 눌렀나"는
+	 * 입력이라 로컬에서 잰다 (던지기 차징이 호스트 시각을 쓰는 것과 달리 결과가 이산적이다).
+	 */
+	void ScanStartInput();
 
-	/** E 한 번 누름 — 우선순위: 주울 수 있는 아이템 > 상호작용 대상 > 놓기 (docs/systems/input.md 감지) */
+	/** IA_Scan(우클) 뗌 — 문턱 전이면 탭 = 스캔(`ACL9PlayerController::RequestScan`). 문턱을 넘겼으면 이미 먹기가 나갔다 */
+	void ScanEndInput();
+
+	/** 우클 길게 누르기 문턱을 넘겼다 — 먹기 요청 (활성 칸이 Dish가 아니면 호스트가 무시한다) */
+	void EatHoldReached();
+
+	/** E 한 번 누름 — 우선순위: 착용 > 주울 수 있는 아이템 > 상호작용 대상 > 미는 수레 놓기 (docs/systems/input.md 감지). 놓기는 여기 없다 — G다 */
 	UFUNCTION(Server, Reliable)
 	void Server_PickPlace();
 
@@ -244,17 +328,45 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_ThrowRelease();
 
-	UFUNCTION(Server, Reliable)
-	void Server_Swap();
-
 	/**
-	 * 좌클 사용 — 호스트가 든 아이템 행으로 판정한다. 탭(bHold=false)은 행의 UseAction
-	 * (ToggleLight 손전등 켜고 끄기 / Swing 휘두르기 / None 무동작), 길게 누르기(bHold=true)는
-	 * Dish면 먹기 — 닭다리처럼 먹을 수도 휘두를 수도 있는 것을 한 키로 가르는 규칙이다
-	 * (2026-09-12 사용자: "길게 누르면 먹기, 짧게 누르면 휘두르기"). 빈손이면 아무 일도 없다.
+	 * 칸 전환 — 호스트가 CanSwitchSlot을 다시 확인한 뒤, 활성 칸 액터를 파괴해 데이터로 만들고
+	 * 새 활성 칸을 다시 스폰해 손에 붙인다(값은 칸에 저장된 것을 되돌린다). 빈 칸도 고를 수 있다 = 빈손.
 	 */
 	UFUNCTION(Server, Reliable)
-	void Server_Use(bool bHold);
+	void Server_SelectSlot(uint8 Slot);
+
+	/**
+	 * 휠 전환 — Direction +1은 다음 칸, −1은 이전 칸(순환). 클라의 ActiveSlot 사본은 복제가 늦을 수 있어
+	 * 목표 칸을 클라가 계산하지 않고 호스트가 자기 값에서 한 칸 옮긴다 — 연속 노치가 같은 칸을 겨누지 않는다.
+	 */
+	UFUNCTION(Server, Reliable)
+	void Server_ScrollSlot(int32 Direction);
+
+	/** G — 활성 칸의 아이템을 앞에(CarryHeight) 놓는다. 그 칸은 비고 활성 칸 번호는 그대로다 */
+	UFUNCTION(Server, Reliable)
+	void Server_Drop();
+
+	/**
+	 * 좌클 누름 — 호스트가 든 아이템 행의 UseAction으로 판정한다. `Swing`이면 **공격 대기**를 시작하고
+	 * (`SwingWindupServerTime` 기록, 무한 대기), `ToggleLight`면 즉시 켜고 끄며, `None`·빈손은 아무 일도 없다
+	 * (2026-09-13 리썰 삽 방식: "누르면 대기, 떼면 타격"). 먹기는 여기 없다 — 우클 길게(Server_Eat)다.
+	 */
+	UFUNCTION(Server, Reliable)
+	void Server_UseStart();
+
+	/**
+	 * 좌클 뗌 — 대기 중이었으면 HostSwing(피해·사거리·경직은 대기 시간과 무관하게 동일). 대기 중 칸 전환·놓기·
+	 * 던지기·먹기·잡힘으로 손의 것이 바뀌면 대기가 취소되어 있어 타격이 나가지 않는다.
+	 */
+	UFUNCTION(Server, Reliable)
+	void Server_UseRelease();
+
+	/**
+	 * 우클 길게 — 활성 칸이 `ItemType == Dish`일 때만 HostEat(그 칸 비움, 활성 칸 유지). 판정은 문턱을 넘는
+	 * 순간이고 먹기 애니(0.6초)는 뒤따른다 — 먹는 동안 칸 전환을 막지 않는다 (2026-09-13 사용자: "우클 길게 = 먹기").
+	 */
+	UFUNCTION(Server, Reliable)
+	void Server_Eat();
 
 	/** 호스트 전용: 든 아이템을 정면으로 휘둘러 사거리·부채꼴 안 가장 가까운 몬스터에 OnStrike */
 	void HostSwing(const UCL9ItemDef& Def);
@@ -292,21 +404,33 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> JumpAction;
 
-	/** 줍기/놓기/상호작용 액션 (E) */
+	/** 줍기/상호작용 액션 (E) — 놓기는 여기 없다 */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> PickPlaceAction;
 
-	/** 던지기 차징 액션 (G) */
+	/** 놓기 액션 (G, IA_Drop) — 달리기 키와 함께 누르면 던지기 차징. 던지기는 이 키를 따라 리바인딩된다 */
 	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> ThrowAction;
+	TObjectPtr<UInputAction> DropAction;
 
-	/** 사용 액션 (마우스 좌클릭) — 든 아이템 행의 UseAction / Dish 먹기 */
+	/** 핫바 칸 지정 액션들 (IA_Slot1..4) — 배열 순서가 칸 번호다 */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TArray<TObjectPtr<UInputAction>> SlotActions;
+
+	/** 핫바 칸 스크롤 액션 (IA_SlotScroll, Axis1D 마우스 휠) — 리바인딩 대상이 아니다 */
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> SlotScrollAction;
+
+	/** 사용 액션 (마우스 좌클릭, IA_Use) — 누르면 공격 대기·떼면 휘두르기 / 손전등은 즉시 토글 (행의 UseAction) */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> UseAction;
 
-	/** 손↔주머니 교체 액션 (R) */
+	/**
+	 * 스캔 액션 (마우스 우클릭, IA_Scan) — 탭은 스캔(`ACL9PlayerController::RequestScan`), `UseHoldTime` 이상 길게
+	 * 누르면 활성 칸의 요리를 먹는다. 2026-09-13부터 PC가 아니라 여기서 바인딩한다 — 길게/탭을 가르는 것이
+	 * 캐릭터 입력이기 때문이다. BP 자식에서 지정한다.
+	 */
 	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> SwapAction;
+	TObjectPtr<UInputAction> ScanAction;
 
 	/** 헤드램프 토글 액션 (F) */
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -353,17 +477,32 @@ private:
 	UFUNCTION()
 	void HandleMappingContextRegistered(const UInputMappingContext* Context);
 
-	/** 호스트 전용: 손과 주머니를 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
+	/** 호스트 전용: 핫바 전 칸을 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
 	void HostDropEverything();
 
-	/** 호스트 전용: 아이템을 이 캐릭터의 손 위치에 붙이고 미러링한다 */
-	void HostPickUp(ACL9Item* Item, const UCL9RulesDef* Rules);
+	/** 호스트 전용: 아이템을 그 칸에 기록하고 그 칸을 활성으로 해 손에 붙인다 — 손은 비어 있어야 한다 */
+	void HostPickUp(ACL9Item* Item, int32 Slot);
 
 	/** 호스트 전용: Head 슬롯 아이템(헤드램프)을 착용시키고 미러링한다 — E 한 번, 손은 그대로 둔다 */
 	void HostWear(ACL9Item* Item);
 
-	/** 호스트 전용: 든 아이템을 앞쪽 바닥에 내려놓는다 */
-	void HostPlaceHeld(const UCL9RulesDef* Rules);
+	/** 호스트 전용: 손에 든 액터를 파괴하고 활성 칸을 데이터로만 남긴다 (칸 전환의 앞 절반) */
+	void HostStowHeld();
+
+	/** 호스트 전용: 그 칸을 활성으로 하고, 들어 있으면 저장된 값 그대로 다시 스폰해 손에 붙인다 (칸 전환의 뒤 절반) */
+	void HostSelectSlot(int32 Slot, const UCL9RulesDef* Rules);
+
+	/** 호스트 전용: 활성 칸의 미러를 비우고 HUD에 알린다 — 손의 액터를 놓고·던지고·먹고·실은 뒤 부른다 */
+	void HostClearActiveSlot();
+
+	/** 호스트 전용: 좌클 공격 대기를 취소한다 — 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가 부른다 */
+	void HostCancelSwingWindup();
+
+	/** 지금 E로 아이템을 주울 수 있는 상태인가 — 수레를 밀지 않고, 전환이 잠기지 않았고, 들어갈 칸이 있다 */
+	bool CanPickUpItem() const;
+
+	/** 주운 아이템이 들어갈 칸 — 활성 칸이 비었으면 활성 칸, 아니면 첫 빈 칸, 꽉 찼으면 INDEX_NONE (리썰 규칙) */
+	int32 FindPickUpSlot() const;
 
 	const UCL9RulesDef* GetRules() const;
 	ACL9PlayerState* GetCL9PlayerState() const;
@@ -377,7 +516,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<const UCL9CharacterDef> CharacterDef;
 
-	/** 소지 상태의 실제 정답 링크 — PlayerState.HandItem이 UI를 위해 이걸 미러링한다 (docs/systems/inventory.md) */
+	/** 활성 칸의 실물 — PlayerState.Slots[ActiveSlot]이 UI를 위해 이걸 미러링한다 (docs/systems/inventory.md) */
 	UPROPERTY(Replicated)
 	TObjectPtr<ACL9Item> HeldItem;
 
@@ -394,11 +533,32 @@ private:
 	/** 같은 차징에 대한 소유 클라이언트의 로컬 시각 (게이지 전용, 판정에는 쓰이지 않음); 대기 중이면 음수 */
 	float LocalThrowChargeStartTime = -1.f;
 
+	/** 소유 클라이언트: 달리기 키가 눌려 있는 동안 true — G가 놓기가 아니라 던지기 차징이 되는 조건 */
+	bool bRunHeld = false;
+
+	/** 소유 클라이언트: 마지막으로 휠 전환을 보낸 로컬 시각 — 한 노치에 한 칸만 넘기는 디바운스 기준 */
+	float LastSlotScrollTime = -1.f;
+
 	/** 다음 휘두르기가 거부되는 기준이 되는 호스트 시각 (휘두른 뒤 회복 시간) */
 	float SwingReadyTime = 0.f;
 
-	/** 좌클 길게 누르기 판정 타이머 (소유 클라 로컬) — 만료 전에 떼면 탭이다 */
-	FTimerHandle UseHoldTimer;
+	/** 마지막 휘두르기의 서버 시각 — GetSwingElapsed의 원천. 음수 큰 값 = 아직 없음 */
+	UPROPERTY(Replicated)
+	float SwingStartServerTime = -1000.f;
+
+	/** 좌클을 눌러 공격 대기를 시작한 서버 시각 — GetSwingWindupElapsed의 원천. 음수 큰 값 = 대기 중 아님 */
+	UPROPERTY(Replicated)
+	float SwingWindupServerTime = -1000.f;
+
+	/** 마지막으로 먹은 서버 시각 — GetEatElapsed의 원천. 음수 큰 값 = 아직 없음 */
+	UPROPERTY(Replicated)
+	float EatStartServerTime = -1000.f;
+
+	/** 우클 길게 누르기(먹기) 판정 타이머 (소유 클라 로컬) — 만료 전에 떼면 탭 = 스캔이다 */
+	FTimerHandle EatHoldTimer;
+
+	/** 소유 클라이언트: 이번 우클 누름이 먹기 문턱을 넘겼다 — 뗄 때 스캔을 내보내지 않는 조건 */
+	bool bEatHoldReached = false;
 
 	/**
 	 * 넘어짐 상태가 캐릭터를 붙들어두는 서버 시각 (0이면 일어난 상태). CartMult처럼

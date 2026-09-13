@@ -12,9 +12,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9PlayerHudChanged);
 
 /**
  * 플레이어별 판정 상태다(conventions § 4 — 캐릭터에는 절대 두지 않는다). Carry
- * 미러링은 docs/systems/inventory.md를 따른다: 월드에 든 액터가 진실이고,
- * HandItem은 UI와 판정을 위해 그것을 미러링한다; 주머니에 넣은 아이템은
- * 데이터로만 존재하고 꺼낼 때 다시 스폰된다.
+ * 미러링은 docs/systems/inventory.md를 따른다: 핫바 칸 배열에서 활성 칸 하나만
+ * 월드에 실물 액터로 들려 있고(그 액터가 진실, 칸은 미러), 나머지 칸은 데이터로만
+ * 존재하다가 활성으로 고르면 다시 스폰된다.
  *
  * HUD 변경 훅: 값은 클라이언트에서 브로드캐스트하는 OnRep과 함께
  * 리플리케이트된다; 리슨 호스트에서는(OnRep이 절대 실행되지 않으므로)
@@ -27,18 +27,21 @@ class ACL9PlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
+	ACL9PlayerState();
+
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	bool IsHandFull() const
-	{
-		return HandItem.IsSet();
-	}
+	/** 비어 있는 첫 칸의 번호, 전부 찼으면 INDEX_NONE */
+	UFUNCTION(BlueprintPure, Category="Carry")
+	int32 FindEmptySlot() const;
 
-	/** 손↔주머니 교체 잠금이 아직 유효한 동안 true(서버 월드 시각 기준) */
-	bool IsSwapLocked(float ServerTimeNow) const
-	{
-		return ServerTimeNow < SwapLockUntil;
-	}
+	/** 그 칸에 아무것도 없으면 true — 범위 밖 번호도 빈 것으로 본다 */
+	UFUNCTION(BlueprintPure, Category="Carry")
+	bool IsSlotEmpty(int32 Slot) const;
+
+	/** 어느 칸이든 하나라도 들어 있으면 true */
+	bool HasAnyCarriedItem() const;
 
 	/** 호스트 측: Hp를 기록한 뒤 발동한다(OnRep은 클라이언트를 처리할 뿐 권한자는 처리하지 않는다) */
 	void NotifyHpChanged()
@@ -46,7 +49,7 @@ public:
 		OnHpChanged.Broadcast();
 	}
 
-	/** 호스트 측: HandItem이나 PocketItems를 기록한 뒤 발동한다 */
+	/** 호스트 측: Slots·ActiveSlot·HeadItem을 기록한 뒤 발동한다 */
 	void NotifyCarryChanged()
 	{
 		OnCarryChanged.Broadcast();
@@ -56,7 +59,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="HUD")
 	FCL9PlayerHudChanged OnHpChanged;
 
-	/** 손이나 주머니 내용물이 바뀌었다 — 로컬 HUD 갱신 */
+	/** 핫바 칸·활성 칸·머리 내용물이 바뀌었다 — 로컬 HUD 갱신 */
 	UPROPERTY(BlueprintAssignable, Category="HUD")
 	FCL9PlayerHudChanged OnCarryChanged;
 
@@ -75,31 +78,31 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Health")
 	int32 MaxHp = 0;
 
-	/** 손에 들고 있는 것 — 부착된 아이템 액터의 미러(비어 있으면 None) */
-	UPROPERTY(ReplicatedUsing=OnRep_HandItem, BlueprintReadOnly, Category="Carry")
-	FCL9CarriedItem HandItem;
+	/**
+	 * 핫바 칸들 — 크기는 CL9Rules.HotbarSlots(호스트가 BeginPlay에서 맞춘다). 활성 칸은 캐릭터
+	 * HeldItem 액터의 미러이고, 비활성 칸은 액터 없이 데이터(Alias·SubAlias·Value)만 든다.
+	 * 빈 칸은 ItemAlias가 None이다.
+	 */
+	UPROPERTY(ReplicatedUsing=OnRep_Slots, BlueprintReadOnly, Category="Carry")
+	TArray<FCL9CarriedItem> Slots;
 
-	/** 주머니에 넣은 아이템들, 최신이 마지막 — 데이터로만 존재하며 액터는 사라졌다(Pocketable 행만 해당) */
-	UPROPERTY(ReplicatedUsing=OnRep_PocketItems, BlueprintReadOnly, Category="Carry")
-	TArray<FCL9CarriedItem> PocketItems;
+	/** 지금 손에 들린 칸의 번호(0부터) — 빈 칸이면 빈손이다 */
+	UPROPERTY(ReplicatedUsing=OnRep_ActiveSlot, BlueprintReadOnly, Category="Carry")
+	uint8 ActiveSlot = 0;
 
 	/** 머리에 얹혀 있는 것(Head carry 슬롯 — 헤드램프) — 착용된 아이템 액터의 미러(맨머리면 None) */
 	UPROPERTY(ReplicatedUsing=OnRep_HeadItem, BlueprintReadOnly, Category="Carry")
 	FCL9CarriedItem HeadItem;
-
-	/** 이 서버 월드 시각까지 교체/줍기/던지기 입력이 거부된다(docs/systems/input.md) */
-	UPROPERTY(Replicated, BlueprintReadOnly, Category="Carry")
-	float SwapLockUntil = 0.f;
 
 protected:
 	UFUNCTION()
 	void OnRep_Hp();
 
 	UFUNCTION()
-	void OnRep_HandItem();
+	void OnRep_Slots();
 
 	UFUNCTION()
-	void OnRep_PocketItems();
+	void OnRep_ActiveSlot();
 
 	UFUNCTION()
 	void OnRep_HeadItem();

@@ -171,11 +171,18 @@ struct FCL9ItemRef
 	}
 };
 
-/** 손이나 주머니 미러에 있는 소지품 하나 (docs/systems/inventory.md 상태 모델) */
+/**
+ * 핫바 칸 하나에 든 소지품 (docs/systems/inventory.md 상태 모델). 활성 칸은 손에 든 액터의
+ * 미러이고, 비활성 칸은 액터 없이 이 데이터만 남는다 — 꺼낼 때 여기서 다시 스폰한다.
+ */
 USTRUCT(BlueprintType)
 struct FCL9CarriedItem : public FCL9ItemRef
 {
 	GENERATED_BODY()
+
+	/** 개체가 굴린 판매가(이더) — 칸에 넣었다 꺼내도 다시 굴리지 않는다 */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Value = 0;
 };
 
 /**

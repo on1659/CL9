@@ -8,17 +8,23 @@
 #include "CL9Cart.generated.h"
 
 class ACL9GameState;
+class UBoxComponent;
 
 /**
- * 수레(docs/plan/data/item/cart.md): 밀고 다닐 뿐 주머니에 넣을 수 없는 아이템이다.
- * 수레 행의 ActorClass 열은 이 클래스의 BP 자식을 가리킨다 — 행별 전용 동작을 넣는
- * 정식 경로가 바로 이것이다. 밀기는 예측 이동 경로 안에서 캐릭터 행의 CartMult를
- * 곱해 미는 사람의 속도를 조정한다 (2026-09-12: 뒤에서 끌기 → 앞에서 밀기).
+ * 수레(docs/plan/data/item/cart.md): 밀고 다닐 뿐 손에 들거나 핫바에 넣을 수 없는 아이템이다.
+ * 수레 행의 ActorClass 열은 이 클래스의 BP 자식을 가리킨다 — 행별 전용 동작을 넣는 정식 경로가 바로 이것이다.
  *
- * 상호작용 키 하나가 전부를 처리한다(2026-09-02): 맨손으로 수레를 조준하면 밀기,
- * 뭔가 들고 조준하면 싣기, 짐칸의 아이템을 조준하면 다시 꺼내기다. 두 손은
- * 배타적이다 — 끌기와 들기는 동시에 있을 수 없다. 항아리 반납은 짐칸 전체를
- * 한 번에 비운다. 적재 한도는 없다(무게 제한 없음 철학과 일치).
+ * 실물 크기의 물리 강체다 (2026-09-13, 사용자: "실제 현실에서 옮기는 느낌"): 행의 bMeshIsBody가 메시(UCX 콜리전)를
+ * 몸체로 쓰게 하고, 미는 동안 호스트가 매 틱 손잡이 소켓 `Grip`을 미는 사람 앞 목표점으로 끄는 스프링·감쇠 힘과
+ * yaw 스프링 토크를 준다 — 수레가 반 박자 늦게 따라오고, 멈추면 미끄러지다 서고, 제자리 회전이면 원호를 그린다.
+ * 손잡이가 목표점에서 GripBreakDistance보다 벌어지면 손을 놓친다. 밀기는 캐릭터 행의 CartMult로 미는 사람의 속도를
+ * 늦춘다(예측 이동 경로). 클라이언트는 복제된 물리 상태를 보간한다(호스트 권위).
+ *
+ * 적재는 부착이 아니라 물리다: 메시 소켓 `Cargo`를 중심으로 하는 CargoExtent 상자(CargoVolume)와 겹치는 자유 상태
+ * 아이템이 곧 "실린 것"이다. 싣기는 놓기(G)·던지기(달리기+G)로 짐칸 위에 떨어뜨리는 것뿐이고, 꺼내기는 바닥 아이템과
+ * 같은 E 줍기다. 상호작용 키는 밀기/놓기만 — 활성 칸이 빈 채(빈손)로 조준하면 밀고, 미는 중이면 놓는다. 활성 칸에
+ * 뭔가 든 채 조준하면 프롬프트도 E도 없다. 미는 동안은 핫바 전환·줍기가 잠긴다(ACL9Character::CanSwitchSlot).
+ * 항아리·창구는 짐칸 안 것을 한 번에 가져간다. 적재 한도는 없다(무게 제한 없음 철학과 일치).
  */
 UCLASS(abstract)
 class ACL9Cart : public ACL9Item, public ICL9Interactable
@@ -26,48 +32,47 @@ class ACL9Cart : public ACL9Item, public ICL9Interactable
 	GENERATED_BODY()
 
 public:
+	ACL9Cart();
+
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual FText GetPrompt(const ACL9Character* Who) const override;
 	virtual bool CanInteract(const ACL9Character* Who) const override;
 	virtual void Interact(ACL9Character* Who) override;
 
-	/** 호스트 전용: 미는 사람에게서 분리하고 서 있는 자리에 그대로 멈춘다 */
+	/** 호스트 전용: 미는 사람에게서 분리한다 — 수레는 제 속도로 미끄러지다 선다 */
 	void StopPull(ACL9Character* Who);
 
-	/** 호스트 전용: 미는 사람이 손에 든 아이템을 짐칸으로 옮긴다 */
-	void LoadItem(ACL9Character* Who);
-
-	/** 호스트 전용: 누가 집어 간 짐칸 아이템을 목록에서 지우고 빈 자리를 메운다 */
-	void RemoveLoadedItem(ACL9Item* Item);
-
-	/** 호스트 전용: 실린 아이템 전부를 반납 처리하고 액터를 파괴한다 (항아리 수레째 반납) */
+	/** 호스트 전용: 짐칸 안 아이템 전부를 반납 처리하고 액터를 파괴한다 (항아리 수레째 반납) */
 	void ReturnAllLoaded(ACL9GameState* GameState);
 
 	/**
-	 * 호스트 전용: 짐칸을 비우고 실려 있던 아이템들을 넘겨준다 — 넘겨받은 쪽이
-	 * 처분을 정한다(항아리는 반납으로, 창구는 납품으로 센다). 액터를 파괴하지는 않는다.
+	 * 호스트 전용: 짐칸 안 아이템들을 넘겨준다 — 넘겨받은 쪽이 처분을 정한다(항아리는 반납으로,
+	 * 창구는 납품으로 센다). 액터를 파괴하지는 않는다.
 	 */
 	void TakeAllLoaded(TArray<ACL9Item*>& OutItems);
 
-	bool HasLoadedItems() const
-	{
-		return LoadedItems.Num() > 0;
-	}
+	/** 짐칸 상자 안에 자유 상태 아이템이 하나라도 있는가 — 프롬프트가 읽으므로 모든 머신에서 답한다 */
+	bool HasLoadedItems() const;
+
+protected:
+	virtual void LoadData() override;
 
 private:
-	/** N번째로 실린 아이템의 짐칸 위치, 수레 루트 기준 상대 좌표 */
-	FVector GetLoadSlotLocation(int32 Index, float ItemRadius) const;
+	/** 짐칸 상자(CargoVolume)와 겹치는 자유 상태 아이템 — 부착이 아니라 위치가 진실이다 */
+	void GatherLoadedItems(TArray<ACL9Item*>& OutItems) const;
 
-	/** 짐칸의 모든 아이템을 각자의 슬롯에 다시 배치한다 (제거로 빈 자리가 생긴 뒤) */
-	void RelayoutLoadedItems();
+	/** 적재 판정 상자 — 메시 원점에 붙어 로드 때 소켓 Cargo의 위치로 옮겨지고(스케일 1 고정), 반폭은 행의 CargoExtent. 충돌체가 아니라 겹침 질의의 자리·크기만 준다 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UBoxComponent> CargoVolume;
 
-	/** 짐칸에 실린 아이템들, 오래된 순 — 부착된 액터 자체가 곧 진실이다 */
-	UPROPERTY(Replicated)
-	TArray<TObjectPtr<ACL9Item>> LoadedItems;
+	/** 밀리는 방향 — 손잡이 소켓에서 수레 중심을 향하는 수레 로컬 XY 단위 벡터(로드 때 소켓에서 계산, 기본은 +X 손잡이 → −X) */
+	FVector PushForwardLocal = FVector(-1.f, 0.f, 0.f);
 
-	/** 이 수레를 끄는 사람 — 호스트 전용이며, 클라이언트는 대신 캐릭터의 복제된 포인터를 읽는다 */
+	/** 잡은 직후 힘·속도를 로그로 남길 남은 틱 수 — PIE 판독용 (호스트 전용) */
+	int32 PushLogTicksLeft = 0;
+
+	/** 이 수레를 미는 사람 — 호스트 전용이며, 클라이언트는 대신 캐릭터의 복제된 포인터를 읽는다 */
 	UPROPERTY()
 	TObjectPtr<ACL9Character> Puller;
 };

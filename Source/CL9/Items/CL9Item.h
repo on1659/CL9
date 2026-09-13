@@ -10,18 +10,17 @@
 class ACL9Character;
 class UCL9ItemDef;
 class UPhysicalMaterial;
+class UPrimitiveComponent;
 class USphereComponent;
 class UStaticMeshComponent;
 
-/** 아이템이 세상에 놓여 있는지, 캐릭터에 들려 있는지, 수레 짐칸에 실려 있는지 */
+/** 아이템이 세상에 놓여 있는지, 캐릭터에 들려 있는지 — 수레 짐칸의 짐은 따로 상태가 없다(짐칸 안에 놓인 Free) */
 UENUM()
 enum class ECL9ItemHoldState : uint8
 {
 	Free,
 	Held,
-	/** 수레 짐칸에 실린 상태 — 물리는 꺼지지만 여전히 조준하고 집을 수 있다 */
-	OnCart,
-	/** 밀려 다니는 중(수레 그 자체) — 물리는 꺼지지만 조준은 가능하고, 무엇에도 부착되지 않는다 */
+	/** 밀려 다니는 중(수레 그 자체) — 물리는 켜진 채 호스트가 매 틱 스프링 힘을 주고, 조준은 가능하며 무엇에도 부착되지 않는다 */
 	Pushed,
 	/** 캐릭터 머리에 착용된 상태(Head 운반 슬롯) — 시점을 따라가며 손은 계속 비어 있다 */
 	Worn
@@ -62,6 +61,13 @@ public:
 	{
 		return Value;
 	}
+
+	/**
+	 * 호스트 전용: 굴린 값을 덮어쓴다 — 핫바 비활성 칸에서 다시 스폰될 때 칸에 저장해 둔 값을
+	 * 되돌리는 용도다(칸 전환으로 가격이 다시 굴려지지 않는다, docs/systems/inventory.md).
+	 * 이후 행이 바뀌면(익음·탐·깨짐) 새 범위로 다시 굴리는 규칙은 그대로다.
+	 */
+	void HostSetValue(int32 NewValue);
 
 	/**
 	 * 호스트 전용: 조리대가 매 틱 이 아이템의 조리 상태를 실어 준다 (docs/systems/cooking.md).
@@ -129,9 +135,6 @@ public:
 		return HoldState == ECL9ItemHoldState::Worn;
 	}
 
-	/** 호스트 전용: 수레 짐칸에 주어진 상대 위치로 부착한다 (docs/plan/data/item/cart.md 적재) */
-	void OnLoadedIntoCart(AActor* Cart, const FVector& RelativeLocation);
-
 	/** 호스트 전용: 분리한 뒤 주어진 월드 위치에 살며시 내려놓는다 */
 	void OnPlaced(const FVector& WorldLocation);
 
@@ -142,6 +145,12 @@ public:
 	{
 		return MeshComponent;
 	}
+
+	/**
+	 * 실제 물리 몸체 — 루트 프리미티브다. 보통은 반경 구이고, 행의 bMeshIsBody가 켜진 물건(수레)은 로드 때
+	 * 루트가 된 메시다. 힘을 주거나 깨우거나 시뮬레이션을 켜고 끄는 코드는 전부 이것을 거친다.
+	 */
+	UPrimitiveComponent* GetBody() const;
 
 protected:
 	virtual void LoadData() override;
@@ -178,11 +187,23 @@ private:
 	/** 호스트 전용: 균열/파손 전이 — 세 문턱값에 따라 SubAlias를 바꾼다 */
 	void HandleImpact(float ImpactSpeed);
 
-	/** 충돌 구체 — 루트 컴포넌트이며, 반지름은 행이 정한 판정값이다 */
+	/**
+	 * bMeshIsBody 행: 메시를 루트이자 물리 몸체로 승격한다 — 구는 콜리전을 끄고 메시 아래로 내려간다. 모든 머신에서
+	 * 로드 때 한 번 일어나며(재로드는 무시), 복제 이동(bRepPhysics)이 새 루트를 따르도록 엔진 동기화를 다시 맞춘다.
+	 */
+	void PromoteMeshToBody();
+
+	/** 메시 몸체의 실제 시뮬레이션 모양을 로그로 남긴다 — 심플 콜리전 없음은 Error, 렌더 바운드보다 훨씬 크면(UCX 배율) Warning */
+	void LogBodyDiagnostics() const;
+
+	/** 충돌 구체 — 보통 루트 컴포넌트이며, 반지름은 행이 정한 판정값이다. bMeshIsBody 행은 로드 때 콜리전 없이 메시 아래로 내려간다 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USphereComponent> SphereComponent;
 
-	/** 행에서 가져온 시각 메시 — 실제 에셋이 들어오기 전까지는 충돌 반지름에 맞춰 자동으로 크기가 조정된다 */
+	/**
+	 * 행에서 가져온 시각 메시 — 실제 에셋이 들어오기 전까지는 충돌 반지름에 맞춰 자동으로 크기가 조정된다.
+	 * bMeshIsBody 행은 자동 스케일 없이 실물 크기 그대로이고, 임포트한 UCX 콜리전으로 시뮬레이션하는 루트다.
+	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
 

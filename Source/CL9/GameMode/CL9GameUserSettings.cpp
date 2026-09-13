@@ -36,6 +36,23 @@ void UCL9GameUserSettings::SetToDefaults()
 	AmbienceVolume = 1.f;
 	MusicVolume = 1.f;
 	VOVolume = 1.f;
+	SeenItemHints.Empty();
+}
+
+bool UCL9GameUserSettings::HasSeenItemHint(FName ItemAlias) const
+{
+	return SeenItemHints.Contains(ItemAlias);
+}
+
+void UCL9GameUserSettings::MarkItemHintSeen(FName ItemAlias)
+{
+	if (ItemAlias.IsNone() || SeenItemHints.Contains(ItemAlias))
+	{
+		return;
+	}
+	SeenItemHints.Add(ItemAlias);
+	// 바꾸는 순간 저장한다 — 화면 닫힘에 저장을 걸지 않는 설정 규칙 그대로 (docs/systems/settings.md)
+	SaveSettings();
 }
 
 void UCL9GameUserSettings::ApplyAudio(UWorld* World) const

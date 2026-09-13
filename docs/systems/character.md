@@ -11,7 +11,18 @@
 - **자기 화면에는 손(팔)만 보인다** (2026-09-02 확정). 든 오브젝트는 **전신 메시의 손 소켓
   `HandGrip_R`**에 붙고(2026-09-12), 팔 메시는 전신 포즈를 복사하므로 같은 자리에 보인다 —
   계란·손전등·프라이팬·냄비·램프 전부 같은 소켓이다. 타인 시점도 같은 소켓이다(`CarryHeight`
-  부착은 폐기). 세부는 [inventory.md](inventory.md).
+  부착은 폐기). 세부는 [inventory.md](inventory.md). 빈손이면 팔은 화면 밖이고 달릴 때만
+  팔을 흔들며 들어온다(2026-09-13 — inventory.md `HoldPose` `None`).
+- **손전등 빔은 손의 손전등 렌즈에서 나오고, 시선 피치는 상체가 따른다** (2026-09-13, 사용자
+  "발원지가 손전등이어야 한다"). 라이트 컴포넌트는 아이템 루트(구)가 아니라 **메시의 자식**이라
+  (`ACL9LightItem`, 발원점 `GetLightOrigin()` = 손전등은 메시 바운드 +X 끝) 소유자 화면에서 메시가
+  1인칭 팔 소켓으로 옮겨 가도 빛이 렌즈에서 메시 +X 방향으로 나간다. 팔이 시선을 따르는 것은 애님이
+  한다 — `GetAimPitch()`(소유자는 컨트롤 피치, 타인은 복제된 `RemoteViewPitch`, −90..90)를 두 ABP
+  (`ABP_Unarmed`·`ABP_FP_Copy`)가 Hold 레이어 뒤 `Transform (Modify) Bone`(`spine_03`, 컴포넌트 공간
+  피치 = AimPitch × 비율, 초안 0.6)에 넣어 상체를 기울인다. 그래서 아래를 보면 손의 손전등이 바닥을
+  비추고, 남의 화면에서도 손이 기울어진다. 헤드램프는 그대로 카메라 부착이다([light.md](light.md)).
+  ABP가 읽는 게터: `GetAimPitch()` · `IsRunning()`(CMC 위임 — 소유자·호스트에서만 참) ·
+  `GetGroundSpeed()`(cm/s 수평 속도).
 - 3인칭 카메라 충돌 검사(segkind.md의 `bBlocksSight` 세 용도 중 하나)는 관전 시점 등
   3인칭 상황에서만 의미가 있다.
 - 관전은 동료 시점 관전 (1인칭 그대로 — 초안).
@@ -174,7 +185,6 @@ class ICL9Damageable {
 - 무게→감속 식과 값 (전역 시스템 몫 — 로드 검사에 최대 무게 기준으로 들어가야 함)
 - 관전 카메라 상세 (동료 1인칭 승계 — 초안)
 - 낙하 데미지 유무 — 어느 문서에도 정의가 없다 (①에서 정한다. 없다면 그것도 명시)
-- 먹기 입력 — 요리를 먹는 행위의 IA가 input.md 표에 없다 (요리 버프는 있는데 입력이 미정)
 - 캐릭터 발 소음 이벤트의 발신 구조 — 몬스터 감각 파이프라인(③)과 함께 정한다
 
 ## 참고
@@ -197,4 +207,15 @@ class ICL9Damageable {
   CMC는 걷기/달리기 속도, `CartMult`, 스태미나 소모·회복 시간에 이 값을 더한다.
 - **HP는 효과 대상이 아니다** — 회복 채널은 트럭 패드다(docs/plan/data/rules.md).
 - 지속 0(즉시형)은 아직 구현하지 않았다 — 지금 범위에 즉시 스탯 변화가 없어서 로그만 남긴다.
-- 입력은 `EatAction`(G, `IA_Eat`). 검증 치트는 `cl9.eat`.
+- 입력은 **우클 길게**(`IA_Scan`을 `CL9Rules.UseHoldTime` 0.4초 넘게 — 탭은 스캔) → `Server_Eat`(2026-09-13,
+  옛 `IA_Eat` G·좌클 길게 폐기). 판정은 문턱을 넘는 순간이고 `EatStartServerTime`(복제)에서 `GetEatElapsed()`가
+  먹기 클립(0.6초)을 태운다 — 애니가 도는 동안 칸 전환을 막지 않는다. 검증 치트는 `cl9.eat`.
+
+## 휘두르기 — 공격 대기 → 뗌 = 타격 (2026-09-13)
+
+좌클은 리썰 삽 방식이다: **누르면 공격 대기, 떼면 휘두르기.** `Server_UseStart`가 든 행의 `UseAction`이 `Swing`이면
+`SwingWindupServerTime`(복제)을 기록하고, `Server_UseRelease`가 대기 중이었을 때만 `HostSwing`을 부른다 — 피해·사거리·
+경직은 대기 시간과 무관하게 같다(밸런스 열 없음, 대기는 무한). 평범한 클릭은 대기 한 틱 뒤 타격이라 평범한 공격이다.
+`ToggleLight`는 누르는 순간 토글이고 대기가 없다. 대기 중 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가
+`HostCancelSwingWindup()`으로 대기를 지우므로 떼도 타격이 없다. 표현: `GetSwingWindupElapsed()`(대기 아니면 −1)로
+ABP가 대기 자세(`AN_Farmer_SwingWindup` 루프)를, `GetSwingElapsed()`로 휘두르기 클립을 태운다 ([animation.md](animation.md)).

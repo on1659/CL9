@@ -64,7 +64,7 @@ bool ACL9GameMode::AllowCheats(APlayerController* P)
 #endif
 }
 
-ACL9Item* ACL9GameMode::SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform)
+ACL9Item* ACL9GameMode::SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTransform& Transform, int32 PresetValue)
 {
 	if (!HasAuthority())
 	{
@@ -105,7 +105,12 @@ ACL9Item* ACL9GameMode::SpawnItem(FName ItemAlias, FName ItemSubAlias, const FTr
 	ACL9Item* Item = GetWorld()->SpawnActor<ACL9Item>(SpawnClass, Transform, SpawnParameters);
 	if (Item != nullptr)
 	{
+		// SetAlias가 호스트에서 LoadData를 바로 돌려 값을 굴린다 — 보존값은 그 뒤에 덮어써야 남는다
 		Item->SetAlias(ItemAlias, ItemSubAlias);
+		if (PresetValue >= 0)
+		{
+			Item->HostSetValue(PresetValue);
+		}
 	}
 	return Item;
 }

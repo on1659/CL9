@@ -87,9 +87,9 @@ public:
 
 	// -- 던지기와 소지 --
 
-	/** 손↔주머니 전환 잠금 시간, 초 단위 — 의도적인 소지 마찰이다 */
+	/** 핫바 칸 수 — 한 번에 들고 다닐 수 있는 아이템 수. 손에 실물로 들리는 것은 활성 칸 하나뿐이다 (docs/systems/inventory.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
-	float SwapTime = 1.2f;
+	int32 HotbarSlots = 4;
 
 	/** 달리며 소지하는 상태가 지속되어 흔들림 게이지가 가득 차기까지의 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
@@ -118,4 +118,11 @@ public:
 	/** 줍기 사거리, cm 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float PickRadius = 120.f;
+
+	/**
+	 * 우클 길게 누르기 문턱, 초 단위 — 이 시간 안에 떼면 탭(스캔), 넘기면 활성 칸의 요리를 먹는다
+	 * (2026-09-13 사용자: "우클 길게 = 먹기"). 소유 클라가 로컬 타이머로 잰다 (docs/systems/inventory.md 조작).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
+	float UseHoldTime = 0.4f;
 };
