@@ -4,6 +4,30 @@
 
 ## 현재 재개 지점
 
+- **[fp-arms-flashlight 실행 2026-09-13 밤] 농부 A 1인칭 빈손 팔 클립 2개 + 손전등 Hold 쌍 재출력 FBX 완료 — UE 임포트·ABP 배선 전.**
+  `AN_Farmer_FPArmsDown`(2.0초 루프, 두 손이 프레임 밖 — 서기·걷기 기본, FPHoldIdle 대체)·`AN_Farmer_FPRun`(0.6초 루프, 좌·우 주먹이
+  화면 아래 좌우로 번갈아 올라옴, manifest `reference_speed_cm_s` 654 → ABP PlayRate = Speed/654), 전신 클립 없음.
+  손전등 `Flashlight.fp` 손목 앞 +8cm·위 +3cm → `AN_Farmer_FPHoldFlashlight`·`AN_Farmer_HoldFlashlight` 재출력(`animate_farmer_hold.py
+  -- --export --only Flashlight`, 다른 범주는 그대로). `Tools/Blender/animate_farmer_fparms.py -- --export` → `verify_farmer_clip_fbx.py`
+  (30fps·길이·루프 이음새 0·sha). 리드가 `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 이 4클립) 로 임포트하고 팔 ABP 빈손 가지
+  `IsRunning ? FPRun : FPArmsDown` + 두 ABP `Transform (Modify) Bone`(spine_03, AimPitch×0.6) — docs/systems/animation.md
+  "1인칭 팔 표시 규칙", PIE A4(신설). 카드: `docs/asset/character/farmer_a.md` 029, 증거 029-farmer-fparms.json.
+
+- **[use-hint-anim 실행 2026-09-13 밤] 농부 A 공격 대기·먹기 클립 4개 FBX 완료 — UE 임포트·ABP 배선·표 행 적용 전.**
+  `AN_Farmer_SwingWindup`/`FPSwingWindup`(루프 1.0초, 휘두르기 t=0.12 자세 + 손목 ±1cm 숨쉬기)·`AN_Farmer_Eat`/`FPEat`(0.6초 원샷,
+  HoldSmall→입 앞→HoldSmall), 30fps·Manny. `Tools/Blender/animate_farmer_windup.py`·`animate_farmer_eat.py -- --export` →
+  `verify_farmer_clip_fbx.py`(30fps·길이·루프 이음새 0 확인). 리드가 `Tools/Unreal/import_farmer_clips.py` 로 임포트하고
+  ABP 두 개에 `SwingWindupElapsed`·`EatElapsed` 가지(docs/systems/animation.md "공격 대기·먹기 가지"), PIE C4·Q1.
+  그립 역산 `measure_item_grip.py` → 고기 3행·팬 1행 `GripOffset`/`GripRotation` 후보(028-item-grip.json), 표 적용 뒤 PIE A5.
+  스테이징 fps 버그(24fps)를 `farmer_pose.export_action` 에서 고쳤다 — 기존 Swing 은 0.583초 그대로 두고 재수출하지 않았다.
+  카드: `docs/asset/character/farmer_a.md` 028.
+
+- **[cart-physics 실행 2026-09-13] 수레 `SM_Cart_A` 물리 몸체용 재제작 — UE 재임포트 전.** 짐칸 안치수 120×80·벽 40·손잡이 100cm,
+  바운드 167.7×97.2×103.4cm, 6,280 tris, UCX 9(짐칸 안 비움)·소켓 `Grip`(80.15,0,48)·`Cargo`(−17.85,0,14), 짐칸 바닥 Z −6.0,
+  `cargo_extent_cm` [60,40,20]. `Tools/Blender/build_cart_a.py` → `verify_cart_a_fbx.py`(027-cart-physics-rebuild.json) → `preview_cart_a.py`.
+  Blender 헤드리스는 `py -3 Tools/Blender/run_headless.py <script>` 로 돌린다. 리드가 `Tools/Unreal/import_cart_a.py` 로 재임포트하고
+  B4 PIE. 카드: `docs/asset/item/cart.md`.
+
 - **[별도 세션 2026-09-11 저녁] CL9Art 미사용 에셋 일괄 연결 완료 — 되돌리지 말 것.** `docs/goal/wire-cl9art-assets.md`.
   맵 조각(벽 500/125·울타리·문짝·바닥·천장·마당·디딤판)은 `PieceTable`/`SegKindTable`에, 소품(둥지·상자·포대·
   여물통·작업등·작업대·표식 4·보·기둥)은 `ModuleTable.PropSets`에, 시설 5종은 BP 메시 + 두 레벨 인스턴스에,
@@ -130,7 +154,8 @@
   `ArtSource/item/cart_a/`, UE `Items/CartA`, 5,532 tris.
   1월드 적재/꺼내기 성공. 초기 지면 침투를 PIE에서 보정한 뒤 견인 연결·해제/수평 응답 확인.
   적재 바닥65.948cm 차이, 구체·메시 하단28.651cm 차이, 견인 중 Z 상승은 미통과.
-  테스트 cart 행은 원복, PIE 종료. Blender `CL9_CART_A`, 실행 핸들 없음. 원본을 재생성하지 않는다.
+  테스트 cart 행은 원복, PIE 종료. Blender `CL9_CART_A`, 실행 핸들 없음. **2026-09-13 cart-physics 실행에서 원본을
+  물리 몸체용으로 다시 만들었다(위 재개 지점) — 011 의 수치는 옛 메시 것.**
 - 다음 제작: standing_lamp 모델. 전체 맵 조립 제외/모델 제작 우선, 위 UE 의존성은 별도 미완료 유지.
 
 - 최신 [010](iterations/010.md): 프라이팬/냄비 신규 원본/FBX/UV0/2재질/최종 3렌더, UE 임포트/LOD3.

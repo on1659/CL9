@@ -1,0 +1,21 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "folder": "/Game/Characters/FarmerA/Anims",
+  "clips": [
+    {
+      "name": "AN_Farmer_Swing",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Swing.AN_Farmer_Swing",
+      "seconds": 0.5833333134651184,
+      "frames": 14,
+      "sha256": "dec99d472f5f8cc03e41e859d35737c8f8dc78ac3c40e85dc4d3d096e212f0e3"
+    },
+    {
+      "name": "AN_Farmer_FPSwing",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwing.AN_Farmer_FPSwing",
+      "seconds": 0.5833333134651184,
+      "frames": 14,
+      "sha256": "518bfc73ee8e5a7ba0975d8cdcb9096114fe10d95d069226fcf06b6a18c7634b"
+    }
+  ]
+}

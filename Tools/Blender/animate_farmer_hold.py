@@ -3,15 +3,26 @@
 원본 리그 RIG_Farmer_A(m 단위)에 두 뼈 IK로 팔을 세우고 손·손가락을 돌려 자세를 만든다.
 CL9_HOLD_SPEC 환경변수의 JSON(스크래치 스펙)으로 목표를 바꿔 가며 렌더로 검수하고,
 `--export`가 있으면 액션을 저장하고 cm 스테이징 리그로 애니메이션 전용 FBX를 내보낸다.
+`--only <범주> [<범주>...]`(`--` 뒤)면 그 범주(Small/Flashlight/Large/Idle)만 렌더·수출한다 — 다른 범주의 FBX·manifest 항목은
+손대지 않는다(FBX 에 저장 시각이 박혀 값이 같아도 다시 수출하면 sha 가 바뀐다).
 전신 ABP가 척추 위만 레이어로 얹으므로 다리·골반은 건드리지 않는다.
+
+실행: py -3 Tools/Blender/run_headless.py animate_farmer_hold.py --blend ArtSource/character/farmer_a/farmer_a.blend [-- --export --only Flashlight]
 """
 import bpy, json, math, os, sys, hashlib
 from pathlib import Path
 from mathutils import Vector, Matrix, Quaternion, Euler
+sys.path.insert(0, str(Path(__file__).parent))
+from farmer_pose import render_fp
 
 ROOT = Path('D:/Work/unreal/CL9/ArtSource/character/farmer_a')
 SPEC = json.loads(os.environ['CL9_HOLD_SPEC']) if os.environ.get('CL9_HOLD_SPEC') else json.loads((Path(__file__).with_name('farmer_hold_spec.json')).read_text(encoding='utf-8'))
 EXPORT = '--export' in sys.argv
+FULL_SPEC = SPEC
+if '--only' in sys.argv:
+    ONLY = [a for a in sys.argv[sys.argv.index('--only') + 1:] if not a.startswith('--')]
+    assert ONLY and all(t in SPEC for t in ONLY), ('--only 뒤 범주 이름이 스펙에 없다', ONLY, list(SPEC))
+    SPEC = {t: SPEC[t] for t in ONLY}
 PREVIEW_DIR = Path(os.environ.get('CL9_HOLD_PREVIEW', str(ROOT / 'preview')))
 PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -122,15 +133,11 @@ def render_previews(tag):
     cam.rotation_euler = (Vector((0, 0, 1.15)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
     preview.render.filepath = str(PREVIEW_DIR / f'hold_{tag}_front.png')
     bpy.ops.render.render(write_still=True)
-    # 1인칭 — 눈 높이(1.56m)에서 정면(-Y)을 약간 내려다본다, 게임 팔 FOV 70
-    cam.data.lens_unit = 'FOV'
-    cam.data.angle = math.radians(70)
-    head = rig.pose.bones['head'].head
-    cam.location = (0.0, 0.0, 1.56)
-    cam.data.clip_start = 0.22
-    cam.rotation_euler = Euler((math.radians(90 - 10), 0, math.radians(180)), 'XYZ')
-    preview.render.filepath = str(PREVIEW_DIR / f'hold_{tag}_fp.png')
-    bpy.ops.render.render(write_still=True)
+    # 1인칭 — farmer_pose.render_fp(팔 메시만, 눈높이 1.56m·10도 내려다봄·FOV 70). 예전 이 자리의 자체 카메라는 몸 메시의 턱·가슴에
+    # 가려 빈 화면이 나왔다(028 에서 원인 확인)
+    bpy.context.window.scene = scene
+    render_fp(f'hold_{tag}', PREVIEW_DIR)
+    bpy.context.window.scene = preview
     cam.data.lens_unit = 'MILLIMETERS'
     # 오른손 클로즈업 — 손바닥 방향·손가락 굽힘 확인용, 정면 왼쪽 위에서 본다
     cam.data.lens = 60
@@ -186,6 +193,8 @@ def export_action(action):
     stage.unit_settings.system = 'METRIC'
     stage.unit_settings.scale_length = 0.01
     stage.frame_start, stage.frame_end = scene.frame_start, scene.frame_end
+    # FBX 는 활성(스테이징) 장면의 fps 로 굽는다 — 저작 장면(30)과 맞춘다(farmer_pose.export_action 과 같은 수정, 028)
+    stage.render.fps, stage.render.fps_base = scene.render.fps, scene.render.fps_base
     bpy.context.window.scene = stage
     occupied = bpy.data.objects.get('root')
     if occupied is not None:
@@ -217,6 +226,9 @@ for tag, both in SPEC.items():
     # tp: 남에게 보이는 전신용(자연스러운 높이) / fp: 1인칭 팔용(카메라 안에 들어오게 눈높이까지 올림)
     for view in ('tp', 'fp'):
         spec = both[view]
+        # 앞 클립의 액션이 붙어 있으면 렌더·frame_set 이 그 액션으로 리그를 다시 평가해 정적 자세를 덮는다 — 떼고 나서 자세를 준다
+        if rig.animation_data:
+            rig.animation_data.action = None
         apply_pose(spec)
         render_previews(tag + '_' + view)
         key = ('AN_Farmer_Hold' if view == 'tp' else 'AN_Farmer_FPHold') + tag
@@ -230,8 +242,8 @@ rig.animation_data_clear() if rig.animation_data else None
 if EXPORT:
     manifest_path = ROOT / 'manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    manifest.setdefault('animations', {}).update({k: {'fbx_sha256': r['sha256'], 'loop': True, 'seconds': 2.0, 'layer': 'upper body from spine_01', 'view': 'first-person arms' if 'FPHold' in k else 'full body'} for k, r in results.items()})
-    manifest['hold_spec'] = SPEC
+    manifest.setdefault('animations', {}).update({k: {'fbx_sha256': r['sha256'], 'loop': True, 'seconds': 2.0, 'fps': scene.render.fps, 'layer': 'upper body from spine_01', 'view': 'first-person arms' if 'FPHold' in k else 'full body'} for k, r in results.items()})
+    manifest['hold_spec'] = FULL_SPEC
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding='utf-8')
     bpy.ops.wm.save_mainfile(filepath=str(ROOT / 'farmer_a.blend'))
 print('HOLD RESULT ' + json.dumps(results))

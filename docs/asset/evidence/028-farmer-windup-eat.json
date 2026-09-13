@@ -1,0 +1,139 @@
+{
+  "run": "use-hint-anim (2026-09-13, art)",
+  "blender": "5.2.1 LTS headless via Tools/Blender/run_headless.py",
+  "source_blend": "ArtSource/character/farmer_a/farmer_a.blend",
+  "scripts": {
+    "windup": "Tools/Blender/animate_farmer_windup.py -- --export",
+    "eat": "Tools/Blender/animate_farmer_eat.py -- --export",
+    "verify": "Tools/Blender/verify_farmer_clip_fbx.py",
+    "grip": "Tools/Blender/measure_item_grip.py (-> 028-item-grip.json)",
+    "ue_import": "Tools/Unreal/import_farmer_clips.py (리드 실행 — 결과가 아래 ue_import 에 붙는다)"
+  },
+  "clips": {
+    "AN_Farmer_SwingWindup": {
+      "view": "full body",
+      "loop": true,
+      "seconds": 1.0,
+      "fps": 30,
+      "frames": 31,
+      "keyed_bones": 19,
+      "pose": "AN_Farmer_Swing KEYS t=0.12 (wrist [-0.30, -0.18, 1.50] m)",
+      "breath": "wrist z ±1cm sine, spine_03 ±0.006rad",
+      "loop_seam_cm": 0.0,
+      "fbx_sha256": "82c775aec421255804dd2badecae5b297250011cc9bac7b2be254738ac91a8d7"
+    },
+    "AN_Farmer_FPSwingWindup": {
+      "view": "first-person arms",
+      "loop": true,
+      "seconds": 1.0,
+      "fps": 30,
+      "frames": 31,
+      "keyed_bones": 18,
+      "pose": "AN_Farmer_FPSwing KEYS t=0.12 (wrist [-0.32, -0.30, 1.58] m)",
+      "breath": "wrist z ±1cm sine",
+      "loop_seam_cm": 0.0,
+      "fbx_sha256": "44166967ad31f795a421d0b90a18ccce35a44e2d920ade9294a7f399c50efd1f"
+    },
+    "AN_Farmer_Eat": {
+      "view": "full body",
+      "loop": false,
+      "seconds": 0.6,
+      "fps": 30,
+      "frames": 19,
+      "keyed_bones": 19,
+      "keys": "0.00 HoldSmall -> 0.25 mouth (wrist [-0.07, -0.24, 1.57] m, head bone z 1.626) -> 0.35 mouth -> 0.60 HoldSmall",
+      "fbx_sha256": "c8f1b01ea1cd6b2a757aa56e22517fb608959419b9f8c558c4ce45628394a0cc"
+    },
+    "AN_Farmer_FPEat": {
+      "view": "first-person arms",
+      "loop": false,
+      "seconds": 0.6,
+      "fps": 30,
+      "frames": 19,
+      "keyed_bones": 18,
+      "keys": "0.00 FPHoldSmall -> 0.25 mouth (wrist [-0.05, -0.27, 1.50] m, 눈높이 1.56 바로 아래·앞 27cm) -> 0.35 -> 0.60 FPHoldSmall",
+      "fbx_sha256": "7835f99a7edfa157a8613b22b837d2777aa7d1d99b2fca6fc5b27e0630eef032"
+    }
+  },
+  "fbx_verify": {
+    "method": "verify_farmer_clip_fbx.py — FBX 를 빈 장면에 다시 읽어 fps·프레임·길이",
+    "AN_Farmer_SwingWindup": {
+      "fps": 30,
+      "frames": 31,
+      "seconds": 1.0,
+      "loop_seam_cm": 0.0
+    },
+    "AN_Farmer_FPSwingWindup": {
+      "fps": 30,
+      "frames": 31,
+      "seconds": 1.0,
+      "loop_seam_cm": 0.0
+    },
+    "AN_Farmer_Eat": {
+      "fps": 30,
+      "frames": 19,
+      "seconds": 0.6
+    },
+    "AN_Farmer_FPEat": {
+      "fps": 30,
+      "frames": 19,
+      "seconds": 0.6
+    },
+    "AN_Farmer_Swing (기존, 참고)": {
+      "fps": 24,
+      "frames": 15,
+      "seconds": 0.5833,
+      "note": "스테이징 장면 fps 24 로 구워져 저작 0.45초가 0.583초로 들어간 것 — farmer_pose.export_action 에서 고침(이번 4클립부터 30fps)"
+    }
+  },
+  "previews": [
+    "ArtSource/character/farmer_a/preview/windup_{tp,fp}_f{1,8,16}_front.png",
+    "ArtSource/character/farmer_a/preview/windup_fp_f{1,8,16}_fp.png (1인칭 카메라 FOV70 에서는 치켜든 손이 오른쪽 프레임 밖 — FPSwing t=0.12 와 같은 자세)",
+    "ArtSource/character/farmer_a/preview/eat_{tp,fp}_f{1,5,9}_front.png",
+    "ArtSource/character/farmer_a/preview/eat_fp_f{1,5,9}_fp.png (팔 메시만 그린 1인칭 — 손이 아래 오른쪽에서 렌즈 앞 중앙으로 올라온다)"
+  ],
+  "grip": "docs/asset/evidence/028-item-grip.json (measure_item_grip.py 출력 — FLASHLIGHT CHECK 4.9deg)",
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "folder": "/Game/Characters/FarmerA/Anims",
+    "clips": [
+      {
+        "name": "AN_Farmer_SwingWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_SwingWindup.AN_Farmer_SwingWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "82c775aec421255804dd2badecae5b297250011cc9bac7b2be254738ac91a8d7",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPSwingWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwingWindup.AN_Farmer_FPSwingWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "44166967ad31f795a421d0b90a18ccce35a44e2d920ade9294a7f399c50efd1f",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_Eat",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Eat.AN_Farmer_Eat",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "c8f1b01ea1cd6b2a757aa56e22517fb608959419b9f8c558c4ce45628394a0cc",
+        "manifest_seconds": 0.6,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPEat",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPEat.AN_Farmer_FPEat",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "7835f99a7edfa157a8613b22b837d2777aa7d1d99b2fca6fc5b27e0630eef032",
+        "manifest_seconds": 0.6,
+        "loop": false
+      }
+    ]
+  }
+}

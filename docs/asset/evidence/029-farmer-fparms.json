@@ -1,0 +1,148 @@
+{
+  "run": "fp-arms-flashlight (2026-09-13 밤, art)",
+  "blender": "5.2.1 LTS headless via Tools/Blender/run_headless.py",
+  "source_blend": "ArtSource/character/farmer_a/farmer_a.blend",
+  "scripts": {
+    "fparms": "Tools/Blender/animate_farmer_fparms.py -- --export (FPArmsDown + FPRun)",
+    "hold": "Tools/Blender/animate_farmer_hold.py -- --export --only Flashlight (손전등 자세 재출력 — 다른 범주 FBX 는 건드리지 않음)",
+    "verify": "Tools/Blender/verify_farmer_clip_fbx.py (기본 목록 = 이번 4클립)",
+    "ue_import": "Tools/Unreal/import_farmer_clips.py (리드 실행 — 기본 목록 = 이번 4클립, 결과가 아래 ue_import 에 붙는다)"
+  },
+  "camera_model": "카메라 눈높이 1.56m(EyeHeight 156)·FirstPersonFieldOfView 70(가로)·16:9 → 세로 반각 21.5도. FirstPersonScale 0.6 은 카메라 원점 기준 축소라 화면 위치(각도)는 그대로다. 미리보기 render_fp 는 4:3·10도 내려다봄이라 세로로 더 너그럽다(아래 반각 37.7도) — 미리보기에서 비면 게임에서도 빈다.",
+  "clips": {
+    "AN_Farmer_FPArmsDown": {
+      "view": "first-person arms",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 36,
+      "pose": "두 팔을 거의 편 채(어깨~손목 0.50m, 팔꿈치 ~130도) 몸 옆·살짝 앞으로 늘어뜨림 — 손목 [±0.26, -0.162, 0.972] m, 카메라에서 75도 아래(피치 0 에서 프레임 밖, 38도 넘게 내려다봐야 들어온다). 손바닥은 허벅지 쪽, 손가락 0.35rad",
+      "breath": "wrist z ±0.5cm sine",
+      "loop_seam_cm": 0.0,
+      "preview_fp": "fparmsdown_f1_fp.png·f16 — 빈 프레임 확인",
+      "fbx_sha256": "ab1352588e4241a5063b58f4a5f322238e2775fbbf84c4c2c1c074f852311a4b"
+    },
+    "AN_Farmer_FPRun": {
+      "view": "first-person arms",
+      "loop": true,
+      "seconds": 0.6,
+      "fps": 30,
+      "frames": 19,
+      "keyed_bones": 36,
+      "reference_speed_cm_s": 654,
+      "pose": "어깨를 축으로 반지름 0.35m 호 위에서 손목이 θ -25도(뒤)↔92도(앞·위) 사인 왕복, 왼팔 반대 위상. 앞 극점 손목 [-0.20, -0.324, 1.443] m = 카메라 20도 아래(16:9 세로 0.95, 프레임 아래 가장자리), 주먹은 그 위 약 0.72~0.95 오른쪽 아래(x ≈ 0.80). 뒤 극점 [-0.28, +0.169, 1.116] 은 카메라 뒤. 주먹 curl 1.1rad·엄지 0.6, 손바닥 안쪽·아래(손등이 카메라 쪽)",
+      "loop_seam_cm": 0.0,
+      "preview_fp": "fprun_f1_fp(중간, 비어 있음)·f5(오른 주먹 오른쪽 아래)·f10(비어 있음)·f14(왼 주먹 왼쪽 아래)",
+      "fbx_sha256": "cca09c3195256b60b08c262f3dd5a453a575c1bafb9315f79c9a33e226d14c2c"
+    },
+    "AN_Farmer_FPHoldFlashlight": {
+      "view": "first-person arms",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 18,
+      "pose": "farmer_hold_spec.json Flashlight.fp 손목 [-0.15, -0.42, 1.42] → [-0.13, -0.50, 1.45] m (앞 +8cm·안쪽 +2cm·위 +3cm, 어깨~손목 0.53m 팔꿈치 ~148도). 카메라 12.4도 아래 = 16:9 세로 0.78(전에는 18.4도 = 0.92, 프레임 가장자리). 손가락·극·curl 은 그대로",
+      "loop_seam_cm": 0.0,
+      "preview_fp": "hold_Flashlight_fp_fp.png (이번부터 팔 메시만 그리는 render_fp 라 화면이 비지 않는다)",
+      "fbx_sha256": "1e09ad3f0069306b1ab3a0b3f24f60f4562832a998d1048f7d82d95975493b3a",
+      "previous_fbx_sha256": "b9b79dadc7de80180c6ecaed4ac3f67150e5407af1ecb574c9e045d9d93f5b3c"
+    },
+    "AN_Farmer_HoldFlashlight": {
+      "view": "full body",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 19,
+      "pose": "값 변경 없음(Flashlight.tp 손목 [-0.17, -0.29, 1.12]) — 같은 스크립트가 tp·fp 쌍으로 뽑아 sha 만 바뀌었다. 025 때 스테이징 24fps 로 구워진 것이 30fps 로 다시 나와 UE 길이 2.5초 → 2.0초(루프라 무해)",
+      "loop_seam_cm": 0.0,
+      "fbx_sha256": "e55cda06562444bc70cd430d2c79cce752569e61be2a277c8d773d592ac7e694",
+      "previous_fbx_sha256": "02654290b16d25f2b7c10b0e405c6ab25f9e7928a96c4c4d74f2a546beb12087"
+    }
+  },
+  "fbx_verify": {
+    "method": "verify_farmer_clip_fbx.py — FBX 를 빈 장면에 다시 읽어 fps·프레임·길이·루프 이음새·sha",
+    "AN_Farmer_FPArmsDown": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPRun": {
+      "fps": 30,
+      "frames": 19,
+      "seconds": 0.6,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPHoldFlashlight": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_HoldFlashlight": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    }
+  },
+  "previews": [
+    "ArtSource/character/farmer_a/preview/fparmsdown_f{1,16}_{fp,front}.png",
+    "ArtSource/character/farmer_a/preview/fprun_f{1,5,10,14}_{fp,front}.png",
+    "ArtSource/character/farmer_a/preview/hold_Flashlight_{tp,fp}_{front,fp,hand}.png"
+  ],
+  "not_done": [
+    "전신 달리기 팔 클립(AN_Farmer_Run) — 만들지 않음(전신은 템플릿 로코모션 그대로)",
+    "다른 Hold 범주(Small/Large/Idle) 재출력 — --only 로 제외. AN_Farmer_FPHoldIdle 은 FPArmsDown 이 대체하므로 ABP 참조 해제 뒤 리드 판단(기본값 21)"
+  ],
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "folder": "/Game/Characters/FarmerA/Anims",
+    "clips": [
+      {
+        "name": "AN_Farmer_FPArmsDown",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPArmsDown.AN_Farmer_FPArmsDown",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "ab1352588e4241a5063b58f4a5f322238e2775fbbf84c4c2c1c074f852311a4b",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPRun",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPRun.AN_Farmer_FPRun",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "cca09c3195256b60b08c262f3dd5a453a575c1bafb9315f79c9a33e226d14c2c",
+        "manifest_seconds": 0.6,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPHoldFlashlight",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPHoldFlashlight.AN_Farmer_FPHoldFlashlight",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "1e09ad3f0069306b1ab3a0b3f24f60f4562832a998d1048f7d82d95975493b3a",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_HoldFlashlight",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_HoldFlashlight.AN_Farmer_HoldFlashlight",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "e55cda06562444bc70cd430d2c79cce752569e61be2a277c8d773d592ac7e694",
+        "manifest_seconds": 2.0,
+        "loop": true
+      }
+    ]
+  }
+}

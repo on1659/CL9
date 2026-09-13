@@ -1,26 +1,59 @@
-# 양계장 운반 수레
+# 양계장 운반 수레 — 물리 몸체용 (2026-09-13 재제작)
 
-실제 `cart/None`, `BP_CL9Cart`, Radius60cm, CartOnly, 물리 비활성 행을 따른다.
-황색 철제 프레임, 바닥 판재, 열린 낮은 난간, 고무 바퀴 네 개와 앞쪽 손잡이의 농장용 수레다.
-전체 목표 약170×110×110cm. +X 손잡이 방향/+Z 위, 납품 Static Mesh는 바운드 중심 피벗.
+실제 `cart/None`, `BP_CL9Cart`, CartOnly 행을 따른다. cart-physics 실행부터 수레는 **물리 강체**다 — 메시가 루트이고
+UCX 심플 콜리전이 몸체, `Radius` 자동 배율은 쓰지 않는다(배율 1). 짐칸에 놓기/던지기로 떨어뜨린 아이템이 물리로
+들어가므로 짐칸 안쪽 콜리전은 비어 있어야 한다.
+황색 철제 프레임, 바닥 판재 7장, 널 3장짜리 측판, 고무 바퀴 네 개(짐칸 밑), 앞쪽(+X) 밀기 손잡이의 농장용 수레다.
 
-- 낮은 철망은 가는 면 텍스처 대신 굵고 드문 가로·세로 막대로 만들며 불필요한 작은 격자를 피한다.
-- 재질 최대2슬롯, 2,000~8,000 tris, UV0/버텍스 색. 원본과 FBX, 중립/야간/손전등 납품.
-- 현재 소비자는 하나의 Static Mesh이며 바퀴 회전/조향 클립을 재생하지 않는다. 현 연결 리그/클립 N/A.
-  바퀴 중심/반경/회전축과 적재/손잡이 기준점을 manifest와 REF Empty로 보존한다.
-- `GetLoadSlotLocation`은 카트 원점 기준 Z=60+ItemRadius, Y=±26, X=-23+46×행이다.
-  실제 바구니 바닥을 읽지 않는다. 적재 면과의 차이는 실제 UE에서 검수하고 완료로 숨기지 않는다.
-- 끌기 시작에는 순간 이동하지 않고 거리 초과분만 따라오며, 코드상 메시 회전도 갱신하지 않는다.
-  방향/바퀴/손 위치 표현은 별도 연결 의존성으로 구분한다. 모델을 맞추려고 게임 수치를 바꾸지 않는다.
-- 원본 `ArtSource/item/cart_a/cart_a.blend`. 임포트 후 실제 싣기/꺼내기·견인/놓기와 2인 검수.
+## 치수 (Blender 지면 기준 → 납품 피벗 = 바운드 중심)
 
-근거: [수레 기획](../../plan/data/item/cart.md), [아이템 계약](README.md).
+| 항목 | 값 | 피벗 기준 |
+|---|---|---|
+| 바운드 | 167.7 × 97.2 × 103.4 cm | 중심 (0,0,0), 바닥 Z −51.7 |
+| 짐칸 바닥 안치수 | 120 × 80 cm | 바닥 면 Z **−6.0** (`deck_height_cm`) |
+| 벽(측판) 높이 | 40 cm (짐칸 바닥에서) | 벽 위 Z +34.0 |
+| 짐칸 상자 반폭 | **[60, 40, 20]** (`cargo_extent_cm`) | 상자 중심 = 소켓 `Cargo` (**−17.85, 0, 14.0**) |
+| 손잡이 가로봉 | 지면 100 cm, 고무 그립 r 3.7 | 소켓 `Grip` (**80.15, 0, 48.0**) |
+| 바퀴 | 반경 18.7 cm, 회전축 Y, 4개 | 중심 (−59.85 / 24.15, ±40, −33) — UE 는 Y 부호 반대 |
 
-제작 실측: 153.40×115.20×105.40cm, 5,532 tris/2,968 vertices/2재질.
-원본/FBX/UV0/중립·야간·손전등 저장 및 시각 확인. UE LOD3 생성과 치수 오차 <0.000017cm 확인.
-현재 자동 배율은0.59485012로 실표시91.25×68.53×62.70cm다.
-원본의 바닥 기준점은 피벗 대비(-18,0,-10)cm. 실제 두 줄 적재 좌표는 이 기준점과 다르므로 연결 검수가 필요하다.
++X 손잡이 방향 / +Z 위. 손잡이는 짐칸 앞 벽 밖으로 뻗어 개구부를 가리지 않는다.
+소켓 좌표는 Blender 값이며 UE 임포트(force_front_x_axis)가 Y 를 뒤집지만 둘 다 Y=0 이라 같다.
 
-[011 검수](../iterations/011.md): 실제 1월드 적재/꺼내기 및 보정된 시작 위치의 견인 응답 확인.
-적재물 하단과 바구니 바닥65.948cm 간격, 구체/메시 바닥 간격28.651cm와 견인 수직 이동은 미통과.
-테스트 임시 cart 행은 원복했다. 2인/실제 이동 화면/LOD 등은 아직 검수하지 않았다.
+## UCX 콜리전 (FBX 동봉, `UCX_SM_Cart_A_00`~`_08`)
+
+| 번호 | 역할 | 모양 |
+|---|---|---|
+| 00 | 바닥판 | 박스, 윗면 = 짐칸 바닥(Z −6.0), 두께 8 |
+| 01·02 | 측벽 ±Y | 박스, 안쪽 면 Y ±40, 두께 6, 높이 40 |
+| 03·04 | 앞뒤 벽 ±X | 박스, 안쪽 면 X −17.85±60, 두께 6, 높이 40 |
+| 05·06 | 손잡이 아래·위 | 기울어진 슬래브 2개(컨벡스), 가로봉 포함 |
+| 07·08 | 차축+바퀴 | 16각 프리즘(폭 97.2, 반경 18.7, 밑점이 지면) — 바닥 이음매에 덜 걸리라고 박스 대신 |
+
+짐칸 안쪽(±60×±40, 바닥 위 0~40)에는 UCX 정점이 없다(`verify_cart_a_fbx.py` 가 검사). 총 9개, 모두 닫힌 컨벡스.
+
+## 소켓
+
+FBX 의 빈 오브젝트 `SOCKET_Grip`·`SOCKET_Cargo`(메시의 자식, 회전 0) → UE 스태틱 메시 소켓 **`Grip`·`Cargo`**.
+gameplay 는 소켓 **위치**만 쓴다(짐칸 상자 축 = 메시 축). 임포트 스크립트가 회전을 0 으로 맞춘다.
+
+## 스크립트
+
+- 제작: `py -3 Tools/Blender/run_headless.py build_cart_a.py` → `cart_a.blend`·`export/SM_Cart_A.fbx`·`export/manifest.json`
+- 왕복 검증: `py -3 Tools/Blender/run_headless.py verify_cart_a_fbx.py` → `docs/asset/evidence/027-cart-physics-rebuild.json`
+- 미리보기: `py -3 Tools/Blender/run_headless.py preview_cart_a.py --blend ArtSource/item/cart_a/cart_a.blend` → `preview/{neutral,night,flashlight}.png`
+- UE 임포트(리드, 에디터 파이썬): `Tools/Unreal/import_cart_a.py` — auto_generate_collision 끔, UCX 1:1, 소켓 위치 검사,
+  Collision Complexity 가 UseSimpleAsComplex/ComplexAsSimple 이면 UseDefault 로. 증거 `027-cart-physics-imports.json`.
+- `run_headless.py` 는 `blender -b [blend] --python <script>` 로 호출한다(`blender -b <script.py>` 는 Blender 가 .py 를 blend 로 열려다 멈춘다).
+
+## manifest 키 (`export/manifest.json` `assets.cart`)
+
+`deck_height_cm`·`cargo_extent_cm`·`cargo_center_cm`·`grip_cm`·`wheel_radius_cm`·`wheel_centers_cm`·`ucx_count`·`ucx_names`·`sockets`·
+`wall_height_cm`·`handle_height_cm`·`ground_z_cm`·`cargo_clear_area_cm`·`anchors_cm`. `runtime_radius_cm` 는 뺐다.
+
+## 제작 실측 (2026-09-13)
+
+167.70×97.20×103.40cm, 6,280 tris / 3,376 vertices / 2재질(프레임·고무) / UV0. Blender FBX 왕복: 치수 오차 <0.0001cm, UCX 9 컨벡스·닫힘,
+소켓 2개 위치 일치. 중립/야간/손전등 렌더 갱신. **UE 재임포트·LOD·PIE(B4)는 리드가 한다** — 옛 011 검수 결과(자동 배율 0.59, 적재 슬롯 부착)는
+이 메시에 더 이상 해당하지 않는다.
+
+근거: [수레 기획](../../plan/data/item/cart.md), [아이템 계약](README.md), [011 검수](../iterations/011.md)(옛 메시).

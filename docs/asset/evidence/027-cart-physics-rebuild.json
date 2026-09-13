@@ -1,0 +1,266 @@
+{
+  "utc": "2026-09-12T21:50:06.827522+00:00",
+  "blender": "5.2.1 LTS",
+  "fbx": "ArtSource/item/cart_a/export/SM_Cart_A.fbx",
+  "fbx_sha256": "02400161a25285a2e9fae093430d3a9255e69be85c8dd13c9d19dff81515735e",
+  "blend_sha256": "661bb0820ee78c4af2b1add3dd0cb48e30fed854930b2b494edfc3f6534ded9f",
+  "render_mesh": {
+    "object": "SM_Cart_A",
+    "dimensions_cm": [
+      167.70001649856567,
+      97.20003008842468,
+      103.39999198913574
+    ],
+    "bounds_center_cm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_dimension_error_cm": 2.9802322387695312e-05,
+    "triangles": 6280,
+    "vertices": 3376,
+    "materials": [
+      "M_CL9_Cart_Frame",
+      "M_CL9_Cart_Rubber"
+    ],
+    "uv_layers": 1
+  },
+  "cargo": {
+    "deck_height_cm": -6.0,
+    "cargo_extent_cm": [
+      60.0,
+      40.0,
+      20.0
+    ],
+    "cargo_center_cm": [
+      -17.85,
+      0.0,
+      14.0
+    ],
+    "clear_area_cm": [
+      120.0,
+      80.0
+    ],
+    "wall_height_cm": 40.0,
+    "ucx_vertices_inside_cargo": 0
+  },
+  "handle": {
+    "grip_cm": [
+      80.15,
+      0.0,
+      48.0
+    ],
+    "handle_height_cm": 100.0
+  },
+  "wheels": {
+    "radius_cm": 18.7,
+    "centers_cm": [
+      [
+        -59.85,
+        -40.0,
+        -33.0
+      ],
+      [
+        -59.85,
+        40.0,
+        -33.0
+      ],
+      [
+        24.15,
+        -40.0,
+        -33.0
+      ],
+      [
+        24.15,
+        40.0,
+        -33.0
+      ]
+    ],
+    "ground_z_cm": -51.7
+  },
+  "ucx": [
+    {
+      "name": "UCX_SM_Cart_A_00",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        -82.35,
+        -43.5,
+        -14.0
+      ],
+      "max_cm": [
+        46.65,
+        43.5,
+        -6.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_01",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        -82.35,
+        -46.0,
+        -6.0
+      ],
+      "max_cm": [
+        46.65,
+        -40.0,
+        34.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_02",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        -82.35,
+        40.0,
+        -6.0
+      ],
+      "max_cm": [
+        46.65,
+        46.0,
+        34.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_03",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        -83.85,
+        -46.0,
+        -6.0
+      ],
+      "max_cm": [
+        -77.85,
+        46.0,
+        34.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_04",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        42.15,
+        -46.0,
+        -6.0
+      ],
+      "max_cm": [
+        48.15,
+        46.0,
+        34.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_05",
+      "vertices": 8,
+      "faces": 12,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        48.15,
+        -34.0,
+        -12.0
+      ],
+      "max_cm": [
+        70.15,
+        34.0,
+        25.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_06",
+      "vertices": 10,
+      "faces": 16,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        68.15,
+        -36.0,
+        15.0
+      ],
+      "max_cm": [
+        84.15,
+        36.0,
+        52.0
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_07",
+      "vertices": 32,
+      "faces": 60,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        -78.55,
+        -48.6,
+        -51.7
+      ],
+      "max_cm": [
+        -41.15,
+        48.6,
+        -14.3
+      ]
+    },
+    {
+      "name": "UCX_SM_Cart_A_08",
+      "vertices": 32,
+      "faces": 60,
+      "closed": true,
+      "convex": true,
+      "min_cm": [
+        5.45,
+        -48.6,
+        -51.7
+      ],
+      "max_cm": [
+        42.85,
+        48.6,
+        -14.3
+      ]
+    }
+  ],
+  "sockets": {
+    "Cargo": {
+      "location_cm_blender": [
+        -17.85,
+        0.0,
+        14.0
+      ],
+      "parent": "SM_Cart_A",
+      "rotation_deg": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "Grip": {
+      "location_cm_blender": [
+        80.15,
+        -0.0,
+        48.0
+      ],
+      "parent": "SM_Cart_A",
+      "rotation_deg": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    }
+  },
+  "axis_note": "값은 Blender 좌표(+X 손잡이/+Z 위). UE 임포트(force_front_x_axis)는 Y 부호를 뒤집는다 — 소켓 둘은 Y=0.",
+  "ue_import": "not run here — Tools/Unreal/import_cart_a.py 를 리드가 에디터에서 돌린다"
+}
