@@ -1,0 +1,54 @@
+{
+  "icons": {
+    "egg": {
+      "file": "T_Icon_egg.png",
+      "alias": "egg",
+      "source_blend": "egg_states.blend",
+      "object": "SM_Egg_Raw_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "6bce70d3e1a9ae3bcbdb0e79d7085c7517cca96e717ec8835e5d6179d3e2e917",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.15089,
+          -0.15089,
+          -0.2
+        ],
+        "bounds_max": [
+          0.15089,
+          0.15089,
+          0.2
+        ],
+        "projected_extent": 0.36874,
+        "ortho_scale": 0.41902,
+        "camera_location": [
+          0.68,
+          -0.68,
+          0.66618
+        ],
+        "vertices": 222
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 8354,
+      "opaque_box_px": [
+        18,
+        7,
+        109,
+        120
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    }
+  },
+  "utc": "2026-09-13T13:08:19.312903+00:00",
+  "blender": "5.2.1 LTS",
+  "renderer": "BLENDER_WORKBENCH flat/single white, film transparent, Standard view",
+  "purpose": "퀵슬롯 아이콘 — 흰 실루엣+알파, 색·흐림은 UI 가 한다",
+  "ue_destination": "/Game/UI/Icons/T_Icon_<alias> (Tools/Unreal/import_item_icons.py)"
+}

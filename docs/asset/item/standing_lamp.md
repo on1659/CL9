@@ -16,3 +16,11 @@
 제작 결과: 86.95×75.60×179.60cm, 1,552 tris/836 vertices, UV0/2재질.
 원본·FBX·앵커·4렌더와 UE 메시/Off·On 인스턴스 저장. [012 검수](../iterations/012.md).
 실제 장비 연결/운반/광원/충돌/2인/LOD 시각·성능은 미완료다.
+
+## 아이콘 (2026-09-13)
+
+퀵슬롯 칸용 흰 실루엣 + 알파 PNG 128×128: `icons/T_Icon_standing_lamp.png`(`SM_StandingLamp_A`). `Tools/Blender/render_item_icons.py`
+(Workbench Flat/Single 흰색, 필름 투명, 정면에서 −Y 45°·위 35° 직교 3/4 시점, 긴 변 88% — 키가 커서 세로로 꽉 차고 삼각
+받침이 아래에 보인다). RGB 전부 1, 알파만 실루엣. UE는 `Tools/Unreal/import_item_icons.py` → `/Game/UI/Icons/T_Icon_standing_lamp`
+(TextureGroup UI·NoMipmaps·sRGB·NeverStream), `ItemTable.standing_lamp.Icon` 연결은 리드가 표 행으로 적용한다.
+증거: `icons/manifest.json`, `evidence/030-item-icons.json`.

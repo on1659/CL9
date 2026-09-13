@@ -1,0 +1,333 @@
+{
+  "render": {
+    "icons": {
+      "egg": {
+        "folder": "egg_states",
+        "file": "T_Icon_egg.png",
+        "alias": "egg",
+        "source_blend": "egg_states.blend",
+        "object": "SM_Egg_Raw_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "6bce70d3e1a9ae3bcbdb0e79d7085c7517cca96e717ec8835e5d6179d3e2e917",
+        "fill_target": 0.88,
+        "opaque_pixels": 8354,
+        "opaque_box_px": [
+          18,
+          7,
+          109,
+          120
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "meat": {
+        "folder": "meat_states",
+        "file": "T_Icon_meat.png",
+        "alias": "meat",
+        "source_blend": "meat_states.blend",
+        "object": "SM_Meat_Raw_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "ade32d8852235b0d0a6c3973e1034e97c6488a4d9bd653ed51b163241d8a9ca9",
+        "fill_target": 0.88,
+        "opaque_pixels": 5690,
+        "opaque_box_px": [
+          7,
+          22,
+          120,
+          105
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "frying_pan": {
+        "folder": "cookware",
+        "file": "T_Icon_frying_pan.png",
+        "alias": "frying_pan",
+        "source_blend": "cookware.blend",
+        "object": "SM_FryingPan_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "7fff1ecde9530ee3c8b18694737eb102920d3d28bd0d1a33dfb1dcf73dfbf1e4",
+        "fill_target": 0.88,
+        "opaque_pixels": 4304,
+        "opaque_box_px": [
+          7,
+          25,
+          120,
+          102
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "pot": {
+        "folder": "cookware",
+        "file": "T_Icon_pot.png",
+        "alias": "pot",
+        "source_blend": "cookware.blend",
+        "object": "SM_Pot_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "682a1eab868c2341b9b5a8542efa0eeafefd12ff913684ff3cf1e18b4245ec9f",
+        "fill_target": 0.88,
+        "opaque_pixels": 8276,
+        "opaque_box_px": [
+          7,
+          15,
+          120,
+          112
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "flashlight": {
+        "folder": "portable_lights",
+        "file": "T_Icon_flashlight.png",
+        "alias": "flashlight",
+        "source_blend": "portable_lights.blend",
+        "object": "SM_Flashlight_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "1eb5a773d6badcae74833cc61d04bd120a892f750b213110f68afb31b579c9b4",
+        "fill_target": 0.88,
+        "opaque_pixels": 4690,
+        "opaque_box_px": [
+          7,
+          21,
+          120,
+          106
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "headlamp": {
+        "folder": "portable_lights",
+        "file": "T_Icon_headlamp.png",
+        "alias": "headlamp",
+        "source_blend": "portable_lights.blend",
+        "object": "SM_Headlamp_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "4d2b020a3407fe44064a50bb2775df294a98536bedf5d99b6b09595681e8ea72",
+        "fill_target": 0.88,
+        "opaque_pixels": 6556,
+        "opaque_box_px": [
+          7,
+          25,
+          120,
+          102
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      },
+      "standing_lamp": {
+        "folder": "standing_lamp_a",
+        "file": "T_Icon_standing_lamp.png",
+        "alias": "standing_lamp",
+        "source_blend": "standing_lamp_a.blend",
+        "object": "SM_StandingLamp_A",
+        "size": [
+          128,
+          128
+        ],
+        "png_sha256": "af954e9463cbffed8080364edb2b1bfe4d16fbb47a1375459aeabaafd2e2b0ab",
+        "fill_target": 0.88,
+        "opaque_pixels": 1460,
+        "opaque_box_px": [
+          36,
+          7,
+          91,
+          120
+        ],
+        "fill_ratio": 0.8906,
+        "min_rgb": 1.0,
+        "min_rgb_before_force": 0.0,
+        "camera_azimuth_deg": -45,
+        "camera_elevation_deg": 35
+      }
+    },
+    "utc": "2026-09-13T13:10:16.030635+00:00",
+    "blender": "5.2.1 LTS",
+    "size": [
+      128,
+      128
+    ],
+    "fill_target": 0.88,
+    "spec": "Workbench Flat/Single 흰색·필름 투명·Standard 뷰·직교 3/4 위 시점, 모든 픽셀 RGB=1·알파만 실루엣",
+    "excluded": [
+      "cart"
+    ]
+  },
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "utc": "2026-09-13T13:43:16.644190+00:00",
+    "folder": "/Game/UI/Icons",
+    "icons": [
+      {
+        "alias": "frying_pan",
+        "path": "/Game/UI/Icons/T_Icon_frying_pan.T_Icon_frying_pan",
+        "source": "ArtSource/item/cookware/icons/T_Icon_frying_pan.png",
+        "source_sha256": "7fff1ecde9530ee3c8b18694737eb102920d3d28bd0d1a33dfb1dcf73dfbf1e4",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 4304
+      },
+      {
+        "alias": "pot",
+        "path": "/Game/UI/Icons/T_Icon_pot.T_Icon_pot",
+        "source": "ArtSource/item/cookware/icons/T_Icon_pot.png",
+        "source_sha256": "682a1eab868c2341b9b5a8542efa0eeafefd12ff913684ff3cf1e18b4245ec9f",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 8276
+      },
+      {
+        "alias": "egg",
+        "path": "/Game/UI/Icons/T_Icon_egg.T_Icon_egg",
+        "source": "ArtSource/item/egg_states/icons/T_Icon_egg.png",
+        "source_sha256": "6bce70d3e1a9ae3bcbdb0e79d7085c7517cca96e717ec8835e5d6179d3e2e917",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 8354
+      },
+      {
+        "alias": "meat",
+        "path": "/Game/UI/Icons/T_Icon_meat.T_Icon_meat",
+        "source": "ArtSource/item/meat_states/icons/T_Icon_meat.png",
+        "source_sha256": "ade32d8852235b0d0a6c3973e1034e97c6488a4d9bd653ed51b163241d8a9ca9",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 5690
+      },
+      {
+        "alias": "flashlight",
+        "path": "/Game/UI/Icons/T_Icon_flashlight.T_Icon_flashlight",
+        "source": "ArtSource/item/portable_lights/icons/T_Icon_flashlight.png",
+        "source_sha256": "1eb5a773d6badcae74833cc61d04bd120a892f750b213110f68afb31b579c9b4",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 4690
+      },
+      {
+        "alias": "headlamp",
+        "path": "/Game/UI/Icons/T_Icon_headlamp.T_Icon_headlamp",
+        "source": "ArtSource/item/portable_lights/icons/T_Icon_headlamp.png",
+        "source_sha256": "4d2b020a3407fe44064a50bb2775df294a98536bedf5d99b6b09595681e8ea72",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 6556
+      },
+      {
+        "alias": "standing_lamp",
+        "path": "/Game/UI/Icons/T_Icon_standing_lamp.T_Icon_standing_lamp",
+        "source": "ArtSource/item/standing_lamp_a/icons/T_Icon_standing_lamp.png",
+        "source_sha256": "af954e9463cbffed8080364edb2b1bfe4d16fbb47a1375459aeabaafd2e2b0ab",
+        "size": [
+          128,
+          128
+        ],
+        "reimported": false,
+        "existed": false,
+        "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+        "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+        "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+        "srgb": true,
+        "never_stream": true,
+        "fill_ratio": 0.8906,
+        "opaque_pixels": 1460
+      }
+    ],
+    "table_rows": "ItemTable.<alias>[.<sub>].Icon 은 리드가 보고서 표 행대로 적용 — 이 스크립트는 텍스처만 만든다"
+  }
+}

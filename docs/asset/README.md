@@ -36,6 +36,7 @@ ArtSource/<monster|item|map|character>/<asset_id>/
   <asset_id>.blend
   textures/                 # 원본 및 베이크 이미지
   export/                   # 실제 납품 FBX·텍스처
+  icons/                    # 아이템만: 퀵슬롯 아이콘 T_Icon_<alias>.png — 흰 실루엣+알파 128×128(RGB 전부 1, 색·흐림은 UI), 직교 3/4 위 시점, 긴 변 88%; Tools/Blender/render_item_icons.py → UE /Game/UI/Icons/T_Icon_<alias>
   preview/                  # 정면·측면·3/4·동작 영상
 docs/asset/<분류>/<asset_id>.md  # 제작 카드·검수 결과
 Tools/Blender/              # 재실행 가능한 제작/검사 스크립트

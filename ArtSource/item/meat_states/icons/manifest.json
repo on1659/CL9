@@ -1,0 +1,54 @@
+{
+  "icons": {
+    "meat": {
+      "file": "T_Icon_meat.png",
+      "alias": "meat",
+      "source_blend": "meat_states.blend",
+      "object": "SM_Meat_Raw_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "ade32d8852235b0d0a6c3973e1034e97c6488a4d9bd653ed51b163241d8a9ca9",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.3355,
+          -0.173,
+          -0.17
+        ],
+        "bounds_max": [
+          0.3355,
+          0.173,
+          0.17
+        ],
+        "projected_extent": 0.55096,
+        "ortho_scale": 0.62609,
+        "camera_location": [
+          0.94363,
+          -0.95183,
+          0.97295
+        ],
+        "vertices": 1506
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 5690,
+      "opaque_box_px": [
+        7,
+        22,
+        120,
+        105
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    }
+  },
+  "utc": "2026-09-13T13:08:19.313445+00:00",
+  "blender": "5.2.1 LTS",
+  "renderer": "BLENDER_WORKBENCH flat/single white, film transparent, Standard view",
+  "purpose": "퀵슬롯 아이콘 — 흰 실루엣+알파, 색·흐림은 UI 가 한다",
+  "ue_destination": "/Game/UI/Icons/T_Icon_<alias> (Tools/Unreal/import_item_icons.py)"
+}

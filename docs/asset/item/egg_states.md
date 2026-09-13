@@ -24,3 +24,12 @@
 균열 리본의 긴 면이 껍데기에 파묻히는 현상을 실제 메시 면 투영과 세분화로 수정했다.
 broken은 내부와 내용물 구분을 위해 3슬롯을 사용한다. 1,228 tris이며 동시 노출 성능 검수 전까지
 예외로 기록한다. 다른 상태는 1~2슬롯이다. cooked/broken은 비대칭 bounds이므로 UE 자동 배율 검수가 남는다.
+
+## 아이콘 (2026-09-13)
+
+퀵슬롯 칸용 흰 실루엣 + 알파 PNG 128×128: `icons/T_Icon_egg.png`. raw(`SM_Egg_Raw_A`) 하나만 렌더한다 — 다섯 상태의
+바깥 실루엣이 같아서 cooked·burnt·cracked·broken 행도 같은 텍스처를 쓴다. `Tools/Blender/render_item_icons.py`
+(Workbench Flat/Single 흰색, 필름 투명, 정면에서 −Y 45°·위 35° 직교 3/4 시점, 긴 변이 프레임 88%). 색·흐림은 UI가
+하므로 RGB는 전부 1이고 알파만 실루엣이다. UE는 `Tools/Unreal/import_item_icons.py` → `/Game/UI/Icons/T_Icon_egg`
+(TextureGroup UI·NoMipmaps·sRGB·NeverStream), `ItemTable.egg[.sub].Icon` 연결은 리드가 표 행으로 적용한다.
+증거: `icons/manifest.json`(sha·채움 비율), `evidence/030-item-icons.json`.

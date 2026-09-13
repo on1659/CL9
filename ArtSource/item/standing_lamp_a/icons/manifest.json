@@ -1,0 +1,54 @@
+{
+  "icons": {
+    "standing_lamp": {
+      "file": "T_Icon_standing_lamp.png",
+      "alias": "standing_lamp",
+      "source_blend": "standing_lamp_a.blend",
+      "object": "SM_StandingLamp_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "af954e9463cbffed8080364edb2b1bfe4d16fbb47a1375459aeabaafd2e2b0ab",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.43477,
+          -0.37799,
+          -0.898
+        ],
+        "bounds_max": [
+          0.43477,
+          0.37799,
+          0.898
+        ],
+        "projected_extent": 1.7724,
+        "ortho_scale": 2.0141,
+        "camera_location": [
+          2.44422,
+          -2.63064,
+          2.31557
+        ],
+        "vertices": 836
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 1460,
+      "opaque_box_px": [
+        36,
+        7,
+        91,
+        120
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    }
+  },
+  "utc": "2026-09-13T13:08:19.315293+00:00",
+  "blender": "5.2.1 LTS",
+  "renderer": "BLENDER_WORKBENCH flat/single white, film transparent, Standard view",
+  "purpose": "퀵슬롯 아이콘 — 흰 실루엣+알파, 색·흐림은 UI 가 한다",
+  "ue_destination": "/Game/UI/Icons/T_Icon_<alias> (Tools/Unreal/import_item_icons.py)"
+}

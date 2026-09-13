@@ -18,3 +18,11 @@
 원본/FBX/중립·야간·손전등과 UE 크기/재질/LOD3 생성 확인.
 팬의 실제 1월드 줍기·놓기·던지기 상태/부착 통과. 바닥 간격26.022cm는 미통과로 유지한다.
 그립/2인/LOD 시각/성능과 냄비 데이터 연결은 미완료. 팬의 임시 데이터 연결은 원복했다.
+
+## 아이콘 (2026-09-13)
+
+퀵슬롯 칸용 흰 실루엣 + 알파 PNG 128×128: `icons/T_Icon_frying_pan.png`(`SM_FryingPan_A`), `icons/T_Icon_pot.png`(`SM_Pot_A`).
+`Tools/Blender/render_item_icons.py`(Workbench Flat/Single 흰색, 필름 투명, 정면에서 −Y 45°·위 35° 직교 3/4 시점 — 팬은
+그릇과 손잡이가 대각선으로, 냄비는 양쪽 고리가 보인다, 긴 변 88%). RGB 전부 1, 알파만 실루엣. UE는
+`Tools/Unreal/import_item_icons.py` → `/Game/UI/Icons/T_Icon_frying_pan`·`T_Icon_pot`(TextureGroup UI·NoMipmaps·sRGB·NeverStream),
+`ItemTable.frying_pan.Icon`·`ItemTable.pot.Icon` 연결은 리드가 표 행으로 적용한다. 증거: `icons/manifest.json`, `evidence/030-item-icons.json`.

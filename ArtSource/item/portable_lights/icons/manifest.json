@@ -1,0 +1,99 @@
+{
+  "icons": {
+    "flashlight": {
+      "file": "T_Icon_flashlight.png",
+      "alias": "flashlight",
+      "source_blend": "portable_lights.blend",
+      "object": "SM_Flashlight_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "1eb5a773d6badcae74833cc61d04bd120a892f750b213110f68afb31b579c9b4",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.132,
+          -0.052,
+          -0.052
+        ],
+        "bounds_max": [
+          0.132,
+          0.052,
+          0.052
+        ],
+        "projected_extent": 0.24042,
+        "ortho_scale": 0.2732,
+        "camera_location": [
+          0.35646,
+          -0.34946,
+          0.34088
+        ],
+        "vertices": 792
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 4690,
+      "opaque_box_px": [
+        7,
+        21,
+        120,
+        106
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    },
+    "headlamp": {
+      "file": "T_Icon_headlamp.png",
+      "alias": "headlamp",
+      "source_blend": "portable_lights.blend",
+      "object": "SM_Headlamp_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "4d2b020a3407fe44064a50bb2775df294a98536bedf5d99b6b09595681e8ea72",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.1525,
+          -0.122,
+          -0.06065
+        ],
+        "bounds_max": [
+          0.1525,
+          0.122,
+          0.06065
+        ],
+        "projected_extent": 0.27337,
+        "ortho_scale": 0.31065,
+        "camera_location": [
+          0.47799,
+          -0.48479,
+          0.45386
+        ],
+        "vertices": 1444
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 6556,
+      "opaque_box_px": [
+        7,
+        25,
+        120,
+        102
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    }
+  },
+  "utc": "2026-09-13T13:10:16.030039+00:00",
+  "blender": "5.2.1 LTS",
+  "renderer": "BLENDER_WORKBENCH flat/single white, film transparent, Standard view",
+  "purpose": "퀵슬롯 아이콘 — 흰 실루엣+알파, 색·흐림은 UI 가 한다",
+  "ue_destination": "/Game/UI/Icons/T_Icon_<alias> (Tools/Unreal/import_item_icons.py)"
+}

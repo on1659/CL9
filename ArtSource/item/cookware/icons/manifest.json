@@ -1,0 +1,99 @@
+{
+  "icons": {
+    "frying_pan": {
+      "file": "T_Icon_frying_pan.png",
+      "alias": "frying_pan",
+      "source_blend": "cookware.blend",
+      "object": "SM_FryingPan_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "7fff1ecde9530ee3c8b18694737eb102920d3d28bd0d1a33dfb1dcf73dfbf1e4",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.301,
+          -0.175,
+          -0.04025
+        ],
+        "bounds_max": [
+          0.301,
+          0.175,
+          0.04025
+        ],
+        "projected_extent": 0.48356,
+        "ortho_scale": 0.5495,
+        "camera_location": [
+          0.82946,
+          -0.7979,
+          0.80087
+        ],
+        "vertices": 568
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 4304,
+      "opaque_box_px": [
+        7,
+        25,
+        120,
+        102
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    },
+    "pot": {
+      "file": "T_Icon_pot.png",
+      "alias": "pot",
+      "source_blend": "cookware.blend",
+      "object": "SM_Pot_A",
+      "size": [
+        128,
+        128
+      ],
+      "png_sha256": "682a1eab868c2341b9b5a8542efa0eeafefd12ff913684ff3cf1e18b4245ec9f",
+      "camera": {
+        "azimuth_deg": -45,
+        "elevation_deg": 35,
+        "projection": "ORTHO",
+        "bounds_min": [
+          -0.184,
+          -0.265,
+          -0.13
+        ],
+        "bounds_max": [
+          0.184,
+          0.265,
+          0.13
+        ],
+        "projected_extent": 0.46222,
+        "ortho_scale": 0.52525,
+        "camera_location": [
+          0.80217,
+          -0.80217,
+          0.8055
+        ],
+        "vertices": 912
+      },
+      "fill_target": 0.88,
+      "opaque_pixels": 8276,
+      "opaque_box_px": [
+        7,
+        15,
+        120,
+        112
+      ],
+      "fill_ratio": 0.8906,
+      "min_rgb": 1.0,
+      "min_rgb_before_force": 0.0
+    }
+  },
+  "utc": "2026-09-13T13:08:19.314103+00:00",
+  "blender": "5.2.1 LTS",
+  "renderer": "BLENDER_WORKBENCH flat/single white, film transparent, Standard view",
+  "purpose": "퀵슬롯 아이콘 — 흰 실루엣+알파, 색·흐림은 UI 가 한다",
+  "ue_destination": "/Game/UI/Icons/T_Icon_<alias> (Tools/Unreal/import_item_icons.py)"
+}

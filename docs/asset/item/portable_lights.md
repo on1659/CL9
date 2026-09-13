@@ -19,3 +19,11 @@
 최종 cm/자동 배율은 해당 기록과 manifest에 있다. 중립/야간/손전등/헬멧 내부 확인.
 실제 1월드 줍기/착용/조명 토글 상태와 부착은 통과했다. 화면 간섭/빔/정전/2인/바닥/LOD는 미완료.
 검수 뒤 실제 두 행은 원래 메시로 복구했다. 원본을 재생성하지 않는다.
+
+## 아이콘 (2026-09-13)
+
+퀵슬롯 칸용 흰 실루엣 + 알파 PNG 128×128: `icons/T_Icon_flashlight.png`(`SM_Flashlight_A`), `icons/T_Icon_headlamp.png`(`SM_Headlamp_A`).
+`Tools/Blender/render_item_icons.py`(Workbench Flat/Single 흰색, 필름 투명, 정면(+X 렌즈)에서 −Y 45°·위 35° 직교 3/4 시점,
+긴 변 88%). 헤드램프는 헬멧 돔 위에 램프가 튀어나온 실루엣이다. RGB 전부 1, 알파만 실루엣. UE는
+`Tools/Unreal/import_item_icons.py` → `/Game/UI/Icons/T_Icon_flashlight`·`T_Icon_headlamp`(TextureGroup UI·NoMipmaps·sRGB·NeverStream),
+`ItemTable.flashlight.Icon`·`ItemTable.headlamp.Icon` 연결은 리드가 표 행으로 적용한다. 증거: `icons/manifest.json`, `evidence/030-item-icons.json`.

@@ -16,3 +16,11 @@
 각2,992 tris/1재질. UE 실표시 약59.76×30.82×30.28cm, 상태 간 동일 배율.
 중립·야간·손전등 확인. 구체 충돌 하단과 메시 하단14.859cm 차이로 바닥 표현 미통과.
 임시 데이터 연결은 검수 후 복구했으며, 실제 요리/운반과 2인 PIE는 아직 검수하지 않았다.
+
+## 아이콘 (2026-09-13)
+
+퀵슬롯 칸용 흰 실루엣 + 알파 PNG 128×128: `icons/T_Icon_meat.png`. raw(`SM_Meat_Raw_A`) 하나만 렌더하고
+cooked·burnt 행도 같은 텍스처를 쓴다(3상태 바운드·실루엣 동일). `Tools/Blender/render_item_icons.py`(Workbench
+Flat/Single 흰색, 필름 투명, 직교 3/4 위 시점, 긴 변 88%). RGB 전부 1, 알파만 실루엣. UE는
+`Tools/Unreal/import_item_icons.py` → `/Game/UI/Icons/T_Icon_meat`(TextureGroup UI·NoMipmaps·sRGB·NeverStream),
+`ItemTable.meat[.sub].Icon` 연결은 리드가 표 행으로 적용한다. 증거: `icons/manifest.json`, `evidence/030-item-icons.json`.
