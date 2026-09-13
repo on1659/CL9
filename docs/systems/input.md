@@ -1,6 +1,6 @@
 # 입력 시스템 (Enhanced Input)
 
-> 조작의 "무엇"은 plan이 이미 정의했다 (줍기·던지기 차징·품 교체·손전등·점프 —
+> 조작의 "무엇"은 plan이 이미 정의했다 (줍기·놓기·던지기 차징·핫바 칸 전환·손전등·점프 —
 > [../plan/data/rules.md](../plan/data/rules.md)). 이 문서는 그것을 **Enhanced Input
 > (IMC + Input Action)**으로 어떻게 구현하는지와, 상호작용 공통 틀을 정의한다.
 
@@ -16,7 +16,7 @@
 
 | IMC | 언제 활성 | 담는 것 |
 |---|---|---|
-| `IMC_Gameplay` | 폰 빙의 중 (기본) | 이동·시점·달리기·점프·줍기/놓기·던지기·품 교체·손전등·상호작용 |
+| `IMC_Gameplay` | 폰 빙의 중 (기본) | 이동·시점·달리기·점프·줍기·놓기/던지기·핫바 칸 전환·손전등·상호작용 |
 | `IMC_UI` | 전면 화면 열림 (`WBP_Main.ShowScreen ≠ None`) | 메뉴 탐색·닫기 — Gameplay보다 우선 |
 | `IMC_Spectate` | 사망 후 관전 (`ACL9PlayerController.SpectateMappingContext`, 우선순위 5 — `bSpectating` OnRep이 관전 화면과 함께 붙였다 뗀다. DefaultMappingContexts에 넣지 않는다) | 관전 대상 전환·(밤 종료 대기). 시점은 동료 1인칭 승계라 별도 Look 없음 |
 
@@ -32,36 +32,45 @@
 | `IA_Look` | Axis2D | 시점 | 로컬 |
 | `IA_Run` | Hold | 달리기 — 스태미나 소모, `FSavedMove`에 실림 | CMC 예측 |
 | `IA_Jump` | Pressed | 점프 — 낮은 장애물 통과용. 거리·감각 판정은 평면 기준 (rules.md) | CMC |
-| `IA_PickPlace` | Pressed | 줍기 (빈손) / 놓기 (든 상태) / 컨텍스트 상호작용(반납·트럭 패널·창구 — 별도 `IA_Interact`는 없다, 아래 공통 틀) | Server RPC |
-| `IA_Use` | Started/Completed | **좌클 = 든 아이템 사용** (2026-09-12) — **탭**(0.4초 안에 뗌)은 행의 `UseAction`(`ToggleLight` 손전등 켜고 끄기 / `Swing` 정면 휘두르기 → 몬스터 `OnStrike(HitDamage, HitStun)` / `None` 무동작), **길게 누르기**(0.4초 문턱, 로컬 타이머)는 `ItemType == Dish`면 먹기. 닭다리처럼 먹을 수도 휘두를 수도 있는 것을 한 키로 가르는 규칙(사용자: "길게 누르면 먹기, 짧게 누르면 휘두르기"). 빈손은 무동작 — 옛 빈손 밀치기는 프라이팬 행(`Swing`+`Push`)이 이어받았다 | Server RPC (`Server_Use(bHold)` → `HostEat`/`ToggleLight`/`HostSwing`) |
-| `IA_Throw` | Pressed(Started/Completed) | 던지기 차징(**G**, 2026-09-12 좌클에서 이동) — 누른 시간 0~`ThrowChargeTime`(0.85s) → `ThrowMin~MaxSpeed`. **Hold 트리거 금지** — 임계 전에 떼면 Canceled가 떠서 짧은 던지기가 먹힌다 | Server RPC (아래) |
-| `IA_Swap` | Pressed | 손↔품 교체 — `SwapTime` 1.2s 잠금 | Server RPC |
+| `IA_PickPlace` | Pressed | 줍기(활성 칸이 비었으면 활성 칸, 아니면 첫 빈 칸 — 꽉 차거나 잠기면 프롬프트도 안 뜨고 무시) / 착용(Head) / 컨텍스트 상호작용(반납·트럭 패널·창구·수레 — 별도 `IA_Interact`는 없다, 아래 공통 틀) / 미는 수레 놓기. **아이템 놓기는 아니다** — 그건 `IA_Drop`(2026-09-13) | Server RPC |
+| `IA_Use` | Started/Completed | **좌클 = 든 아이템 사용** — 행의 `UseAction`이 정한다(2026-09-13 리썰 삽 방식). `Swing`(프라이팬 등): **누르면 공격 대기**(Started → `Server_UseStart`, 대기 자세 루프 — 시간 제한 없음), **떼면 타격**(Completed → `Server_UseRelease` → 몬스터 `OnStrike(HitDamage, HitStun)`). 평범하게 딸깍 누르면 평범한 한 방, 누르고 있으면 타이밍을 고른다 — 데미지·사거리는 대기 시간과 무관하게 항상 같다. `ToggleLight`(손전등): Started에 **즉시 켜고 끈다**, 대기 없음. `None`: 무동작. **먹기가 아니다** — 먹기는 `IA_Scan` 길게(아래). 빈손은 무동작 — 옛 빈손 밀치기는 프라이팬 행(`Swing`+`Push`)이 이어받았다 | Server RPC (`Server_UseStart`/`Server_UseRelease` → `ToggleLight`/`HostSwing`) |
+| `IA_Drop` | Started/Completed | **G = 놓기, 달리기 키 + G = 던지기 차징** (2026-09-13 — `IA_Throw` 폐기). Started에 달리기 키(`bRunHeld`)가 눌려 있으면 `Server_ThrowChargeStart`, 아니면 `Server_Drop`(활성 칸의 것을 캡슐 앞 `CarryHeight`에 놓고 그 칸을 비운다 — 활성 칸 번호는 그대로). Completed는 차징 중이었을 때만 `Server_ThrowRelease`. 차징은 누른 시간 0~`ThrowChargeTime`(0.85s) → `ThrowMin~MaxSpeed`. **Hold 트리거 금지** — 임계 전에 떼면 Canceled가 떠서 짧은 던지기가 먹힌다 | Server RPC (아래) |
+| `IA_Slot1`~`IA_Slot4` | Pressed | 핫바 그 번호 칸을 손에 든다(절대 번호 → `Server_SelectSlot(n)`). 빈 칸도 고를 수 있다 = 빈손. `BP_CL9Character.SlotActions` 배열 순서가 칸 번호다 | Server RPC |
+| `IA_SlotScroll` | Axis1D(Triggered) | 마우스 휠 — **아래(−) = 다음 칸, 위(+) = 이전 칸**, 순환, 한 노치 한 칸(부호만 보고 로컬 디바운스 `SlotScrollDebounce` 0.1초로 겹침을 거른다). 목표 칸을 클라가 계산하지 않고 `Server_ScrollSlot(±1)`로 호스트가 자기 `ActiveSlot`에서 옮긴다. IMC 행에 **Negate 모디파이어를 넣지 않는다**(위가 +). **리바인딩 대상 아님** — 행 `IgnoreSettings` | Server RPC |
 | `IA_Flashlight` | Pressed | **쓴 헤드램프** 켜기/끄기 — 손전등은 `IA_Use`(좌클)가 켠다 (2026-09-12; [light.md](light.md) · [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md)) | Server RPC (아이템 상태 Replicated) |
 | `IA_Skip` | Pressed | 시퀀스 로컬 스킵 (`bSkippable`) — **에셋 미생성** (시퀀스 시스템과 함께) | 로컬 |
 | `IA_Pause` | Pressed | 메뉴 화면 (게임은 멈추지 않는다 — 온라인이라 멈춤 자체가 없다) | 로컬 |
 | `IA_SpectateNext` | Pressed | 관전 대상 전환 — `ACL9PlayerController.SpectateNextAction` → `SpectateNext()` (관전 화면 버튼도 같은 함수) | Server RPC (호스트가 다음 생존자로 뷰 타깃 교체) |
-| `IA_Scan` | Pressed | 우클릭 스캔 — 시야 안 아이템에 이름·가격 라벨을 잠깐 띄우는 표현 (`ACL9PlayerController.ScanAction` → `OnScanRequested` → HUD, [ui.md](ui.md) 스캔) | 로컬 (판정 없음) |
+| `IA_Scan` | Started/Completed | **우클릭 — 탭은 스캔, 길게는 먹기** (2026-09-13). 바인딩은 **캐릭터**(`BP_CL9Character.ScanAction`)가 갖는다 — 컨트롤러가 갖던 `ScanAction`은 뗐다. `CL9Rules.UseHoldTime`(0.4초) 안에 떼면 `ACL9PlayerController::RequestScan()`(시야 안 아이템에 이름·가격 라벨을 잠깐 띄우는 표현 — [ui.md](ui.md) 스캔, 판정 없음), 그보다 길게 누르면 활성 칸이 `ItemType == Dish`일 때 `Server_Eat` — 먹기. 리썰의 우클릭처럼 "보기"에 가까운 키에 먹기를 얹은 것이라 좌클(타격)과 섞이지 않는다 | 탭: 로컬 · 길게: Server RPC (`Server_Eat` → `HostEat`) |
 
-**기본 키 배치** (시점·게임패드 빼고 전부 리바인딩 가능 — 아래 리바인딩 절):
-WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호작용/줍기·놓기** ·
-**마우스좌 사용**(탭: 손전등 켜기·휘두르기 — 행이 정함 / 길게: 먹기) · **마우스우 스캔**(시야 안 아이템 라벨) · R 품 교체 · F 헤드램프 ·
-**G 던지기 차징** · **M 메뉴 열기·닫기** · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate)
+**기본 키 배치** (시점·휠·게임패드 빼고 전부 리바인딩 가능 — 아래 리바인딩 절):
+WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호작용/줍기** · **G 놓기** ·
+**달리기 키+G 던지기 차징**(조합 고정 — G를 바꾸면 던지기도 따라간다) · **1~4 / 마우스 휠 핫바 칸 전환**(휠 아래 = 다음 칸) ·
+**마우스좌 사용**(누르면 공격 대기·떼면 타격 — 프라이팬 / 손전등은 누르는 즉시 켜고 끄기 — 행이 정함) ·
+**마우스우 스캔/먹기**(탭: 시야 안 아이템 라벨 / `UseHoldTime` 0.4초 길게: 든 요리 먹기) · F 헤드램프 ·
+**M 메뉴 열기·닫기** · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate).
+R은 비어 있다 — 옛 품 교체(`IA_Swap`)가 2026-09-13 핫바로 대체되며 사라졌다.
 (2026-09-05: 이 화면을 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
 PIE 정지 키와 겹쳐 에디터가 꺼진다. IMC_Gameplay·IMC_UI 모두 M→IA_Pause 한 행, Esc 행 없음).
 
 ## 던지기 차징 — 시간 판정은 호스트가
 
 ```
-클라: IA_Throw Started → Server_ThrowChargeStart()   // 호스트가 시작 시각 기록
+클라: IA_Drop Started (달리기 키 눌린 채) → Server_ThrowChargeStart()   // 호스트가 시작 시각 기록
 클라: 차징 게이지 표시 (로컬 예측 — ui.md)
-클라: IA_Throw Completed → Server_ThrowRelease()
+클라: IA_Drop Completed → Server_ThrowRelease()
 호스트: 경과 시간 = 자기 시계 기준 → 속도 계산 → 던짐 판정
 ```
 
+- **키 조합은 파생 규칙이다** (2026-09-13): `IA_Throw`라는 액션이 따로 없다. `DropStartInput`이 달리기 키가
+  눌려 있는지(`bRunHeld` — `RunInputStart/End`가 기록)로 놓기와 차징을 가르고, 달리기 키 없이 G만 누르면 즉시
+  놓는다. 차징 중 달리기 키를 먼저 떼도 차징은 유지되고 G를 뗄 때 던진다. 그래서 설정 화면에는 "놓기" 행만
+  있고 던지기는 그 키를 따라간다 — 던지기만 다른 키로 옮길 수는 없다.
 - 차징량을 클라가 보내지 않는다 — 클라 값(치팅·시계 조작)을 판정에 쓰지 않는다.
 - 로컬 게이지와 실제 결과의 오차는 지연 한 틱 수준 — 허용.
-- `SwapTime` 잠금 중 던지기·줍기·교체 입력은 **호스트 판정에서 거부**한다
-  (PlayerState.SwapLockUntil). 입력 자체를 클라에서 막는 건 표시용 보조일 뿐, 관문이 아니다.
+- 두 손(`HoldPose == Large`) 아이템을 든 채·수레를 미는 중에는 칸 전환·줍기 입력을 **호스트 판정에서 거부**한다
+  (`ACL9Character::CanSwitchSlot()` — 놓기·던지기는 허용, 놓아야 풀린다). 입력 자체를 클라에서 막는 건
+  표시용 보조일 뿐, 관문이 아니다. 잠금 시간(`SwapTime`)은 없다.
 
 ## 상호작용 공통 틀
 
@@ -100,9 +109,9 @@ class ICL9Interactable {
 
 | 대상 | 설정 위치 | 매핑 이름(`Name`) | 표시 이름(`DisplayName`) |
 |---|---|---|---|
-| `IA_Jump` `IA_Run` `IA_PickPlace` `IA_Throw` `IA_Use` `IA_Swap` `IA_Flashlight` `IA_Scan` `IA_Pause` `IA_SpectateNext` | IA 에셋의 `PlayerMappableKeySettings` (IMC 행은 `InheritSettingsFromAction`) | IA 이름에서 `IA_`를 뗀 것 (`Jump`…) | String Table `Input.<Name>.Name` |
+| `IA_Jump` `IA_Run` `IA_PickPlace` `IA_Drop` `IA_Slot1`~`IA_Slot4` `IA_Use` `IA_Flashlight` `IA_Scan` `IA_Pause` `IA_SpectateNext` | IA 에셋의 `PlayerMappableKeySettings` (IMC 행은 `InheritSettingsFromAction`) | IA 이름에서 `IA_`를 뗀 것 (`Jump` `Drop` `Slot1`…) | String Table `Input.<Name>.Name` (`Input.Drop.Name` "놓기", `Input.Slot1.Name` "1번 칸"…) |
 | `IA_Move` | `IMC_Gameplay`의 W/S/A/D 행마다 `OverrideSettings` | `MoveForward` `MoveBack` `MoveLeft` `MoveRight` | `Input.MoveForward.Name` … |
-| `IA_Look`, 게임패드 행(`Gamepad_*`) | 액션에 설정 없음 / 행 `IgnoreSettings` | — | 대상 아님 |
+| `IA_Look`, `IA_SlotScroll`(마우스 휠), 게임패드 행(`Gamepad_*`) | 액션에 설정 없음 / 행 `IgnoreSettings` | — | 대상 아님 — 설정 화면에 행이 뜨지 않고, 캡처도 휠을 거부하므로 다른 동작에 휠을 넣을 수도 없다 |
 
 - **`Name`은 전부 고유해야 한다** — 비우면 `NAME_None` 행 하나로 합쳐진다(에디터 검증 없음).
 - 게임패드 행을 `IgnoreSettings`로 두는 이유: 액션 설정을 상속하면 같은 행에 들어가고, 하드웨어 판별이 항상
@@ -181,7 +190,7 @@ UserSettings->RegisterInputMappingContexts({IMC_Gameplay, IMC_UI, IMC_Spectate})
 | 입력 | 경로 |
 |---|---|
 | 이동·달리기·점프 | 커스텀 CMC + `FSavedMove` 예측 (1d 스텝) |
-| 줍기·놓기·던지기·교체·손전등·상호작용 | **캐릭터(소유 액터)의 Server RPC** → 호스트 판정 → 대상 액터 함수 호출 → Replicated 결과 |
+| 줍기·놓기·던지기·핫바 칸 전환·손전등·상호작용 | **캐릭터(소유 액터)의 Server RPC** → 호스트 판정 → 대상 액터 함수 호출 → Replicated 결과 |
 | 시점·스킵·메뉴·UI | 로컬 전용 |
 
 ## 참고

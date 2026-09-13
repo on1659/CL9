@@ -10,7 +10,7 @@
 ```
 WBP_Main (UCL9MainWidget)        ← 뷰포트에 붙는 유일한 위젯 (로컬 전용)
   ├─ HUD 레이어                   디자이너에 직접 배치 — 항상 표시
-  │                               (밤 시계 · 이더 · 짐 슬롯 · 주문 · 상호작용 프롬프트)
+  │                               (밤 시계 · 이더 · 핫바 · 주문 · 상호작용 프롬프트)
   ├─ Layer_Screen (CanvasPanel)   전면 화면 — **배타** (하나 열면 이전 것이 닫힌다)
   └─ Layer_Popup  (CanvasPanel)   중첩 허용 (확인 대화상자·토스트가 생기면 여기)
 
@@ -96,7 +96,7 @@ public:
   `OpenWidget(OrderSelect)`, 비면 `CloseWidget`. 관전 화면을 PlayerController의 `bSpectating` OnRep이 여는
   것과 같은 원칙(열려 있어야 할 Screen = 상태의 함수)이고, HUD는 항상 떠 있어 GameState 델리게이트를
   이미 받고 있어서 거기 둔다. 화면 자신은 열고 닫지 않는다.
-- **스캔은 로컬 표현이고 Popup 레이어의 첫 사용자다** — `ACL9PlayerController::ScanInput`(IA_Scan)이
+- **스캔은 로컬 표현이고 Popup 레이어의 첫 사용자다** — `ACL9PlayerController::RequestScan()`(캐릭터가 IA_Scan 탭에 부른다 — input.md)이
   `OpenWidget(Scan)`을 부르면 UI 표의 Popup 행 `Scan`(`WBP_Scan`, `UCL9ScanWidget`)이 하나 열린다. 그 위젯이
   열리는 순간 화면에 보이는 액터 중 `ScanKinds`(`ECL9ActorKind` 목록, 기본 아이템만)에 든 종류를 모으고, 파동 링을 키우며 자기 `LabelLayer`에 `WBP_ScanLabel`을 개별로
   붙인다(개수 제한 없음). 파동과 라벨이 다 끝나면 `CloseSelf()`로 닫히고 라벨도 함께 사라진다. 우클릭을

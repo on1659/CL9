@@ -104,10 +104,7 @@ void ACL9PlayerController::SetupInputComponent()
 		{
 			EnhancedInput->BindAction(PauseAction, ETriggerEvent::Started, this, &ACL9PlayerController::PauseInput);
 			EnhancedInput->BindAction(SpectateNextAction, ETriggerEvent::Started, this, &ACL9PlayerController::SpectateNext);
-			if (ScanAction != nullptr)
-			{
-				EnhancedInput->BindAction(ScanAction, ETriggerEvent::Started, this, &ACL9PlayerController::ScanInput);
-			}
+			// 우클릭(IA_Scan)은 캐릭터가 바인딩한다 — 탭이면 RequestScan(), 길게면 먹기라 판정이 캐릭터에 있다
 		}
 	}
 }
@@ -119,7 +116,7 @@ void ACL9PlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ACL9PlayerController, bSpectating);
 }
 
-void ACL9PlayerController::ScanInput()
+void ACL9PlayerController::RequestScan()
 {
 	// 스캔 한 번 = Popup 위젯 하나 (docs/systems/ui.md 스캔). 다시 누르면 이전 스캔을 버리고 새로 연다.
 	if (UCL9UIManager* UIManager = UCL9UIManager::Get(this))

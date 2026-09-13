@@ -16,6 +16,7 @@ class ACL9PlayerState;
 class UBorder;
 class UCanvasPanel;
 class UCL9CookGaugeWidget;
+class UCL9HotbarSlotWidget;
 class UCL9ItemDef;
 class UCL9ScanLabelWidget;
 class UHorizontalBox;
@@ -23,8 +24,8 @@ class UProgressBar;
 class UTextBlock;
 
 /**
- * 게임 중 항상 떠 있는 HUD 레이어 콘텐츠(docs/systems/ui.md 게임 중 HUD): HP, 소지
- * 슬롯, 밤 시계, 상호작용 프롬프트, 던지기 차징, 그리고 윤곽선이 그려진 아이템 위의
+ * 게임 중 항상 떠 있는 HUD 레이어 콘텐츠(docs/systems/ui.md 게임 중 HUD): HP, 핫바,
+ * 밤 시계, 상호작용 프롬프트, 던지기 차징, 그리고 윤곽선이 그려진 아이템 위의
  * 월드 고정 라벨. 값은 PlayerState/GameState/Character의 변경 델리게이트를 통해
  * 들어온다 — 복제된 상태를 매 틱 폴링하지 않는다(docs/systems/ui_system.md 데이터 연결).
  * WBP_Main의 디자이너에 한 번만 배치된다.
@@ -70,13 +71,17 @@ protected:
 	UPROPERTY(meta=(BindWidgetOptional))
 	TObjectPtr<UTextBlock> NightWarnText;
 
-	/** 손에 든 것 — PlayerState.HandItem을 그대로 반영 */
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UTextBlock> HandText;
+	/**
+	 * 화면 하단 중앙(프롬프트 위)의 핫바 — 칸 위젯(WBP_HotbarSlot)이 나란히 담기는 상자. HUD가
+	 * `CL9Rules.HotbarSlots`개를 `HotbarSlotClass`로 만들어 붙이고, PlayerState의 `Slots`·`ActiveSlot`을
+	 * 그대로 반영한다(docs/systems/ui.md 핫바). 상자가 없으면 핫바를 그리지 않는다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UHorizontalBox> HotbarBox;
 
-	/** 품에 넣은 아이템 — 개수와 이름 */
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UTextBlock> PocketText;
+	/** WBP_HotbarSlot — WBP_HUD에서 지정. 비어 있으면 핫바를 그리지 않는다 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	TSubclassOf<UCL9HotbarSlotWidget> HotbarSlotClass;
 
 	/** 날짜, 페이즈, 흘러가는 밤 시계 */
 	UPROPERTY(meta=(BindWidget))
@@ -93,6 +98,18 @@ protected:
 	/** 던지기 차징 0~1, 호스트 시계를 로컬에서 예측한 값(input.md 던지기 차징); 대기 중에는 숨김 */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UProgressBar> ChargeBar;
+
+	/**
+	 * 첫 줍기 힌트 — 프롬프트 위, 가운데 정렬 1~3줄(docs/systems/ui.md "첫 줍기 힌트"). 설명이 필요한 종류
+	 * (`UCL9ItemDef::HasUseHint`)를 처음 손에 들었을 때만 "[LMB] 살짝 누르기 — …"를 조립해 보이고 `HintDuration` 뒤
+	 * 접는다. 본 적 있음은 이 PC의 `UCL9GameUserSettings`에 종류(Alias)별로 남아 다시는 안 뜬다. 없으면 힌트를 그리지 않는다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UTextBlock> HintText;
+
+	/** 힌트가 떠 있는 시간, 초 — WBP_HUD에서 편집 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float HintDuration = 4.f;
 
 	/** 윤곽선이 그려진 아이템 위의 월드 고정 라벨 — 이름 · 가격 · 소지 정보(2026-09-05 사용자 요청). 매 프레임 화면에 투영된다 */
 	UPROPERTY(meta=(BindWidget))
@@ -208,11 +225,24 @@ private:
 	void WireCharacter();
 
 	void RefreshHp();
+
+	/** 핫바 — 칸 수가 규칙과 다르면 칸 위젯을 다시 만들고, 칸마다 이름·활성 여부를 채운다 */
 	void RefreshCarry();
 	void RefreshClock();
 	void RefreshStamina();
 	void RefreshPrompt();
 	void RefreshCharge();
+
+	/**
+	 * 활성 칸의 아이템이 바뀌었을 때만 본다 — 처음 드는 설명 필요 종류면 힌트를 띄우고 본 것으로 기록하고,
+	 * 아니면 떠 있던 힌트를 접는다(다른 칸이 바뀌거나 머리 장비만 바뀐 경우는 건드리지 않는다)
+	 */
+	void RefreshHint();
+
+	/** 힌트 문구 — 행의 UseAction·종류에 따라 1~3줄을 줄바꿈으로 잇는다(String Table `Hint.*`) */
+	FText BuildHintText(const UCL9ItemDef& Def) const;
+
+	void HideHint();
 
 	/** 윤곽선 대상을 따라간다: 내용은 대상이나 행이 바뀔 때만, 위치는 매 프레임 갱신한다 */
 	void RefreshItemLabel();
@@ -259,8 +289,18 @@ private:
 	/** 조리대 → 그 위에 띄운 게이지. 게이지는 CookLayer의 자식이라 소유는 캔버스가 한다 */
 	TMap<TWeakObjectPtr<ACL9Kitchen>, TWeakObjectPtr<UCL9CookGaugeWidget>> CookGauges;
 
+	/** 핫바 칸 위젯들 — 인덱스가 칸 번호(0부터). HotbarBox의 자식이라 소유는 상자가 한다 */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UCL9HotbarSlotWidget>> HotbarSlots;
+
 	/** 번쩍임의 위상 — 경고가 꺼져 있는 동안 0으로 돌아가 항상 밝은 지점에서 시작한다 */
 	float NightWarnPhase = 0.f;
+
+	/** 마지막으로 힌트를 판단한 활성 칸의 아이템(별칭·하위 별칭) — 같은 것이 그대로면 OnCarryChanged가 와도 다시 판단하지 않는다 */
+	FCL9ItemRef HintedItem;
+
+	/** HintDuration 뒤 힌트를 접는다 */
+	FTimerHandle HintTimer;
 
 	FTimerHandle WireTimer;
 

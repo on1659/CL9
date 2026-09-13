@@ -14,11 +14,14 @@
 #include "TimerManager.h"
 #include "Character/CL9Character.h"
 #include "Character/CL9CharacterMovement.h"
+#include "Core/CL9InputText.h"
 #include "Data/CL9BuffDef.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
+#include "Data/CL9RulesDef.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
+#include "GameMode/CL9GameUserSettings.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Counter.h"
 #include "Items/CL9Item.h"
@@ -26,6 +29,7 @@
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "UI/CL9CookGaugeWidget.h"
+#include "UI/CL9HotbarSlotWidget.h"
 #include "UI/CL9ScanLabelWidget.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
@@ -118,6 +122,7 @@ void UCL9HUDWidget::NativeDestruct()
 	{
 		World->GetTimerManager().ClearTimer(WireTimer);
 		World->GetTimerManager().ClearTimer(ClockTimer);
+		World->GetTimerManager().ClearTimer(HintTimer);
 	}
 
 	Super::NativeDestruct();
@@ -199,6 +204,7 @@ void UCL9HUDWidget::HandleCarryChanged()
 {
 	RefreshCarry();
 	RefreshHead();
+	RefreshHint();
 }
 
 void UCL9HUDWidget::HandlePhaseChanged(ECL9NightPhase NewPhase)
@@ -263,29 +269,49 @@ void UCL9HUDWidget::RefreshHp()
 void UCL9HUDWidget::RefreshCarry()
 {
 	const ACL9PlayerState* PlayerState = GetOwnPlayerState();
-	if (PlayerState == nullptr)
+	if (HotbarBox == nullptr || HotbarSlotClass == nullptr || PlayerState == nullptr)
 	{
 		return;
 	}
 
-	if (HandText != nullptr)
+	// 칸 수는 규칙이 정한다(CL9Rules.HotbarSlots). PlayerState.Slots는 호스트가 BeginPlay에서 그 수로
+	// 맞추지만 클라에는 복제가 늦어 잠시 비어 있을 수 있다 — 그동안도 칸은 규칙 수만큼 그리고,
+	// 내용은 빈 칸으로 뒀다가 OnCarryChanged에서 다시 채운다(docs/systems/inventory.md 상태 모델).
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = (Registry != nullptr) ? Registry->GetRules() : nullptr;
+	const int32 SlotCount = (Rules != nullptr) ? Rules->HotbarSlots : PlayerState->Slots.Num();
+
+	// 칸 위젯은 수가 달라질 때만 다시 만든다 — 규칙은 판 중에 바뀌지 않으므로 사실상 한 번이다
+	if (HotbarSlots.Num() != SlotCount)
 	{
-		HandText->SetText(PlayerState->HandItem.IsSet()
-			? FText::Format(LOCTABLE("CL9", "Hud.Hand"), ItemLabel(PlayerState->HandItem))
-			: LOCTABLE("CL9", "Hud.HandEmpty"));
+		HotbarBox->ClearChildren();
+		HotbarSlots.Reset();
+		for (int32 Index = 0; Index < SlotCount; ++Index)
+		{
+			UCL9HotbarSlotWidget* SlotWidget = CreateWidget<UCL9HotbarSlotWidget>(GetOwningPlayer(), HotbarSlotClass);
+			if (SlotWidget == nullptr)
+			{
+				continue;
+			}
+			HotbarBox->AddChildToHorizontalBox(SlotWidget);
+			SlotWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+			SlotWidget->SetNumber(Index + 1);   // 숫자키 1~4와 같은 표기
+			HotbarSlots.Add(SlotWidget);
+		}
 	}
 
-	if (PocketText != nullptr)
+	for (int32 Index = 0; Index < HotbarSlots.Num(); ++Index)
 	{
-		TArray<FText> Labels;
-		for (const FCL9CarriedItem& Item : PlayerState->PocketItems)
+		UCL9HotbarSlotWidget* SlotWidget = HotbarSlots[Index];
+		if (SlotWidget == nullptr)
 		{
-			Labels.Add(ItemLabel(Item));
+			continue;
 		}
-		PocketText->SetText(Labels.Num() > 0
-			? FText::Format(LOCTABLE("CL9", "Hud.Pocket"),
-				Labels.Num(), FText::Join(LOCTABLE("CL9", "Hud.PocketSep"), Labels))
-			: LOCTABLE("CL9", "Hud.PocketEmpty"));
+		const bool bFilled = PlayerState->Slots.IsValidIndex(Index) && PlayerState->Slots[Index].IsSet();
+		SlotWidget->Refresh(bFilled ? ItemLabel(PlayerState->Slots[Index]) : FText::GetEmpty(),
+			Index == PlayerState->ActiveSlot);
 	}
 }
 
@@ -364,6 +390,87 @@ void UCL9HUDWidget::RefreshCharge()
 
 	ChargeBar->SetVisibility(ESlateVisibility::HitTestInvisible);
 	ChargeBar->SetPercent(Alpha);
+}
+
+void UCL9HUDWidget::RefreshHint()
+{
+	const ACL9PlayerState* PlayerState = GetOwnPlayerState();
+	if (HintText == nullptr || PlayerState == nullptr)
+	{
+		return;
+	}
+
+	// OnCarryChanged는 다른 칸·머리 장비가 바뀌어도 오므로, 활성 칸의 아이템이 정말 바뀌었을 때만 판단한다
+	const FCL9ItemRef Active = PlayerState->Slots.IsValidIndex(PlayerState->ActiveSlot)
+		? static_cast<const FCL9ItemRef&>(PlayerState->Slots[PlayerState->ActiveSlot])
+		: FCL9ItemRef();
+	if (Active.ItemAlias == HintedItem.ItemAlias && Active.ItemSubAlias == HintedItem.ItemSubAlias)
+	{
+		return;
+	}
+	HintedItem = Active;
+
+	// 설명이 필요한 종류(HasUseHint)를 이 PC에서 처음 들었을 때만 — 본 적 있음은 종류(Alias)별로 로컬 설정에 남는다
+	// (docs/systems/ui.md 첫 줍기 힌트). 다른 것으로 바꿔 들면 떠 있던 힌트는 바로 접는다 — 남의 설명이 된다.
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9ItemDef* Def = (Registry != nullptr && Active.IsSet()) ? Registry->FindItem(Active.ItemAlias, Active.ItemSubAlias) : nullptr;
+	UCL9GameUserSettings* Settings = UCL9GameUserSettings::Get();
+	if (Def == nullptr || Settings == nullptr || !Def->HasUseHint() || Settings->HasSeenItemHint(Def->Alias))
+	{
+		HideHint();
+		return;
+	}
+
+	Settings->MarkItemHintSeen(Def->Alias);
+	HintText->SetText(BuildHintText(*Def));
+	HintText->SetVisibility(ESlateVisibility::HitTestInvisible);
+	if (World != nullptr)
+	{
+		World->GetTimerManager().SetTimer(HintTimer, this, &UCL9HUDWidget::HideHint, HintDuration, false);
+	}
+}
+
+FText UCL9HUDWidget::BuildHintText(const UCL9ItemDef& Def) const
+{
+	// 키 표기는 지금 바인딩된 키다 — 캐릭터의 IA_Use/IA_Scan을 유저 설정 프로필에서 읽는다(input.md 키 표기).
+	// {0}=사용 키, {1}=스캔 키 — 줄마다 둘 다 넘기고 문구가 필요한 쪽만 쓴다
+	const APlayerController* PlayerController = GetOwningPlayer();
+	const ACL9Character* Character = GetOwnCharacter();
+	const FText UseKey = CL9Input::GetActionKeyText(PlayerController, (Character != nullptr) ? Character->GetUseAction() : nullptr);
+	const FText ScanKey = CL9Input::GetActionKeyText(PlayerController, (Character != nullptr) ? Character->GetScanAction() : nullptr);
+
+	TArray<FText> Lines;
+	switch (Def.UseAction)
+	{
+	case ECL9UseAction::Swing:
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hint.UseTap.Swing"), UseKey, ScanKey));
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hint.UseHold.Swing"), UseKey, ScanKey));
+		break;
+	case ECL9UseAction::ToggleLight:
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hint.UseTap.ToggleLight"), UseKey, ScanKey));
+		break;
+	default:
+		break;
+	}
+	if (Def.ItemType == ECL9ItemType::Dish)
+	{
+		Lines.Add(FText::Format(LOCTABLE("CL9", "Hint.ScanHold.Eat"), UseKey, ScanKey));
+	}
+	return FText::Join(FText::FromString(TEXT("\n")), Lines);
+}
+
+void UCL9HUDWidget::HideHint()
+{
+	if (HintText != nullptr)
+	{
+		HintText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(HintTimer);
+	}
 }
 
 void UCL9HUDWidget::RefreshItemLabel()

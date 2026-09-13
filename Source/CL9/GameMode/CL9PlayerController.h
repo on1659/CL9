@@ -86,6 +86,14 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_OpenScreen(FName UIName);
 
+	/**
+	 * 스캔 — UI 표의 Popup 행 "Scan"을 새로 연다(열려 있으면 닫고 다시). 우클릭 바인딩은 캐릭터가 갖는다
+	 * (탭이면 여기로, `UseHoldTime` 이상 길게 누르면 먹기 — docs/systems/input.md `IA_Scan`)라 컨트롤러는
+	 * 표현만 맡고 판정이 없다.
+	 */
+	UFUNCTION(BlueprintCallable, Category="CL9|Scan")
+	void RequestScan();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -93,9 +101,6 @@ protected:
 
 	/** M(IA_Pause) — 열린 화면이 없으면 메뉴를 열고, 있으면 한 단계 뒤로(히스토리가 아래 화면을 다시 연다 — docs/systems/ui_system.md) */
 	void PauseInput();
-
-	/** 마우스 오른쪽(IA_Scan) — UI 표의 Popup 행 "Scan"을 새로 연다 (열려 있으면 닫고 다시) */
-	void ScanInput();
 
 	UFUNCTION(Server, Reliable)
 	void Server_SpectateNext();
@@ -130,10 +135,6 @@ protected:
 	/** 관전 대상 전환 액션 — BP 자식에서 할당한다 */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SpectateNextAction;
-
-	/** 스캔 액션(마우스 오른쪽) — BP 자식에서 할당한다; Pause처럼 컨트롤러에 두어 HUD가 응답을 책임진다 */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> ScanAction;
 
 	/** SpectateDelay 이후 호스트가 기록한다; 로비 부활 때 초기화된다. PlayerController 리플리케이션 규칙상 소유자에게만 전달된다 */
 	UPROPERTY(ReplicatedUsing=OnRep_Spectating)

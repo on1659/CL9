@@ -32,8 +32,10 @@
 │              [게임 플레이 화면 (3D)]             │
 │                                                 │
 │ [좌하단] 진행 중 주문 (남은 재료 · 마감 일수)    │
-│ [하단 중앙] 상호작용 프롬프트 · 던지기 차징      │
-│ [우하단] 짐 슬롯 (손 · 품)                       │
+│ [하단 중앙] 핫바 4칸 (프롬프트 위)               │
+│            첫 줍기 힌트 (처음 한 번, 4초)        │
+│            상호작용 프롬프트 · 던지기 차징       │
+│ [우하단] 머리 장비 (헤드램프)                    │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -44,9 +46,11 @@
 | 밤 만료 경고 | 남은 밤이 `NightWarnTime`(30초) 아래로 내려가면 시계 밑 화면 중앙에 "밤이 끝난다 · 28초"가 뜨고 `NightWarnFlashTime`(0.6초) 주기로 불투명도가 오르내린다(가장 어두운 지점은 `NightWarnDimOpacity` 0.25). 밤이 아니거나 문턱 위면 접힌다. 만료가 새벽 실패이므로 시계를 안 보고 있어도 눈에 들어와야 한다 — **번쩍임이 허용되는 유일한 자리다**(아래 "UI 애니메이션") | rules.md |
 | 먹기 버프 | 지금 걸린 버프를 좌상단에 **버프 하나당 한 줄**: "다리에 힘 +60 (12초)". 목록은 `ACL9Character::GetActiveBuffs`, 남은 시간은 `GetBuffRemaining`, 이름은 `FindBuff(별칭)`의 `DisplayName`이다. **스탯이 하나뿐인 버프만 크기를 붙인다** — 여러 스탯을 묶은 양날 버프는 한 줄에 늘어놓으면 안 읽히므로 이름만 보여준다. **행을 못 찾거나 이름이 비면 별칭을 그대로 띄운다**: 표의 구멍이 화면에 드러나야 고치게 되고, 빈 줄로 삼키면 "먹었는데 아무 일도 없다"가 된다. 별칭 없이 걸린 효과는 예전처럼 스탯 단위로 물러선다. 효과는 서버 시각으로 만료되고 변경 이벤트가 없어서 스태미나처럼 **폴링**한다 | buff.md · character.md |
 | 이더 | `GameState.SharedMoney` (판 공유) — 좌상단 스태미나 바 아래 `MoneyText`에 "N 이더". `GetSharedMoney()`를 읽고 `OnMoneyChanged`로 갱신한다(지급·차감 양쪽에서 발동, 클라도 복제로 같은 값을 본다) | economy.md |
-| 짐 슬롯 | 손에 든 것 + 품(Pocketable) + 머리(HeadItem — 헤드램프) | inventory.md |
+| 핫바 | 화면 하단 중앙, 프롬프트 바로 위의 **4칸**(`CL9Rules.HotbarSlots`) — 칸마다 번호(1~4)와 든 아이템의 표시 이름, **활성 칸만 테두리 강조**. `PlayerState.Slots`·`ActiveSlot`을 `OnCarryChanged`로 반영한다(리썰식 핫바, 2026-09-13 — 옛 우하단 "손: / 품:" 텍스트 폐기). 구조는 아래 "핫바" | inventory.md |
+| 머리 | 우하단 `HeadText` — 머리에 쓴 것(HeadItem — 헤드램프)은 핫바와 별개다 | inventory.md |
 | 주문 | 수락한 주문을 좌하단에 한 줄씩: 이름 · 재료×n · 마감 N일차까지 · **확정 보상 이더** (`GameState.AcceptedOrders`, `OnOrdersChanged`로 갱신). 보상은 카드의 범위가 아니라 수락할 때 굴려 확정된 `Reward`다 — 실제로 받을 액수를 보여준다(2026-09-06). 남은 재료 진행도는 아직 없다 | order.md |
-| 상호작용 | 줍기·놓기·반납 프롬프트(하단 중앙 — 문구는 캐릭터 `GetFocusPrompt`가 조립, 비면 숨김), 던지기 차징 게이지(차징 중에만 표시) | raiding.md · input.md |
+| 상호작용 | 줍기·반납·수레 프롬프트(하단 중앙 — 문구는 캐릭터 `GetFocusPrompt`가 조립, 비면 숨김. 들고만 있을 때는 아무것도 안 뜬다 — 놓기는 G라 프롬프트가 없다), 던지기 차징 게이지(달리기 키+G 차징 중에만 표시) | raiding.md · input.md |
+| 첫 줍기 힌트 | 프롬프트 위 `HintText` — 설명이 필요한 종류를 **이 PC에서 처음** 손에 들었을 때만 "[LMB] 살짝 누르기 — 바로 휘두르기 / [LMB] 꾹 누르기 — …"가 `HintDuration`(4초) 떴다 사라진다. 종류별 한 번, 본 적 있음은 로컬 설정에 남는다. 구조는 아래 "첫 줍기 힌트" | input.md · settings.md |
 | 창구 재고 | 납품 창구를 바라보는 동안만, 프롬프트 위에 올려둔 것들을 보여준다: 같은 물건끼리 묶어 "익은 계란 ×2 · 340 이더" 한 줄씩 + 합계. 남이 올려도 바뀌므로 이벤트가 아니라 매 프레임 `ACL9Counter::GetStock()`을 읽는다(복제된다). 합계는 올릴 때 굴린 값의 합이고 실제 판매가는 목적지·일자 배율이 곱해진다 | order.md · economy.md |
 | 조리 게이지 | **익히는 중인 조리대 꼭대기 위**에 뜨는 바(`WBP_CookGauge`, UCL9CookGaugeWidget) — 조리대마다 하나씩 HUD의 `CookLayer`에 붙어 `ACL9Kitchen::GetTopLocation()`을 매 프레임 화면에 투영한다. 재료를 바라보지 않아도, 어느 쪽에서 봐도, 누구에게나 보인다(2026-09-10 사용자 — 라벨 안의 바는 그 재료를 자세히 봐야만 보여서 폐기). 열을 받는 동안만 보이고(`ACL9Item::IsOnHeat`), `GetCookProgress()` 0~1로 채우고, 다음 전이가 "탄 것"이면(`IsNextBurnt`) 주황에서 붉은색으로 바뀐다 = 지금 집으라는 신호. 이게 없으면 이름이 바뀌기 전에는 얼마나 익었는지 알 수 없어 태우지 않을 방법이 없다(2026-09-06) | cooking.md |
 | 아이템 라벨 | 아웃라인된 아이템 머리 위에 월드→2D 투영으로 붙는 라벨: 이름 · 개체별 실제 값(`ACL9Item::GetValue`, 호스트가 행 범위에서 굴려 복제) 이더 · 무게/품·손·수레/깨지기 쉬움 (2026-09-05 사용자 요청; 값을 범위가 아니라 개체 값으로 — 2026-09-06 사용자). 아이템(ACL9Item)만, 수레·항아리 같은 상호작용 액터는 프롬프트로 충분. 같은 액터의 행이 바뀌어도(요리) 다시 채운다 | item/common.md · economy.md |
@@ -54,6 +58,63 @@
 
 - 던지기 차징은 조작 피드백이라 게이지가 허용된다 — 스태미나 같은 "관리 자원"이 아니다.
 - 미니맵은 초기 구현에서 생략. 넣을 때 무엇이 그려지는지는 개체별 `bShowOnMinimap` 값이 정한다.
+
+### 핫바 (2026-09-13)
+
+```
+WBP_HUD
+  └─ HotbarBox (HorizontalBox, BindWidgetOptional — 하단 중앙, PromptText 위)
+       ├─ WBP_HotbarSlot ×4   ← C++이 HotbarSlotClass로 런타임에 만들어 붙인다
+       │    (UCL9HotbarSlotWidget)
+       │    └─ Frame (Border — 테두리, 활성 칸만 ActiveFrameColor)
+       │         └─ [Vertical/Overlay]
+       │              ├─ NumberText (TextBlock — "1"~"4")
+       │              └─ NameText (TextBlock — 든 아이템 표시 이름, 빈 칸은 비움)
+```
+
+- **칸 수는 규칙이 정한다** — HUD가 `CL9Rules.HotbarSlots`개를 `HotbarSlotClass`(WBP_HUD 프로퍼티, `WBP_HotbarSlot`)로
+  만들어 `HotbarBox`에 붙인다. 디자이너에 칸을 미리 놓지 않는다(HP 하트 칸과 반대 — 하트는 칸 수가 표현이고, 핫바는
+  칸 수가 규칙이라서). 수가 달라질 때만 다시 만들고 그 뒤로는 내용만 갱신한다.
+- **갱신은 `PlayerState.OnCarryChanged` 한 곳** — `Slots[i]`가 차 있으면 아이템 행의 `DisplayName`(없으면 별칭), 비었으면
+  빈 텍스트. `i == ActiveSlot`인 칸의 `Frame`만 `ActiveFrameColor`, 나머지는 `InactiveFrameColor`(둘 다 WBP_HotbarSlot
+  프로퍼티). 클라에서는 `Slots`가 복제되기 전에 잠시 빈 채로 그려졌다가 첫 `OnCarryChanged`에서 채워진다 — 정상이다.
+- 칸의 크기·간격·글꼴·배경은 전부 `WBP_HotbarSlot`이 정한다 — C++은 번호·이름 글자와 테두리 색만 만진다.
+  `HotbarBox`가 없거나 `HotbarSlotClass`가 비어 있으면 핫바를 그리지 않는다.
+- 빈 칸을 활성으로 고른 상태(= 빈손)도 그 칸의 테두리가 강조된다 — 어느 칸이 손인지는 늘 보여야 한다.
+- 조작(휠·숫자키·G)은 [input.md](input.md), 칸 규칙(잠금·값 보존)은 [inventory.md](inventory.md).
+
+### 첫 줍기 힌트 (2026-09-13)
+
+게임이 처음인 사람이 프라이팬을 처음 주웠을 때 좌클이 무슨 뜻인지 알려주는 튜토리얼 한 줄 — 들고 있다고 늘 뜨는
+"[E] 놓기" 같은 프롬프트는 없앴고(사용자: "E 놓기 UI가 뜨면 안 된다"), 대신 처음 한 번만 잠깐 보였다 사라진다.
+
+```
+WBP_HUD
+  └─ HintText (TextBlock, BindWidgetOptional — PromptText 위 2~3줄, 가운데 정렬, 기본 Collapsed)
+     HintDuration (float 프로퍼티, 기본 4.0초)
+```
+
+- **대상** — 활성 칸의 아이템 행이 `UCL9ItemDef::HasUseHint()`인 것: `UseAction != None`(프라이팬·손전등)이거나
+  `ItemType == Dish`(요리 — 먹기). 계란·냄비처럼 설명할 조작이 없는 것은 안 뜬다(사용자: "설명이 필요해 보이는 것만").
+- **언제** — `PlayerState.OnCarryChanged`에서 **활성 칸의 아이템(별칭·하위 별칭)이 바뀌었을 때만** 판단한다. 다른 칸이나
+  머리 장비만 바뀐 경우는 건드리지 않는다. 힌트가 뜬 채로 다른 것을 들면 바로 접는다 — 남의 설명이 된다.
+- **한 번만** — 종류별(`Alias`)로 이 PC의 `UCL9GameUserSettings`(`HasSeenItemHint`/`MarkItemHintSeen`)에 남는다. 보이는
+  순간 기록하므로 4초를 다 보지 않아도 다시는 안 뜬다. PIE를 다시 켜도 안 뜬다(`GameUserSettings.ini`) — 다시 보려면
+  거기서 지운다. 호스트 세이브가 아니라 로컬이다: 튜토리얼은 사람에게 붙는 것이지 판에 붙는 것이 아니라서
+  ([settings.md](settings.md)). 익은 계란은 `egg`로 기록되므로 탄 계란도 함께 본 것이 된다.
+- **시간** — `HintDuration`(WBP_HUD 프로퍼티, 4.0초) 뒤 `Collapsed`. 애니메이션 없음 — "번쩍임은 밤 만료 경고에만"(아래
+  UI 애니메이션)이라 그냥 나타났다 그냥 사라진다.
+- **문구** — String Table `Hint.*`를 행에 따라 1~3줄 `\n`으로 잇는다. `{0}`=사용 키(`ACL9Character::GetUseAction()`),
+  `{1}`=스캔 키(`GetScanAction()`) — 지금 바인딩된 키 표기(`CL9Input::GetActionKeyText`, [input.md](input.md) 키 표기)라
+  키를 바꾸면 힌트도 따라간다.
+
+  | 행 | 줄 | 키 |
+  |---|---|---|
+  | `UseAction == Swing` | "[{0}] 살짝 누르기 — 바로 휘두르기" / "[{0}] 꾹 누르기 — 들고 있다가 떼는 순간 휘두르기" | `Hint.UseTap.Swing` · `Hint.UseHold.Swing` |
+  | `UseAction == ToggleLight` | "[{0}] 살짝 누르기 — 켜고 끄기" | `Hint.UseTap.ToggleLight` |
+  | `ItemType == Dish` (위에 더해) | "[{1}] 꾹 누르기 — 먹기" | `Hint.ScanHold.Eat` |
+
+- `HintText`가 없으면 힌트를 그리지 않는다. 글꼴·위치·정렬은 WBP_HUD가 정한다.
 
 ## 화면 전환 — WBP_Main 하위
 
@@ -246,7 +307,7 @@
 | 24 Bold | 늘 보는 큰 값 (밤 시계 · HP · 상호작용 프롬프트 · 관전 대상) |
 | 20 Bold | 강조 값 (이더 · 아이템 이름 · 주문 카드 이름) |
 | 20 Regular | 버튼 라벨 |
-| 18 Regular | 보조 값 (짐 슬롯 · 아이템 값) |
+| 18 Regular | 보조 값 (핫바 칸 이름 · 머리 장비 · 아이템 값) |
 | 16 Regular | 목록·힌트 (진행 중 주문 · 창구 재고 · 아이템 부가 정보 · 안내 문구 · 카드 상세) |
 
 주문 카드는 런타임에 C++이 만들므로 크기가 `UCL9OrderSelectWidget`의 `CardNameSize`(20) ·
