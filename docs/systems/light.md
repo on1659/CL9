@@ -40,8 +40,9 @@ F 토글, 정전 규칙). 행의 `ActorClass`가 `BP_CL9FlashItem`을 가리키�
 `Server_Flashlight`→`ACL9FlashItem::ToggleLight`→`bLightOn` 복제(각 머신 OnRep로 빔 표시).
 들면 flashlight는 off로 시작, 놓기·던지기·품 넣기는 off(`OnAcquired`/`OnReleased` 훅), 정전이면
 flashlight 강제 off. 광원은 `MeshComponent`의 자식으로 렌즈 앞(+X 끝)에 붙어 소유자 화면에서 메시가
-1인칭 팔 소켓으로 옮겨 가면 빛도 따라간다(2026-09-13). 빔 방향 = 메시 +X; 상체가 시선 피치를
-따르므로(ABP `AimPitch`) 아래를 보면 바닥이 비춰진다.
+1인칭 팔 소켓으로 옮겨 가면 빛도 따라간다(2026-09-13). 빔 방향 = 메시 +X; 소유자 화면은 팔이
+카메라 자식이라 빔이 시선을 그대로 따르고, 남의 화면은 상체가 시선 피치를 따른다(전신 ABP
+`AimPitch`) — 어느 쪽이든 아래를 보면 바닥이 비춰진다.
 
 **헤드램프** (2026-09-05): 같은 아이템 광원 경로에 `CarrySlot::Head`가 얹힌다. E로 줍는 대신
 `HostWear` → `ACL9Item::OnWorn`(HoldState `Worn`): 1인칭 카메라 컴포넌트에 부착(착용자 시선을

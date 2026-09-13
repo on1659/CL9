@@ -1156,3 +1156,34 @@
   `RemoteViewPitch`)·`IsRunning()`·`GetGroundSpeed()` 게터 + 두 ABP에 `Transform (Modify) Bone`(spine_03, 컴포넌트 공간, AimPitch×0.6 초안;
   FP는 ControlRig 뒤). PIE 실측: 전신·FP 메시의 spine은 기울지만 소유자 화면의 손전등 렌즈 피치는 FPWarp 릭 때문에 거의 불변 — 아침 질문 14.
   농부 Hold 클립 재출력은 `--only <범주>`로 제한(sha 변화 방지). FPRun PlayRate는 고정 1.0(핀 미노출 — 질문 15).
+
+- **"핫바" → "퀵슬롯", HUD 칸은 리썰식** (2026-09-13 저녁, 사용자 — "퀵슬롯이라 하자", "핫바 UI가 너무 강조되고 있음 … 하얀색으로만 … 리썰처럼").
+  이름: C++ `UCL9HotbarSlotWidget`→`UCL9QuickSlotWidget`(파일 `CL9QuickSlotWidget.*`), `UCL9HUDWidget::HotbarBox/HotbarSlotClass/HotbarSlots`→
+  `QuickSlotBox/QuickSlotClass/QuickSlots`, `UCL9RulesDef::HotbarSlots`→`QuickSlots`(기본 4, 에셋 미직렬화라 리다이렉트 불필요), 에셋
+  `WBP_HotbarSlot`→`WBP_QuickSlot`(`Config/DefaultEngine.ini` 클래스·`HotbarSlotClass` 프로퍼티 리다이렉트 2줄), 문서·주석·문자열 DevNotes 전부.
+  `Slots`·`ActiveSlot`·`SlotActions`·`SlotScrollAction`·`IA_Slot*`·`FCL9CarriedItem`은 "슬롯"이라 그대로. 옛 결정 문안의 "핫바"는 기록으로 둔다.
+  칸: 64px 정사각, 검은 반투명 바탕, 얇은 흰 테두리, 번호·이름 글자 없이 행 `Icon`(행이 바뀔 때만 동기 로드)만 — **든 칸 흰 100%, 나머지 흰 40%**
+  (`ActiveColor`/`InactiveColor`), 노란 강조 폐기. 아이콘 없는 행은 이름 12pt 폴백. 아이콘은 Blender Workbench 흰 실루엣+알파 PNG 128×128
+  (`Tools/Blender/render_item_icons.py` → `ArtSource/item/<폴더>/icons/` → `/Game/UI/Icons/T_Icon_<alias>`, UI 그룹·NoMipmaps·sRGB), 계란·고기는
+  상태 행이 raw 아이콘 하나를 공유(칸만 보고는 상태 구분 없음 — 리썰과 같음), 수레는 없음.
+
+- **1인칭 팔은 카메라의 자식(뷰모델) — 리썰 방식, 클립은 카메라 로컬로만 저작한다** (2026-09-13 밤, 사용자 — "아이템 들었을 때 … 자꾸 회전",
+  "위아래를 볼 때 손이 움직이는 거랑 시야가 좀 이상해, 리썰 보고 그 조작감으로", "애니메이션이 부자연스러워, 억지로 팔을 들고 있는 모습").
+  `FirstPersonMesh`는 `FirstPersonCameraComponent`에 `(0,0,−EyeHeight)`·요 −90°로 붙어(전신 마네킹과 같은 규격 — 리그 root 원점, 눈이
+  (0,0,EyeHeight)에서 +X) 시선 피치·요를 통째로 따른다; `ApplyCharacterDef`가 행의 EyeHeight로 다시 맞춘다. 팔 ABP는 새 `ABP_FP_View`
+  (`/Game/Characters/FarmerA/Anims`) — 몸 포즈를 보지 않고 `GetHoldPose/IsRunning/GetGroundSpeed/GetSwingElapsed/GetSwingWindupElapsed/
+  GetEatElapsed`만 읽어 카메라 로컬 클립을 고른다. 2026-09-02~13의 "전신 메시 자식 + 몸 포즈 복사(`ABP_FP_Copy`) + `CtrlRig_FPWarp` +
+  팔 쪽 spine_03 피치 추종 + `FPHoldIdle`" 구조는 폐기(에셋 삭제). `GetAimPitch()`는 전신 `ABP_Unarmed` 전용(남의 화면의 상체 기울임).
+  스태미나 셰이크는 POV만 흔들어 화면이 흔들리고 팔은 따라 떨리는 듯 보인다(리썰과 같음). 클립 규약: 공간 = 리그 root 원점·눈 (0,0,1.56m)·
+  전방, 피치 0 고정 프레이밍, 클립 하나가 전 뼈를 소유(척추 identity, 숨쉬기는 손목 ±0.5cm), manifest `space: "camera"`·`eye_height_m`.
+  화면 위치는 `farmer_pose.fp_screen_uv`(1280×720·가로 FOV 70·눈 1.56·근접 5cm/0.6 — 게임과 같은 카메라) 실측으로 적는다(옛 4:3·10° 미리보기
+  폐기; FirstPersonScale 0.6은 화면상 위치·크기를 바꾸지 않는다). **주먹 위치(사용자 — "손 위치는 이 정도로 좀 바깥에", 기준 캡처
+  `preview/my/1.png`)**: 든 손 주먹은 우하단 구석에서 프레임 안으로(중심 u 0.86~0.92·v 0.85~0.95, 손목은 프레임 바로 밖), 두 손은 0.28/0.72·
+  v ~0.9, 팔꿈치 ~90°로 느슨하게(억지로 들지 않음), 손전등도 같은 구석(029 "뻗기" 폐기 — 렌즈 정면은 표 행 `GripRotation`이 맞춘다), 대기는
+  우상단 안(손목 (0.86, 0.46)), 먹기는 렌즈 앞 중앙(너클 (0.59, 0.48)). 휘두르기 클립은 30fps 0.467초(15프레임)가 정본(옛 0.583초 폐기) —
+  두 ABP 모두 평가 시간 = `SwingElapsed + 0.12`(대기 루프가 이미 보여 준 앞부분 건너뜀)·범위 `[0, 0.347)`. 그립 소켓 보정은 028 자세를
+  `measure_item_grip.py`에 상수로 박아 되살린다 — 1인칭 자세를 바꾸면 손전등·두 손 행을 다시 푼다. 이번 표 행(`031-item-grip.json`):
+  `flashlight.GripRotation (−29.8, 105.5, 34.6)`, `pot`·`standing_lamp` `GripOffset (11.5, 1.6, 6.7)`·`GripRotation (4.9, 112.4, 26.8)`,
+  고기 3행 `(−3.2, 26.5, −3.1)`·`(8.6, −78.4, −28.1)`, `frying_pan` `(−2.0, 26.4, −5.2)`·`(−8.6, 101.6, 28.1)` — `forward` 후보로 PIE에서
+  뼈가 손에·팬 손잡이가 손에 오는 것을 확인(아침 질문 11·12 "팬 거꾸로" 해소). PIE 실측: 계란을 들고 피치 −30/0/+30에서 카메라 기준 아이템
+  회전 불변(아이템이 돌지 않음), 손전등 빔 피치 = 시선 피치(−45.8 @ −45), 팔 부모 `FirstPersonCamera`·`(0,0,−156)`·`(0,−90,0)`.
