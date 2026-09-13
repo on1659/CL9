@@ -120,3 +120,52 @@ UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin
   [029 증거](../evidence/029-farmer-fparms.json). ABP 배선은 [../../systems/animation.md](../../systems/animation.md)
   "1인칭 팔 표시 규칙".
 - 하지 않은 것: 전신 달리기 팔 클립, 다른 Hold 범주 재출력, 걷기 전용 팔 클립(걷기는 FPArmsDown — 기본값 19).
+
+## 031 1인칭 뷰모델 — 카메라 로컬 클립 8종 재저작 + 전신 Swing 30fps 재수출 (2026-09-13 저녁, fp-viewmodel)
+
+사용자 "애니메이션이 부자연스러워 — 억지로 팔을 들고 있는 모습", "위아래를 볼 때 손이 움직이는 거랑 시야가 이상해 — 리썰 조작감으로".
+답: 리썰 방식으로 전환 — 팔 메시가 **카메라 컴포넌트의 자식**(상대 (0,0,−EyeHeight)·yaw −90, gameplay)이 되고 몸 포즈 복사·FPWarp 는
+폐기, 1인칭 클립은 전부 다시 만들었다. 이름은 그대로 덮어썼다.
+
+- **저작 규약(카메라 로컬)** — `Tools/Blender/farmer_pose.py` 머리말이 정본. 클립 공간 = 리그 root 원점, 눈 (0,0,1.56m)에서 −Y(Blender)/
+  +X(UE)를 보는 공간. 피치·요는 카메라가 통째로 돌리므로 **피치 0 고정 프레이밍**으로만 저작한다. 몸 포즈 복사·척추 레이어가 없으니
+  **클립 하나가 전 뼈를 소유**한다(root·pelvis·spine identity, `export_action` 이 전 뼈를 굽는다). 숨쉬기는 척추가 아니라 손목 z 사인
+  (`farmer_pose.breathe`, Hold ±0.5cm). manifest `animations[*]` 에 `space: "camera"`·`eye_height_m: 1.56`·`layer: "full rig (camera-local
+  view model, spine identity)"`. 손바닥 방향은 스펙의 `palm`(월드 방향)으로 실측 정렬한다(`align_palm` — 029 의 `set_palms` 를 공용화).
+- **미리보기·화면 모델** — `render_fp(tag, dir, pitch_deg=0)` 는 게임과 같은 카메라(1280×720·가로 FOV 70 → 세로 반각 21.5°·눈 1.56m·
+  근접 5cm/0.6 = 8.3cm)로 팔 메시만 그린다(옛 4:3·10° 내려다봄 폐기). `fp_screen_uv(point) -> (u, v) | None`(왼쪽 위 0,0, 프레임 밖·카메라
+  뒤면 None)이 카메라 모델을 코드로 갖고 있어 아래 수치는 전부 실측이다(`fp_pose_report`: 손목·너클·손가락 끝 uv, 팔꿈치 각, 손목 꺾임).
+  FirstPersonScale 0.6 은 카메라 원점 기준 닮음 변환이라 화면상 위치·크기가 그대로다.
+- **Hold 3범주** `farmer_hold_spec.json` `fp`(`tp` 무변경, `Idle` 항목 삭제) — 리썰식 느슨한 자세: 팔꿈치 ~90°, 아래팔이 우하단 구석에서
+  안쪽으로 비스듬히 올라오고 주먹만 화면에 든다. 손등·엄지가 카메라를 향한다(1차 미리보기에서 손바닥이 보여 `palm` 을 안쪽·살짝 아래로 돌림).
+  주먹 위치는 brief 의 u 0.72~0.80 이 아니라 리드가 전달한 사용자 피드백(기준 캡처 `preview/my/1.png` — 우하단 구석 u 0.86~0.92·v 0.85~0.95,
+  Large 0.28/0.72·v ~0.9)을 따랐다.
+  · `AN_Farmer_FPHoldSmall`: 손목 [−0.24, −0.36, 1.415]m(눈 앞 36cm·아래 14.5cm·오른쪽 24cm — 프레임 바로 밖 구석), 주먹이 구석에서 안으로
+    들어와 너클 (0.83, 0.83)·손가락 끝 (0.79, 0.96)·주먹 중심 ≈ (0.90, 0.92), curl 1.1. brief 초안의 "아래 25~30cm" 는 깊이 40cm 에서 32° 아래 =
+    프레임 밖이라 화면 uv 를 기준으로 잡았다.
+  · `AN_Farmer_FPHoldFlashlight`: 같은 높이·구석 [−0.24, −0.35, 1.415](너클 (0.81, 0.87)), 꽉 쥔 주먹(curl 1.4), 팔 안 뻗음(029 "뻗기" 폐기).
+    렌즈 정면은 표 행이 맞춘다(아래 그립).
+  · `AN_Farmer_FPHoldLarge`: 두 손목 [±0.15, −0.36, 1.44](30cm 간격), 손목 (0.20, 0.92)/(0.80, 0.92)·너클 (0.33, 0.89)/(0.67, 0.89) — 주먹 중심
+    ≈ 0.28/0.72·v 0.9, 두 팔꿈치 90°.
+  `animate_farmer_hold.py -- --export --fp-only` — 전신 FBX 는 sha 까지 그대로. 스크립트의 중복 IK 함수는 `farmer_pose` 공용으로 통일.
+- **`AN_Farmer_FPArmsDown`** 029 설계 그대로 재수출(카메라 자식이라 피치와 무관하게 항상 프레임 밖). **`AN_Farmer_FPRun`** 호 설계 유지·
+  `reference_speed_cm_s` 654 — 게임과 같은 카메라로 다시 보니 앞 극점 주먹이 우하단 모서리에 걸쳐 잘려(u 0.76~0.94·v 0.73~0.96) 앞 극점
+  92→100°·앞 손목 바깥 거리 0.20→0.14m 로 조정, 이제 주먹이 u 0.65~0.82·v 0.58~0.77 에 온전히 든다.
+- **`AN_Farmer_FPSwing`·`AN_Farmer_Swing`** 0.467초(30fps 15프레임) 원샷. fp 키는 시작·끝을 `Small.fp` 에서 읽고(Small 이 바뀌면 자동
+  재키잉) 치켜든 자세(t=0.12, 손목 [−0.17, −0.34, 1.57], 주먹 우상단 u 0.75~0.86·v 0.22~0.46)·내려친 자세(t=0.25, 손목 [−0.05, −0.40, 1.42],
+  화면 아래 중앙 가장자리)는 스크립트 상수. 전신은 026 키 그대로를 30fps 로 재수출(옛 0.583초 폐기) → 두 ABP 모두 대기→휘두르기 오프셋
+  0.12·평가 범위 0.347. **`AN_Farmer_FPSwingWindup`** 1.0초 루프 = 위 치켜든 자세 + 손목 ±1cm. **`AN_Farmer_FPEat`** 0.6초 원샷 = 새 Small →
+  입 앞(손목 [−0.05, −0.27, 1.49], 렌즈 앞 27cm 중앙, 너클 (0.59, 0.48)) → Small. windup·eat 은 `--fp-only`(전신 무변경).
+- **일괄 수출** `py -3 Tools/Blender/export_farmer_fp_clips.py` — hold·fparms·swing·windup·eat·verify 를 순서대로(모두 manifest·blend 를 쓰므로
+  병렬 금지). 검증 `verify_farmer_clip_fbx.py`(기본 9클립): 전부 30fps, 길이 일치, 루프 이음새 0, sha 일치. UE 임포트
+  `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 9클립, 증거 `ue_import` 절) → `/Game/Characters/FarmerA/Anims`.
+  [031 증거](../evidence/031-farmer-fp-viewmodel.json). ABP 는 리드의 `ABP_FP_View` — [../../systems/animation.md](../../systems/animation.md)
+  "1인칭 팔".
+- **그립 검산** `measure_item_grip.py`(→ [031-item-grip](../evidence/031-item-grip.json)): 소켓 보정(hand_r 대비 소켓 자세, 리그 상수)은
+  028 당시 옛 1인칭 자세를 스크립트에 박아 되살리고(손전등 옛 행 검산 3.4°) 새 자세에 상수만 적용한다. 결과 — 손전등: 옛 행이면 새 자세에서
+  렌즈가 30.9° 빗나가므로 `GripRotation (−17.8, 136.8, 69.3) → (−29.8, 105.5, 34.6)`; 두 손 물건(냄비·작업등): 손 간격 44→30cm 라
+  `GripOffset (12.3, −5.4, 17.3) → (11.5, 1.6, 6.7)`·`GripRotation (1.6, 81.6, 51.8) → (4.9, 112.4, 26.8)`; 고기·팬은 `forward`(몸통 정면 15° 위)/
+  `knuckle`(너클 축) 두 후보 — 표 적용·PIE A5 판정은 리드.
+- 미리보기(게이트 15장): `hold_{Small,Flashlight,Large}_fp_fp.png`·`fparmsdown_f1_fp.png`·`fprun_f{1,5,10,14}_fp.png`·`windup_fp_f1_fp.png`·
+  `swing_fp_f{1,5,9}_fp.png`·`eat_fp_f{1,5,9}_fp.png`(+ `_front`·`_hand` 보조).
+- 하지 않은 것: manifest `animations` 의 HoldIdle/FPHoldIdle 항목·Idle FBX·미리보기 삭제(리드 판단), 전신 Hold·SwingWindup·Eat 재수출.

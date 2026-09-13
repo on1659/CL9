@@ -4,6 +4,22 @@
 
 ## 현재 재개 지점
 
+- **[fp-viewmodel 실행 2026-09-13 저녁] 농부 A 1인칭 클립 8종을 카메라 로컬 뷰모델로 재저작 + 전신 Swing 30fps 재수출 — FBX·미리보기 완료, 사용자 미리보기 "가" → UE 임포트·ABP_FP_View 연결 전.**
+  팔 메시가 카메라 자식이 되어(gameplay) 클립 공간 = 눈 (0,0,1.56m)·피치 0 고정·전 뼈 소유(`farmer_pose.py` 머리말, manifest `space: camera`).
+  `AN_Farmer_FPHoldSmall/Flashlight/Large`(리썰식 — 팔꿈치 ~90°, 주먹이 우하단 구석에서 들어옴; 사용자 피드백으로 brief 보다 바깥)·`FPArmsDown`·`FPRun`(앞 극점 100°)·`FPSwingWindup`(우상단)·
+  `FPSwing`·`AN_Farmer_Swing`(0.467초)·`FPEat`. 미리보기는 게임과 같은 카메라(`render_fp` 1280×720·FOV 70) + `fp_screen_uv` 실측.
+  일괄 재수출 `py -3 Tools/Blender/export_farmer_fp_clips.py`. 리드가 `Tools/Unreal/import_farmer_clips.py`(기본 9클립)로 임포트하고
+  전신 ABP 휘두르기 문턱 0.58→0.347·오프셋 0.15→0.12, ItemTable 손전등·두 손 행 갱신(031-item-grip.json), PIE A4·A5·A6·C4·Q1·E2.
+  카드: `docs/asset/character/farmer_a.md` 031, 증거 031-farmer-fp-viewmodel.json.
+
+- **[quickslot-rename-ui 실행 2026-09-13 저녁] 퀵슬롯 아이템 아이콘 7종 PNG 완료 — UE 임포트·표 행 전.**
+  `ArtSource/item/<폴더>/icons/T_Icon_<alias>.png`(egg·meat·frying_pan·pot·flashlight·headlamp·standing_lamp, cart 제외) — 흰 실루엣 +
+  알파 128×128, Workbench Flat/Single 흰색·필름 투명·직교 3/4 위 시점(정면에서 −Y 45°·위 35°)·긴 변 88%, 모든 픽셀 RGB=1(색·흐림은 UI).
+  `py -3 Tools/Blender/run_headless.py render_item_icons.py [-- --only egg,pot --preview-dir <폴더>]` → 폴더별 `icons/manifest.json`
+  (png sha256·채움 비율) + `evidence/030-item-icons.json` `render` 절. 리드가 `Tools/Unreal/import_item_icons.py`(`/Game/UI/Icons/T_Icon_<alias>`,
+  TextureGroup UI·NoMipmaps·sRGB·NeverStream·UserInterface2D, sha 대조, 증거 `ue_import` 절) 로 임포트하고 `ItemTable.<alias>[.<sub>].Icon`
+  표 행을 적용한다(egg 상태 행·meat 상태 행은 같은 아이콘). 카드: `docs/asset/item/*.md` "아이콘" 절. PIE G2.
+
 - **[fp-arms-flashlight 실행 2026-09-13 밤] 농부 A 1인칭 빈손 팔 클립 2개 + 손전등 Hold 쌍 재출력 FBX 완료 — UE 임포트·ABP 배선 전.**
   `AN_Farmer_FPArmsDown`(2.0초 루프, 두 손이 프레임 밖 — 서기·걷기 기본, FPHoldIdle 대체)·`AN_Farmer_FPRun`(0.6초 루프, 좌·우 주먹이
   화면 아래 좌우로 번갈아 올라옴, manifest `reference_speed_cm_s` 654 → ABP PlayRate = Speed/654), 전신 클립 없음.

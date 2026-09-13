@@ -196,11 +196,15 @@
       "view": "full body"
     },
     "AN_Farmer_FPHoldSmall": {
-      "fbx_sha256": "9b2d265cf6f211185218e56337bae59b0839897d331c2a93f59140b7205d7cc6",
+      "fbx_sha256": "884be38026d44153aca22673fb764a34e06a310b3666641a08341b0fb2f43c88",
       "loop": true,
       "seconds": 2.0,
-      "layer": "upper body from spine_01",
-      "view": "first-person arms"
+      "fps": 30,
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms",
+      "breath_cm": 0.5
     },
     "AN_Farmer_HoldFlashlight": {
       "fbx_sha256": "e55cda06562444bc70cd430d2c79cce752569e61be2a277c8d773d592ac7e694",
@@ -211,12 +215,15 @@
       "view": "full body"
     },
     "AN_Farmer_FPHoldFlashlight": {
-      "fbx_sha256": "1e09ad3f0069306b1ab3a0b3f24f60f4562832a998d1048f7d82d95975493b3a",
+      "fbx_sha256": "dbfba3a5081c44cc94db7a193d72b2b513400218b060b10ea3b2002612127d71",
       "loop": true,
       "seconds": 2.0,
       "fps": 30,
-      "layer": "upper body from spine_01",
-      "view": "first-person arms"
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms",
+      "breath_cm": 0.5
     },
     "AN_Farmer_HoldLarge": {
       "fbx_sha256": "47d159a9d2ccd19602de844236d6d55512a29d77474803e36c1b91d6ee3e97fa",
@@ -226,39 +233,40 @@
       "view": "full body"
     },
     "AN_Farmer_FPHoldLarge": {
-      "fbx_sha256": "3316c775e87a49a8a373c64430c4690a35968f1bad4e2dbbde5c671d3e9246b0",
+      "fbx_sha256": "841ec17440c20dd6892742fbae6c08c4b9af2cf8e2aefd106ec431231e767e32",
       "loop": true,
       "seconds": 2.0,
-      "layer": "upper body from spine_01",
-      "view": "first-person arms"
-    },
-    "AN_Farmer_HoldIdle": {
-      "fbx_sha256": "5f159bb2fcadf06716280f8916c060919fdb4f042a2ec9685c37f1d853537a36",
-      "loop": true,
-      "seconds": 2.0,
-      "layer": "upper body from spine_01",
-      "view": "full body"
-    },
-    "AN_Farmer_FPHoldIdle": {
-      "fbx_sha256": "e43a342d955714cfb801233f1b9475298af19997e3ea89031041f0252b88ea23",
-      "loop": true,
-      "seconds": 2.0,
-      "layer": "upper body from spine_01",
-      "view": "first-person arms"
+      "fps": 30,
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms",
+      "breath_cm": 0.5
     },
     "AN_Farmer_Swing": {
-      "fbx_sha256": "dec99d472f5f8cc03e41e859d35737c8f8dc78ac3c40e85dc4d3d096e212f0e3",
+      "fbx_sha256": "511f4983dcd98fd7ef7ba338adac0e8aeaa542ac59616ccc38198abdd8072635",
       "loop": false,
-      "seconds": 0.45,
+      "seconds": 0.4667,
+      "fps": 30,
+      "frames": 15,
+      "windup_time": 0.12,
+      "impact_time": 0.25,
       "layer": "upper body from spine_01 (montage slot)",
       "view": "full body"
     },
     "AN_Farmer_FPSwing": {
-      "fbx_sha256": "518bfc73ee8e5a7ba0975d8cdcb9096114fe10d95d069226fcf06b6a18c7634b",
+      "fbx_sha256": "b0bda5b6f59ca0ab6f47f83fe92b2c9bcb391f81b3366a370ff7a2523b5803e6",
       "loop": false,
-      "seconds": 0.45,
-      "layer": "upper body from spine_01 (montage slot)",
-      "view": "first-person arms"
+      "seconds": 0.4667,
+      "fps": 30,
+      "frames": 15,
+      "windup_time": 0.12,
+      "impact_time": 0.25,
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms",
+      "pose": "HoldSmall(fp) -> windup(upper right, in frame) -> impact(bottom centre) -> HoldSmall(fp)"
     },
     "AN_Farmer_SwingWindup": {
       "fbx_sha256": "82c775aec421255804dd2badecae5b297250011cc9bac7b2be254738ac91a8d7",
@@ -271,14 +279,16 @@
       "breath_cm": 1.0
     },
     "AN_Farmer_FPSwingWindup": {
-      "fbx_sha256": "44166967ad31f795a421d0b90a18ccce35a44e2d920ade9294a7f399c50efd1f",
+      "fbx_sha256": "97ef687e1b0b3622cd198f94c8af82b6b7116c1643f19a5b950501d3418f3df2",
       "loop": true,
       "seconds": 1.0,
       "fps": 30,
-      "layer": "upper body from spine_01 (montage slot)",
-      "view": "first-person arms",
       "pose": "AN_Farmer_Swing t=0.12",
-      "breath_cm": 1.0
+      "breath_cm": 1.0,
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms"
     },
     "AN_Farmer_Eat": {
       "fbx_sha256": "c8f1b01ea1cd6b2a757aa56e22517fb608959419b9f8c558c4ce45628394a0cc",
@@ -290,33 +300,39 @@
       "pose": "HoldSmall -> mouth (0.25~0.35s) -> HoldSmall"
     },
     "AN_Farmer_FPEat": {
-      "fbx_sha256": "7835f99a7edfa157a8613b22b837d2777aa7d1d99b2fca6fc5b27e0630eef032",
+      "fbx_sha256": "78dc4cb41691dbee441251039eb136c0183af92cfa74db2232df5d19a31befb0",
       "loop": false,
       "seconds": 0.6,
       "fps": 30,
-      "layer": "upper body from spine_01 (montage slot)",
-      "view": "first-person arms",
-      "pose": "HoldSmall -> mouth (0.25~0.35s) -> HoldSmall"
+      "pose": "HoldSmall -> mouth (0.25~0.35s) -> HoldSmall",
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
+      "view": "first-person arms"
     },
     "AN_Farmer_FPArmsDown": {
-      "fbx_sha256": "ab1352588e4241a5063b58f4a5f322238e2775fbbf84c4c2c1c074f852311a4b",
-      "loop": true,
+      "fbx_sha256": "f68cc989909f42f5eebe05c4c592837cb91aededa60f8a3639353778eabd32d5",
       "seconds": 2.0,
-      "fps": 30,
-      "layer": "upper body from spine_01",
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
       "view": "first-person arms",
+      "fps": 30,
+      "loop": true,
       "pose": "both arms down/out of frame (run arc theta=22.0deg)",
       "breath_cm": 0.5
     },
     "AN_Farmer_FPRun": {
-      "fbx_sha256": "cca09c3195256b60b08c262f3dd5a453a575c1bafb9315f79c9a33e226d14c2c",
-      "loop": true,
+      "fbx_sha256": "c70bfe65b5e2561229a61143aa484cd97daf7156ad2aac01449243cfe6fd8712",
       "seconds": 0.6,
-      "fps": 30,
-      "reference_speed_cm_s": 654,
-      "layer": "upper body from spine_01",
+      "space": "camera",
+      "eye_height_m": 1.56,
+      "layer": "full rig (camera-local view model, spine identity)",
       "view": "first-person arms",
-      "pose": "alternating arm swing on shoulder arc theta -25.0..92.0deg, r=0.35m"
+      "fps": 30,
+      "loop": true,
+      "reference_speed_cm_s": 654,
+      "pose": "alternating arm swing on shoulder arc theta -25.0..100.0deg, r=0.35m"
     }
   },
   "hold_spec": {
@@ -354,23 +370,28 @@
         "spine": {},
         "arm_r": {
           "wrist": [
-            -0.15,
-            -0.45,
-            1.36
+            -0.24,
+            -0.36,
+            1.415
           ],
           "pole": [
-            -1.0,
-            -0.3,
+            -0.7,
+            0.0,
             -1.0
           ],
           "fingers": [
-            0.0,
-            -1.0,
-            0.3
+            0.3,
+            -0.85,
+            0.4
+          ],
+          "palm": [
+            0.9,
+            0.1,
+            -0.3
           ],
           "hand_roll": 0.0,
-          "curl": 0.6,
-          "thumb": 0.3
+          "curl": 1.1,
+          "thumb": 0.5
         }
       }
     },
@@ -408,19 +429,24 @@
         "spine": {},
         "arm_r": {
           "wrist": [
-            -0.13,
-            -0.5,
-            1.45
+            -0.24,
+            -0.35,
+            1.415
           ],
           "pole": [
             -1.0,
             -0.2,
-            -1.0
+            -0.7
           ],
           "fingers": [
-            0.6,
-            -0.6,
-            -0.5
+            0.55,
+            -0.75,
+            0.35
+          ],
+          "palm": [
+            0.9,
+            0.1,
+            -0.35
           ],
           "hand_roll": 0.0,
           "curl": 1.4,
@@ -482,131 +508,53 @@
         "spine": {},
         "arm_r": {
           "wrist": [
-            -0.22,
-            -0.45,
-            1.3
-          ],
-          "pole": [
-            -1.0,
-            -0.2,
-            -1.0
-          ],
-          "fingers": [
-            0.0,
-            -1.0,
-            0.2
-          ],
-          "hand_roll": 0.0,
-          "curl": 0.5,
-          "thumb": 0.3
-        },
-        "arm_l": {
-          "wrist": [
-            0.22,
-            -0.45,
-            1.3
-          ],
-          "pole": [
-            1.0,
-            -0.2,
-            -1.0
-          ],
-          "fingers": [
-            0.0,
-            -1.0,
-            0.2
-          ],
-          "hand_roll": 0.0,
-          "curl": 0.5,
-          "thumb": 0.3
-        }
-      }
-    },
-    "Idle": {
-      "tp": {
-        "spine": {},
-        "arm_r": {
-          "wrist": [
-            -0.3,
-            -0.16,
-            1.02
+            -0.15,
+            -0.36,
+            1.44
           ],
           "pole": [
             -1.0,
             0.0,
-            -0.5
-          ],
-          "fingers": [
-            0.0,
-            -0.4,
-            -1.0
-          ],
-          "hand_roll": 0.0,
-          "curl": 0.25,
-          "thumb": 0.2
-        },
-        "arm_l": {
-          "wrist": [
-            0.3,
-            -0.16,
-            1.02
-          ],
-          "pole": [
-            1.0,
-            0.0,
-            -0.5
-          ],
-          "fingers": [
-            0.0,
-            -0.4,
-            -1.0
-          ],
-          "hand_roll": 0.0,
-          "curl": 0.25,
-          "thumb": 0.2
-        }
-      },
-      "fp": {
-        "spine": {},
-        "arm_r": {
-          "wrist": [
-            -0.17,
-            -0.42,
-            1.39
-          ],
-          "pole": [
-            -1.0,
-            -0.2,
-            -1.0
+            -0.6
           ],
           "fingers": [
             0.35,
-            -1.0,
-            -0.45
+            -0.9,
+            -0.1
+          ],
+          "palm": [
+            0.95,
+            0.0,
+            -0.2
           ],
           "hand_roll": 0.0,
-          "curl": 0.5,
-          "thumb": 0.2
+          "curl": 0.9,
+          "thumb": 0.4
         },
         "arm_l": {
           "wrist": [
-            0.17,
-            -0.42,
-            1.39
+            0.15,
+            -0.36,
+            1.44
           ],
           "pole": [
             1.0,
-            -0.2,
-            -1.0
+            0.0,
+            -0.6
           ],
           "fingers": [
             -0.35,
-            -1.0,
-            -0.45
+            -0.9,
+            -0.1
+          ],
+          "palm": [
+            -0.95,
+            0.0,
+            -0.2
           ],
           "hand_roll": 0.0,
-          "curl": 0.5,
-          "thumb": 0.2
+          "curl": 0.9,
+          "thumb": 0.4
         }
       }
     }
@@ -680,7 +628,7 @@
         }
       ],
       [
-        0.45,
+        0.4666666666666667,
         {
           "wrist": [
             -0.17,
@@ -707,88 +655,112 @@
         0.0,
         {
           "wrist": [
-            -0.15,
-            -0.45,
-            1.36
+            -0.24,
+            -0.36,
+            1.415
           ],
           "pole": [
-            -1.0,
-            -0.3,
+            -0.7,
+            0.0,
             -1.0
           ],
           "fingers": [
-            0.0,
-            -1.0,
-            0.3
+            0.3,
+            -0.85,
+            0.4
           ],
-          "curl": 0.6,
-          "thumb": 0.3
+          "palm": [
+            0.9,
+            0.1,
+            -0.3
+          ],
+          "hand_roll": 0.0,
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
         0.12,
         {
           "wrist": [
-            -0.32,
-            -0.3,
-            1.58
+            -0.17,
+            -0.34,
+            1.57
           ],
           "pole": [
             -1.0,
             0.2,
-            -0.6
+            -0.5
           ],
           "fingers": [
-            -0.3,
-            -0.6,
+            -0.25,
+            -0.55,
             0.8
           ],
-          "curl": 0.6,
-          "thumb": 0.3
+          "palm": [
+            0.9,
+            0.35,
+            0.2
+          ],
+          "hand_roll": 0.0,
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
         0.25,
         {
           "wrist": [
-            -0.02,
-            -0.42,
-            1.24
+            -0.05,
+            -0.4,
+            1.42
           ],
           "pole": [
-            -0.6,
+            -0.5,
             -0.8,
             -0.8
           ],
           "fingers": [
             0.3,
-            -0.9,
-            -0.4
+            -0.85,
+            -0.45
           ],
-          "curl": 0.6,
-          "thumb": 0.3
+          "palm": [
+            0.9,
+            0.0,
+            0.4
+          ],
+          "hand_roll": 0.0,
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
-        0.45,
+        0.4666666666666667,
         {
           "wrist": [
-            -0.15,
-            -0.45,
-            1.36
+            -0.24,
+            -0.36,
+            1.415
           ],
           "pole": [
-            -1.0,
-            -0.3,
+            -0.7,
+            0.0,
             -1.0
           ],
           "fingers": [
-            0.0,
-            -1.0,
-            0.3
+            0.3,
+            -0.85,
+            0.4
           ],
-          "curl": 0.6,
-          "thumb": 0.3
+          "palm": [
+            0.9,
+            0.1,
+            -0.3
+          ],
+          "hand_roll": 0.0,
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ]
     ]
@@ -819,22 +791,28 @@
       },
       "fp": {
         "wrist": [
-          -0.32,
-          -0.3,
-          1.58
+          -0.17,
+          -0.34,
+          1.57
         ],
         "pole": [
           -1.0,
           0.2,
-          -0.6
+          -0.5
         ],
         "fingers": [
-          -0.3,
-          -0.6,
+          -0.25,
+          -0.55,
           0.8
         ],
-        "curl": 0.6,
-        "thumb": 0.3
+        "palm": [
+          0.9,
+          0.35,
+          0.2
+        ],
+        "hand_roll": 0.0,
+        "curl": 1.1,
+        "thumb": 0.5
       }
     }
   },
@@ -938,23 +916,28 @@
         0.0,
         {
           "wrist": [
-            -0.15,
-            -0.45,
-            1.36
+            -0.24,
+            -0.36,
+            1.415
           ],
           "pole": [
-            -1.0,
-            -0.3,
+            -0.7,
+            0.0,
             -1.0
           ],
           "fingers": [
-            0.0,
-            -1.0,
-            0.3
+            0.3,
+            -0.85,
+            0.4
+          ],
+          "palm": [
+            0.9,
+            0.1,
+            -0.3
           ],
           "hand_roll": 0.0,
-          "curl": 0.6,
-          "thumb": 0.3
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
@@ -963,21 +946,26 @@
           "wrist": [
             -0.05,
             -0.27,
-            1.5
+            1.49
           ],
           "pole": [
-            -1.0,
-            -0.3,
-            -1.0
+            -0.9,
+            -0.2,
+            -0.8
           ],
           "fingers": [
-            0.3,
-            0.9,
-            0.4
+            0.15,
+            0.55,
+            0.82
+          ],
+          "palm": [
+            0.4,
+            0.8,
+            -0.4
           ],
           "hand_roll": 0.0,
-          "curl": 0.6,
-          "thumb": 0.3
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
@@ -986,44 +974,54 @@
           "wrist": [
             -0.05,
             -0.27,
-            1.5
+            1.49
           ],
           "pole": [
-            -1.0,
-            -0.3,
-            -1.0
+            -0.9,
+            -0.2,
+            -0.8
           ],
           "fingers": [
-            0.3,
-            0.9,
-            0.4
+            0.15,
+            0.55,
+            0.82
+          ],
+          "palm": [
+            0.4,
+            0.8,
+            -0.4
           ],
           "hand_roll": 0.0,
-          "curl": 0.6,
-          "thumb": 0.3
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ],
       [
         0.6,
         {
           "wrist": [
-            -0.15,
-            -0.45,
-            1.36
+            -0.24,
+            -0.36,
+            1.415
           ],
           "pole": [
-            -1.0,
-            -0.3,
+            -0.7,
+            0.0,
             -1.0
           ],
           "fingers": [
-            0.0,
-            -1.0,
-            0.3
+            0.3,
+            -0.85,
+            0.4
+          ],
+          "palm": [
+            0.9,
+            0.1,
+            -0.3
           ],
           "hand_roll": 0.0,
-          "curl": 0.6,
-          "thumb": 0.3
+          "curl": 1.1,
+          "thumb": 0.5
         }
       ]
     ]
@@ -1035,11 +1033,11 @@
       "radius_m": 0.35,
       "theta_deg": [
         -25.0,
-        92.0
+        100.0
       ],
       "x_out_m": [
         0.28,
-        0.2
+        0.14
       ],
       "fingers": [
         [

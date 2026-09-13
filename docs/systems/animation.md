@@ -75,74 +75,65 @@
 
 ## 1인칭 팔 (FPP Arms)
 
-시점이 1인칭이고 **자기 화면에는 손(팔)만 보인다** ([character.md](character.md)):
+시점이 1인칭이고 **자기 화면에는 손(팔)만 보인다** ([character.md](character.md)). 2026-09-13 저녁 fp-viewmodel 에서 **리썰
+컴퍼니식 뷰모델**로 바꿨다 — 사용자 "애니메이션이 부자연스러워, 억지로 팔을 들고 있는 모습", "위아래를 볼 때 손이 움직이는 거랑
+시야가 이상해, 리썰 조작감으로". 그 전(2026-09-12~13 밤)의 팔 쪽 구조 — 몸 포즈 복사(`ABP_FP_Copy` CopyPoseFromMesh)·상체 레이어·
+ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는 전부 폐기했다. 전신(남이 보는 것)은 아래 "전신 ABP_Unarmed" 그대로.
 
-- **팔 전용 메시 + 팔 전용 AnimBP**를 풀바디와 별도로 둔다 (표준 FPS 관행) — 카메라에는
-  팔 메시만, 타인에게는 풀바디만 보이게 Owner See / Owner No See로 분리.
-- 든 오브젝트는 **전신 메시의 손 소켓 `HandGrip_R`**에 부착하고(2026-09-12 구현 — 팔 메시가
-  아니라 전신인 이유는 [inventory.md](inventory.md)), 팔 메시는 FP Copy로 같은 포즈를 따라간다.
-  줍기·던지기·교체·손전등 토글의 1인칭 애님과 Hold 자세 클립이 여기 산다. Hold 자세는 범주별
-  (`ECL9HoldPose` Small/Flashlight/Large) 전신 클립 + 1인칭 팔 클립 한 쌍으로 2026-09-12에 들어갔다 —
-  [inventory.md](inventory.md) "들면 팔이 올라온다". 줍기·던지기 동작 클립은 아직 없다.
-- **Hold 상체 레이어 배선** (2026-09-12, ABP_Unarmed·ABP_FP_Copy 동일 구조): 기존 포즈 체인 사이에
-  `본별 레이어드 블렌딩`(`spine_01`, 로컬 공간, BlendDepth 0)을 끼운다 — 전신은 `Slot(DefaultSlot)` →
-  레이어 → `ControlRig(발 IK)`, 팔은 `CopyPoseFromMesh` → 레이어 → `ControlRig(FPWarp)`. 레이어의
-  블렌드 포즈는 **부울 블렌드 2단**: `HoldPose == Large ? HoldLarge : (HoldPose == Flashlight ?
-  HoldFlashlight : HoldSmall)` (팔은 `FPHold*` 클립), 전신의 가중치는 `ToFloat(NOT(HoldPose == None))`.
-  **팔 ABP는 가중치 1 고정 + `HoldPose == None ? (빈손 가지) : (위 체인)` 한 단을 더 둔다**. 빈손 가지는 처음(2026-09-12 낮,
-  사용자 "idle에서도 손이 화면에 보여야 한다") `FPHoldIdle`(두 손이 화면 아래 양쪽에 보임)이었으나 2026-09-13 밤 사용자가
-  뒤집었다("항상 손을 보이게 하니 부자연스럽다") — 지금 규칙은 아래 "1인칭 팔 표시 규칙". 전신(남이 보는 것)은 빈손이면
-  템플릿 로코모션 그대로.
-  `BlendPoses(ECL9HoldPose)` 노드를 안 쓴 이유: 항목 핀 노출(`ExposeEnumElementAsPin`)이 에디터
-  컨텍스트 메뉴 전용이라 MCP/파이썬으로 만들 수 없다 — 부울 블렌드는 모양이 고정이라 자동화가 된다.
-  ABP 변수 `HoldPose`(ECL9HoldPose)는 EventGraph가 매 틱 `Cast To CL9Character → GetHoldPose`로
-  채운다(전신은 `SetIsFalling` 뒤, 팔은 `BlueprintUpdateAnimation → TryGetPawnOwner`). 변수 생성은
-  `BlueprintEditorLibrary.add_member_variable` + `EdGraphPinType.import_text('(PinCategory="byte",
-  PinSubCategoryObject="/Script/CL9.ECL9HoldPose")')`(MCP `add_variable`은 프리미티브만 받는다).
-  PIE(Lvl_Flat) 확인: 손전등·달걀·냄비·작업등 모두 두 ABP의 `HoldPose`가 행 값과 일치하고 아이템이
-  화면 하단(x 0.55~0.64, y 0.75~0.89)에 들어온다. 카메라·팔 메시 상대 위치는 건드리지 않았다.
-- **휘두르기 가지** (2026-09-13, 사용자 "아예 액션을 안 해"): 좌클 `Swing`의 표현. 몽타주·RPC가 아니라 **상태 파생**이다 —
-  `ACL9Character::SwingStartServerTime`(복제)에서 `GetSwingElapsed()`가 지난 초를 주고, ABP 변수 `SwingElapsed`가 매 틱
-  그 값을 받는다. 두 ABP 모두 Hold 체인 머리 앞에 부울 블렌드 한 단: `InRange(SwingElapsed, 0, 0.58)`이면
-  **시퀀스 평가기**(`AN_Farmer_Swing` / 팔 `AN_Farmer_FPSwing`, `ExplicitTime = SwingElapsed`), 아니면 기존 Hold 체인.
-  원샷을 평가기+경과 시각으로 트는 이유: 시퀀스 플레이어는 가지가 켜질 때 처음부터 재생된다는 보장이 없고, 복제된
-  시작 시각이면 모든 머신이 같은 프레임을 본다. 클립은 Small 들기 자세에서 치켜들었다 내려치는 15프레임(30fps 저작 →
-  임포트 0.583초, 문턱 0.58), `Tools/Blender/animate_farmer_swing.py`(+ 공용 `farmer_pose.py`), 임포트
-  `Tools/Unreal/import_farmer_swing.py` → `/Game/Characters/FarmerA/Anims`. 판정(`HostSwing`)은 누르는 즉시이고 애님은
-  따라올 뿐이다 — 규칙 2.
-- **공격 대기·먹기 가지** (2026-09-13 밤, use-hint-anim — 사용자 "좌클 누르면 공격 대기, 떼면 공격", "먹을 때 손이 입 쪽으로"):
-  둘 다 휘두르기와 같은 **상태 파생**이다. ABP 변수 두 개를 매 틱 채운다 — `SwingWindupElapsed`
-  (`ACL9Character::GetSwingWindupElapsed()`, **−1 이면 대기 아님**, 아니면 좌클을 누른 뒤 지난 초)와 `EatElapsed`
-  (`GetEatElapsed()`, 먹기 시작 뒤 지난 초, 아니면 −1). 두 ABP 모두 휘두르기 부울 블렌드 앞에 두 단을 더 둔다(우선순위 순):
-  1. `EatElapsed`가 `[0, 0.6)` 이면 **시퀀스 평가기** `AN_Farmer_Eat` / 팔 `AN_Farmer_FPEat`, `ExplicitTime = EatElapsed`
-     (0.6초 원샷, 시작·끝이 HoldSmall 이라 Hold 체인으로 돌아갈 때 튀지 않는다). 판정은 즉시, 먹는 동안 칸 전환 허용(기본값 18).
-  2. `SwingWindupElapsed >= 0` 이면 **시퀀스 플레이어** `AN_Farmer_SwingWindup` / 팔 `AN_Farmer_FPSwingWindup`(1.0초 루프, 루프 켬,
-     자세는 휘두르기 t=0.12 의 치켜든 자세 + 손목 ±1cm 숨쉬기). 무한 대기 — 길이 제한 없음(사용자 답 "무한 대기").
-  3. 뗀 뒤(`SwingWindupElapsed == -1`, `SwingStartServerTime` 갱신)는 기존 휘두르기 가지가 받되 **치켜든 자세부터** 잇는다:
-     `ExplicitTime = SwingElapsed + WindupOffset`, 범위 `InRange(SwingElapsed, 0, 0.58 − WindupOffset)`. `WindupOffset` 은 지금
-     임포트된 `AN_Farmer_Swing`(24fps 로 구워져 0.583초)에서는 **0.15초**(저작 t=0.12 × 0.583/0.45), 스윙을 30fps 로 다시
-     수출하면 0.12(그때 총 길이 0.467·문턱 0.47) — [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 026 의 알려진 것.
-     탭(누르자마자 뗌)도 같은 경로라 "평범한 공격"은 치켜든 자세에서 바로 내려치는 0.43초가 된다(기본값 17).
-  클립 제작 `Tools/Blender/animate_farmer_windup.py`·`animate_farmer_eat.py`, 임포트 `Tools/Unreal/import_farmer_clips.py`,
-  30fps·Manny 스켈레톤·`/Game/Characters/FarmerA/Anims` — [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 028.
-- **1인칭 팔 표시 규칙** (2026-09-13 밤, fp-arms-flashlight — 사용자 "리썰처럼 최초 화면에선 안 보이다가, 뛸 때 손을 흔들면서
-  뛰는 애니메이션으로 손을 자연스럽게 보여주자. 플래시를 들면 손을 조금 뻗어서 플래시가 보이게"; 기본값 19·20):
-  1. **빈손(`HoldPose == None`) 가지** = `IsRunning ? FPRun : FPArmsDown` — `AN_Farmer_FPHoldIdle` 을 대체한다.
-     `AN_Farmer_FPArmsDown`(2.0초 루프)은 두 손이 카메라 프레임 밖(아래·바깥)에 있는 자세라 **서 있거나 걸을 때는 손이 안 보인다**
-     (38° 넘게 내려다보면 늘어뜨린 손이 들어온다). `AN_Farmer_FPRun`(0.6초 루프)은 좌·우 주먹이 화면 아래 좌우로 번갈아 올라오는
-     리썰식 뷰모델 흔들기 — **시퀀스 플레이어 `PlayRate = GetGroundSpeed() / 654`**(manifest `reference_speed_cm_s`, RunSpeed —
-     "로코모션 재생 배율" 규칙). ABP 변수 `IsRunning`(`ACL9Character::IsRunning()`)·`Speed`(`GetGroundSpeed()`)를 매 틱 채운다
-     (gameplay 게터). 걷기는 팔이 안 보이므로 걷기 전용 팔 클립은 없다.
-  2. **손에 든 것**은 기존 Hold 체인 그대로. 손전등 자세(`AN_Farmer_FPHoldFlashlight`)만 손목을 8cm 앞·3cm 위로 뻗어 손전등 몸통·
-     렌즈가 프레임 오른쪽 아래(세로 ~0.78)에 확실히 보이게 재출력했다 — 029.
-  3. **피치 추종** — 두 ABP(전신 `ABP_Unarmed`·팔 `ABP_FP_Copy`) 모두 Hold 레이어 **뒤**에 `Transform (Modify) Bone`(`spine_03`,
-     회전 Add, 피치 = `AimPitch × 0.6`, ABP 변수 `AimPitch` ← `GetAimPitch()`)을 둔다. 손전등 빔이 렌즈(메시 +X)에서 나가므로
-     (light.md) 아래를 보면 팔·손전등이 따라 기울어 바닥이 비춰지고, 남의 화면에서도 상체가 기운다. 계수 0.6 은 초안 — 리드가
-     배선·PIE 로 확정한다. 팔 ABP 는 CopyPoseFromMesh 로 전신 포즈를 받으므로 전신 쪽만 두면 팔도 따라오지만, 레이어 뒤에서 팔
-     클립이 spine_01 아래를 덮으므로 팔 ABP 에도 같은 노드가 필요하다.
-  클립 제작 `Tools/Blender/animate_farmer_fparms.py`, 임포트 `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 029 의 4클립) —
-  [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 029. `AN_Farmer_FPHoldIdle` 은 참조 해제 뒤 삭제 여부 리드 판단
-  (기본값 21).
+- **팔은 카메라 자식** — 팔 메시 `SK_Farmer_A_Arms`(OnlyOwnerSee, `FirstPersonPrimitiveType::FirstPerson`, FOV 70·스케일 0.6)는
+  **카메라 컴포넌트의 자식**이다: 상대 `(0,0,−EyeHeight)`·yaw −90 (리그 root 가 원점, 눈이 (0,0,EyeHeight)에서 +X 를 봄 —
+  `ACL9Character` 생성자, EyeHeight 는 CharacterTable). 시선 피치·요는 카메라가 통째로 돌리므로 팔은 항상 화면의 같은 자리에 있고,
+  든 아이템은 `FirstPersonMesh:HandGrip_R` 에 붙어 같이 돈다(시선·이동에 따라 손 자세가 흔들려 "아이템이 자꾸 회전"으로 보이던 것이
+  사라진다). 리썰과 같이 두는 것: 스태미나 카메라 셰이크는 POV 만 흔들어 팔이 화면에 고정된 채 세상이 흔들려 보인다.
+- **전용 `ABP_FP_View`** — 몸과 무관한 카메라 로컬 클립만 튼다. 우선순위 순 부울 블렌드(BlendTime 0.15):
+  1. `EatElapsed ∈ [0, 0.6)` → 시퀀스 평가기 `AN_Farmer_FPEat`(`ExplicitTime = EatElapsed`)
+  2. `SwingWindupElapsed ≥ 0` → 시퀀스 플레이어 `AN_Farmer_FPSwingWindup`(1.0초 루프)
+  3. `SwingElapsed ∈ [0, 0.347)` → 시퀀스 평가기 `AN_Farmer_FPSwing`(`ExplicitTime = SwingElapsed + 0.12` — 치켜든 자세부터, 클립 0.467초)
+  4. `HoldPose == None ? (IsRunning ? AN_Farmer_FPRun[루프, PlayRate = Speed / 654] : AN_Farmer_FPArmsDown[루프])
+     : (Large ? FPHoldLarge : Flashlight ? FPHoldFlashlight : FPHoldSmall)`
+  변수 `HoldPose`·`IsRunning`·`Speed`·`SwingElapsed`·`SwingWindupElapsed`·`EatElapsed` 는 매 틱 `ACL9Character` 게터로 채운다
+  (전신 ABP 와 같은 게터, `BlueprintUpdateAnimation → TryGetPawnOwner`). 빈손 규칙(기본값 19·20)은 그대로: 서 있거나 걸을 때는 손이
+  안 보이고(`FPArmsDown` 은 프레임 밖 — 카메라 자식이라 피치와 무관하게 항상), 달릴 때만 주먹이 화면 아래 좌우로 번갈아(`FPRun`,
+  "로코모션 재생 배율" 규칙). 걷기 전용 팔 클립은 없다.
+- **카메라 로컬 클립 규약** (`Tools/Blender/farmer_pose.py` 머리말, [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 031):
+  클립 공간 = 리그 root 원점, 눈 (0,0,1.56m)에서 −Y(Blender)/+X(UE)를 보는 공간. **피치 0 고정 프레이밍**으로만 저작한다(피치·요는
+  카메라가 돌린다). 몸 포즈 복사·척추 레이어가 없으니 **클립 하나가 전 뼈를 소유한다** — root·pelvis·spine 은 identity, 숨쉬기는 척추가
+  아니라 손목 z 사인. manifest `animations[*]` 에 `space: "camera"`·`eye_height_m: 1.56` 이 붙은 항목만 이 ABP 에 넣는다(전신용
+  `full body` 항목과 섞지 않는다). 자세는 리썰식 — 팔꿈치 ~90° 굽힌 느슨한 자세, 아래팔이 우하단 구석에서 안쪽으로 올라오고 주먹이
+  구석에서 화면 안으로 들어오며 손등·엄지가 카메라를 향한다(억지로 들지 않는다; 사용자 기준 캡처 `preview/my/1.png`).
+- **미리보기 모델** — `farmer_pose.render_fp(tag, dir, pitch_deg=0)` 가 게임과 같은 카메라(1280×720·가로 FOV 70 → 세로 반각 21.5°·
+  눈 1.56m·근접 5cm/0.6 = 8.3cm)로 팔 메시만 그리고, `fp_screen_uv(point)` 가 리그 공간 점의 화면 (u, v)(왼쪽 위 0,0, 프레임 밖이면
+  None)를 준다 — 문서·보고서의 화면 위치 수치는 전부 이 함수의 실측이다. FirstPersonScale 0.6 은 카메라 원점 기준 닮음 변환이라 화면상
+  위치·크기가 그대로다(근접 클립만 환산). 미리보기 게이트: 사용자가 `preview/*_fp.png` 를 보고 "가"를 준 뒤 임포트한다(기본값 12).
+- **클립 9종(031)** — 1인칭 8: `FPHoldSmall`(2.0s 루프, 오른 주먹이 우하단 구석에서 들어옴 — 너클 (0.83, 0.83), 주먹 중심 ≈ (0.90, 0.92))·
+  `FPHoldFlashlight`(같은 높이·구석, 꽉 쥔 주먹 — 렌즈 정면은 ItemTable `flashlight.GripRotation` 새 행이 맞춘다)·`FPHoldLarge`(두 주먹 중심
+  ≈ 0.28/0.72·v 0.9)·`FPArmsDown`·
+  `FPRun`(0.6s 루프, `reference_speed_cm_s` 654, 앞 극점 주먹 u 0.65~0.82·v 0.58~0.77)·`FPSwingWindup`(1.0s 루프, 주먹 우상단)·
+  `FPSwing`(0.467s 원샷)·`FPEat`(0.6s 원샷, 입 앞 = 렌즈 앞 27cm 중앙) + 전신 `AN_Farmer_Swing` 30fps 재수출. 제작 `Tools/Blender/
+  export_farmer_fp_clips.py`(hold·fparms·swing·windup·eat·verify 일괄), 임포트 `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 이 9클립)
+  → `/Game/Characters/FarmerA/Anims`. `AN_Farmer_FPHoldIdle`·`ABP_FP_Copy` 는 참조 해제 뒤 삭제 여부 리드 판단.
+- **전신 `ABP_Unarmed`** (남이 보는 것 — 2026-09-12~13 구조 유지): `Slot(DefaultSlot)` → `본별 레이어드 블렌딩`(`spine_01`, 로컬 공간,
+  BlendDepth 0) → `ControlRig(발 IK)`. 레이어의 블렌드 포즈는 **부울 블렌드 2단** `HoldPose == Large ? HoldLarge : (HoldPose == Flashlight ?
+  HoldFlashlight : HoldSmall)`, 가중치 `ToFloat(NOT(HoldPose == None))` — 빈손이면 템플릿 로코모션 그대로. 레이어 뒤 `Transform (Modify)
+  Bone`(`spine_03`, 회전 Add, 피치 = `AimPitch × 0.6`, `AimPitch` ← `GetAimPitch()`)로 아래를 보면 상체가 기운다(계수는 초안 — PIE 로 확정).
+  `BlendPoses(ECL9HoldPose)` 노드를 안 쓴 이유: 항목 핀 노출(`ExposeEnumElementAsPin`)이 에디터 컨텍스트 메뉴 전용이라 MCP/파이썬으로
+  만들 수 없다. ABP 변수 `HoldPose`(ECL9HoldPose)는 EventGraph 가 매 틱 `Cast To CL9Character → GetHoldPose` 로 채운다(`SetIsFalling`
+  뒤); 변수 생성은 `BlueprintEditorLibrary.add_member_variable` + `EdGraphPinType.import_text('(PinCategory="byte",
+  PinSubCategoryObject="/Script/CL9.ECL9HoldPose")')`(MCP `add_variable` 은 프리미티브만 받는다).
+  - **휘두르기 가지** (2026-09-13, 사용자 "아예 액션을 안 해"): 좌클 `Swing` 의 표현. 몽타주·RPC 가 아니라 **상태 파생** — `ACL9Character::
+    SwingStartServerTime`(복제)에서 `GetSwingElapsed()` 가 지난 초를 주고 ABP 변수 `SwingElapsed` 가 매 틱 받는다. Hold 체인 머리 앞에
+    부울 블렌드 한 단: `InRange(SwingElapsed, 0, 0.347)` 이면 **시퀀스 평가기** `AN_Farmer_Swing`(`ExplicitTime = SwingElapsed + 0.12`),
+    아니면 Hold 체인. 원샷을 평가기+경과 시각으로 트는 이유: 시퀀스 플레이어는 가지가 켜질 때 처음부터 재생된다는 보장이 없고, 복제된 시작
+    시각이면 모든 머신이 같은 프레임을 본다. 클립은 Small 들기 자세에서 치켜들었다(t=0.12) 내려치는 15프레임 30fps **0.467초**(031 에서
+    재수출 — 옛 24fps 0.583초·문턱 0.58·오프셋 0.15 폐기). 판정(`HostSwing`)은 누르는 즉시이고 애님은 따라올 뿐이다 — 규칙 2.
+  - **공격 대기·먹기 가지** (2026-09-13 밤, use-hint-anim — "좌클 누르면 공격 대기, 떼면 공격", "먹을 때 손이 입 쪽으로"): 같은 상태 파생.
+    ABP 변수 `SwingWindupElapsed`(`GetSwingWindupElapsed()`, **−1 이면 대기 아님**)·`EatElapsed`(`GetEatElapsed()`, 아니면 −1). 휘두르기
+    부울 블렌드 앞에 우선순위 순으로 (1) `EatElapsed ∈ [0, 0.6)` → 시퀀스 평가기 `AN_Farmer_Eat`(`ExplicitTime = EatElapsed`; 시작·끝이
+    HoldSmall 이라 튀지 않는다, 먹는 동안 칸 전환 허용 — 기본값 18) (2) `SwingWindupElapsed >= 0` → 시퀀스 플레이어 `AN_Farmer_SwingWindup`
+    (1.0초 루프, 휘두르기 t=0.12 자세 + 손목 ±1cm; 무한 대기). 뗀 뒤는 휘두르기 가지가 치켜든 자세부터 잇는다 — 탭도 같은 경로라 "평범한
+    공격"은 0.347초(기본값 17).
+  클립 제작 `Tools/Blender/animate_farmer_hold.py`(tp)·`animate_farmer_swing.py`·`animate_farmer_windup.py`·`animate_farmer_eat.py`,
+  30fps·Manny 스켈레톤 — [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 025·026·028.
 - 데이터 연결: `UCL9CharacterDef`에 팔 메시·팔 AnimBP 컬럼 추가 필요 (미결 — 1c에서).
 
 ## 몽타주 사용처

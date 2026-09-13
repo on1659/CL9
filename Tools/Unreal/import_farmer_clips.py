@@ -1,26 +1,28 @@
 """농부 A 애니메이션 클립을 manifest 기반으로 Manny 스켈레톤에 임포트한다 — import_farmer_hold.py/import_farmer_swing.py 의 공용판.
 
-클립 이름 목록은 (1) 명령 인자 `-- <name> ...` (2) 환경변수 CL9_FARMER_CLIPS(쉼표 구분) (3) 기본 = 이번 4클립 순으로 고른다.
+클립 이름 목록은 (1) 명령 인자 `-- <name> ...` (2) 환경변수 CL9_FARMER_CLIPS(쉼표 구분) (3) 기본 = 이번 9클립 순으로 고른다.
 각 이름은 `ArtSource/character/farmer_a/manifest.json` `animations` 에 있어야 하고, `export/<name>.fbx` 의 sha256 이 manifest 와
 같아야 임포트한다. 레거시 FBX 경로(`Interchange.FeatureFlags.Import.FBX 0`, 끝나면 복구), 목적 폴더 CL9_FARMER_ANIMS
 (기본 /Game/Characters/FarmerA/Anims). 임포트 뒤 길이가 manifest `seconds` 와 0.05초 넘게 다르면 경고(FBX fps 불일치 신호 —
 farmer_pose.export_action 이 스테이징 장면 fps 를 맞춘 뒤로는 30fps 그대로 들어온다). 증거 JSON 은 CL9_FARMER_EVIDENCE
-(기본 docs/asset/evidence/029-farmer-fparms.json — 이미 있으면 `ue_import` 절만 갱신).
+(기본 docs/asset/evidence/031-farmer-fp-viewmodel.json — 이미 있으면 `ue_import` 절만 갱신).
 
 실행(리드): `py -3 Tools/Unreal/run_python.py Tools/Unreal/import_farmer_clips.py` — 원격 실행은 인자·환경변수를 못 넘기므로 기본
-4클립(029: FPArmsDown·FPRun + 재출력한 Flashlight Hold 쌍)이 들어간다. 다른 목록은 에디터 Output Log 의 Python 콘솔에서
+9클립(031 fp-viewmodel: 카메라 로컬 1인칭 8종 FPHoldSmall·FPHoldFlashlight·FPHoldLarge·FPArmsDown·FPRun·FPSwingWindup·FPSwing·FPEat +
+30fps 로 재수출한 전신 AN_Farmer_Swing)이 들어간다. 다른 목록은 에디터 Output Log 의 Python 콘솔에서
 `import os; os.environ['CL9_FARMER_CLIPS']='AN_Farmer_Swing,AN_Farmer_FPSwing'` 를 먼저 치고
 `exec(open(r'D:/Work/unreal/CL9/Tools/Unreal/import_farmer_clips.py', encoding='utf-8').read())`.
 """
 import unreal, json, hashlib, os, sys
 from pathlib import Path
 
-DEFAULT_CLIPS = ['AN_Farmer_FPArmsDown', 'AN_Farmer_FPRun', 'AN_Farmer_FPHoldFlashlight', 'AN_Farmer_HoldFlashlight']
+DEFAULT_CLIPS = ['AN_Farmer_FPHoldSmall', 'AN_Farmer_FPHoldFlashlight', 'AN_Farmer_FPHoldLarge', 'AN_Farmer_FPArmsDown', 'AN_Farmer_FPRun',
+                 'AN_Farmer_FPSwingWindup', 'AN_Farmer_FPSwing', 'AN_Farmer_Swing', 'AN_Farmer_FPEat']
 root = Path(unreal.Paths.project_dir())
 src = root / 'ArtSource/character/farmer_a/export'
 manifest = json.loads((root / 'ArtSource/character/farmer_a/manifest.json').read_text(encoding='utf-8'))
 folder = os.environ.get('CL9_FARMER_ANIMS', '/Game/Characters/FarmerA/Anims')
-evidence = root / os.environ.get('CL9_FARMER_EVIDENCE', 'docs/asset/evidence/029-farmer-fparms.json')
+evidence = root / os.environ.get('CL9_FARMER_EVIDENCE', 'docs/asset/evidence/031-farmer-fp-viewmodel.json')
 if '--' in sys.argv and len(sys.argv) > sys.argv.index('--') + 1:
     names = sys.argv[sys.argv.index('--') + 1:]
 elif os.environ.get('CL9_FARMER_CLIPS'):

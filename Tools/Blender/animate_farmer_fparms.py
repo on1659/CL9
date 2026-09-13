@@ -16,7 +16,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import bpy
 from mathutils import Vector
-from farmer_pose import ROOT, scene, rig, rest, apply_pose, aim, curl, key_current_pose, new_action, action_fcurves, export_action, render_front, render_fp
+from farmer_pose import (ROOT, scene, rig, rest, apply_pose, key_current_pose, new_action, action_fcurves, export_action, render_front, render_fp,
+                         fp_pose_report, FP_EYE_HEIGHT_M)
 
 EXPORT = '--export' in sys.argv
 PREVIEW_DIR = ROOT / 'preview'
@@ -27,12 +28,13 @@ RUN_REFERENCE_SPEED = 654    # cm/s — docs/plan/data/character.md RunSpeed, AB
 DOWN_SECONDS = 2.0
 DOWN_BREATH_CM = 0.5
 
-# 팔 호(m): 어깨(upperarm 기준 위치)를 축으로 반지름 RUN_RADIUS, θ=0 이 수직 아래, +θ 가 앞·위. 어깨 z 1.436 이라 θ=92° 면 손목이
-# 어깨 높이·앞 32cm → 카메라(1.56)에서 20° 아래 = 16:9 FOV70 화면의 세로 96% 지점(아래 가장자리, 주먹은 그 위 0.72~0.95),
-# θ≤40° 면 60° 넘게 아래(프레임 밖). 화면 세로 = 0.5 + 0.5·tanθ/tan21.5°.
+# 팔 호(m): 어깨(upperarm 기준 위치)를 축으로 반지름 RUN_RADIUS, θ=0 이 수직 아래, +θ 가 앞·위. 어깨 z 1.436 이라 θ=100° 면 손목이
+# 어깨보다 6cm 위·앞 34cm → 카메라(1.56)에서 12° 아래 = 16:9 FOV70 화면의 세로 0.86(주먹은 그 위 ~0.65~0.86), θ≤40° 면 60° 넘게
+# 아래(프레임 밖). 화면 세로 = 0.5 + 0.5·tanθ/tan21.5° (farmer_pose.fp_screen_uv). 029 는 92°·0.20 이었는데 게임과 같은 카메라로 다시
+# 보니 주먹이 우하단 모서리에 걸쳐 잘려(u 0.76~0.94·v 0.73~0.96) 031 에서 앞 극점을 8° 올리고 바깥 거리를 6cm 좁혔다.
 RUN_RADIUS = 0.35
-RUN_THETA_MIN, RUN_THETA_MAX = -25.0, 92.0
-RUN_X_BACK, RUN_X_FRONT = 0.28, 0.20         # 손목 바깥쪽 거리 — 뒤에서 벌어지고 앞에서 좁혀진다
+RUN_THETA_MIN, RUN_THETA_MAX = -25.0, 100.0
+RUN_X_BACK, RUN_X_FRONT = 0.28, 0.14         # 손목 바깥쪽 거리 — 뒤에서 벌어지고 앞에서 좁혀진다
 RUN_FINGERS_BACK, RUN_FINGERS_FRONT = (0.0, -0.75, -0.65), (0.1, -0.8, 0.55)
 RUN_CURL, RUN_THUMB = 1.1, 0.6
 RUN_PALM = (1.0, 0.0, -0.6)  # 주먹 손바닥이 몸 안쪽(오른손 +x)·아래를 본다 — 엄지가 위·안쪽, 카메라엔 손등·엄지
@@ -61,29 +63,6 @@ def arm_spec(side, theta_deg, radius, x_out, fingers, curl, thumb, palm, pole, d
             'hand_roll': 0.0, 'curl': curl, 'thumb': thumb}
 
 
-def set_palms(spec):
-    """apply_pose 뒤에 손 뼈를 손가락 축 둘레로 돌려 손바닥이 spec 의 palm 방향(월드)을 보게 한다. farmer_pose.aim 의 roll=0 은
-    최소 회전이라 손이 아래를 향하면 손바닥 방향이 제멋대로다. 손바닥 방향은 축 가정 없이 실측한다 — 가운뎃손가락을 굽혔을 때
-    둘째 마디가 움직이는 쪽(왼손은 뼈 축이 거울상이라 국부 축 부호를 믿을 수 없다)"""
-    for side in ('r', 'l'):
-        arm = spec.get('arm_' + side)
-        if not arm or 'palm' not in arm:
-            continue
-        name = 'hand_' + side
-        f = Vector(arm['fingers']).normalized()
-        aim(name, f, 0.0)
-        curl(side, 0.0, 0.0)
-        straight = rig.pose.bones['middle_02_' + side].head.copy()
-        curl(side, 1.0, 0.0)
-        cur = rig.pose.bones['middle_02_' + side].head - straight
-        want = Vector(arm['palm'])
-        cur_p = (cur - f * cur.dot(f)).normalized()
-        want_p = (want - f * want.dot(f)).normalized()
-        roll = math.atan2(cur_p.cross(want_p).dot(f), cur_p.dot(want_p))
-        aim(name, f, roll)
-        curl(side, arm.get('curl', 0.0), arm.get('thumb'), arm.get('spread', 0.0))
-
-
 def run_spec(u):
     """u∈[0,1] 한 주기. 오른팔 θ = mid + amp·sin(2πu), 왼팔은 반대 위상"""
     mid = (RUN_THETA_MIN + RUN_THETA_MAX) * 0.5
@@ -106,7 +85,7 @@ def down_spec(u):
 
 
 CLIPS = {
-    'AN_Farmer_FPArmsDown': {'seconds': DOWN_SECONDS, 'spec': down_spec, 'preview_frames': (1, 16), 'tag': 'fparmsdown'},
+    'AN_Farmer_FPArmsDown': {'seconds': DOWN_SECONDS, 'spec': down_spec, 'preview_frames': (1,), 'tag': 'fparmsdown'},
     'AN_Farmer_FPRun': {'seconds': RUN_SECONDS, 'spec': run_spec, 'preview_frames': (1, 5, 10, 14), 'tag': 'fprun'},
 }
 
@@ -124,14 +103,13 @@ def main():
             u = (frame - 1) / (end - 1)
             scene.frame_set(frame)
             spec = clip['spec'](u)
-            apply_pose(spec)
-            set_palms(spec)
+            apply_pose(spec)   # palm 이 있으므로 farmer_pose.align_palm 이 손바닥 방향을 실측 정렬한다
             if EXPORT:
                 key_current_pose(keyed, frame)
             if frame in clip['preview_frames']:
                 render_fp(f"{clip['tag']}_f{frame}", PREVIEW_DIR)
                 render_front(f"{clip['tag']}_f{frame}", PREVIEW_DIR)
-                samples[f'f{frame}'] = {side: [round(v, 4) for v in rig.pose.bones['hand_' + side].head] for side in ('r', 'l')}
+                samples[f'f{frame}'] = {side: fp_pose_report(side) for side in ('r', 'l')}
         results[name] = {'frames': end, 'seconds': clip['seconds'], 'wrist_samples': samples}
         if EXPORT:
             for fc in action_fcurves(action):
@@ -145,11 +123,12 @@ def main():
         manifest_path = ROOT / 'manifest.json'
         manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
         anims = manifest.setdefault('animations', {})
-        anims['AN_Farmer_FPArmsDown'] = {'fbx_sha256': results['AN_Farmer_FPArmsDown']['sha256'], 'loop': True, 'seconds': DOWN_SECONDS, 'fps': FPS,
-                                         'layer': 'upper body from spine_01', 'view': 'first-person arms',
+        fp_common = {'space': 'camera', 'eye_height_m': FP_EYE_HEIGHT_M, 'layer': 'full rig (camera-local view model, spine identity)',
+                     'view': 'first-person arms', 'fps': FPS, 'loop': True}
+        anims['AN_Farmer_FPArmsDown'] = {'fbx_sha256': results['AN_Farmer_FPArmsDown']['sha256'], 'seconds': DOWN_SECONDS, **fp_common,
                                          'pose': f'both arms down/out of frame (run arc theta={ARMS_DOWN_DEG}deg)', 'breath_cm': DOWN_BREATH_CM}
-        anims['AN_Farmer_FPRun'] = {'fbx_sha256': results['AN_Farmer_FPRun']['sha256'], 'loop': True, 'seconds': RUN_SECONDS, 'fps': FPS,
-                                    'reference_speed_cm_s': RUN_REFERENCE_SPEED, 'layer': 'upper body from spine_01', 'view': 'first-person arms',
+        anims['AN_Farmer_FPRun'] = {'fbx_sha256': results['AN_Farmer_FPRun']['sha256'], 'seconds': RUN_SECONDS, **fp_common,
+                                    'reference_speed_cm_s': RUN_REFERENCE_SPEED,
                                     'pose': f'alternating arm swing on shoulder arc theta {RUN_THETA_MIN}..{RUN_THETA_MAX}deg, r={RUN_RADIUS}m'}
         manifest['fparms_keys'] = {'run': {'seconds': RUN_SECONDS, 'reference_speed_cm_s': RUN_REFERENCE_SPEED, 'radius_m': RUN_RADIUS,
                                            'theta_deg': [RUN_THETA_MIN, RUN_THETA_MAX], 'x_out_m': [RUN_X_BACK, RUN_X_FRONT],

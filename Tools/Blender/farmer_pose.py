@@ -1,11 +1,47 @@
-"""농부 A 리그 자세 헬퍼 — animate_farmer_hold.py의 두 뼈 IK·손가락 굽힘·액션/FBX 내보내기를 다른 클립
-스크립트(animate_farmer_swing.py)가 같이 쓰도록 떼어 놓은 것. 원본 리그 RIG_Farmer_A(m 단위)를 전제한다.
+"""농부 A 리그 자세 헬퍼 — animate_farmer_*.py 가 같이 쓰는 두 뼈 IK·손가락 굽힘·손바닥 정렬·액션/FBX 내보내기·미리보기.
+원본 리그 RIG_Farmer_A(m 단위)를 전제한다.
+
+1인칭 카메라 모델(031 fp-viewmodel): 팔 메시 SK_Farmer_A_Arms 는 게임에서 카메라 컴포넌트의 자식(상대 (0,0,−EyeHeight)·yaw −90)이라
+클립 공간 = 리그 root 원점, 눈 (0,0,FP_EYE_HEIGHT_M)에서 −Y(UE +X)를 보는 공간이다. 피치·요는 카메라가 통째로 돌리므로 1인칭 클립은
+**피치 0 프레이밍**으로만 저작하고, 몸 포즈 복사·척추 레이어가 없으니 클립 하나가 전 뼈를 소유한다(root·pelvis·spine 은 identity).
+화면 위치는 `fp_screen_uv` 로 실측하고 `render_fp` 가 같은 모델(1280×720·가로 FOV 70·피치 0)로 그린다. FirstPersonScale 0.6 은 카메라
+원점 기준 닮음 변환이라 화면상 위치·크기가 그대로다 — 근접 클립면만 5cm/0.6 로 환산한다.
 """
 import bpy, math
 from pathlib import Path
 from mathutils import Vector, Matrix, Quaternion
 
 ROOT = Path('D:/Work/unreal/CL9/ArtSource/character/farmer_a')
+
+# ---------- 1인칭 카메라 모델 (게임과 동일: CharacterTable EyeHeight 156, FirstPersonFieldOfView 70(가로), 16:9, NearClipPlane 5cm, FirstPersonScale 0.6) ----------
+FP_EYE_HEIGHT_M = 1.56
+FP_FOV_H_DEG = 70.0
+FP_RESOLUTION = (1280, 720)
+FP_NEAR_CLIP_M = 0.05 / 0.6
+FP_FORWARD, FP_RIGHT, FP_UP = Vector((0.0, -1.0, 0.0)), Vector((-1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0))
+
+
+def fp_camera_basis(pitch_deg=0.0):
+    """카메라 (전방, 오른쪽, 위) 단위 벡터 — 피치는 UE 부호(+ 가 위를 봄), 오른쪽 축 둘레 회전"""
+    q = Quaternion(FP_RIGHT, math.radians(pitch_deg))
+    return q @ FP_FORWARD, FP_RIGHT, q @ FP_UP
+
+
+def fp_screen_uv(point, pitch_deg=0.0, inside_only=True):
+    """리그 공간 점(m) → 화면 (u, v) — 왼쪽 위 (0,0)·오른쪽 아래 (1,1). 카메라 뒤(깊이 ≤ 0)면 None, inside_only 면 프레임 밖도 None"""
+    fwd, right, up = fp_camera_basis(pitch_deg)
+    rel = Vector(point) - Vector((0.0, 0.0, FP_EYE_HEIGHT_M))
+    depth = rel.dot(fwd)
+    if depth <= 1e-6:
+        return None
+    tan_h = math.tan(math.radians(FP_FOV_H_DEG) * 0.5)
+    tan_v = tan_h * FP_RESOLUTION[1] / FP_RESOLUTION[0]
+    u = 0.5 + 0.5 * (rel.dot(right) / depth) / tan_h
+    v = 0.5 - 0.5 * (rel.dot(up) / depth) / tan_v
+    if inside_only and not (0.0 <= u <= 1.0 and 0.0 <= v <= 1.0):
+        return None
+    return (round(u, 3), round(v, 3))
+
 
 scene = bpy.data.scenes['CL9_FARMER_A']
 bpy.context.window.scene = scene
@@ -15,6 +51,7 @@ child_of = {}
 for b in rig.data.bones:
     if b.parent is not None and b.parent.name not in child_of:
         child_of[b.parent.name] = b.name
+# 기준 방향: 뼈 머리에서 첫 자식 머리로 — UE 임포트 리그는 tail 이 임의라 tail 을 쓰면 안 된다
 FIRST_CHILD = {'upperarm_r': 'lowerarm_r', 'lowerarm_r': 'hand_r', 'hand_r': 'middle_metacarpal_r',
                'upperarm_l': 'lowerarm_l', 'lowerarm_l': 'hand_l', 'hand_l': 'middle_metacarpal_l'}
 
@@ -26,6 +63,7 @@ def reset():
 
 
 def world_base(name):
+    """부모가 지금 포즈대로 있고 이 뼈만 기준 포즈일 때의 월드 행렬"""
     pb = rig.pose.bones[name]
     if pb.parent is None:
         return rest[name].copy()
@@ -33,6 +71,7 @@ def world_base(name):
 
 
 def aim(name, target_dir, roll=0.0):
+    """기준 방향(첫 자식 쪽)이 target_dir 을 보도록 돌리고, 그 축 둘레로 roll 만큼 더 돌린다"""
     base = world_base(name)
     ref_child = FIRST_CHILD.get(name, child_of.get(name))
     v_rest = rest[ref_child].translation - rest[name].translation
@@ -44,6 +83,7 @@ def aim(name, target_dir, roll=0.0):
 
 
 def arm_ik(side, wrist, pole, roll_upper=0.0, roll_lower=0.0):
+    """어깨는 지금 자리, 손목을 wrist(월드 m)에, 팔꿈치는 pole 방향으로 — 두 뼈 IK"""
     up, lo = 'upperarm_' + side, 'lowerarm_' + side
     shoulder = world_base(up).translation
     l1 = (rest[lo].translation - rest[up].translation).length
@@ -63,6 +103,7 @@ def arm_ik(side, wrist, pole, roll_upper=0.0, roll_lower=0.0):
 
 
 def curl(side, amount, thumb=None, spread=0.0):
+    """손가락을 국부 Z축 둘레로 amount(rad) 굽힌다(실측: Z 가 굽힘 축) — 셋 마디 모두. thumb 은 따로"""
     for finger in ('index', 'middle', 'ring', 'pinky'):
         for seg in ('01', '02', '03'):
             pb = rig.pose.bones[f'{finger}_{seg}_{side}']
@@ -76,7 +117,27 @@ def curl(side, amount, thumb=None, spread=0.0):
     bpy.context.view_layer.update()
 
 
+def align_palm(side, arm):
+    """손 뼈를 손가락 축 둘레로 돌려 손바닥이 arm['palm'](월드 방향)을 보게 한다. aim 의 roll=0 은 최소 회전이라 손이 어디를 향하느냐에
+    따라 손바닥 방향이 제멋대로다. 손바닥 방향은 축 가정 없이 실측한다 — 가운뎃손가락을 굽혔을 때 둘째 마디가 움직이는 쪽(왼손은 뼈 축이
+    거울상이라 국부 축 부호를 믿을 수 없다)"""
+    name = 'hand_' + side
+    f = Vector(arm['fingers']).normalized()
+    aim(name, f, 0.0)
+    curl(side, 0.0, 0.0)
+    straight = rig.pose.bones['middle_02_' + side].head.copy()
+    curl(side, 1.0, 0.0)
+    cur = rig.pose.bones['middle_02_' + side].head - straight
+    want = Vector(arm['palm'])
+    cur_p = (cur - f * cur.dot(f)).normalized()
+    want_p = (want - f * want.dot(f)).normalized()
+    roll = math.atan2(cur_p.cross(want_p).dot(f), cur_p.dot(want_p))
+    aim(name, f, roll + arm.get('hand_roll', 0.0))
+
+
 def apply_pose(spec, breath=0.0):
+    """spec = {'spine': {뼈: [x,y,z] rad}, 'arm_r'/'arm_l': {wrist, pole, fingers, [palm], [hand_roll], curl, [thumb], [spread]}}.
+    palm 이 있으면 손바닥 방향을 실측 정렬하고(align_palm), 없으면 aim 의 최소 회전 + hand_roll"""
     reset()
     for name, rot in spec.get('spine', {}).items():
         pb = rig.pose.bones[name]
@@ -88,8 +149,36 @@ def apply_pose(spec, breath=0.0):
         if not arm:
             continue
         arm_ik(side, arm['wrist'], arm['pole'], arm.get('roll_upper', 0.0), arm.get('roll_lower', 0.0))
-        aim('hand_' + side, arm['fingers'], arm.get('hand_roll', 0.0))
+        if arm.get('palm'):
+            align_palm(side, arm)
+        else:
+            aim('hand_' + side, arm['fingers'], arm.get('hand_roll', 0.0))
         curl(side, arm.get('curl', 0.0), arm.get('thumb'), arm.get('spread', 0.0))
+
+
+def breathe(spec, u, cm=0.5):
+    """루프 위상 u∈[0,1] 에서 두 손목 z 를 ±cm 사인으로 흔든 spec 사본 — 카메라 로컬 클립의 미세 숨쉬기(척추를 안 쓰니 손목으로).
+    u=0·1 에서 0 이라 루프 이음새가 없다"""
+    dz = cm * 0.01 * math.sin(math.tau * u)
+    out = {'spine': spec.get('spine', {})}
+    for side in ('r', 'l'):
+        arm = spec.get('arm_' + side)
+        if arm:
+            out['arm_' + side] = {**arm, 'wrist': [arm['wrist'][0], arm['wrist'][1], arm['wrist'][2] + dz]}
+    return out
+
+
+def fp_pose_report(side='r', pitch_deg=0.0):
+    """지금 자세의 1인칭 실측 — 팔꿈치 안쪽 각, 손목 꺾임(아래팔 대 손등 방향), 손목·너클·손가락 끝의 화면 uv(프레임 밖이면 None)"""
+    pb = rig.pose.bones
+    sh, el, wr = pb['upperarm_' + side].head, pb['lowerarm_' + side].head, pb['hand_' + side].head
+    kn, tip = pb['middle_01_' + side].head, pb['middle_03_' + side].head
+    elbow_deg = math.degrees((sh - el).angle(wr - el))
+    wrist_deg = math.degrees((wr - el).angle(kn - wr))
+    return {'wrist_m': [round(v, 3) for v in wr], 'elbow_deg': round(elbow_deg, 1), 'wrist_flex_deg': round(wrist_deg, 1),
+            'depth_m': round(-wr.y, 3), 'below_eye_m': round(FP_EYE_HEIGHT_M - wr.z, 3),
+            'uv': {'wrist': fp_screen_uv(wr, pitch_deg), 'knuckle': fp_screen_uv(kn, pitch_deg), 'fingertip': fp_screen_uv(tip, pitch_deg),
+                   'elbow': fp_screen_uv(el, pitch_deg)}}
 
 
 def key_current_pose(action_bones, frame):
@@ -114,6 +203,7 @@ def new_action(name):
 
 
 def action_fcurves(action):
+    """Blender 5.x 슬롯 액션(layers/strips/channelbags)과 옛 fcurves 둘 다 지원"""
     if hasattr(action, 'fcurves'):
         return list(action.fcurves)
     curves = []
@@ -125,7 +215,8 @@ def action_fcurves(action):
 
 
 def export_action(action):
-    """cm 스테이징 리그로 애니메이션 전용 FBX를 낸다 (animate_farmer_hold.py와 같은 옵션)"""
+    """cm 스테이징 리그로 애니메이션 전용 FBX를 낸다 — 전 뼈를 굽는다(bake_anim_use_all_bones). 키가 없는 뼈는 identity 로 들어가므로
+    카메라 로컬 클립의 root·pelvis·spine 도 이 한 파일이 소유한다"""
     stage = bpy.data.scenes.get('CL9_FARMER_A_EXPORT') or bpy.data.scenes.new('CL9_FARMER_A_EXPORT')
     for o in list(stage.objects):
         bpy.data.objects.remove(o, do_unlink=True)
@@ -162,37 +253,7 @@ def export_action(action):
     return out
 
 
-def render_front(tag, preview_dir):
-    preview = bpy.data.scenes['CL9_FARMER_A_PREVIEW']
-    if rig.name not in preview.objects:
-        preview.collection.objects.link(rig)
-    body = bpy.data.objects['SK_Farmer_A_Body']
-    if body.name not in preview.objects:
-        preview.collection.objects.link(body)
-    for o in preview.objects:
-        if o.name == 'PREVIEW_Farmer_A':
-            o.hide_render = True
-    bpy.context.window.scene = preview
-    # 액션이 붙어 있으면 렌더가 미리보기 장면의 프레임으로 리그를 다시 평가한다 — 저작 장면과 같은 프레임으로 맞춘다
-    preview.frame_set(scene.frame_current)
-    preview.render.engine = 'BLENDER_WORKBENCH'
-    preview.render.resolution_x, preview.render.resolution_y = 960, 720
-    preview.display.shading.light = 'STUDIO'
-    preview.display.shading.color_type = 'MATERIAL'
-    cam = preview.camera
-    cam.data.type = 'PERSP'
-    cam.data.lens_unit = 'MILLIMETERS'
-    cam.data.lens = 50
-    cam.location = (1.6, -2.4, 1.5)
-    cam.rotation_euler = (Vector((0, 0, 1.15)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
-    preview.render.filepath = str(Path(preview_dir) / f'{tag}_front.png')
-    bpy.ops.render.render(write_still=True)
-    bpy.context.window.scene = scene
-
-
-def render_fp(tag, preview_dir):
-    """1인칭 미리보기 — 눈 높이(1.56m)에서 정면(-Y)을 10도 내려다보는 FOV 70 카메라. 게임처럼 팔 메시(SK_Farmer_A_Arms)만
-    그린다 — 몸 메시를 두면 턱·가슴이 손을 가려 빈 화면이 나온다(025 의 `_fp_fp.png` 가 빈 원인). 팔 메시가 없으면 몸으로 대신"""
+def _preview_scene():
     preview = bpy.data.scenes['CL9_FARMER_A_PREVIEW']
     if rig.name not in preview.objects:
         preview.collection.objects.link(rig)
@@ -204,25 +265,61 @@ def render_fp(tag, preview_dir):
     for o in preview.objects:
         if o.name == 'PREVIEW_Farmer_A':
             o.hide_render = True
+    preview.render.engine = 'BLENDER_WORKBENCH'
+    preview.display.shading.light = 'STUDIO'
+    preview.display.shading.color_type = 'MATERIAL'
+    return preview, body, arms
+
+
+def render_front(tag, preview_dir):
+    """3/4 정면 전신 미리보기(960×720, 50mm) — 팔 메시는 몸과 겹치므로 숨긴다"""
+    preview, body, arms = _preview_scene()
+    body.hide_render = False
+    if arms is not None:
+        arms.hide_render = True
+    bpy.context.window.scene = preview
+    # 액션이 붙어 있으면 렌더가 미리보기 장면의 프레임으로 리그를 다시 평가한다 — 저작 장면과 같은 프레임으로 맞춘다
+    preview.frame_set(scene.frame_current)
+    preview.render.resolution_x, preview.render.resolution_y = 960, 720
+    preview.render.resolution_percentage = 100
+    cam = preview.camera
+    cam.data.type = 'PERSP'
+    cam.data.sensor_fit = 'AUTO'
+    cam.data.lens_unit = 'MILLIMETERS'
+    cam.data.lens = 50
+    cam.data.clip_start = 0.1
+    cam.location = (1.6, -2.4, 1.5)
+    cam.rotation_euler = (Vector((0, 0, 1.15)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+    preview.render.filepath = str(Path(preview_dir) / f'{tag}_front.png')
+    bpy.ops.render.render(write_still=True)
+    bpy.context.window.scene = scene
+
+
+def render_fp(tag, preview_dir, pitch_deg=0.0):
+    """1인칭 미리보기 — 게임과 동일한 카메라(눈 (0,0,1.56)·−Y 전방·가로 FOV 70·1280×720·피치 0 기본·근접 8.3cm). 게임처럼 팔 메시
+    (SK_Farmer_A_Arms)만 그린다 — 몸 메시를 두면 턱·가슴이 손을 가려 빈 화면이 나온다(025 의 `_fp_fp.png` 가 빈 원인). 팔 메시가 없으면
+    몸으로 대신. pitch_deg 는 검산용(UE 부호, + 위) — 클립 저작·게이트는 0 으로만 본다"""
+    preview, body, arms = _preview_scene()
     body.hide_render = arms is not None
     if arms is not None:
         arms.hide_render = False
     bpy.context.window.scene = preview
-    # 액션이 붙어 있으면 렌더가 미리보기 장면의 프레임으로 리그를 다시 평가한다 — 저작 장면과 같은 프레임으로 맞춘다
     preview.frame_set(scene.frame_current)
-    preview.render.engine = 'BLENDER_WORKBENCH'
-    preview.render.resolution_x, preview.render.resolution_y = 960, 720
-    preview.display.shading.light = 'STUDIO'
-    preview.display.shading.color_type = 'MATERIAL'
+    preview.render.resolution_x, preview.render.resolution_y = FP_RESOLUTION
+    preview.render.resolution_percentage = 100
     cam = preview.camera
     cam.data.type = 'PERSP'
+    cam.data.sensor_fit = 'HORIZONTAL'
     cam.data.lens_unit = 'FOV'
-    cam.data.angle = math.radians(70)
-    cam.data.clip_start = 0.22
-    cam.location = (0.0, 0.0, 1.56)
-    cam.rotation_euler = (Vector((0.0, -2.0, 1.56 - 2.0 * math.tan(math.radians(10)))) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+    cam.data.angle = math.radians(FP_FOV_H_DEG)
+    cam.data.shift_x = cam.data.shift_y = 0.0
+    cam.data.clip_start = FP_NEAR_CLIP_M
+    cam.location = (0.0, 0.0, FP_EYE_HEIGHT_M)
+    fwd, _, _ = fp_camera_basis(pitch_deg)
+    cam.rotation_euler = fwd.to_track_quat('-Z', 'Y').to_euler()
     preview.render.filepath = str(Path(preview_dir) / f'{tag}_fp.png')
     bpy.ops.render.render(write_still=True)
+    cam.data.sensor_fit = 'AUTO'
     cam.data.lens_unit = 'MILLIMETERS'
     cam.data.clip_start = 0.1
     body.hide_render = False

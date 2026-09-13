@@ -1,0 +1,479 @@
+{
+  "run": "fp-viewmodel (2026-09-13 저녁, art)",
+  "blender": "5.2.1 LTS headless via Tools/Blender/run_headless.py",
+  "source_blend": "ArtSource/character/farmer_a/farmer_a.blend",
+  "scripts": {
+    "all": "py -3 Tools/Blender/export_farmer_fp_clips.py — hold(--fp-only)·fparms·swing·windup(--fp-only)·eat(--fp-only)·verify 를 순서대로(값을 바꾼 뒤 같은 명령으로 재수출; --only hold,swing 처럼 단계 선택)",
+    "hold": "Tools/Blender/animate_farmer_hold.py -- --export --fp-only (FPHoldSmall/Flashlight/Large — 전신 Hold 3종 FBX 는 sha 그대로)",
+    "fparms": "Tools/Blender/animate_farmer_fparms.py -- --export (FPArmsDown + FPRun)",
+    "swing": "Tools/Blender/animate_farmer_swing.py -- --export (FPSwing + 전신 Swing 30fps 재수출)",
+    "windup": "Tools/Blender/animate_farmer_windup.py -- --export --fp-only",
+    "eat": "Tools/Blender/animate_farmer_eat.py -- --export --fp-only",
+    "verify": "Tools/Blender/verify_farmer_clip_fbx.py (기본 목록 = 이번 9클립)",
+    "grip": "Tools/Blender/measure_item_grip.py → docs/asset/evidence/031-item-grip.json",
+    "ue_import": "Tools/Unreal/import_farmer_clips.py (리드 실행 — 기본 목록 = 이번 9클립, 결과가 아래 ue_import 에 붙는다)"
+  },
+  "authoring_contract": {
+    "space": "camera — 팔 메시가 카메라 컴포넌트의 자식(상대 (0,0,-EyeHeight)·yaw -90). 클립 공간 = 리그 root 원점, 눈 (0,0,1.56m)에서 -Y(Blender)/+X(UE)를 보는 공간",
+    "framing": "피치 0 고정 — 피치·요는 카메라가 통째로 돌린다",
+    "bones": "클립 하나가 전 뼈를 소유(몸 포즈 복사·척추 레이어 없음): root·pelvis·spine identity, export_action 이 전 뼈를 굽는다",
+    "breath": "손목 z 사인(Hold ±0.5cm, ArmsDown ±0.5cm, Windup ±1cm) — 척추 숨쉬기 없음",
+    "manifest": "animations[*] 에 space:\"camera\", eye_height_m:1.56, layer:\"full rig (camera-local view model, spine identity)\""
+  },
+  "camera_model": {
+    "eye_height_m": 1.56,
+    "fov_horizontal_deg": 70,
+    "resolution": [
+      1280,
+      720
+    ],
+    "vertical_half_angle_deg": 21.5,
+    "near_clip_m": 0.0833,
+    "near_clip_note": "NearClipPlane 5cm ÷ FirstPersonScale 0.6 — 스케일은 카메라 원점 기준 닮음 변환이라 화면상 위치·크기는 그대로",
+    "uv": "u = 0.5 + 0.5·(-x/depth)/tan35°, v = 0.5 + 0.5·((1.56-z)/depth)/tan21.5° (왼쪽 위 0,0) — farmer_pose.fp_screen_uv",
+    "preview": "farmer_pose.render_fp(tag, dir, pitch_deg=0) — 팔 메시만, 위 카메라 그대로. 옛 4:3·10도 내려다봄(029) 폐기"
+  },
+  "rig_measured": {
+    "shoulder_r_m": [
+      -0.1901,
+      0.0256,
+      1.4358
+    ],
+    "upperarm_m": 0.278,
+    "forearm_m": 0.273,
+    "head_bone_z_m": 1.626
+  },
+  "iterations": [
+    "1차: 손바닥이 카메라를 향해 '손금'이 보임 → palm 을 안쪽·살짝 아래로(손등·엄지가 보이게)",
+    "2차(brief 값): 주먹 중심 (0.76, 0.83) — 리드 전달 사용자 피드백 '더 바깥, 우하단 구석'(기준 캡처 preview/my/1.png) → 목표 u 0.86~0.92·v 0.85~0.95, Large 0.28/0.72·v ~0.9",
+    "3차: 손목을 프레임 바로 밖 구석으로(주먹 중심 (0.90, 0.95)) — 주먹 윗부분만 보여 손목을 1.5cm 올림 → 최종 주먹 중심 ≈ (0.90, 0.92)"
+  ],
+  "clips": {
+    "AN_Farmer_FPHoldSmall": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 18,
+      "pose": "farmer_hold_spec.json Small.fp — 손목 [-0.24, -0.36, 1.415] m(눈 앞 36cm·아래 14.5cm·오른쪽 24cm, 프레임 바로 밖 우하단 구석), 팔꿈치 90도, 손목 꺾임 14.8도, 손가락 앞·안쪽·위, 손바닥 안쪽·살짝 아래(카메라엔 손등·엄지), curl 1.1·엄지 0.5. 주먹이 구석에서 안으로 들어온다",
+      "screen_uv": {
+        "wrist": null,
+        "knuckle": [
+          0.828,
+          0.829
+        ],
+        "fingertip": [
+          0.788,
+          0.961
+        ],
+        "fist_centre_est": [
+          0.9,
+          0.92
+        ]
+      },
+      "breath": "wrist z ±0.5cm sine",
+      "loop_seam_cm": 0.0,
+      "preview_fp": "hold_Small_fp_fp.png",
+      "fbx_sha256": "884be38026d44153aca22673fb764a34e06a310b3666641a08341b0fb2f43c88",
+      "previous_fbx_sha256": "9b2d265cf6f211185218e56337bae59b0839897d331c2a93f59140b7205d7cc6"
+    },
+    "AN_Farmer_FPHoldFlashlight": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 18,
+      "pose": "Flashlight.fp — 손목 [-0.24, -0.35, 1.415] m(Small 과 같은 높이·구석, 팔 안 뻗음 — 029 의 '뻗기' 폐기), 팔꿈치 87도, 꽉 쥔 주먹 curl 1.4·엄지 0.8, 손바닥 안쪽·아래. 렌즈(+X) 정면은 ItemTable.flashlight.GripRotation 새 행이 맞춘다(031-item-grip.json)",
+      "screen_uv": {
+        "wrist": null,
+        "knuckle": [
+          0.807,
+          0.865
+        ],
+        "fingertip": null
+      },
+      "loop_seam_cm": 0.0,
+      "preview_fp": "hold_Flashlight_fp_fp.png",
+      "fbx_sha256": "dbfba3a5081c44cc94db7a193d72b2b513400218b060b10ea3b2002612127d71",
+      "previous_fbx_sha256": "1e09ad3f0069306b1ab3a0b3f24f60f4562832a998d1048f7d82d95975493b3a"
+    },
+    "AN_Farmer_FPHoldLarge": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 36,
+      "pose": "Large.fp — 두 손목 [±0.15, -0.36, 1.44] m(30cm 간격), 팔꿈치 90도, 손가락 앞·안쪽, 손바닥 서로 마주보며 살짝 아래, curl 0.9",
+      "screen_uv": {
+        "wrist_r": [
+          0.798,
+          0.923
+        ],
+        "knuckle_r": [
+          0.674,
+          0.892
+        ],
+        "wrist_l": [
+          0.202,
+          0.923
+        ],
+        "knuckle_l": [
+          0.326,
+          0.892
+        ],
+        "fist_centre_est": "0.28 / 0.72, v 0.90"
+      },
+      "loop_seam_cm": 0.0,
+      "preview_fp": "hold_Large_fp_fp.png",
+      "fbx_sha256": "841ec17440c20dd6892742fbae6c08c4b9af2cf8e2aefd106ec431231e767e32",
+      "previous_fbx_sha256": "3316c775e87a49a8a373c64430c4690a35968f1bad4e2dbbde5c671d3e9246b0"
+    },
+    "AN_Farmer_FPArmsDown": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "keyed_bones": 36,
+      "pose": "029 설계 그대로(손목 [±0.26, -0.162, 0.972] m, 카메라 75도 아래) — 카메라 자식이라 피치와 무관하게 항상 프레임 밖",
+      "screen_uv": {
+        "wrist": null,
+        "knuckle": null
+      },
+      "loop_seam_cm": 0.0,
+      "preview_fp": "fparmsdown_f1_fp.png (빈 프레임)",
+      "fbx_sha256": "f68cc989909f42f5eebe05c4c592837cb91aededa60f8a3639353778eabd32d5",
+      "previous_fbx_sha256": "ab1352588e4241a5063b58f4a5f322238e2775fbbf84c4c2c1c074f852311a4b"
+    },
+    "AN_Farmer_FPRun": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 0.6,
+      "fps": 30,
+      "frames": 19,
+      "keyed_bones": 36,
+      "reference_speed_cm_s": 654,
+      "pose": "029 호 설계 유지(어깨 축 반지름 0.35m, 왼팔 반대 위상). 게임과 같은 카메라로 다시 보니 앞 극점 주먹이 우하단 모서리에 걸쳐 잘려(u 0.76~0.94·v 0.73~0.96) 앞 극점 92→100도·앞 손목 바깥 거리 0.20→0.14m 로 조정 — 앞 극점 손목 [-0.141, -0.32, 1.491] m",
+      "screen_uv_front_extreme": {
+        "wrist": [
+          0.815,
+          0.774
+        ],
+        "knuckle": [
+          0.722,
+          0.577
+        ],
+        "fingertip": [
+          0.654,
+          0.716
+        ]
+      },
+      "loop_seam_cm": 0.0,
+      "preview_fp": "fprun_f1_fp(빈 프레임)·f5(오른 주먹 우하단)·f10(빈 프레임)·f14(왼 주먹 좌하단)",
+      "fbx_sha256": "c70bfe65b5e2561229a61143aa484cd97daf7156ad2aac01449243cfe6fd8712",
+      "previous_fbx_sha256": "cca09c3195256b60b08c262f3dd5a453a575c1bafb9315f79c9a33e226d14c2c"
+    },
+    "AN_Farmer_FPSwingWindup": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": true,
+      "seconds": 1.0,
+      "fps": 30,
+      "frames": 31,
+      "keyed_bones": 18,
+      "pose": "새 Small 에서 파생한 치켜든 자세(swing WINDUP_FP, t=0.12) — 손목 [-0.17, -0.34, 1.57] m, 화면 안 우상단, 손목 z ±1cm 숨쉬기",
+      "screen_uv": {
+        "wrist": [
+          0.857,
+          0.463
+        ],
+        "knuckle": [
+          0.831,
+          0.219
+        ],
+        "fingertip": [
+          0.745,
+          0.215
+        ]
+      },
+      "loop_seam_cm": 0.0,
+      "preview_fp": "windup_fp_f1_fp.png",
+      "fbx_sha256": "97ef687e1b0b3622cd198f94c8af82b6b7116c1643f19a5b950501d3418f3df2",
+      "previous_fbx_sha256": "44166967ad31f795a421d0b90a18ccce35a44e2d920ade9294a7f399c50efd1f"
+    },
+    "AN_Farmer_FPSwing": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": false,
+      "seconds": 0.4667,
+      "fps": 30,
+      "frames": 15,
+      "keyed_bones": 18,
+      "pose": "새 Small(t=0) → 치켜듦(t=0.12, 우상단) → 내려침(t=0.25, 손목 [-0.05, -0.40, 1.42] m, 화면 아래 중앙 가장자리) → Small(t=0.467). 대기→휘두르기 오프셋 0.12·평가 범위 0.347",
+      "screen_uv": {
+        "f5_t0.133": {
+          "wrist": [
+            0.825,
+            0.52
+          ],
+          "knuckle": [
+            0.791,
+            0.297
+          ]
+        },
+        "f9_t0.267": {
+          "wrist": [
+            0.616,
+            0.949
+          ],
+          "knuckle": [
+            0.538,
+            0.976
+          ]
+        }
+      },
+      "preview_fp": "swing_fp_f1_fp·f5·f9",
+      "fbx_sha256": "b0bda5b6f59ca0ab6f47f83fe92b2c9bcb391f81b3366a370ff7a2523b5803e6",
+      "previous_fbx_sha256": "518bfc73ee8e5a7ba0975d8cdcb9096114fe10d95d069226fcf06b6a18c7634b"
+    },
+    "AN_Farmer_Swing": {
+      "view": "full body",
+      "loop": false,
+      "seconds": 0.4667,
+      "fps": 30,
+      "frames": 15,
+      "keyed_bones": 19,
+      "pose": "026 키 그대로 — 옛 스테이징 24fps 로 0.583초로 들어갔던 것을 30fps 로 재수출(UE 0.467초). 전신 ABP 문턱 0.58→0.347·오프셋 0.15→0.12",
+      "preview": "swing_tp_f1_front·f5·f9",
+      "fbx_sha256": "511f4983dcd98fd7ef7ba338adac0e8aeaa542ac59616ccc38198abdd8072635",
+      "previous_fbx_sha256": "dec99d472f5f8cc03e41e859d35737c8f8dc78ac3c40e85dc4d3d096e212f0e3"
+    },
+    "AN_Farmer_FPEat": {
+      "view": "first-person arms",
+      "space": "camera",
+      "loop": false,
+      "seconds": 0.6,
+      "fps": 30,
+      "frames": 19,
+      "keyed_bones": 18,
+      "pose": "새 Small → 입 앞(0.25~0.35s: 손목 [-0.05, -0.27, 1.49] m, 렌즈 앞 27cm 중앙, 손가락 뒤·위, 손바닥 얼굴 쪽) → Small",
+      "screen_uv": {
+        "f5_t0.133": {
+          "wrist": [
+            0.817,
+            0.927
+          ],
+          "knuckle": [
+            0.712,
+            0.58
+          ]
+        },
+        "f9_t0.267": {
+          "wrist": [
+            0.632,
+            0.829
+          ],
+          "knuckle": [
+            0.59,
+            0.484
+          ]
+        }
+      },
+      "preview_fp": "eat_fp_f1_fp·f5·f9",
+      "fbx_sha256": "78dc4cb41691dbee441251039eb136c0183af92cfa74db2232df5d19a31befb0",
+      "previous_fbx_sha256": "7835f99a7edfa157a8613b22b837d2777aa7d1d99b2fca6fc5b27e0630eef032"
+    }
+  },
+  "fbx_verify": {
+    "method": "verify_farmer_clip_fbx.py — FBX 를 빈 장면에 다시 읽어 fps·프레임·길이·루프 이음새·sha",
+    "AN_Farmer_FPHoldSmall": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPHoldFlashlight": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPHoldLarge": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPArmsDown": {
+      "fps": 30,
+      "frames": 61,
+      "seconds": 2.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPRun": {
+      "fps": 30,
+      "frames": 19,
+      "seconds": 0.6,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPSwingWindup": {
+      "fps": 30,
+      "frames": 31,
+      "seconds": 1.0,
+      "loop_seam_cm": 0.0,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPSwing": {
+      "fps": 30,
+      "frames": 15,
+      "seconds": 0.4667,
+      "sha_ok": true
+    },
+    "AN_Farmer_Swing": {
+      "fps": 30,
+      "frames": 15,
+      "seconds": 0.4667,
+      "sha_ok": true
+    },
+    "AN_Farmer_FPEat": {
+      "fps": 30,
+      "frames": 19,
+      "seconds": 0.6,
+      "sha_ok": true
+    }
+  },
+  "previews_gate": [
+    "ArtSource/character/farmer_a/preview/hold_Small_fp_fp.png",
+    "ArtSource/character/farmer_a/preview/hold_Flashlight_fp_fp.png",
+    "ArtSource/character/farmer_a/preview/hold_Large_fp_fp.png",
+    "ArtSource/character/farmer_a/preview/fparmsdown_f1_fp.png",
+    "ArtSource/character/farmer_a/preview/fprun_f1_fp.png",
+    "ArtSource/character/farmer_a/preview/fprun_f5_fp.png",
+    "ArtSource/character/farmer_a/preview/fprun_f10_fp.png",
+    "ArtSource/character/farmer_a/preview/fprun_f14_fp.png",
+    "ArtSource/character/farmer_a/preview/windup_fp_f1_fp.png",
+    "ArtSource/character/farmer_a/preview/swing_fp_f1_fp.png",
+    "ArtSource/character/farmer_a/preview/swing_fp_f5_fp.png",
+    "ArtSource/character/farmer_a/preview/swing_fp_f9_fp.png",
+    "ArtSource/character/farmer_a/preview/eat_fp_f1_fp.png",
+    "ArtSource/character/farmer_a/preview/eat_fp_f5_fp.png",
+    "ArtSource/character/farmer_a/preview/eat_fp_f9_fp.png"
+  ],
+  "previews_supplementary": [
+    "ArtSource/character/farmer_a/preview/hold_{Small,Flashlight,Large}_fp_{front,hand}.png",
+    "ArtSource/character/farmer_a/preview/fparmsdown_f1_front.png · fprun_f{1,5,10,14}_front.png",
+    "ArtSource/character/farmer_a/preview/swing_{tp,fp}_f{1,5,9}_front.png · windup_fp_f1_front.png · eat_fp_f{1,5,9}_front.png"
+  ],
+  "item_grip": "docs/asset/evidence/031-item-grip.json — 소켓 보정(028 자세, 손전등 옛 행 검산 3.4도)·새 Small/Flashlight/Large 자세의 행 후보",
+  "brief_deviations": [
+    "Small·Flashlight 주먹 위치는 brief 의 u 0.72~0.80·v 0.78~0.88 이 아니라 리드가 전달한 사용자 피드백(우하단 구석 u 0.86~0.92·v 0.85~0.95, Large 0.28/0.72·v ~0.9)을 따랐다 — 손목이 프레임 바로 밖 구석, 주먹 중심 ≈ (0.90, 0.92)",
+    "Small 손목 '아래 25~30cm' 초안은 깊이 35~45cm 에서 30도 넘게 아래 = 프레임 밖(세로 반각 21.5도)이라 화면 uv 를 기준으로 삼았다(눈 아래 14.5cm)",
+    "FPRun 앞 극점 92→100도·바깥 거리 0.20→0.14m (호 설계는 유지)"
+  ],
+  "not_done": [
+    "manifest.animations 의 AN_Farmer_HoldIdle·AN_Farmer_FPHoldIdle 항목과 export/*Idle.fbx·preview/hold_Idle_*.png 는 지우지 않았다 — hold_spec 에서만 Idle 을 뺐다(삭제는 리드 판단)",
+    "전신 Hold 3종·SwingWindup·Eat 은 재수출하지 않았다(--fp-only, sha 그대로)",
+    "옛 미리보기 fparmsdown_f16_*.png 는 더 생성하지 않는다(파일은 남아 있음)"
+  ],
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "folder": "/Game/Characters/FarmerA/Anims",
+    "clips": [
+      {
+        "name": "AN_Farmer_FPHoldSmall",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPHoldSmall.AN_Farmer_FPHoldSmall",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "884be38026d44153aca22673fb764a34e06a310b3666641a08341b0fb2f43c88",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPHoldFlashlight",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPHoldFlashlight.AN_Farmer_FPHoldFlashlight",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "dbfba3a5081c44cc94db7a193d72b2b513400218b060b10ea3b2002612127d71",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPHoldLarge",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPHoldLarge.AN_Farmer_FPHoldLarge",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "841ec17440c20dd6892742fbae6c08c4b9af2cf8e2aefd106ec431231e767e32",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPArmsDown",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPArmsDown.AN_Farmer_FPArmsDown",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "f68cc989909f42f5eebe05c4c592837cb91aededa60f8a3639353778eabd32d5",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPRun",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPRun.AN_Farmer_FPRun",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "c70bfe65b5e2561229a61143aa484cd97daf7156ad2aac01449243cfe6fd8712",
+        "manifest_seconds": 0.6,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPSwingWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwingWindup.AN_Farmer_FPSwingWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "97ef687e1b0b3622cd198f94c8af82b6b7116c1643f19a5b950501d3418f3df2",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPSwing",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwing.AN_Farmer_FPSwing",
+        "seconds": 0.46666666865348816,
+        "frames": 14,
+        "sha256": "b0bda5b6f59ca0ab6f47f83fe92b2c9bcb391f81b3366a370ff7a2523b5803e6",
+        "manifest_seconds": 0.4667,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_Swing",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Swing.AN_Farmer_Swing",
+        "seconds": 0.46666666865348816,
+        "frames": 14,
+        "sha256": "511f4983dcd98fd7ef7ba338adac0e8aeaa542ac59616ccc38198abdd8072635",
+        "manifest_seconds": 0.4667,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPEat",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPEat.AN_Farmer_FPEat",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "78dc4cb41691dbee441251039eb136c0183af92cfa74db2232df5d19a31befb0",
+        "manifest_seconds": 0.6,
+        "loop": false
+      }
+    ]
+  }
+}

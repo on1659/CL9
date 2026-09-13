@@ -1,6 +1,6 @@
 """농부 A 클립 FBX 검증 — export/<clip>.fbx 를 빈 장면에 다시 읽어 fps·프레임 범위·길이(초)와, 루프 클립이면 첫/끝 프레임의
-손 자세 차이를 찍는다. UE 임포트 길이(number_of_sampled_frames / 초) 예측용. 검증할 클립 이름은 `--` 뒤 인자, 없으면 이번 4개
-(029 fp-arms-flashlight).
+손 자세 차이를 찍는다. UE 임포트 길이(number_of_sampled_frames / 초) 예측용. 검증할 클립 이름은 `--` 뒤 인자, 없으면 이번 9개
+(031 fp-viewmodel — 1인칭 8 + 전신 Swing).
 
 실행: py -3 Tools/Blender/run_headless.py verify_farmer_clip_fbx.py [-- AN_Farmer_SwingWindup ...]
 """
@@ -8,7 +8,8 @@ import bpy, sys, json, hashlib
 from pathlib import Path
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 ROOT = Path('D:/Work/unreal/CL9/ArtSource/character/farmer_a')
-DEFAULT = ['AN_Farmer_FPArmsDown', 'AN_Farmer_FPRun', 'AN_Farmer_FPHoldFlashlight', 'AN_Farmer_HoldFlashlight']
+DEFAULT = ['AN_Farmer_FPHoldSmall', 'AN_Farmer_FPHoldFlashlight', 'AN_Farmer_FPHoldLarge', 'AN_Farmer_FPArmsDown', 'AN_Farmer_FPRun',
+           'AN_Farmer_FPSwingWindup', 'AN_Farmer_FPSwing', 'AN_Farmer_Swing', 'AN_Farmer_FPEat']
 names = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv and len(sys.argv) > sys.argv.index('--') + 1 else DEFAULT
 manifest = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))['animations']
 out = {}

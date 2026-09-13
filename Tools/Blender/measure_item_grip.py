@@ -1,23 +1,27 @@
 """아이템 그립 피벗 역산 — 고기(SM_Meat_*_A)·프라이팬(SM_FryingPan_A)을 농부 A 의 Small 들기 손에 "손잡이가 손 안, 몸통이 앞·조금 위"로
-들리게 하는 ItemTable `GripOffset`(cm)·`GripRotation`(deg) 을 계산해 표 행으로 찍는다. 수정은 하지 않는다(값은 리드가 표에 넣는다).
+들리게 하는 ItemTable `GripOffset`(cm)·`GripRotation`(deg) 을 계산하고, 손전등(렌즈 +X 정면)·두 손 물건(X 정면·Z 위·양손 중점) 행도
+지금 1인칭 자세에서 다시 푼다. 표 행으로 찍기만 하고 수정은 하지 않는다(값은 리드가 표에 넣는다).
 
 절차
 1. 아이템 원본 blend 에서 메시를 읽어(append) 손잡이를 잰다 — 고기는 +X 쪽 뼈(단면 반경이 몸통의 절반 아래인 구간), 팬은 −X 쪽 손잡이.
    손잡이 끝에서 GRIP_INSET 만큼 안쪽이 "손 안에 들어오는 점"이다. 게임은 메시를 `Radius/바운드 구 반경`으로 자동 배율하므로
    (CL9Item::LoadData) 그 배율(SCALE, production-progress 2026-09-11 실측)을 곱한다.
-2. 손 소켓 `HandGrip_R` 은 Blender 리그에 없다(UE 스켈레톤 소켓). 대신 기존 행이 준 두 실측 — 두 손 물건(Large) 의
+2. 손 소켓 `HandGrip_R` 은 Blender 리그에 없다(UE 스켈레톤 소켓). 대신 028 당시 기존 행이 준 두 실측 — 두 손 물건(Large) 의
    `GripRotation (1.6, 81.6, 51.8)`·`GripOffset (12.3, −5.4, 17.3)`(= 소켓 공간에서 "X=카메라 정면·Z=월드 위·위치=양손 중점",
-   docs/plan/data/item/common.md) — 로 Large 1인칭 자세의 소켓 자세를 되살리고, 소켓이 hand_r 뼈에 고정돼 있으니 손 기하 프레임
-   (손가락 방향·손바닥 법선) 을 매개로 Small 자세의 소켓 자세를 얻는다. 손전등 행 `(−17.8, 136.8, 69.3)`(렌즈 +X = 정면) 으로
-   이 보정이 맞는지 검산한다(FLASHLIGHT CHECK — 각도 오차가 몇 도 안이면 OK).
-3. 원하는 아이템 자세(정면+UP_DEG 위로 뻗고 Z 는 위)를 소켓 공간으로 되돌려 GripRotation, 손잡이 점이 손바닥 점에 오도록 GripOffset.
-   대안으로 "너클 축 정합"(손가락이 감기는 축에 손잡이를 맞춘 것 — 현재 Small 자세에선 위·안쪽을 향한다) 값도 같이 찍는다.
+   docs/plan/data/item/common.md) — 로 **그때의 1인칭 Large 자세(CALIB_POSE)** 에서 소켓 자세를 되살리고, 소켓이 hand_r 뼈에 고정돼
+   있으니 손 기하 프레임(손가락 방향·손바닥 법선) 대비 소켓 자세(M_SH·o_SH)를 얻는다 — 이것은 자세와 무관한 리그 상수다. 손전등 행
+   `(−17.8, 136.8, 69.3)`(렌즈 +X = 정면) 을 그때의 손전등 자세에 넣어 이 보정이 맞는지 검산한다(FLASHLIGHT CALIB CHECK — 몇 도 안이면 OK).
+   031 에서 1인칭 자세가 전부 바뀌었으므로(카메라 자식 뷰모델) 보정 자세는 farmer_hold_spec.json 이 아니라 여기 박아 둔 옛 값을 쓴다.
+3. 새 자세(farmer_hold_spec.json)에 상수를 적용해 소켓 자세를 얻고, 원하는 아이템 자세를 소켓 공간으로 되돌린다:
+   - 고기·팬: 몸통이 정면+UP_DEG 위, Z 위 — `forward`; 대안 `knuckle` = 손가락이 감기는 축(너클 선)에 손잡이를 맞춘 것.
+   - 손전등: 지금 행으로 렌즈가 어디를 보는지(오차) + 렌즈 +X 가 정면·수평이 되는 새 GripRotation.
+   - 두 손 물건(냄비·작업등): X 정면·Z 위·원점 = 양손 손목 중점 → 새 GripRotation·GripOffset.
 
 좌표: Blender(m, 오른손, 정면 −Y) → UE 액터 공간(cm, X 정면·Y 오른쪽·Z 위) 는 (x, y, z) → (−y, −x, z)·100. UE 회전 행렬·FRotator 변환은
-엔진의 FRotationMatrix / FMatrix::Rotator 공식 그대로(행 = 축).
+엔진의 FRotationMatrix / FMatrix::Rotator 공식 그대로(행 = 축). 1인칭 팔이 카메라 자식이라 액터 공간 = 카메라 공간(피치 0).
 
-실행: py -3 Tools/Blender/run_headless.py measure_item_grip.py --blend ArtSource/character/farmer_a/farmer_a.blend [-- --up 15 --inset 4]
-결과: 표준 출력 `GRIP RESULT {...}` + docs/asset/evidence/028-item-grip.json
+실행: py -3 Tools/Blender/run_headless.py measure_item_grip.py --blend ArtSource/character/farmer_a/farmer_a.blend [-- --up 15 --inset 4 --out docs/asset/evidence/031-item-grip.json]
+결과: 표준 출력 `GRIP RESULT {...}` + `ROW ...` 줄 + JSON(기본 docs/asset/evidence/031-item-grip.json)
 """
 import bpy, sys, json, math
 from pathlib import Path
@@ -31,12 +35,13 @@ HOLD = json.loads((Path(__file__).with_name('farmer_hold_spec.json')).read_text(
 ARGS = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 
 
-def arg(name, default):
-    return float(ARGS[ARGS.index(name) + 1]) if name in ARGS else default
+def arg(name, default, cast=float):
+    return cast(ARGS[ARGS.index(name) + 1]) if name in ARGS else default
 
 
 UP_DEG = arg('--up', 15.0)        # 몸통이 정면에서 위로 들리는 각
 GRIP_INSET = arg('--inset', 4.0)  # 손잡이 끝에서 손바닥 점까지(cm, 월드) — 주먹 폭의 절반쯤
+OUT = REPO / arg('--out', 'docs/asset/evidence/031-item-grip.json', str)
 PALM_DEPTH = 2.5                  # 손등 뼈 선에서 손바닥 쪽으로 들어간 깊이(cm) — 쥔 손잡이 축이 지나는 곳
 SCALE = {'meat': 0.89, 'frying_pan': 0.99}   # 자동 배율 = Radius / 바운드 구 반경 (production-progress.md 2026-09-11)
 ITEMS = {
@@ -47,9 +52,17 @@ ITEMS = {
                    'manifest': 'ArtSource/item/cookware/export/manifest.json', 'key': 'frying_pan', 'handle_side': -1,
                    'rows': ['frying_pan'], 'body_axis': +1},
 }
-# 기존 행 실측(common.md) — 소켓 보정의 근거
+# 기존 행 실측(common.md) — 소켓 보정의 근거. 028 당시 1인칭 자세(몸 포즈 복사 위 레이어, 척추 identity 라 손 자세 = 그 클립 자세)
 LARGE_ROT, LARGE_OFF = (1.6, 81.6, 51.8), Vector((12.3, -5.4, 17.3))
 FLASH_ROT = (-17.8, 136.8, 69.3)
+CALIB_POSE = {
+    'large': {'spine': {},
+              'arm_r': {'wrist': [-0.22, -0.45, 1.3], 'pole': [-1.0, -0.2, -1.0], 'fingers': [0.0, -1.0, 0.2], 'hand_roll': 0.0, 'curl': 0.5, 'thumb': 0.3},
+              'arm_l': {'wrist': [0.22, -0.45, 1.3], 'pole': [1.0, -0.2, -1.0], 'fingers': [0.0, -1.0, 0.2], 'hand_roll': 0.0, 'curl': 0.5, 'thumb': 0.3}},
+    'flashlight': {'spine': {},
+                   'arm_r': {'wrist': [-0.13, -0.5, 1.45], 'pole': [-1.0, -0.2, -1.0], 'fingers': [0.6, -0.6, -0.5], 'hand_roll': 0.0, 'curl': 1.4, 'thumb': 0.8}},
+}
+FORWARD, UP = Vector((1, 0, 0)), Vector((0, 0, 1))
 
 
 # ---------- UE 회전 수학 (행 = 축, 행벡터 곱) ----------
@@ -96,6 +109,10 @@ def to_ue_dir(v):
     return Vector((-v.y, -v.x, v.z)).normalized()
 
 
+def angle_deg(a, b):
+    return round(math.degrees(math.acos(max(-1.0, min(1.0, a.normalized().dot(b.normalized()))))), 1)
+
+
 # ---------- 손 기하 프레임 ----------
 def hand_frame(spec):
     apply_pose(spec)
@@ -111,25 +128,33 @@ def hand_frame(spec):
             'p_l': to_ue(pb['hand_l'].head.copy()) if spec.get('arm_l') else None}
 
 
-large, small_fp, small_tp, flash = (hand_frame(HOLD['Large']['fp']), hand_frame(HOLD['Small']['fp']),
-                                    hand_frame(HOLD['Small']['tp']), hand_frame(HOLD['Flashlight']['fp']))
-# Large 1인칭 자세의 소켓: 아이템 프레임 = 액터 프레임 → M_L · M_S = I
-M_S_large = rot_matrix(*LARGE_ROT).transposed()
-p_mid = (large['p'] + large['p_l']) * 0.5
+# 소켓 보정 — 028 자세에서 리그 상수 M_SH·o_SH 를 얻는다
+calib_large, calib_flash = hand_frame(CALIB_POSE['large']), hand_frame(CALIB_POSE['flashlight'])
+M_S_large = rot_matrix(*LARGE_ROT).transposed()              # Large 1인칭 자세의 소켓: 아이템 프레임 = 액터 프레임 → M_L · M_S = I
+p_mid = (calib_large['p'] + calib_large['p_l']) * 0.5
 p_S_large = p_mid - rowmul(LARGE_OFF, M_S_large)
-M_SH = M_S_large @ large['M'].transposed()               # 소켓 회전 = M_SH · 손 프레임
-o_SH = rowmul(p_S_large - large['p'], large['M'].transposed())
+M_SH = M_S_large @ calib_large['M'].transposed()             # 소켓 회전 = M_SH · 손 프레임
+o_SH = rowmul(p_S_large - calib_large['p'], calib_large['M'].transposed())
 
 
 def socket_in(pose):
     return M_SH @ pose['M'], pose['p'] + rowmul(o_SH, pose['M'])
 
 
-# 검산: 손전등 자세에서 렌즈 +X 가 정면(1,0,0)을 보는가
-M_S_flash, _ = socket_in(flash)
-lens = rowmul(Vector((1, 0, 0)), rot_matrix(*FLASH_ROT) @ M_S_flash)
-flash_err = math.degrees(math.acos(max(-1.0, min(1.0, lens.dot(Vector((1, 0, 0)))))))
-print(f'FLASHLIGHT CHECK lens_dir={[round(v, 3) for v in lens]} error_deg={flash_err:.1f}')
+def lens_dir(pose, rot):
+    """손전등 행 rot 를 이 자세의 소켓에 붙였을 때 렌즈(+X)가 액터 공간에서 보는 방향"""
+    M_S, _ = socket_in(pose)
+    return rowmul(Vector((1, 0, 0)), rot_matrix(*rot) @ M_S)
+
+
+# 검산: 028 손전등 자세에서 옛 행의 렌즈 +X 가 정면(1,0,0)을 보는가 — 보정 자체의 오차
+calib_lens = lens_dir(calib_flash, FLASH_ROT)
+calib_err = angle_deg(calib_lens, FORWARD)
+print(f'FLASHLIGHT CALIB CHECK (028 pose, old row) lens_dir={[round(v, 3) for v in calib_lens]} error_deg={calib_err}')
+
+# 새 자세(031 카메라 로컬 뷰모델)
+small_fp, small_tp = hand_frame(HOLD['Small']['fp']), hand_frame(HOLD['Small']['tp'])
+flash_fp, large_fp = hand_frame(HOLD['Flashlight']['fp']), hand_frame(HOLD['Large']['fp'])
 
 
 # ---------- 아이템 손잡이 실측 ----------
@@ -182,13 +207,12 @@ def load_item(info):
 def solve(name, info, geo, pose, variant):
     s = SCALE[name]
     M_S, p_S = socket_in(pose)
-    up = Vector((0, 0, 1))
     if variant == 'forward':
         d = Vector((math.cos(math.radians(UP_DEG)), 0.0, math.sin(math.radians(UP_DEG))))   # 몸통이 뻗는 방향(액터 공간)
     else:
         d = pose['across']                            # 너클 축: 몸통은 엄지(검지) 쪽으로 나간다
     x_item = d * info['body_axis']                    # 아이템 +X 가 액터 공간에서 향하는 곳
-    M_item = frame(x_item, up)                        # 아이템 Z(위) 는 월드 위에 가깝게
+    M_item = frame(x_item, UP)                        # 아이템 Z(위) 는 월드 위에 가깝게
     grip_local = Vector((geo['handle_tip_x_cm'] - info['handle_side'] * GRIP_INSET / s, geo['handle_axis_yz_cm'][0], geo['handle_axis_yz_cm'][1]))
     p_item = pose['palm_point'] - rowmul(grip_local * s, M_item)      # 손잡이 점이 손바닥 점에 오는 메시 원점
     M_rel = M_item @ M_S.transposed()
@@ -197,28 +221,58 @@ def solve(name, info, geo, pose, variant):
             'item_x_world': [round(v, 3) for v in x_item], 'grip_point_local_cm': [round(v, 1) for v in grip_local], 'scale': s}
 
 
-result = {'inputs': {'up_deg': UP_DEG, 'grip_inset_cm': GRIP_INSET, 'palm_depth_cm': PALM_DEPTH, 'scale': SCALE,
-                     'calibration': {'large_rotation': LARGE_ROT, 'large_offset': list(LARGE_OFF), 'flashlight_rotation': FLASH_ROT}},
-          'socket_calibration': {'socket_rot_in_hand_frame': to_rotator(M_SH), 'socket_offset_in_hand_frame_cm': [round(v, 1) for v in o_SH],
-                                 'flashlight_check': {'lens_dir': [round(v, 3) for v in lens], 'error_deg': round(flash_err, 1)}},
-          'hand': {}, 'items': {}}
-for tag, pose in (('small_fp', small_fp), ('small_tp', small_tp)):
+def solve_axis_only(pose, x_world):
+    """원점은 소켓 그대로(GripOffset 무변경), 아이템 +X 가 x_world 를 보고 Z 는 위 — 손전등용 GripRotation"""
+    M_S, _ = socket_in(pose)
+    return to_rotator(frame(x_world, UP) @ M_S.transposed())
+
+
+def solve_two_hand(pose):
+    """X 정면·Z 위, 원점 = 양손 손목 중점 — 두 손 물건(냄비·작업등) 행"""
     M_S, p_S = socket_in(pose)
-    result['hand'][tag] = {'hand_r_cm': [round(v, 1) for v in pose['p']], 'palm_point_cm': [round(v, 1) for v in pose['palm_point']],
-                           'fingers': [round(v, 3) for v in pose['fingers']], 'across(knuckle axis)': [round(v, 3) for v in pose['across']],
-                           'palm_normal': [round(v, 3) for v in pose['palm']], 'socket_pos_cm': [round(v, 1) for v in p_S],
-                           'socket_axes': {'x': [round(v, 3) for v in M_S[0]], 'y': [round(v, 3) for v in M_S[1]], 'z': [round(v, 3) for v in M_S[2]]}}
+    mid = (pose['p'] + pose['p_l']) * 0.5
+    return {'GripOffset_cm': [round(v, 1) for v in rowmul(mid - p_S, M_S.transposed())], 'GripRotation_deg': to_rotator(frame(FORWARD, UP) @ M_S.transposed()),
+            'hands_apart_cm': round((pose['p'] - pose['p_l']).length, 1), 'midpoint_cm': [round(v, 1) for v in mid]}
+
+
+def hand_info(pose):
+    M_S, p_S = socket_in(pose)
+    return {'hand_r_cm': [round(v, 1) for v in pose['p']], 'palm_point_cm': [round(v, 1) for v in pose['palm_point']],
+            'fingers': [round(v, 3) for v in pose['fingers']], 'across(knuckle axis)': [round(v, 3) for v in pose['across']],
+            'palm_normal': [round(v, 3) for v in pose['palm']], 'socket_pos_cm': [round(v, 1) for v in p_S],
+            'socket_axes': {'x': [round(v, 3) for v in M_S[0]], 'y': [round(v, 3) for v in M_S[1]], 'z': [round(v, 3) for v in M_S[2]]}}
+
+
+new_lens = lens_dir(flash_fp, FLASH_ROT)
+result = {'inputs': {'up_deg': UP_DEG, 'grip_inset_cm': GRIP_INSET, 'palm_depth_cm': PALM_DEPTH, 'scale': SCALE,
+                     'calibration': {'large_rotation': LARGE_ROT, 'large_offset': list(LARGE_OFF), 'flashlight_rotation': FLASH_ROT, 'poses': CALIB_POSE}},
+          'socket_calibration': {'socket_rot_in_hand_frame': to_rotator(M_SH), 'socket_offset_in_hand_frame_cm': [round(v, 1) for v in o_SH],
+                                 'flashlight_check_028_pose': {'lens_dir': [round(v, 3) for v in calib_lens], 'error_deg': calib_err}},
+          'hand': {tag: hand_info(pose) for tag, pose in (('small_fp', small_fp), ('small_tp', small_tp), ('flashlight_fp', flash_fp), ('large_fp', large_fp))},
+          'flashlight': {'current_row': FLASH_ROT, 'lens_dir_with_current_row_in_new_pose': [round(v, 3) for v in new_lens],
+                         'lens_error_deg_with_current_row': angle_deg(new_lens, FORWARD),
+                         'new_GripRotation_deg(lens forward, level)': solve_axis_only(flash_fp, FORWARD),
+                         'rows': ['flashlight']},
+          'two_hand': {'current_row': {'GripRotation': LARGE_ROT, 'GripOffset': list(LARGE_OFF)}, 'new': solve_two_hand(large_fp),
+                       'rows': ['pot', 'standing_lamp']},
+          'items': {}}
 for name, info in ITEMS.items():
     geo = load_item(info)
     result['items'][name] = {'geometry': geo, 'rows': info['rows'],
                              'forward_fp': solve(name, info, geo, small_fp, 'forward'), 'forward_tp': solve(name, info, geo, small_tp, 'forward'),
                              'knuckle_fp': solve(name, info, geo, small_fp, 'knuckle')}
 apply_pose({'spine': {}, 'arm_r': HOLD['Small']['tp']['arm_r']})
-out = REPO / 'docs/asset/evidence/028-item-grip.json'
-out.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding='utf-8')
+OUT.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding='utf-8')
 print('GRIP RESULT ' + json.dumps(result))
 for name, r in result['items'].items():
     for row in r['rows']:
-        f = r['forward_fp']
-        print(f"ROW ItemTable.{row}.GripOffset: (?) -> ({f['GripOffset_cm'][0]}, {f['GripOffset_cm'][1]}, {f['GripOffset_cm'][2]}) (cm)")
-        print(f"ROW ItemTable.{row}.GripRotation: (?) -> ({f['GripRotation_deg'][0]}, {f['GripRotation_deg'][1]}, {f['GripRotation_deg'][2]}) (deg P,Y,R)")
+        for variant in (('forward_fp', 'forward'), ('knuckle_fp', 'knuckle')):
+            f = r[variant[0]]
+            print(f"ROW[{variant[1]}] ItemTable.{row}.GripOffset: (?) -> ({f['GripOffset_cm'][0]}, {f['GripOffset_cm'][1]}, {f['GripOffset_cm'][2]}) (cm)")
+            print(f"ROW[{variant[1]}] ItemTable.{row}.GripRotation: (?) -> ({f['GripRotation_deg'][0]}, {f['GripRotation_deg'][1]}, {f['GripRotation_deg'][2]}) (deg P,Y,R)")
+fr = result['flashlight']['new_GripRotation_deg(lens forward, level)']
+print(f"ROW ItemTable.flashlight.GripRotation: ({FLASH_ROT[0]}, {FLASH_ROT[1]}, {FLASH_ROT[2]}) -> ({fr[0]}, {fr[1]}, {fr[2]}) (deg P,Y,R) — 지금 행이면 렌즈 오차 {result['flashlight']['lens_error_deg_with_current_row']}deg")
+th = result['two_hand']['new']
+for row in result['two_hand']['rows']:
+    print(f"ROW ItemTable.{row}.GripOffset: ({LARGE_OFF[0]}, {LARGE_OFF[1]}, {LARGE_OFF[2]}) -> ({th['GripOffset_cm'][0]}, {th['GripOffset_cm'][1]}, {th['GripOffset_cm'][2]}) (cm)")
+    print(f"ROW ItemTable.{row}.GripRotation: ({LARGE_ROT[0]}, {LARGE_ROT[1]}, {LARGE_ROT[2]}) -> ({th['GripRotation_deg'][0]}, {th['GripRotation_deg'][1]}, {th['GripRotation_deg'][2]}) (deg P,Y,R)")
