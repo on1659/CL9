@@ -79,7 +79,7 @@ public:
 	/** 호스트 전용, 카트가 연결/분리될 때 카트가 호출한다 */
 	void SetPullingCart(ACL9Cart* Cart);
 
-	/** 지금 손에 들린 핫바 칸 번호(0부터) — PlayerState.ActiveSlot의 읽기 창구 */
+	/** 지금 손에 들린 퀵슬롯 칸 번호(0부터) — PlayerState.ActiveSlot의 읽기 창구 */
 	UFUNCTION(BlueprintPure, Category="Carry")
 	int32 GetActiveSlot() const;
 
@@ -94,12 +94,12 @@ public:
 	/** 호스트 전용: 든 아이템을 파괴하고 활성 칸을 비운다 (항아리 반납·먹기가 이걸 먹는다) */
 	void HostConsumeHeldItem();
 
-	/** 핫바 어느 칸이든, 또는 카트 중 하나라도 있으면 — 빈손이면 DeaggroRadius에서 추격을 놓는다 */
+	/** 퀵슬롯 어느 칸이든, 또는 카트 중 하나라도 있으면 — 빈손이면 DeaggroRadius에서 추격을 놓는다 */
 	bool IsCarryingAnything() const;
 
 	/**
 	 * 호스트 전용 (docs/systems/character.md 피격·넘어짐·죽음): HP 감소, 넘어짐,
-	 * 핫바 네 칸 전부 흘림. HP가 0이 되면 그날 밤 내내 쓰러진 채로 있으며 죽음 처리를
+	 * 퀵슬롯 네 칸 전부 흘림. HP가 0이 되면 그날 밤 내내 쓰러진 채로 있으며 죽음 처리를
 	 * 게임 모드로 넘긴다 (전멸 체크, SpectateDelay 이후 관전).
 	 */
 	virtual void OnDamage(int32 Amount, AActor* Source) override;
@@ -183,9 +183,10 @@ public:
 
 	/**
 	 * 시선 피치(도, -90..90 — 위가 양수). 소유자는 컨트롤 피치, 남의 화면에서는 복제된 `RemoteViewPitch`
-	 * (ACharacter 기본, `GetBaseAimRotation`)다. 두 ABP가 Hold 레이어 뒤 `Transform (Modify) Bone`(spine_03)에
-	 * 이 값 × 비율을 넣어 상체·팔이 시선을 따르게 한다 — 그래서 손의 손전등이 아래를 보면 바닥을 비추고,
-	 * 남의 화면에서도 손이 기울어진다 (docs/systems/character.md 시점, 2026-09-13).
+	 * (ACharacter 기본, `GetBaseAimRotation`)다. **전신 ABP(`ABP_Unarmed`) 전용** — Hold 레이어 뒤
+	 * `Transform (Modify) Bone`(spine_03)에 이 값 × 비율을 넣어 남의 화면에서 상체·손이 시선을 따르게 한다.
+	 * 1인칭 팔은 카메라 자식이라 시선을 저절로 따르므로 팔 ABP는 이 값을 쓰지 않는다
+	 * (docs/systems/character.md 시점, 2026-09-13).
 	 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetAimPitch() const;
@@ -412,11 +413,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> DropAction;
 
-	/** 핫바 칸 지정 액션들 (IA_Slot1..4) — 배열 순서가 칸 번호다 */
+	/** 퀵슬롯 칸 지정 액션들 (IA_Slot1..4) — 배열 순서가 칸 번호다 */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TArray<TObjectPtr<UInputAction>> SlotActions;
 
-	/** 핫바 칸 스크롤 액션 (IA_SlotScroll, Axis1D 마우스 휠) — 리바인딩 대상이 아니다 */
+	/** 퀵슬롯 칸 스크롤 액션 (IA_SlotScroll, Axis1D 마우스 휠) — 리바인딩 대상이 아니다 */
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SlotScrollAction;
 
@@ -477,7 +478,7 @@ private:
 	UFUNCTION()
 	void HandleMappingContextRegistered(const UInputMappingContext* Context);
 
-	/** 호스트 전용: 핫바 전 칸을 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
+	/** 호스트 전용: 퀵슬롯 전 칸을 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
 	void HostDropEverything();
 
 	/** 호스트 전용: 아이템을 그 칸에 기록하고 그 칸을 활성으로 해 손에 붙인다 — 손은 비어 있어야 한다 */
@@ -581,11 +582,12 @@ private:
 	TObjectPtr<UCameraComponent> FirstPersonCameraComponent;
 
 	/**
-	 * 1인칭 시점 메시. 소지한 아이템은 여기의 손 소켓에 붙는다.
-	 * 템플릿 방식대로 바디 메시 아래에 붙어 있다: 소유한 FP 리그
-	 * (ABP_FP_Copy + CtrlRig_FPWarp)가 바디 공간에서 전신 메시를 애니메이션하고
-	 * 팔을 카메라 쪽으로 워프한다 — 팔만 있는 뷰모델 에셋으로는 나중에
-	 * 테이블 컬럼만 바꿔서 교체할 수 있다.
+	 * 1인칭 팔 메시(뷰모델). 소유자 화면에서는 손에 든 아이템의 메시가 여기의 손 소켓 `HandGrip_R`에
+	 * 옮겨 붙는다(`ACL9Item::UpdateFirstPersonView`). **카메라의 자식**이라 시선 피치·요를 통째로 따른다
+	 * (리썰 방식, 2026-09-13 — 옛 "전신 메시 자식 + 몸 포즈 복사(ABP_FP_Copy) + CtrlRig_FPWarp"는 폐기).
+	 * 상대 트랜스폼은 `(0,0,-EyeHeight)`·요 −90°로 전신 마네킹과 같은 규격(리그 root가 원점, 눈이
+	 * (0,0,EyeHeight)에서 +X를 봄) — 팔 ABP(`ABP_FP_View`)는 이 공간에서 저작한 카메라 로컬 클립만
+	 * 재생하고 몸 포즈는 보지 않는다. 메시·ABP는 캐릭터 행(`ArmsMesh`·`ArmsAnimBP`)에서 온다.
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;

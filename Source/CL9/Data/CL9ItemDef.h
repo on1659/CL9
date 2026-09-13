@@ -15,7 +15,8 @@
 /**
  * 손에 들었을 때 팔이 취하는 자세의 범주 (docs/systems/inventory.md 손에 든 아이템). 아이템마다
  * 클립을 따로 만들지 않고 범주로 묶는다 — 전신 ABP가 이 값으로 상체 Hold 레이어를 고르고,
- * 1인칭 팔은 전신 포즈를 복사해 같은 자세가 된다.
+ * 1인칭 팔 ABP(카메라 자식 뷰모델, 몸 포즈 복사 없음 — 2026-09-13)는 같은 값으로 카메라 로컬
+ * Hold 클립을 고른다. 두 벌은 서로 다른 클립이고 범주만 공유한다.
  */
 UENUM(BlueprintType)
 enum class ECL9HoldPose : uint8
@@ -92,7 +93,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	FRotator GripRotation = FRotator::ZeroRotator;
 
-	/** 들었을 때 팔 자세 범주 — 전신 ABP의 상체 Hold 레이어가 읽는다 */
+	/** 들었을 때 팔 자세 범주 — 전신 ABP의 상체 Hold 레이어와 1인칭 팔 ABP가 각자의 클립을 고르는 데 읽는다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	ECL9HoldPose HoldPose = ECL9HoldPose::Small;
 

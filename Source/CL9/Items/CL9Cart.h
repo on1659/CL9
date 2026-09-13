@@ -11,7 +11,7 @@ class ACL9GameState;
 class UBoxComponent;
 
 /**
- * 수레(docs/plan/data/item/cart.md): 밀고 다닐 뿐 손에 들거나 핫바에 넣을 수 없는 아이템이다.
+ * 수레(docs/plan/data/item/cart.md): 밀고 다닐 뿐 손에 들거나 퀵슬롯에 넣을 수 없는 아이템이다.
  * 수레 행의 ActorClass 열은 이 클래스의 BP 자식을 가리킨다 — 행별 전용 동작을 넣는 정식 경로가 바로 이것이다.
  *
  * 실물 크기의 물리 강체다 (2026-09-13, 사용자: "실제 현실에서 옮기는 느낌"): 행의 bMeshIsBody가 메시(UCX 콜리전)를
@@ -23,7 +23,7 @@ class UBoxComponent;
  * 적재는 부착이 아니라 물리다: 메시 소켓 `Cargo`를 중심으로 하는 CargoExtent 상자(CargoVolume)와 겹치는 자유 상태
  * 아이템이 곧 "실린 것"이다. 싣기는 놓기(G)·던지기(달리기+G)로 짐칸 위에 떨어뜨리는 것뿐이고, 꺼내기는 바닥 아이템과
  * 같은 E 줍기다. 상호작용 키는 밀기/놓기만 — 활성 칸이 빈 채(빈손)로 조준하면 밀고, 미는 중이면 놓는다. 활성 칸에
- * 뭔가 든 채 조준하면 프롬프트도 E도 없다. 미는 동안은 핫바 전환·줍기가 잠긴다(ACL9Character::CanSwitchSlot).
+ * 뭔가 든 채 조준하면 프롬프트도 E도 없다. 미는 동안은 퀵슬롯 전환·줍기가 잠긴다(ACL9Character::CanSwitchSlot).
  * 항아리·창구는 짐칸 안 것을 한 번에 가져간다. 적재 한도는 없다(무게 제한 없음 철학과 일치).
  */
 UCLASS(abstract)

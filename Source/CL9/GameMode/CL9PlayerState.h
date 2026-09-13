@@ -12,7 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9PlayerHudChanged);
 
 /**
  * 플레이어별 판정 상태다(conventions § 4 — 캐릭터에는 절대 두지 않는다). Carry
- * 미러링은 docs/systems/inventory.md를 따른다: 핫바 칸 배열에서 활성 칸 하나만
+ * 미러링은 docs/systems/inventory.md를 따른다: 퀵슬롯 칸 배열에서 활성 칸 하나만
  * 월드에 실물 액터로 들려 있고(그 액터가 진실, 칸은 미러), 나머지 칸은 데이터로만
  * 존재하다가 활성으로 고르면 다시 스폰된다.
  *
@@ -59,7 +59,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="HUD")
 	FCL9PlayerHudChanged OnHpChanged;
 
-	/** 핫바 칸·활성 칸·머리 내용물이 바뀌었다 — 로컬 HUD 갱신 */
+	/** 퀵슬롯 칸·활성 칸·머리 내용물이 바뀌었다 — 로컬 HUD 갱신 */
 	UPROPERTY(BlueprintAssignable, Category="HUD")
 	FCL9PlayerHudChanged OnCarryChanged;
 
@@ -79,7 +79,7 @@ public:
 	int32 MaxHp = 0;
 
 	/**
-	 * 핫바 칸들 — 크기는 CL9Rules.HotbarSlots(호스트가 BeginPlay에서 맞춘다). 활성 칸은 캐릭터
+	 * 퀵슬롯 칸들 — 크기는 CL9Rules.QuickSlots(호스트가 BeginPlay에서 맞춘다). 활성 칸은 캐릭터
 	 * HeldItem 액터의 미러이고, 비활성 칸은 액터 없이 데이터(Alias·SubAlias·Value)만 든다.
 	 * 빈 칸은 ItemAlias가 None이다.
 	 */

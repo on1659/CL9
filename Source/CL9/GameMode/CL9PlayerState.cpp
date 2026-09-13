@@ -8,7 +8,7 @@
 
 ACL9PlayerState::ACL9PlayerState()
 {
-	// 엔진 기본은 1Hz다 — 핫바 칸·활성 칸이 클라 HUD에 최대 1초 늦게 보이면 전환이 먹통으로 느껴진다.
+	// 엔진 기본은 1Hz다 — 퀵슬롯 칸·활성 칸이 클라 HUD에 최대 1초 늦게 보이면 전환이 먹통으로 느껴진다.
 	// 캐릭터와 같은 20Hz로 올린다(내용이 작아 비용은 무시할 수 있다).
 	SetNetUpdateFrequency(20.f);
 }
@@ -26,9 +26,9 @@ void ACL9PlayerState::BeginPlay()
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 	const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
-	if (Rules != nullptr && Rules->HotbarSlots > 0)
+	if (Rules != nullptr && Rules->QuickSlots > 0)
 	{
-		Slots.SetNum(Rules->HotbarSlots);
+		Slots.SetNum(Rules->QuickSlots);
 		NotifyCarryChanged();
 	}
 }

@@ -11,9 +11,9 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 		OutErrors.Add(TEXT("PickRadius and CarryHeight must be positive."));
 	}
 	// 활성 칸 번호가 uint8로 복제된다 — 그 범위를 넘는 칸 수는 표가 아니라 코드를 바꿔야 하는 일이다
-	if (HotbarSlots < 1 || HotbarSlots > 255)
+	if (QuickSlots < 1 || QuickSlots > 255)
 	{
-		OutErrors.Add(TEXT("HotbarSlots must be 1..255 — the hotbar needs at least one slot."));
+		OutErrors.Add(TEXT("QuickSlots must be 1..255 — the quick slot bar needs at least one slot."));
 	}
 	if (!(ThrowMinSpeed > 0.f && ThrowMinSpeed <= ThrowMaxSpeed) || ThrowChargeTime <= 0.f)
 	{

@@ -77,8 +77,12 @@ ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -CL9::CapsuleHalfHeight), FRotator(0.f, -90.f, 0.f));
 
+	// 1인칭 팔은 카메라의 자식(뷰모델)이다 — 시선 피치·요를 통째로 따라간다(리썰 방식, 2026-09-13).
+	// 상대 트랜스폼은 전신 마네킹과 같은 규격: 리그 root가 원점, 눈이 (0,0,EyeHeight)에서 +X를 보는
+	// 공간 — 카메라가 눈이므로 root를 눈높이만큼 내리고 -90° 요를 준다. 팔 클립은 이 공간에서 저작한다.
 	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
-	FirstPersonMesh->SetupAttachment(GetMesh());
+	FirstPersonMesh->SetupAttachment(FirstPersonCameraComponent);
+	FirstPersonMesh->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -CL9::EyeHeight), FRotator(0.f, -90.f, 0.f));
 	FirstPersonMesh->SetOnlyOwnerSee(true);
 	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
@@ -151,6 +155,8 @@ void ACL9Character::ApplyCharacterDef()
 	// (conventions § 5).
 	GetCapsuleComponent()->SetCapsuleSize(Def->CapsuleRadius, Def->CapsuleHalfHeight);
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, Def->EyeHeight - Def->CapsuleHalfHeight));
+	// 팔(카메라 자식)의 root도 행의 눈높이만큼 내린다 — BP가 생성자 값을 덮어써도 여기서 다시 맞는다.
+	FirstPersonMesh->SetRelativeLocation(FVector(0.f, 0.f, -Def->EyeHeight));
 
 	UCL9CharacterMovement* Movement = GetCL9CharacterMovement();
 	Movement->SetCharacterDef(Def);
@@ -552,7 +558,7 @@ AActor* ACL9Character::ResolveFocus() const
 
 		if (ACL9Item* Item = Cast<ACL9Item>(Actor); Item != nullptr && Item->CanBePickedUp())
 		{
-			// Head 슬롯 아이템은 머리에 착용하므로 핫바가 꽉 차거나 잠겨 있어도 상관없다 — 대신 머리가 비어 있어야 한다
+			// Head 슬롯 아이템은 머리에 착용하므로 퀵슬롯이 꽉 차거나 잠겨 있어도 상관없다 — 대신 머리가 비어 있어야 한다
 			const bool bWearable = Item->GetItemDef()->CarrySlot == ECL9CarrySlot::Head;
 			const bool bCanTake = bWearable ? (WornItem == nullptr) : bCanPickUp;
 			if (bCanTake && AimDot > BestItemDot)
@@ -1106,8 +1112,9 @@ float ACL9Character::GetEatElapsed() const
 
 float ACL9Character::GetAimPitch() const
 {
+	// 전신 ABP(ABP_Unarmed) 전용 — 1인칭 팔은 카메라 자식이라 시선을 저절로 따르므로 이 값을 쓰지 않는다(2026-09-13).
 	// 소유자는 컨트롤 회전을 직접 읽는다 — GetBaseAimRotation은 카메라 시점(POV)을 돌려주는데 거기에는 스태미나
-	// 셰이크가 섞여 팔이 떨린다. 남의 폰은 GetBaseAimRotation이 호스트에서는 그 컨트롤러의 시점을, 클라에서는
+	// 셰이크가 섞여 몸이 떨린다. 남의 폰은 GetBaseAimRotation이 호스트에서는 그 컨트롤러의 시점을, 클라에서는
 	// 복제된 RemoteViewPitch(바이트 압축)를 준다.
 	const float Pitch = IsLocallyControlled() ? GetControlRotation().Pitch : GetBaseAimRotation().Pitch;
 	return FMath::Clamp(FRotator::NormalizeAxis(Pitch), -90.f, 90.f);

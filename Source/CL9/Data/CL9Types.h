@@ -172,7 +172,7 @@ struct FCL9ItemRef
 };
 
 /**
- * 핫바 칸 하나에 든 소지품 (docs/systems/inventory.md 상태 모델). 활성 칸은 손에 든 액터의
+ * 퀵슬롯 칸 하나에 든 소지품 (docs/systems/inventory.md 상태 모델). 활성 칸은 손에 든 액터의
  * 미러이고, 비활성 칸은 액터 없이 이 데이터만 남는다 — 꺼낼 때 여기서 다시 스폰한다.
  */
 USTRUCT(BlueprintType)

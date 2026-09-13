@@ -87,9 +87,9 @@ public:
 
 	// -- 던지기와 소지 --
 
-	/** 핫바 칸 수 — 한 번에 들고 다닐 수 있는 아이템 수. 손에 실물로 들리는 것은 활성 칸 하나뿐이다 (docs/systems/inventory.md) */
+	/** 퀵슬롯 칸 수 — 한 번에 들고 다닐 수 있는 아이템 수. 손에 실물로 들리는 것은 활성 칸 하나뿐이다 (docs/systems/inventory.md) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
-	int32 HotbarSlots = 4;
+	int32 QuickSlots = 4;
 
 	/** 달리며 소지하는 상태가 지속되어 흔들림 게이지가 가득 차기까지의 시간, 초 단위 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")

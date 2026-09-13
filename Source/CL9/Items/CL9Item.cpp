@@ -181,8 +181,8 @@ void ACL9Item::OnPickedUp(ACL9Character* Holder)
 	OnAcquired();
 
 	// 전신 메시의 손에 붙는다 — 팔 메시(OnlyOwnerSee)는 남의 화면에서는 애니메이션이 돌지 않아
-	// 소켓이 기준 포즈에 멈춰 있으므로, 어느 화면에서든 움직이는 전신 메시가 기준이다. 팔 메시는
-	// 전신 포즈를 복사(ABP_FP_Copy)하니 자기 화면에서도 같은 자리다 (docs/systems/inventory.md).
+	// 소켓이 기준 포즈에 멈춰 있으므로, 어느 화면에서든 움직이는 전신 메시가 기준이다. 소유자 본인
+	// 화면에서는 UpdateFirstPersonView가 메시만 팔(카메라 자식 뷰모델)로 옮긴다 (docs/systems/inventory.md).
 	// 소켓은 마네킹 스켈레톤이 이미 갖고 있는 `HandGrip_R`(손바닥 앞으로 +X) — 농부 A도 같은
 	// 뼈대라 그대로 쓴다. 없는 뼈대면 `hand_r` 뼈에 직접 붙는다.
 	USkeletalMeshComponent* Body = Holder->GetMesh();
@@ -401,11 +401,12 @@ void ACL9Item::UpdateFirstPersonView()
 		MeshComponent->SetFirstPersonPrimitiveType(Wanted);
 	}
 
-	// 1인칭 팔은 전신 포즈를 복사한 뒤 컨트롤 릭(CtrlRig_FPWarp)으로 카메라에 맞게 비틀어서 손 위치가
-	// 전신의 손과 십수 cm 어긋난다. 액터는 전신 손에 붙어 복제되지만(남의 화면 기준), 소유자 본인
-	// 화면에서는 **메시 컴포넌트만** 팔 메시의 같은 소켓으로 옮겨 팔에 정확히 들려 보이게 한다 —
-	// 컴포넌트 부착은 복제되지 않으므로 다른 머신에는 영향이 없다. 메시의 자식(ACL9LightItem의 라이트 —
-	// 손전등 렌즈 발원)은 부착을 따라 같이 옮겨 간다.
+	// 1인칭 팔은 카메라의 자식(뷰모델)이라 시선을 통째로 따르고, 몸 포즈와 무관한 카메라 로컬 클립을
+	// 재생하므로 손 위치가 전신의 손과 다르다(2026-09-13, 리썰 방식). 액터는 전신 손에 붙어 복제되지만
+	// (남의 화면 기준), 소유자 본인 화면에서는 **메시 컴포넌트만** 팔 메시의 같은 소켓으로 옮겨 팔에
+	// 정확히 들려 보이게 한다 — 컴포넌트 부착은 복제되지 않으므로 다른 머신에는 영향이 없다. 팔 소켓이
+	// 카메라를 따라가니 아이템도 시선을 따라간다. 메시의 자식(ACL9LightItem의 라이트 — 손전등 렌즈 발원)은
+	// 부착을 따라 같이 옮겨 간다.
 	static const FName GripSocket(TEXT("HandGrip_R"));
 	static const FName HandBone(TEXT("hand_r"));
 	USkeletalMeshComponent* Arms = bInLocalHand ? Holder->GetFirstPersonMesh() : nullptr;

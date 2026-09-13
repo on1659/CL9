@@ -1,6 +1,6 @@
-# 운반 시스템 (핫바·수레)
+# 운반 시스템 (퀵슬롯·수레)
 
-> **리썰식 4칸 핫바다.** 활성 칸 하나만 손에 실물로 들리고, 나머지 칸은 데이터로 따라다닌다.
+> **리썰식 4칸 퀵슬롯이다.** 활성 칸 하나만 손에 실물로 들리고, 나머지 칸은 데이터로 따라다닌다.
 > 2026-09-13 사용자 결정으로 "손 하나 + 품 + R 교체 + `SwapTime` 1.2초"를 폐기했다 — 전환은 즉시다.
 > **설계 정본은 plan이다** — [../plan/data/item/common.md](../plan/data/item/common.md) ·
 > [../plan/data/rules.md](../plan/data/rules.md) "던지기와 운반".
@@ -9,10 +9,10 @@
 
 - 아이템은 **월드의 실물 액터**다. 줍는다고 목록에 들어가는 게 아니라 손에 들린다 — 단, 활성이
   아닌 칸의 것은 액터를 파괴하고 데이터(Alias·SubAlias·Value)만 남겼다가 꺼낼 때 다시 스폰한다.
-- 칸 수는 `CL9Rules.HotbarSlots`(4). 휠·숫자키로 전환하고 **잠금 시간이 없다**.
+- 칸 수는 `CL9Rules.QuickSlots`(4). 휠·숫자키로 전환하고 **잠금 시간이 없다**.
 - `CarrySlot` enum(`Hand`/`Pocketable`)은 남아 있지만 **칸 규칙은 `HoldPose`가 정한다** — `Large`(두 손)
   아이템도 칸 하나를 차지하되 들고 있는 동안 전환·줍기가 잠긴다. `CartOnly`는 칸에 못 들어간다(손에도
-  못 든다 — 지금과 같다). `Head`는 머리에 쓰며 핫바와 무관하다.
+  못 든다 — 지금과 같다). `Head`는 머리에 쓰며 퀵슬롯과 무관하다.
 - 무게는 감속으로 작용한다 — 이진 페널티가 아니라 연속 함수이고, **네 칸의 합**이다.
 
 ## 상태 모델 (PlayerState)
@@ -20,7 +20,7 @@
 ```cpp
 // ACL9PlayerState — 운반 상태 (A1 결정: 판정 상태는 PlayerState에)
 UPROPERTY(ReplicatedUsing=OnRep_Slots)
-TArray<FCL9CarriedItem> Slots;         // 핫바 칸들 — 크기 = CL9Rules.HotbarSlots(호스트가 BeginPlay에서 맞춘다)
+TArray<FCL9CarriedItem> Slots;         // 퀵슬롯 칸들 — 크기 = CL9Rules.QuickSlots(호스트가 BeginPlay에서 맞춘다)
 
 UPROPERTY(ReplicatedUsing=OnRep_ActiveSlot)
 uint8 ActiveSlot;                      // 손에 들린 칸 번호(0부터) — 빈 칸이면 빈손
@@ -44,17 +44,21 @@ struct FCL9CarriedItem : FCL9ItemRef { int32 Value; };   // 개체가 굴린 판
 - **HUD 훅**: `OnRep_Slots`·`OnRep_ActiveSlot`·`OnRep_HeadItem` 셋 다 `OnCarryChanged`를 발동하고, 리슨
   호스트는 캐릭터가 기록 직후 `NotifyCarryChanged()`로 같은 델리게이트를 발동한다. PlayerState의 복제
   빈도는 엔진 기본 1Hz가 아니라 **20Hz**다(2026-09-13) — 칸 전환이 클라 HUD에 1초 늦게 보이면 먹통으로 느껴진다.
-- **머리 슬롯은 손과 별개다** — `Head` 아이템은 E로 주우면 쓰이고(핫바가 꽉 차거나 잠겨 있어도), 핫바·수레
+- **머리 슬롯은 손과 별개다** — `Head` 아이템은 E로 주우면 쓰이고(퀵슬롯이 꽉 차거나 잠겨 있어도), 퀵슬롯·수레
   규칙을 타지 않는다. 벗기 없음(현재 설계) — [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md).
 
 - 손에 든 아이템은 실물 액터가 **소지자 전신 메시의 손 소켓 `HandGrip_R`**(마네킹 스켈레톤
   공용, 없으면 `hand_r` 뼈)에 Attach되어 **보인다** — 모든 아이템이 예외 없이 같은 규칙이다
   (2026-09-12, 사용자: "모든 아이템들도 일괄로 손에 붙을 수 있게"). 행의 `GripOffset`·`GripRotation`이
-  손잡이 위치를 맞춘다(손전등은 렌즈 +X가 앞). 1인칭 팔 메시는 전신 포즈를 복사(`ABP_FP_Copy`)하므로
-  자기 화면에서도 같은 손에 들려 보이고, 소유자 화면에서만 아이템을 팔과 같은 1인칭 렌더 공간
-  (`FirstPersonPrimitiveType::FirstPerson` — FOV 70·스케일 0.6)으로 그려 팔과 어긋나지 않게 한다.
-  팔 메시(OnlyOwnerSee)에 붙이지 않는 이유: 남의 화면에서는 그 메시가 그려지지 않아 애니메이션이
-  멈추고 소켓이 기준 포즈에 남는다. `CarryHeight`(120cm)는 **놓는 높이**와 **칸에서 꺼내 스폰하는 높이**에 쓰인다.
+  손잡이 위치를 맞춘다(손전등은 렌즈 +X가 앞). **1인칭 팔은 카메라의 자식(뷰모델)이다**(2026-09-13,
+  리썰 방식 — 몸 포즈 복사 `ABP_FP_Copy`·`CtrlRig_FPWarp` 폐기): 팔 메시 `FirstPersonMesh`가
+  `FirstPersonCameraComponent`에 상대 위치 `(0,0,−EyeHeight)`·요 −90°로 붙어 시선 피치·요를 통째로 따르고,
+  팔 ABP(`ABP_FP_View`)는 몸 포즈를 보지 않고 카메라 로컬 클립만 재생한다. 소유자 본인 화면에서는
+  `ACL9Item::UpdateFirstPersonView`가 아이템 **메시만** 팔의 같은 소켓 `HandGrip_R`로 옮기고(컴포넌트 부착은
+  복제되지 않는다) 팔과 같은 1인칭 렌더 공간(`FirstPersonPrimitiveType::FirstPerson` — FOV 70·스케일 0.6)으로
+  그린다 — 팔 소켓이 카메라를 따라가니 든 물건도 시선을 따라간다. 액터 자체를 팔 메시(OnlyOwnerSee)에
+  붙이지 않는 이유: 남의 화면에서는 그 메시가 그려지지 않아 애니메이션이 멈추고 소켓이 기준 포즈에 남는다.
+  `CarryHeight`(120cm)는 **놓는 높이**와 **칸에서 꺼내 스폰하는 높이**에 쓰인다.
 - **들면 팔이 올라온다 — 행의 `HoldPose` 범주가 자세를 고른다** (2026-09-12). `ECL9HoldPose`
   `Small`(한 손, 계란·고기·팬) · `Flashlight`(앞을 향해 쥠 — 팔을 뻗어 렌즈가 화면에 들어온다) ·
   `Large`(두 손, 냄비·램프) · `None`(빈손 — 전신은 템플릿 Idle 그대로, **1인칭 팔은 화면 밖이다**:
@@ -62,9 +66,11 @@ struct FCL9CarriedItem : FCL9ItemRef { int32 Value; };   // 개체가 굴린 판
   `AN_Farmer_FPRun`으로 팔을 흔들며 손이 화면에 들어온다 — PlayRate = `GetGroundSpeed()` ÷ 클립 기준
   속도. 2026-09-13 사용자: "리썰처럼 최초 화면에서는 안 보이다가 뛸 때 손을 흔들면서" — 2026-09-12의
   "빈손이어도 손이 보인다"(`AN_Farmer_FPHoldIdle`)를 뒤집는다). 아이템마다 클립을 만들지 않고 범주로 묶는다. 클립은 두 벌이다 — 전신용 `AN_Farmer_Hold*`
-  (남이 보는 자연스러운 높이, 가슴 앞)과 1인칭 팔용 `AN_Farmer_FPHold*`(카메라 안에 들어오도록
-  눈높이 가까이 올린 것). 전신 ABP(`ABP_Unarmed`)는 `spine_01` 위 상체에 전신 클립을, 팔 ABP
-  (`ABP_FP_Copy`)는 전신 포즈 복사 위에 팔 클립을 같은 방식으로 레이어한다 — FPS 뷰모델 관행이다.
+  (남이 보는 자연스러운 높이, 가슴 앞)과 1인칭 팔용 `AN_Farmer_FPHold*`(카메라 로컬 공간에서 저작한
+  전용 클립 — 리그 root가 원점, 눈이 (0,0,EyeHeight)에서 +X를 보는 공간). 전신 ABP(`ABP_Unarmed`)는
+  `spine_01` 위 상체에 전신 클립을 레이어하고, 팔 ABP(`ABP_FP_View`)는 몸 포즈 복사·FPWarp 없이 팔 클립을
+  그대로 재생한다(2026-09-13 — 팔은 카메라 자식이라 시선을 저절로 따르고, 팔 모션은 몸과 무관하다.
+  옛 `ABP_FP_Copy`의 CopyPoseFromMesh 위 레이어 방식은 폐기, 기존 FP 클립은 이 공간으로 다시 만든다).
   `ACL9Character::GetHoldPose()`가 `HeldItem` 행에서 값을 읽고, HeldItem이 복제되니 모든 머신이
   같은 자세를 낸다. 칸을 전환하면 손의 모델과 자세가 그 칸의 아이템으로 바뀐다. 제작은 `Tools/Blender/animate_farmer_hold.py`(+`farmer_hold_spec.json`), 임포트는
   `Tools/Unreal/import_farmer_hold.py` — [../asset/character/farmer_a.md](../asset/character/farmer_a.md).
@@ -146,8 +152,8 @@ Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostC
 
 ## 현재 범위에 없는 것 (이전 판과의 차이)
 
-- ❌ 손 하나 + 품 + R 교체 + `SwapTime` 1.2초 — 2026-09-13 핫바로 대체
-- ❌ 슬롯 그리드 인벤토리 (20칸, 드래그앤드롭) — 핫바 4칸이 전부, 드래그·정렬 없음
+- ❌ 손 하나 + 품 + R 교체 + `SwapTime` 1.2초 — 2026-09-13 퀵슬롯으로 대체
+- ❌ 슬롯 그리드 인벤토리 (20칸, 드래그앤드롭) — 퀵슬롯 4칸이 전부, 드래그·정렬 없음
 - ❌ 리썰의 유틸리티 벨트(한 손 도구 전용 5번째 칸)·전환 딜레이(0.2~0.3초) — 칸은 넷뿐이고 전환은 즉시
 - ❌ 스택·수량 관리 UI — 실물이 전부다
 - ❌ 장비 착용 슬롯 (Hand/Feet) — Head(헤드램프)만 있다 (plan/data/equipment.md)
@@ -156,6 +162,6 @@ Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostC
 ## 참고
 
 - 아이템 물리(깨짐·반발): [../plan/data/item/egg.md](../plan/data/item/egg.md)
-- 운반 상수(`HotbarSlots` 등): [../plan/data/rules.md](../plan/data/rules.md)
+- 운반 상수(`QuickSlots` 등): [../plan/data/rules.md](../plan/data/rules.md)
 - 입력 바인딩·차징 구현: [input.md](input.md)
-- HUD 핫바 표시: [ui.md](ui.md)
+- HUD 퀵슬롯 표시: [ui.md](ui.md)

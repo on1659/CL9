@@ -11,14 +11,14 @@
 
 | 컬럼 | 타입 | 뜻 | 기본값 |
 |---|---|---|---|
-| `CarrySlot` | enum | `Hand` / `Pocketable` — 옛 손·품 구분으로 enum은 남아 있지만 **핫바 규칙은 `HoldPose`가 정한다**(2026-09-13, 둘 다 칸에 들어간다) / `CartOnly` 수레만(칸에도 손에도 못 든다) / `Head` 머리에 쓴다(주우면 착용, 핫바와 무관 — [headlamp.md](headlamp.md), 2026-09-05) | `Pocketable` |
+| `CarrySlot` | enum | `Hand` / `Pocketable` — 옛 손·품 구분으로 enum은 남아 있지만 **퀵슬롯 규칙은 `HoldPose`가 정한다**(2026-09-13, 둘 다 칸에 들어간다) / `CartOnly` 수레만(칸에도 손에도 못 든다) / `Head` 머리에 쓴다(주우면 착용, 퀵슬롯과 무관 — [headlamp.md](headlamp.md), 2026-09-05) | `Pocketable` |
 | `Weight` | float | 무게 — 들었을 때의 감속이 여기서 계산된다 | **미정** |
 | `GripOffset` | Vector | 손에 들었을 때 손 소켓 `HandGrip_R` 기준 상대 위치(cm) — 손잡이가 메시 원점에 없는 물건용. 두 손 물건(냄비·작업등)은 양손 중점 (12.3, −5.4, 17.3) | (0,0,0) |
 | `GripRotation` | Rotator | 손 소켓 기준 상대 회전 — 손전등은 렌즈(+X)가 카메라 정면을 보도록 (−17.8, 136.8, 69.3), 두 손 물건은 똑바로 서도록 (1.6, 81.6, 51.8). 1인칭 Hold 자세의 손 방향에서 역산한 값 ([../../../systems/inventory.md](../../../systems/inventory.md)) | (0,0,0) |
 
 그립 두 열의 **정본은 `ItemTable` 행이고 값은 art가 메시에서 역산한다**(고기는 뼈를 잡고, 프라이팬은 손잡이를 —
 `Tools/Blender/measure_item_grip.py`, 2026-09-13). 위 표의 수치는 예시일 뿐 표 행이 바뀌면 여기를 고치지 않는다.
-| `HoldPose` | enum | 들었을 때 팔 자세 범주 — `Small` 한 손(달걀·고기·팬) / `Flashlight` 앞을 향해 쥠(손전등·헤드램프) / `Large` 두 손(냄비·작업등) — **들고 있는 동안 핫바 전환·줍기가 잠긴다**(리썰 twoHanded, 2026-09-13) / `None` 자세 없음(수레 — 앞에서 미는 액터라 손에 들지 않는다) | `Small` |
+| `HoldPose` | enum | 들었을 때 팔 자세 범주 — `Small` 한 손(달걀·고기·팬) / `Flashlight` 앞을 향해 쥠(손전등·헤드램프) / `Large` 두 손(냄비·작업등) — **들고 있는 동안 퀵슬롯 전환·줍기가 잠긴다**(리썰 twoHanded, 2026-09-13) / `None` 자세 없음(수레 — 앞에서 미는 액터라 손에 들지 않는다) | `Small` |
 | `bStackable` | bool | 겹치나 | false |
 
 ## 사용 (좌클) — 2026-09-12, 2026-09-13 대기→타격
@@ -36,7 +36,7 @@
 **첫 줍기 힌트는 설명이 필요한 종류만** — `UseAction != None`이거나 `Dish`인 행(`UCL9ItemDef::HasUseHint()`).
 본 적 있음은 `Alias`별로 내 PC 설정(`UCL9GameUserSettings.SeenItemHints`)에 남는다 (2026-09-13).
 
-**운반은 `HotbarSlots`(4) 칸 핫바다** ([../rules.md](../rules.md), 2026-09-13). 활성 칸 하나만 손에 실물로
+**운반은 `QuickSlots`(4) 칸 퀵슬롯이다** ([../rules.md](../rules.md), 2026-09-13). 활성 칸 하나만 손에 실물로
 들리고 나머지 칸은 데이터(별칭·상태·굴린 값)만 남는다 — **비활성 칸에서는 빛만 잃고 들키는 건 그대로다.**
 칸 전환은 휠·숫자키로 즉시이며 잠금 시간이 없다. 규칙 전문은
 [../../../systems/inventory.md](../../../systems/inventory.md).
@@ -78,7 +78,7 @@
 |---|---|---|
 | `ActorClass` | class | 빛을 내려면 `BP_CL9FlashItem`(스포트, 좌클 토글) — 2026-09-11 클래스 분리 전에는 `bEmitsLight`+`LightKind` 컬럼이었다 |
 | `LightRadius` | float | 발광 반경 (cm) |
-| `bLightLostInPocket` | bool | 활성이 아닌 핫바 칸에 있을 때 빛을 잃나 (열 이름은 옛 품 시절 그대로 — 비활성 칸은 액터가 없어 자연히 꺼진다) |
+| `bLightLostInPocket` | bool | 활성이 아닌 퀵슬롯 칸에 있을 때 빛을 잃나 (열 이름은 옛 품 시절 그대로 — 비활성 칸은 액터가 없어 자연히 꺼진다) |
 | `CarrierSeenRadius` | float | 발광 소지자가 정전 때 보이는 거리 (cm) |
 
 **발광이 세지면 손전등의 역할이 무의미해지고, 약하면 "들고 있으면 들킨다"가 사라진다.**

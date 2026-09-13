@@ -16,7 +16,7 @@
   `GripOffset`/`GripRotation`을 준다; 소유자 화면에서는 메시 컴포넌트만 1인칭 팔 소켓으로 옮겨
   그린다. 팔 자세는 행의 `HoldPose` 범주로 ABP가 고른다 (2026-09-12) — 부착·자세 규칙의 정본은
   [inventory.md](inventory.md), ABP 배선은 [animation.md](animation.md).
-- **핫바 칸에 넣으면(비활성) 액터는 파괴되고 데이터만 남는다** — 꺼낼 때 `ACL9GameMode::SpawnItem(…, PresetValue)`
+- **퀵슬롯 칸에 넣으면(비활성) 액터는 파괴되고 데이터만 남는다** — 꺼낼 때 `ACL9GameMode::SpawnItem(…, PresetValue)`
   로 다시 스폰하고 `HostSetValue`로 굴린 값을 되돌린다(칸 전환은 가격을 다시 굴리지 않는다, 2026-09-13).
   행이 바뀌면 다시 굴리는 규칙(아래 "상태 = SubAlias")은 그대로다.
 - **몸체는 보통 반경 구(`Radius`)이고 메시는 그 구에 맞춰 자동 스케일된다.** 행의 `bMeshIsBody`가 켜진 물건(수레)은
@@ -53,7 +53,7 @@ egg → egg+cooked → egg+burnt      (열원 위 시간 — cooking.md)
 
 ## 참고
 
-- 운반(핫바·수레): [inventory.md](inventory.md)
+- 운반(퀵슬롯·수레): [inventory.md](inventory.md)
 - 드롭: [drop.md](drop.md)
 - 요리 상태 전이: [cooking.md](cooking.md)
 - 조명(발광·손전등): [light.md](light.md)
