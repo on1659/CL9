@@ -39,13 +39,14 @@ F 토글, 정전 규칙). 행의 `ActorClass`가 `BP_CL9FlashItem`을 가리키�
 (`LightRadius`·`LightIntensity`·`LightConeAngle`)만 행에서 읽는다. F(`IA_Flashlight`)→
 `Server_Flashlight`→`ACL9FlashItem::ToggleLight`→`bLightOn` 복제(각 머신 OnRep로 빔 표시).
 들면 flashlight는 off로 시작, 놓기·던지기·품 넣기는 off(`OnAcquired`/`OnReleased` 훅), 정전이면
-flashlight 강제 off. 광원은 메시 바운드 +X 끝(렌즈 앞)에 붙는다. 빔 방향은 현재 아이템 전방
-(캐릭터 yaw) — 카메라 피치 추종은 후속.
+flashlight 강제 off. 광원은 `MeshComponent`의 자식으로 렌즈 앞(+X 끝)에 붙어 소유자 화면에서 메시가
+1인칭 팔 소켓으로 옮겨 가면 빛도 따라간다(2026-09-13). 빔 방향 = 메시 +X; 상체가 시선 피치를
+따르므로(ABP `AimPitch`) 아래를 보면 바닥이 비춰진다.
 
 **헤드램프** (2026-09-05): 같은 아이템 광원 경로에 `CarrySlot::Head`가 얹힌다. E로 줍는 대신
 `HostWear` → `ACL9Item::OnWorn`(HoldState `Worn`): 1인칭 카메라 컴포넌트에 부착(착용자 시선을
 그대로 따름 — 타인 화면은 yaw만), 착용자에겐 메시가 안 보인다(OwnerNoSee), 충돌 없음.
-`Server_Flashlight`(F)는 **쓴 램프만** 토글하고, 손 손전등은 `Server_Use`(좌클)가 토글한다(2026-09-12). 정전 강제 소등(`ACL9FlashItem`의
+`Server_Flashlight`(F)는 **쓴 램프만** 토글하고, 손 손전등은 `Server_UseStart`(좌클 누름)가 토글한다(2026-09-12). 정전 강제 소등(`ACL9FlashItem`의
 ToggleLight·ShouldLightBeVisible·Tick)은 `IsWorn()`이면 건너뛴다. 미러는 `PlayerState.HeadItem`.
 
 ## 정전 (Blackout)

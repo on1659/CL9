@@ -1048,6 +1048,10 @@
   - 수레 `Pulled`→`Pushed`: 연결 거리(캡슐+수레 반경+20cm) 정면에 서서 미는 사람 yaw를 따라 스윕 이동, 막히면 못 간
     만큼 미는 사람을 물린다. "견인은 순간이동 없음"(09-02) 규칙은 밀기로 대체. 반려: 수레를 캡슐에 부착 — 벽을 뚫는다.
   - 문구: `Prompt.CartPull` "[E] 수레 밀기"/"Push cart" 등 수레 4건 시트 수정(`CL9_Strings.csv` → sync).
+  - **휘두르기 애님은 몽타주가 아니라 복제된 시작 시각 + 시퀀스 평가기** (2026-09-13, 사용자 "휘두르기 안 되는데?" → "아예
+    액션을 안 해"): `SwingStartServerTime` 복제 → ABP `SwingElapsed` → `InRange(0, 0.58)`이면 평가기(`ExplicitTime`) 가지.
+    반려: `Multicast_PlaySwing`+몽타주 — 일회성 연출엔 허용이지만 슬롯을 상체 레이어 위에 또 얹어야 하고(전신 몽타주는
+    다리를 기준 포즈로 되돌린다) 늦게 들어온 클라가 못 본다. 평가기 방식은 기존 부울 블렌드 체인에 한 단만 더한다.
 
 - **옵션 시스템·키 리바인딩·화면 스택** (2026-09-12 밤, 사용자 — "설정에서 단축키를 바꿀 수 있어야 돼… [E] 이런 식으로
   박혀 있더라고, {0} 해서 단축키를 바꾸면 같이 적용", "옵션 시스템도 같이 만들어야 돼 / plan, system 등 모든 문서도",
@@ -1098,3 +1102,57 @@
   함정: 맵(.umap)은 `rename_asset`이 "INI/소스 찾기·바꾸기 필요" 확인 대화상자에 막혀 실패한다 — 복제 → 원본 삭제로
   옮긴다. 옮긴 뒤 남은 리다이렉터는 참조 레벨(Lvl_Flat·Henhouse)을 `save_asset(only_if_is_dirty=False)`로 재저장하면 지울 수
   있다(py에 `fixup_referencers`가 없다). Interchange 임포트 메타(`contentImportPath`)에 옛 경로 문자열이 남지만 참조가 아니다.
+
+- **운반 모델 — 손 하나+품+R 교체+`SwapTime` 1.2초 폐기, 리썰식 4칸 핫바로** (2026-09-13, 사용자 — "아이템 인벤토리같은게
+  있으면좋겠어 ui하단에 네모칸같은거로해서 … 전형적인 리썰방식이야. 조작은 마우스휠로 할수있는데, 이건 마우스 옵션에서 바꿀 수
+  없어야돼"; 답변: 4칸·품/R/SwapTime 폐기·휠+숫자키 1~4·리썰 twoHanded 규칙). `ACL9PlayerState::Slots`(크기 `CL9Rules.HotbarSlots`)
+  + `ActiveSlot`; 활성 칸만 실물 액터, 나머지는 데이터(별칭·상태·굴린 값 `Value`). 휠(아래=다음, 순환, 한 노치 한 칸 —
+  `Server_ScrollSlot(±1)` 상대 RPC)·숫자키 1~4(`Server_SelectSlot` 절대 번호)로 즉시 전환, 빈 칸 선택 허용. E는 줍기·착용·
+  상호작용·수레 놓기만("[E] 놓기" 프롬프트 제거), **G 놓기**(칸 비우고 활성 칸 유지), **달리기 키+G 차징 던지기**(조합 고정,
+  설정에는 놓기 행만 — G를 옮기면 던지기가 따라간다). 줍기는 활성 칸이 비었으면 활성 칸, 아니면 첫 빈 칸+그 칸 활성; 꽉 차면
+  불가. 두 손(`HoldPose` Large)·수레 미는 중은 전환·줍기 잠금(호스트 판정). 잡혀 넘어지면 네 칸 전부 흘림. 칸 전환은 가격을
+  다시 굴리지 않는다(`SpawnItem(PresetValue)`/`HostSetValue`). PlayerState 복제 20Hz(기본 1Hz면 HUD 칸 전환이 1초 늦다).
+  - HUD: 우하단 "손:/품:" 텍스트 → 하단 중앙 4칸 핫바(`WBP_HotbarSlot`/`UCL9HotbarSlotWidget`, `HotbarBox`에 런타임 생성,
+    활성 칸은 `Frame` 테두리 색). 문자열 `Hud.Hand*`·`Hud.Pocket*`·`Prompt.Place`·`Input.Throw.Name`·`Input.Swap.Name` 폐기,
+    `Input.Drop.Name`·`Input.Slot1~4.Name` 신설. **마우스 휠은 옵션이 아니다** — IMC 행 `IgnoreSettings`, 설정 화면에 행 없음.
+  - 에셋: `IA_Drop`·`IA_Slot1~4`·`IA_SlotScroll` 신설, `IMC_Gameplay` 행 교체(Throw·Swap 행 삭제), `IA_Throw`·`IA_Swap`
+    에셋은 참조 0이지만 아직 삭제하지 않았다(아침 판단). `CL9Rules.HotbarSlots` 4.
+
+- **수레 — 실물 크기 물리 강체 + 스프링 밀기 + 물리 적재** (2026-09-13, 사용자 — "수레를 일단 크게만들어 … 넣은 아이템에서 물리법칙이
+  자연스럽게 움직여야돼", "내가 움직인다고 수레가 저렇게 따라서 움직이면 안돼. 수레를 실제 현실에서 옮기는거같은 느낌"; 답변: 물리 강체+스프링,
+  짐칸 120×80·벽 40·손잡이 100cm, 놓기/던지기로 싣기, 짐칸 안 깨짐 규칙 유지). 행 `bMeshIsBody`로 메시(UCX 9)가 루트·몸체(반경 구·자동
+  스케일 폐기 — 그 자동 스케일이 수레를 작게 보이게 한 원인), 밀기는 호스트 매 틱 무게중심 스프링·감쇠 힘(backward Euler, 상대 속도 감쇠)+
+  yaw 스프링 토크(PhysicsConstraint 아님), 손잡이–목표점 > `GripBreakDistance`면 손 놓침. 적재는 소켓 `Cargo` 상자(`CargoExtent`) 안 자유
+  아이템(부착·`LoadedItems`·"[E] 싣기" 폐기, 싣기는 G/던지기, 꺼내기는 E 줍기). 연결 거리는 행 `GripDistance`. 수레는 폰을 막는다(Pawn
+  Block) — 미는 사람도 벽에 막힌 수레와 함께 선다(아침 확인). 클라 아이템 시뮬은 엔진 `SyncReplicatedPhysicsSimulation`에 맡긴다(클라가
+  끄면 복제 목표가 버려져 얼어붙는다). `BP_CL9Character` CMC `PushForceFactor`·`InitialPushForceFactor` 0 — 캡슐이 수레를 밀치면
+  25kg 수레가 공중으로 떴다(PIE 실측); 밀기는 스프링만 한다. 값(Mass 25 · PushSpring 40 · PushDamping 9 · PushYawSpring 25 ·
+  PushYawDamping 7 · GripDistance 60 · GripBreakDistance 90 · Friction 0.15 · Restitution 0.05)은 **초안** — balance가 PIE 감각으로
+  확정. `SM_Cart_A` 재제작(바운드 167.7×97.2×103.4, 소켓 `Grip`(80.15,0,48)·`Cargo`(−17.85,0,14)). FBX는 Interchange가 UCX를 무시해
+  `Interchange.FeatureFlags.Import.FBX 0`으로 레거시 임포터를 강제했다. Blender 헤드리스는 `Tools/Blender/run_headless.py`로(훅 허용
+  문안 수정 필요 — 아침 질문).
+
+- **좌클 = 공격 대기 → 뗌 = 타격, 먹기는 우클 길게, 첫 줍기 힌트는 로컬·종류별 한 번** (2026-09-13, 사용자 — "마우스 누르면 기본->공격대기모션,
+  마우스떼면 그떄 공격모션 … 리썰방식", "아이템을 들고있을때 e누르면 놓기 ui나오는게 뜨면안돼. 정말로 게임이 처음인 유저만 … 잠깐나와서
+  보여주고 사라지게"; 답변: 무한 대기·공격 동일, 우클 길게=먹기, 내 PC 로컬 설정·설명이 필요한 종류만·4초·컨텍스트 프롬프트만 남김).
+  `IA_Use` Started → `Server_UseStart`(행 `UseAction` `Swing`이면 `SwingWindupServerTime` 복제·무한 대기, `ToggleLight`는 누르는 순간
+  토글) / Completed → `Server_UseRelease`(대기 중이었을 때만 `HostSwing` — 피해·사거리·경직은 대기 시간과 무관, 밸런스 열 없음). 손의 것이
+  바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가 대기를 지운다. 옛 `Server_Use(bool)`·좌클 길게 먹기 폐기. `IA_Scan` 바인딩을 PC에서
+  캐릭터로 — 탭(`CL9Rules.UseHoldTime` 0.4초 전 뗌)은 `ACL9PlayerController::RequestScan()`, 넘기면 `Server_Eat`(활성 칸 `Dish`만);
+  스캔은 뗄 때 나가 최대 0.4초 늦을 수 있다(사용자 수용). 힌트: `UCL9ItemDef::HasUseHint()`(`UseAction != None || Dish`) 행을 처음
+  들었을 때만 HUD `HintText`에 `Hint.*` 문구(현재 키 표기)가 `HintDuration` 4초 — 본 적 있음은 `Alias`별로 `UCL9GameUserSettings.SeenItemHints`
+  (튜토리얼은 사람에게 붙는다). 대기·먹기 표현은 상태 파생(복제 서버 시각 + `GetSwingWindupElapsed`/`GetEatElapsed`, 몽타주·RPC 없음):
+  `AN_Farmer_SwingWindup`/`FPSwingWindup`(휘두르기 t=0.12 자세 1.0초 루프)·`AN_Farmer_Eat`/`FPEat`(HoldSmall→입 앞→HoldSmall 0.6초),
+  ABP 두 개에 `SwingWindupElapsed`·`EatElapsed` 가지(대기 루프 > 휘두르기 > 먹기 순으로 덮음). 농부 클립 FBX는 30fps로 굽는다(스테이징
+  24fps 버그 수정 — 기존 `AN_Farmer_Swing` 0.583초는 재수출 보류, 아침 질문). 그립 값은 `measure_item_grip.py`로 역산하되 결과가 기존
+  행과 같아 프라이팬 "거꾸로"는 미해결(아침 질문 11·12).
+
+- **1인칭 팔은 빈손·걷기에 화면 밖, 달릴 때만 흔들리며 들어오고, 손전등 빔은 렌즈에서 나오며 상체가 시선 피치를 따른다** (2026-09-13, 사용자 —
+  "지금 항상 손을 보이게하려고하니까 문제가있어 … 리썰처럼 최초화면에선는 안보이다가. 뛸때 손을 흔들면서 … 플래시를들면 그떄 손조금 뻗어서",
+  "발원지가 손전드이여야돼"; 답변: 렌즈 발원 + 팔이 시선 피치를 따름). 2026-09-12 "idle에서도 손이 보여야 한다(`AN_Farmer_FPHoldIdle`)" 번복 —
+  `ABP_FP_Copy` `HoldPose == None` 가지 = `IsRunning ? AN_Farmer_FPRun(0.6초 루프, 기준 654cm/s) : AN_Farmer_FPArmsDown(2.0초 루프, 손 프레임
+  밖)`, 걷기 전용 클립 없음. 손전등 `Flashlight.fp` 손목을 앞 8·위 3cm 뻗어 렌즈가 보이게(`animate_farmer_hold.py -- --only Flashlight`).
+  라이트는 아이템 메시의 자식(`GetLightOrigin()` = 바운드 +X 끝+1cm), 방향 메시 +X. `ACL9Character::GetAimPitch()`(소유자 컨트롤 피치·타인
+  `RemoteViewPitch`)·`IsRunning()`·`GetGroundSpeed()` 게터 + 두 ABP에 `Transform (Modify) Bone`(spine_03, 컴포넌트 공간, AimPitch×0.6 초안;
+  FP는 ControlRig 뒤). PIE 실측: 전신·FP 메시의 spine은 기울지만 소유자 화면의 손전등 렌즈 피치는 FPWarp 릭 때문에 거의 불변 — 아침 질문 14.
+  농부 Hold 클립 재출력은 `--only <범주>`로 제한(sha 변화 방지). FPRun PlayRate는 고정 1.0(핀 미노출 — 질문 15).
