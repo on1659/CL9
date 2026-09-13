@@ -16,15 +16,16 @@ class ACL9PlayerState;
 class UBorder;
 class UCanvasPanel;
 class UCL9CookGaugeWidget;
-class UCL9HotbarSlotWidget;
 class UCL9ItemDef;
+class UCL9QuickSlotWidget;
 class UCL9ScanLabelWidget;
 class UHorizontalBox;
 class UProgressBar;
 class UTextBlock;
+class UTexture2D;
 
 /**
- * 게임 중 항상 떠 있는 HUD 레이어 콘텐츠(docs/systems/ui.md 게임 중 HUD): HP, 핫바,
+ * 게임 중 항상 떠 있는 HUD 레이어 콘텐츠(docs/systems/ui.md 게임 중 HUD): HP, 퀵슬롯,
  * 밤 시계, 상호작용 프롬프트, 던지기 차징, 그리고 윤곽선이 그려진 아이템 위의
  * 월드 고정 라벨. 값은 PlayerState/GameState/Character의 변경 델리게이트를 통해
  * 들어온다 — 복제된 상태를 매 틱 폴링하지 않는다(docs/systems/ui_system.md 데이터 연결).
@@ -72,16 +73,16 @@ protected:
 	TObjectPtr<UTextBlock> NightWarnText;
 
 	/**
-	 * 화면 하단 중앙(프롬프트 위)의 핫바 — 칸 위젯(WBP_HotbarSlot)이 나란히 담기는 상자. HUD가
-	 * `CL9Rules.HotbarSlots`개를 `HotbarSlotClass`로 만들어 붙이고, PlayerState의 `Slots`·`ActiveSlot`을
-	 * 그대로 반영한다(docs/systems/ui.md 핫바). 상자가 없으면 핫바를 그리지 않는다.
+	 * 화면 하단 중앙(프롬프트 위)의 퀵슬롯 — 칸 위젯(WBP_QuickSlot)이 나란히 담기는 상자. HUD가
+	 * `CL9Rules.QuickSlots`개를 `QuickSlotClass`로 만들어 붙이고, PlayerState의 `Slots`·`ActiveSlot`을
+	 * 그대로 반영한다(docs/systems/ui.md 퀵슬롯). 상자가 없으면 퀵슬롯을 그리지 않는다.
 	 */
 	UPROPERTY(meta=(BindWidgetOptional))
-	TObjectPtr<UHorizontalBox> HotbarBox;
+	TObjectPtr<UHorizontalBox> QuickSlotBox;
 
-	/** WBP_HotbarSlot — WBP_HUD에서 지정. 비어 있으면 핫바를 그리지 않는다 */
+	/** WBP_QuickSlot — WBP_HUD에서 지정. 비어 있으면 퀵슬롯을 그리지 않는다 */
 	UPROPERTY(EditAnywhere, Category="HUD")
-	TSubclassOf<UCL9HotbarSlotWidget> HotbarSlotClass;
+	TSubclassOf<UCL9QuickSlotWidget> QuickSlotClass;
 
 	/** 날짜, 페이즈, 흘러가는 밤 시계 */
 	UPROPERTY(meta=(BindWidget))
@@ -226,7 +227,7 @@ private:
 
 	void RefreshHp();
 
-	/** 핫바 — 칸 수가 규칙과 다르면 칸 위젯을 다시 만들고, 칸마다 이름·활성 여부를 채운다 */
+	/** 퀵슬롯 — 칸 수가 규칙과 다르면 칸 위젯을 다시 만들고, 칸마다 아이콘(없으면 이름)·활성 여부를 채운다 */
 	void RefreshCarry();
 	void RefreshClock();
 	void RefreshStamina();
@@ -289,9 +290,18 @@ private:
 	/** 조리대 → 그 위에 띄운 게이지. 게이지는 CookLayer의 자식이라 소유는 캔버스가 한다 */
 	TMap<TWeakObjectPtr<ACL9Kitchen>, TWeakObjectPtr<UCL9CookGaugeWidget>> CookGauges;
 
-	/** 핫바 칸 위젯들 — 인덱스가 칸 번호(0부터). HotbarBox의 자식이라 소유는 상자가 한다 */
+	/** 퀵슬롯 칸 위젯들 — 인덱스가 칸 번호(0부터). QuickSlotBox의 자식이라 소유는 상자가 한다 */
 	UPROPERTY(Transient)
-	TArray<TObjectPtr<UCL9HotbarSlotWidget>> HotbarSlots;
+	TArray<TObjectPtr<UCL9QuickSlotWidget>> QuickSlots;
+
+	/**
+	 * 칸마다 마지막으로 그린 아이템 행과 그 아이콘 — 행이 바뀐 칸만 `UCL9DefBase::Icon`을 동기 로드한다
+	 * (아이콘은 소프트 참조라 매번 로드하면 안 된다). 아이콘이 없는 행은 nullptr가 남고 이름으로 물러선다.
+	 */
+	TArray<TWeakObjectPtr<const UCL9ItemDef>> QuickSlotDefs;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UTexture2D>> QuickSlotIcons;
 
 	/** 번쩍임의 위상 — 경고가 꺼져 있는 동안 0으로 돌아가 항상 밝은 지점에서 시작한다 */
 	float NightWarnPhase = 0.f;

@@ -32,7 +32,7 @@
 │              [게임 플레이 화면 (3D)]             │
 │                                                 │
 │ [좌하단] 진행 중 주문 (남은 재료 · 마감 일수)    │
-│ [하단 중앙] 핫바 4칸 (프롬프트 위)               │
+│ [하단 중앙] 퀵슬롯 4칸 (프롬프트 위)             │
 │            첫 줍기 힌트 (처음 한 번, 4초)        │
 │            상호작용 프롬프트 · 던지기 차징       │
 │ [우하단] 머리 장비 (헤드램프)                    │
@@ -46,8 +46,8 @@
 | 밤 만료 경고 | 남은 밤이 `NightWarnTime`(30초) 아래로 내려가면 시계 밑 화면 중앙에 "밤이 끝난다 · 28초"가 뜨고 `NightWarnFlashTime`(0.6초) 주기로 불투명도가 오르내린다(가장 어두운 지점은 `NightWarnDimOpacity` 0.25). 밤이 아니거나 문턱 위면 접힌다. 만료가 새벽 실패이므로 시계를 안 보고 있어도 눈에 들어와야 한다 — **번쩍임이 허용되는 유일한 자리다**(아래 "UI 애니메이션") | rules.md |
 | 먹기 버프 | 지금 걸린 버프를 좌상단에 **버프 하나당 한 줄**: "다리에 힘 +60 (12초)". 목록은 `ACL9Character::GetActiveBuffs`, 남은 시간은 `GetBuffRemaining`, 이름은 `FindBuff(별칭)`의 `DisplayName`이다. **스탯이 하나뿐인 버프만 크기를 붙인다** — 여러 스탯을 묶은 양날 버프는 한 줄에 늘어놓으면 안 읽히므로 이름만 보여준다. **행을 못 찾거나 이름이 비면 별칭을 그대로 띄운다**: 표의 구멍이 화면에 드러나야 고치게 되고, 빈 줄로 삼키면 "먹었는데 아무 일도 없다"가 된다. 별칭 없이 걸린 효과는 예전처럼 스탯 단위로 물러선다. 효과는 서버 시각으로 만료되고 변경 이벤트가 없어서 스태미나처럼 **폴링**한다 | buff.md · character.md |
 | 이더 | `GameState.SharedMoney` (판 공유) — 좌상단 스태미나 바 아래 `MoneyText`에 "N 이더". `GetSharedMoney()`를 읽고 `OnMoneyChanged`로 갱신한다(지급·차감 양쪽에서 발동, 클라도 복제로 같은 값을 본다) | economy.md |
-| 핫바 | 화면 하단 중앙, 프롬프트 바로 위의 **4칸**(`CL9Rules.HotbarSlots`) — 칸마다 번호(1~4)와 든 아이템의 표시 이름, **활성 칸만 테두리 강조**. `PlayerState.Slots`·`ActiveSlot`을 `OnCarryChanged`로 반영한다(리썰식 핫바, 2026-09-13 — 옛 우하단 "손: / 품:" 텍스트 폐기). 구조는 아래 "핫바" | inventory.md |
-| 머리 | 우하단 `HeadText` — 머리에 쓴 것(HeadItem — 헤드램프)은 핫바와 별개다 | inventory.md |
+| 퀵슬롯 | 화면 하단 중앙, 프롬프트 바로 위의 **정사각 4칸**(`CL9Rules.QuickSlots`) — 리썰식: 검은 반투명 바탕에 얇은 흰 테두리, 칸에는 든 아이템의 **아이콘**(`UCL9DefBase::Icon`)만 있고 번호·글자가 없다. **든 칸만 흰색 100%, 나머지는 흰색 40%** — 색으로 강조하지 않는다(2026-09-13 사용자 — 노란 강조 폐기, "리썰처럼"). 아이콘이 없는 행은 이름 글자로 물러선다. `PlayerState.Slots`·`ActiveSlot`을 `OnCarryChanged`로 반영한다(옛 우하단 "손: / 품:" 텍스트 폐기). 구조는 아래 "퀵슬롯" | inventory.md |
+| 머리 | 우하단 `HeadText` — 머리에 쓴 것(HeadItem — 헤드램프)은 퀵슬롯과 별개다 | inventory.md |
 | 주문 | 수락한 주문을 좌하단에 한 줄씩: 이름 · 재료×n · 마감 N일차까지 · **확정 보상 이더** (`GameState.AcceptedOrders`, `OnOrdersChanged`로 갱신). 보상은 카드의 범위가 아니라 수락할 때 굴려 확정된 `Reward`다 — 실제로 받을 액수를 보여준다(2026-09-06). 남은 재료 진행도는 아직 없다 | order.md |
 | 상호작용 | 줍기·반납·수레 프롬프트(하단 중앙 — 문구는 캐릭터 `GetFocusPrompt`가 조립, 비면 숨김. 들고만 있을 때는 아무것도 안 뜬다 — 놓기는 G라 프롬프트가 없다), 던지기 차징 게이지(달리기 키+G 차징 중에만 표시) | raiding.md · input.md |
 | 첫 줍기 힌트 | 프롬프트 위 `HintText` — 설명이 필요한 종류를 **이 PC에서 처음** 손에 들었을 때만 "[LMB] 살짝 누르기 — 바로 휘두르기 / [LMB] 꾹 누르기 — …"가 `HintDuration`(4초) 떴다 사라진다. 종류별 한 번, 본 적 있음은 로컬 설정에 남는다. 구조는 아래 "첫 줍기 힌트" | input.md · settings.md |
@@ -59,28 +59,42 @@
 - 던지기 차징은 조작 피드백이라 게이지가 허용된다 — 스태미나 같은 "관리 자원"이 아니다.
 - 미니맵은 초기 구현에서 생략. 넣을 때 무엇이 그려지는지는 개체별 `bShowOnMinimap` 값이 정한다.
 
-### 핫바 (2026-09-13)
+### 퀵슬롯 (2026-09-13)
+
+**리썰식이다** (`docs/reference/image/player/lethal_hud.jpeg` — 2026-09-13 사용자 "리썰처럼"): 정사각 칸이 하단 중앙에
+나란히, 검은 반투명 바탕에 얇은 흰 테두리, 칸 안에는 든 아이템의 아이콘뿐 — 번호도 이름도 없다. **든 칸만 밝고(흰색 100%)
+나머지는 흐리다(흰색 40%)** — 노란 강조·색 구분은 폐기. 상태별 아이콘 구분(들었을 때/아닐 때 다른 그림)은 없다.
 
 ```
 WBP_HUD
-  └─ HotbarBox (HorizontalBox, BindWidgetOptional — 하단 중앙, PromptText 위)
-       ├─ WBP_HotbarSlot ×4   ← C++이 HotbarSlotClass로 런타임에 만들어 붙인다
-       │    (UCL9HotbarSlotWidget)
-       │    └─ Frame (Border — 테두리, 활성 칸만 ActiveFrameColor)
-       │         └─ [Vertical/Overlay]
-       │              ├─ NumberText (TextBlock — "1"~"4")
-       │              └─ NameText (TextBlock — 든 아이템 표시 이름, 빈 칸은 비움)
+  └─ QuickSlotBox (HorizontalBox, BindWidgetOptional — 하단 중앙, PromptText 위)
+       ├─ WBP_QuickSlot ×4   ← C++이 QuickSlotClass로 런타임에 만들어 붙인다
+       │    (UCL9QuickSlotWidget)
+       │    └─ SizeBox 64×64 (정사각)
+       │         └─ Frame (Border, BindWidget — 흰 얇은 테두리 브러시 2px, 배경 없음. 브러시 색 = 밝기)
+       │              └─ Background (Border — 검정 α0.5)
+       │                   └─ Overlay
+       │                        ├─ Icon (Image 48×48 가운데, BindWidgetOptional — 텍스처는 C++이 세팅)
+       │                        └─ NameText (TextBlock 12pt 가운데 줄바꿈, BindWidget — 아이콘 없는 행의 폴백)
 ```
 
-- **칸 수는 규칙이 정한다** — HUD가 `CL9Rules.HotbarSlots`개를 `HotbarSlotClass`(WBP_HUD 프로퍼티, `WBP_HotbarSlot`)로
-  만들어 `HotbarBox`에 붙인다. 디자이너에 칸을 미리 놓지 않는다(HP 하트 칸과 반대 — 하트는 칸 수가 표현이고, 핫바는
+| `UCL9QuickSlotWidget` 프로퍼티 (Category `QuickSlot`) | 기본 | 뜻 |
+|---|---|---|
+| `ActiveColor` | (1, 1, 1, 1) | 손에 들린(활성) 칸 — 테두리·아이콘·이름에 같이 건다 |
+| `InactiveColor` | (1, 1, 1, 0.4) | 나머지 칸 |
+
+- **칸 수는 규칙이 정한다** — HUD가 `CL9Rules.QuickSlots`개를 `QuickSlotClass`(WBP_HUD 프로퍼티, `WBP_QuickSlot`)로
+  만들어 `QuickSlotBox`에 붙인다. 디자이너에 칸을 미리 놓지 않는다(HP 하트 칸과 반대 — 하트는 칸 수가 표현이고, 퀵슬롯은
   칸 수가 규칙이라서). 수가 달라질 때만 다시 만들고 그 뒤로는 내용만 갱신한다.
-- **갱신은 `PlayerState.OnCarryChanged` 한 곳** — `Slots[i]`가 차 있으면 아이템 행의 `DisplayName`(없으면 별칭), 비었으면
-  빈 텍스트. `i == ActiveSlot`인 칸의 `Frame`만 `ActiveFrameColor`, 나머지는 `InactiveFrameColor`(둘 다 WBP_HotbarSlot
-  프로퍼티). 클라에서는 `Slots`가 복제되기 전에 잠시 빈 채로 그려졌다가 첫 `OnCarryChanged`에서 채워진다 — 정상이다.
-- 칸의 크기·간격·글꼴·배경은 전부 `WBP_HotbarSlot`이 정한다 — C++은 번호·이름 글자와 테두리 색만 만진다.
-  `HotbarBox`가 없거나 `HotbarSlotClass`가 비어 있으면 핫바를 그리지 않는다.
-- 빈 칸을 활성으로 고른 상태(= 빈손)도 그 칸의 테두리가 강조된다 — 어느 칸이 손인지는 늘 보여야 한다.
+- **갱신은 `PlayerState.OnCarryChanged` 한 곳** — `Refresh(Name, Icon, bActive)`. `Slots[i]`가 차 있으면 아이템 행의
+  `Icon`(`UCL9DefBase::Icon`, 소프트 참조)을 넘긴다 — **그 칸의 행이 바뀔 때만 `LoadSynchronous()`** 하고, 같은 행이면
+  로드해 둔 텍스처를 다시 쓴다. 아이콘이 있으면 `Icon`만 보이고 `NameText`는 접히며, 아이콘이 없는 행은 반대로
+  `DisplayName`(없으면 별칭)만 보인다. 빈 칸은 둘 다 접힌다. `i == ActiveSlot`인 칸은 `ActiveColor`, 나머지는
+  `InactiveColor`를 `Frame` 브러시 색·`Icon` ColorAndOpacity·`NameText` 색에 같이 건다. 클라에서는 `Slots`가 복제되기
+  전에 잠시 빈 채로 그려졌다가 첫 `OnCarryChanged`에서 채워진다 — 정상이다.
+- 칸의 크기·테두리 두께·배경·글꼴은 전부 `WBP_QuickSlot`이 정한다 — C++은 아이콘·이름의 표시 여부와 밝기만 만진다.
+  `QuickSlotBox`가 없거나 `QuickSlotClass`가 비어 있으면 퀵슬롯을 그리지 않는다.
+- 빈 칸을 활성으로 고른 상태(= 빈손)도 그 칸의 테두리가 밝다 — 어느 칸이 손인지는 늘 보여야 한다.
 - 조작(휠·숫자키·G)은 [input.md](input.md), 칸 규칙(잠금·값 보존)은 [inventory.md](inventory.md).
 
 ### 첫 줍기 힌트 (2026-09-13)
@@ -307,8 +321,9 @@ WBP_HUD
 | 24 Bold | 늘 보는 큰 값 (밤 시계 · HP · 상호작용 프롬프트 · 관전 대상) |
 | 20 Bold | 강조 값 (이더 · 아이템 이름 · 주문 카드 이름) |
 | 20 Regular | 버튼 라벨 |
-| 18 Regular | 보조 값 (핫바 칸 이름 · 머리 장비 · 아이템 값) |
+| 18 Regular | 보조 값 (머리 장비 · 아이템 값) |
 | 16 Regular | 목록·힌트 (진행 중 주문 · 창구 재고 · 아이템 부가 정보 · 안내 문구 · 카드 상세) |
+| 12 Regular | 퀵슬롯 칸의 이름 폴백 — 아이콘이 없는 행에서만 64px 정사각 칸 안에 접어 넣는다 |
 
 주문 카드는 런타임에 C++이 만들므로 크기가 `UCL9OrderSelectWidget`의 `CardNameSize`(20) ·
 `CardDetailSize`(16) 프로퍼티에 있다 — 카드는 이름과 상세를 **다른 위젯 두 개**로 나눠서

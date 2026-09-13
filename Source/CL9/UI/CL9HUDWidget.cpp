@@ -9,6 +9,7 @@
 #include "Components/HorizontalBox.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
@@ -29,7 +30,7 @@
 #include "Data/CL9OrderDef.h"
 #include "Data/CL9ProgressionDef.h"
 #include "UI/CL9CookGaugeWidget.h"
-#include "UI/CL9HotbarSlotWidget.h"
+#include "UI/CL9QuickSlotWidget.h"
 #include "UI/CL9ScanLabelWidget.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
@@ -269,49 +270,62 @@ void UCL9HUDWidget::RefreshHp()
 void UCL9HUDWidget::RefreshCarry()
 {
 	const ACL9PlayerState* PlayerState = GetOwnPlayerState();
-	if (HotbarBox == nullptr || HotbarSlotClass == nullptr || PlayerState == nullptr)
+	if (QuickSlotBox == nullptr || QuickSlotClass == nullptr || PlayerState == nullptr)
 	{
 		return;
 	}
 
-	// 칸 수는 규칙이 정한다(CL9Rules.HotbarSlots). PlayerState.Slots는 호스트가 BeginPlay에서 그 수로
+	// 칸 수는 규칙이 정한다(CL9Rules.QuickSlots). PlayerState.Slots는 호스트가 BeginPlay에서 그 수로
 	// 맞추지만 클라에는 복제가 늦어 잠시 비어 있을 수 있다 — 그동안도 칸은 규칙 수만큼 그리고,
 	// 내용은 빈 칸으로 뒀다가 OnCarryChanged에서 다시 채운다(docs/systems/inventory.md 상태 모델).
 	const UWorld* World = GetWorld();
 	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
 	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
 	const UCL9RulesDef* Rules = (Registry != nullptr) ? Registry->GetRules() : nullptr;
-	const int32 SlotCount = (Rules != nullptr) ? Rules->HotbarSlots : PlayerState->Slots.Num();
+	const int32 SlotCount = (Rules != nullptr) ? Rules->QuickSlots : PlayerState->Slots.Num();
 
 	// 칸 위젯은 수가 달라질 때만 다시 만든다 — 규칙은 판 중에 바뀌지 않으므로 사실상 한 번이다
-	if (HotbarSlots.Num() != SlotCount)
+	if (QuickSlots.Num() != SlotCount)
 	{
-		HotbarBox->ClearChildren();
-		HotbarSlots.Reset();
+		QuickSlotBox->ClearChildren();
+		QuickSlots.Reset();
+		QuickSlotDefs.Reset();
+		QuickSlotIcons.Reset();
 		for (int32 Index = 0; Index < SlotCount; ++Index)
 		{
-			UCL9HotbarSlotWidget* SlotWidget = CreateWidget<UCL9HotbarSlotWidget>(GetOwningPlayer(), HotbarSlotClass);
+			UCL9QuickSlotWidget* SlotWidget = CreateWidget<UCL9QuickSlotWidget>(GetOwningPlayer(), QuickSlotClass);
 			if (SlotWidget == nullptr)
 			{
 				continue;
 			}
-			HotbarBox->AddChildToHorizontalBox(SlotWidget);
+			QuickSlotBox->AddChildToHorizontalBox(SlotWidget);
 			SlotWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-			SlotWidget->SetNumber(Index + 1);   // 숫자키 1~4와 같은 표기
-			HotbarSlots.Add(SlotWidget);
+			QuickSlots.Add(SlotWidget);
+			QuickSlotDefs.Add(nullptr);
+			QuickSlotIcons.Add(nullptr);
 		}
 	}
 
-	for (int32 Index = 0; Index < HotbarSlots.Num(); ++Index)
+	for (int32 Index = 0; Index < QuickSlots.Num(); ++Index)
 	{
-		UCL9HotbarSlotWidget* SlotWidget = HotbarSlots[Index];
+		UCL9QuickSlotWidget* SlotWidget = QuickSlots[Index];
 		if (SlotWidget == nullptr)
 		{
 			continue;
 		}
 		const bool bFilled = PlayerState->Slots.IsValidIndex(Index) && PlayerState->Slots[Index].IsSet();
-		SlotWidget->Refresh(bFilled ? ItemLabel(PlayerState->Slots[Index]) : FText::GetEmpty(),
-			Index == PlayerState->ActiveSlot);
+		const FCL9CarriedItem* Carried = bFilled ? &PlayerState->Slots[Index] : nullptr;
+		const UCL9ItemDef* Def = (Registry != nullptr && Carried != nullptr) ? Registry->FindItem(Carried->ItemAlias, Carried->ItemSubAlias) : nullptr;
+
+		// 아이콘은 소프트 참조(UCL9DefBase::Icon) — 그 칸의 행이 바뀔 때만 동기 로드한다
+		if (QuickSlotDefs[Index].Get() != Def)
+		{
+			QuickSlotDefs[Index] = Def;
+			QuickSlotIcons[Index] = (Def != nullptr && !Def->Icon.IsNull()) ? Def->Icon.LoadSynchronous() : nullptr;
+		}
+
+		SlotWidget->Refresh(Carried != nullptr ? ItemLabel(*Carried) : FText::GetEmpty(),
+			QuickSlotIcons[Index], Index == PlayerState->ActiveSlot);
 	}
 }
 
