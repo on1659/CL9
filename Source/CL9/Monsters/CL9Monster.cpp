@@ -7,6 +7,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Materials/MaterialInterface.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
@@ -152,6 +153,9 @@ FText ACL9Monster::GetDisplayName() const
 void ACL9Monster::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// 타격 플래시는 호스트와 클라 모두에서 같은 복제 시계로 굴러간다 — 아래 호스트 분기가 먼저 돌아가 버리기 전에 부른다
+	TickHitFlash();
 
 	if (HasAuthority())
 	{
@@ -998,6 +1002,41 @@ void ACL9Monster::ApplyState()
 		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, 0.f));
 	}
+}
+
+void ACL9Monster::TickHitFlash()
+{
+	if (MeshComponent == nullptr)
+	{
+		return;
+	}
+
+	// 맞은 직후만 빨갛다: 경직(Stun)과 죽음(Dead)에 들어간 뒤 HitFlashTime 동안. 상태로 거르므로 레벨에 처음부터
+	// 놓여 있어 StateStartServerTime이 0인(= 경과가 아주 큰) 개체는 애초에 걸리지 않고, 배회 중에도 번쩍이지 않는다.
+	bool bWantFlash = false;
+	if (State == ECL9MonsterState::Stun || State == ECL9MonsterState::Dead)
+	{
+		const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+		const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+		const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+		if (Rules != nullptr && GetStateElapsed() < Rules->HitFlashTime)
+		{
+			if (!bHitFlashLoaded)
+			{
+				bHitFlashLoaded = true;
+				HitFlashMaterial = Rules->HitFlashMaterial.LoadSynchronous();
+			}
+			bWantFlash = HitFlashMaterial != nullptr;
+		}
+	}
+
+	// 오버레이는 바뀔 때만 건드린다 — 매 틱 다시 세팅하면 렌더 상태가 매번 갱신된다
+	if (bWantFlash == bHitFlashOn)
+	{
+		return;
+	}
+	bHitFlashOn = bWantFlash;
+	MeshComponent->SetOverlayMaterial(bWantFlash ? HitFlashMaterial.Get() : nullptr);
 }
 
 float ACL9Monster::GetDangerScale() const

@@ -49,6 +49,20 @@ Content/<Characters|Items|Monsters|Maps>/<AssetName>/
 경로라고 가정하지 않는다. 구매 에셋은 원본 팩을 보존한다. 큰 바이너리는 커밋 전 크기와
 저장 정책을 확인하며, 별도 요청 없이 Git LFS나 저장소 제외 규칙을 바꾸지 않는다.
 
+## 효과 에셋 — `/Game/Effects`
+
+타격감·피격감 표현에 쓰는 세 에셋은 Blender 를 거치지 않고 에디터 파이썬 한 벌이 만든다
+(`Tools/Unreal/create_hit_feedback_assets.py`, 멱등 — 다시 돌리면 값만 덮어쓴다). **`M_CL9_HitFlash`**
+는 맞은 몬스터와 잡힌 플레이어의 스켈레탈 메시에 `SetOverlayMaterial` 로 덧씌우는 재질이다
+(Unlit·Translucent·양면, 파라미터 `Opacity` 기본 0.6 · `Color` 기본 (1, 0.05, 0.05) — 붉게 번쩍인다).
+**`CS_HitShake`** 는 휘두른 것이 맞았을 때 때린 쪽 카메라가 한 번 튀는 짧고 날카로운 흔들림,
+**`CS_HurtShake`** 는 잡힌 쪽의 묵직하고 긴 흔들림이며, 둘 다 `CS_StaminaShake`(`UDefaultCameraShakeBase`
++ `UPerlinNoiseCameraShakePattern`) 를 복제해 흔들림 값만 바꾼 것이다. 코드는 에셋 경로를 갖지 않는다 —
+재질은 `CL9Rules.HitFlashMaterial` 열로, 셰이크는 `ShakeTable` 의 `Hit`·`Hurt` 행으로 들어간다.
+두 행의 `StartAt` 은 복제 원본의 값이 그대로 남아 있는데, 게이지가 구동하는 흔들림의 문턱이라
+한 번 재생하고 마는 원샷 행에서는 코드가 읽지 않는 값이다 — 맞추려 들 필요가 없다
+(요구 정본 [../goal/hit-feedback.md](../goal/hit-feedback.md), 연결 [../systems/character.md](../systems/character.md)).
+
 ## 작업 완료의 의미
 
 **제작됨 → Blender 검수됨 → UE 임포트 검수됨 → 게임 연결 검수됨**을 따로 기록한다.

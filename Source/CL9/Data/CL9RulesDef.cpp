@@ -40,4 +40,9 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(FString::Printf(TEXT("Swing hit window needs 0 <= SwingHitStart < SwingHitEnd < %.3f (the ABP plays the swing clip only in that range)."), SwingClipWindow));
 	}
+	// 0이면 플래시·비네트가 한 프레임도 보이지 않는다 — "맞았다"를 알리는 표현이 통째로 사라지므로 값의 문제가 아니라 오류다
+	if (HitFlashTime <= 0.f || HurtFlashTime <= 0.f || HurtVignetteTime <= 0.f)
+	{
+		OutErrors.Add(TEXT("HitFlashTime, HurtFlashTime and HurtVignetteTime must be positive — a zero makes the hit feedback invisible."));
+	}
 }

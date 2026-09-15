@@ -20,6 +20,7 @@ class UCL9ItemDef;
 class UCL9QuickSlotWidget;
 class UCL9ScanLabelWidget;
 class UHorizontalBox;
+class UImage;
 class UProgressBar;
 class UTextBlock;
 class UTexture2D;
@@ -71,6 +72,15 @@ protected:
 	 */
 	UPROPERTY(meta=(BindWidgetOptional))
 	TObjectPtr<UTextBlock> NightWarnText;
+
+	/**
+	 * 잡혔을 때 화면을 물들이는 빨간 비네트(docs/systems/ui.md 피격 비네트) — 다른 HUD 요소 뒤에 깔린
+	 * 전면 이미지다. 세기는 소유 캐릭터의 `GetHurtFlash()`(잡힌 순간 1 → `CL9Rules.HurtVignetteTime`에
+	 * 걸쳐 0)를 그대로 불투명도로 옮긴 것이고, 0이면 접혀서 아무것도 그리지 않는다. 이미지가 없으면
+	 * 비네트를 그리지 않는다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UImage> HurtVignette;
 
 	/**
 	 * 화면 하단 중앙(프롬프트 위)의 퀵슬롯 — 칸 위젯(WBP_QuickSlot)이 나란히 담기는 상자. HUD가
@@ -261,6 +271,9 @@ private:
 
 	/** 남은 밤이 문턱 아래로 내려간 동안에만 경고를 켜고 불투명도를 흔든다 */
 	void RefreshNightWarn(float InDeltaTime);
+
+	/** 잡힌 뒤의 빨간 비네트 — 캐릭터의 GetHurtFlash()를 그대로 이미지 불투명도로 옮긴다(0이면 접는다) */
+	void RefreshHurtVignette();
 
 	/** 이번 기간 수입 · 목표 · 정산까지 남은 날 */
 	void RefreshPeriod();

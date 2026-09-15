@@ -625,6 +625,9 @@ void ACL9Character::Tick(float DeltaSeconds)
 		HostTickSwingHit();
 	}
 
+	// 피격 플래시는 남의 화면에서도 보여야 한다(동료가 잡히는 것을 알아채는 유일한 단서다) — 로컬 조작 여부와 무관하게 모든 폰에서
+	UpdateHurtFlash();
+
 	// 조준 하이라이트는 순전히 로컬 표시용이다 — 키가 눌렸을 때 호스트에서도
 	// 같은 resolver가 실행되므로, 윤곽선은 E가 실제로 할 일을 그대로 보여준다.
 	if (!IsLocallyControlled())
@@ -667,6 +670,7 @@ void ACL9Character::Tick(float DeltaSeconds)
 	}
 
 	UpdateStaminaShake();
+	UpdateHitShakes();
 }
 
 void ACL9Character::UpdateStaminaShake()
@@ -707,6 +711,85 @@ void ACL9Character::UpdateStaminaShake()
 	{
 		CameraManager->StopCameraShake(StaminaShakeInstance, false);
 		StaminaShakeInstance = nullptr;
+	}
+}
+
+void ACL9Character::UpdateHurtFlash()
+{
+	// 잡힌 직후만 빨갛다. 원천은 복제된 넘어짐 시각 하나이므로 호스트·클라·남의 화면이 전부 같은 그림을 만든다
+	// (멀티캐스트 없음 — docs/systems/character.md 피격).
+	bool bWantFlash = false;
+	if (const UCL9RulesDef* Rules = GetRules(); Rules != nullptr && GetHurtElapsed() < Rules->HurtFlashTime)
+	{
+		if (!bHurtFlashLoaded)
+		{
+			bHurtFlashLoaded = true;
+			HurtFlashMaterial = Rules->HitFlashMaterial.LoadSynchronous();
+		}
+		bWantFlash = HurtFlashMaterial != nullptr;
+	}
+
+	// 바뀔 때만 건드리고, 켠 적이 없으면 끄지도 않는다 — 다른 이유로 걸린 오버레이(줍기 하이라이트 같은)를 지우지 않기 위한 가드다
+	if (bWantFlash == bHurtFlashOn)
+	{
+		return;
+	}
+	bHurtFlashOn = bWantFlash;
+
+	UMaterialInterface* Overlay = bWantFlash ? HurtFlashMaterial.Get() : nullptr;
+	if (USkeletalMeshComponent* BodyMesh = GetMesh())
+	{
+		BodyMesh->SetOverlayMaterial(Overlay);
+	}
+	// 1인칭 팔은 소유자에게만 그려지므로(SetOnlyOwnerSee) 조건 없이 걸어도 남의 화면에는 나타나지 않는다
+	if (FirstPersonMesh != nullptr)
+	{
+		FirstPersonMesh->SetOverlayMaterial(Overlay);
+	}
+}
+
+void ACL9Character::UpdateHitShakes()
+{
+	// 리슨 호스트는 권한이자 소유자라 자기 폰에서는 OnRep이 뜨지 않는다 — 복제 시각을 지난 틱 값과 비교하는 방식은
+	// 호스트와 클라 양쪽에서 똑같이 작동한다 (docs/systems/character.md 피격).
+	if (!bHitShakesPrimed)
+	{
+		bHitShakesPrimed = true;
+		LastSeenSwingHitTime = SwingHitServerTime;
+		LastSeenKnockdownTime = KnockdownStartServerTime;
+		return;
+	}
+
+	if (SwingHitServerTime != LastSeenSwingHitTime)
+	{
+		LastSeenSwingHitTime = SwingHitServerTime;
+		PlayShakeOnce(CL9ShakeNames::Hit);
+	}
+	if (KnockdownStartServerTime != LastSeenKnockdownTime)
+	{
+		LastSeenKnockdownTime = KnockdownStartServerTime;
+		PlayShakeOnce(CL9ShakeNames::Hurt);
+	}
+}
+
+void ACL9Character::PlayShakeOnce(FName RowName)
+{
+	// 스태미나 흔들림과 같은 경로다 — 흔들림을 늘리는 일은 표에 행을 추가하는 일이지 규칙에 컬럼을 늘리는 일이 아니다
+	// (2026-09-05 결정, docs/plan/data/rules.md).
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	APlayerCameraManager* CameraManager = PC ? PC->PlayerCameraManager : nullptr;
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9ShakeTable* ShakeTable = GameInstance ? GameInstance->GetShakeTable() : nullptr;
+	const FCL9ShakeInfo* Info = ShakeTable ? ShakeTable->Rows.Find(RowName) : nullptr;
+	if (CameraManager == nullptr || Info == nullptr)
+	{
+		return;
+	}
+
+	// 원샷이라 StartAt은 보지 않는다 — 게이지가 없는 순간 사건이므로 세기 1로 한 번 재생할 뿐이다
+	if (UClass* ShakeClass = Info->Shake.LoadSynchronous())
+	{
+		CameraManager->StartCameraShake(ShakeClass, 1.f);
 	}
 }
 
@@ -1212,6 +1295,24 @@ float ACL9Character::GetKnockdownElapsed() const
 float ACL9Character::GetKnockdownRemaining() const
 {
 	return IsKnockedDown() ? KnockdownEndServerTime - GetServerTime() : -1.f;
+}
+
+float ACL9Character::GetHurtElapsed() const
+{
+	// 애님용 GetKnockdownElapsed는 일어나는 순간 −1로 돌아간다(그쪽은 "지금 넘어져 있나"가 필요하다). 표현 시계는
+	// 그렇게 되면 −1 < HurtFlashTime이 되어 플래시가 영원히 켜지므로, 여기서는 시각 차이만 그대로 쓴다.
+	// 넘어진 적이 없으면 KnockdownStartServerTime이 −1000이라 아주 큰 값이 되어 저절로 꺼진 상태가 된다.
+	return FMath::Max(0.f, GetServerTime() - KnockdownStartServerTime);
+}
+
+float ACL9Character::GetHurtFlash() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr || Rules->HurtVignetteTime <= 0.f)
+	{
+		return 0.f;
+	}
+	return FMath::Clamp(1.f - GetHurtElapsed() / Rules->HurtVignetteTime, 0.f, 1.f);
 }
 
 float ACL9Character::GetThrowWindupElapsed() const

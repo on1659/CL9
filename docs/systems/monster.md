@@ -42,6 +42,16 @@
 - 상태는 enum 하나 (`ECL9MonsterState`) — Replicated, OnRep에서 애니메이션·소리 전환.
 - `ChaseCooldown`은 **새로 경계 상태에 들어가는 것만** 막는다. 정전·복수·기절에서 깨어나는 건
   못 막는다.
+- **타격 플래시** (2026-09-15): `Stun`·`Dead`에 들어간 뒤 `HitFlashTime`(rules) 동안 메시가
+  `HitFlashMaterial` 오버레이를 쓰고, 지나면 벗는다 (`ACL9Monster::TickHitFlash`, 모든 머신).
+  때렸다는 사실을 화면에 알리는 절반이고 나머지 절반은 공격자 카메라 킥이다
+  ([character.md](character.md) 피격 절). 규칙 셋:
+  - 원천은 복제된 `StateStartServerTime` 하나다 — 멀티캐스트도 새 복제 필드도 없고, 호스트·클라가
+    각자 같은 경과를 계산해 같은 그림을 만든다.
+  - **상태로 거른다**: 레벨에 처음부터 놓여 있는 개체는 `StateStartServerTime`이 0이라 경과가
+    아주 크지만, 애초에 `Stun`·`Dead`가 아니므로 PIE 시작 직후 빨개지는 일이 없다.
+  - 죽음도 한 번 번쩍이고 끝난다 (`Dead` 진입 시각 기준이라 시체가 계속 빨갛지 않다).
+  - 오버레이는 켜지고 꺼질 때만 세팅한다(캐시된 bool). 머티리얼이 비어 있으면 아무것도 하지 않는다.
 
 ## 감각 파이프라인 (공통, 호스트 틱)
 
@@ -126,6 +136,7 @@
 | 상태(`ECL9MonsterState`)·HP·발각 게이지 | Replicated + OnRep (애님·소리·표시는 표현 계층) |
 | 위치 | 표준 액터 복제 20Hz + 클라 보간 |
 | WakeTelegraph·AlertWindup 예고 | Replicated 상태의 표현 — 전 플레이어에게 보인다 |
+| 타격 플래시(빨간 오버레이) | 복제 없음 — 각 머신이 `State`+`StateStartServerTime`에서 파생 |
 
 ## 구현 순서 (build-order ③과 맞물림)
 

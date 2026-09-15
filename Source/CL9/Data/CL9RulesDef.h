@@ -6,6 +6,8 @@
 #include "Data/CL9DefBase.h"
 #include "CL9RulesDef.generated.h"
 
+class UMaterialInterface;
+
 /**
  * 유일한 전역 규칙 애셋 — 어떤 캐릭터도 다르게 가질 수 없는 값들이다: 소음,
  * 죽음, 밤 시계, 소지 마찰 (docs/plan/data/rules.md). 기본값은 문서화된 표를
@@ -140,4 +142,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
 	float SwingHitEnd = 0.25f;
 
+	// -- 타격감·피격감 (docs/systems/monster.md 플래시, docs/systems/character.md 피격) --
+
+	/**
+	 * 맞은 몬스터가 빨간 오버레이를 쓰고 있는 시간, 초 단위 — 가장 짧은 경직(`HitStunMs` 300ms)의 절반이라 색이
+	 * 먼저 꺼진다: 빨강은 맞는 순간, 젖혀진 자세는 경직을 말한다. 모든 머신이 복제된 상태 시각(`GetStateElapsed`)에서
+	 * 파생한다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HitFlashTime = 0.15f;
+
+	/**
+	 * 잡힌 사람의 몸(과 소유자의 1인칭 팔)이 빨간 시간, 초 단위 — `HurtStun` 0.35초 비틀거림을 덮고 일어서기가
+	 * 시작되는 0.9초 전에 꺼진다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HurtFlashTime = 0.45f;
+
+	/**
+	 * 잡힌 사람 화면의 빨간 비네트가 사라지기까지, 초 단위 — 넘어짐 경과에 따라 1 → 0으로 선형으로 옅어진다.
+	 * `KnockdownTime` 1.5초보다 0.3초 길어서 일어설 때쯤 화면도 갠다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HurtVignetteTime = 1.8f;
+
+	/**
+	 * 위 두 플래시가 메시에 덧씌우는 오버레이 머티리얼 — 애셋 경로는 C++에 없다(conventions § 5).
+	 * 비어 있으면 플래시는 조용히 꺼지고 나머지 연출(카메라 킥·비네트)만 남는다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	TSoftObjectPtr<UMaterialInterface> HitFlashMaterial;
 };

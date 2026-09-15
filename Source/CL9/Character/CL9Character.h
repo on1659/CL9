@@ -193,6 +193,13 @@ public:
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetKnockdownRemaining() const;
 
+	/**
+	 * 피격 비네트의 세기 0..1 — 잡힌 순간 1이고 `HurtVignetteTime`에 걸쳐 0으로 옅어진다. 잡힌 적이 없거나
+	 * 다 옅어졌으면 0. HUD가 빨간 전면 이미지의 불투명도로 읽는다 (docs/systems/ui.md 비네트).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetHurtFlash() const;
+
 	/** 던지기 차징을 시작한 뒤 지난 초 — 대기 루프(AN_Farmer_ThrowWindup)를 켜는 데 읽는다. 소유자는 로컬 시각으로 즉시. 차징 중이 아니면 −1 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetThrowWindupElapsed() const;
@@ -409,6 +416,22 @@ protected:
 	/** 소유 클라이언트 전용: 스태미나가 규칙 임계값 아래로 떨어지면 카메라가 흔들리고, 비워질수록 더 심해진다 (docs/systems/character.md) */
 	void UpdateStaminaShake();
 
+	/**
+	 * 모든 머신, 매 틱: 잡힌 뒤 `HurtFlashTime` 동안 몸(과 1인칭 팔)에 빨간 오버레이를 씌우고 지나면 벗긴다 —
+	 * 남의 화면에서 "쟤가 맞았다"를 알리는 표현이다 (docs/systems/character.md 피격).
+	 */
+	void UpdateHurtFlash();
+
+	/**
+	 * 소유 클라이언트(리슨 호스트의 자기 폰 포함), 매 틱: 복제된 타격·피격 시각이 지난 틱과 달라졌으면 그때마다
+	 * 셰이크를 한 번씩 재생한다. OnRep을 안 쓰는 이유는 리슨 호스트가 권한이자 소유자라 자기 화면에서는
+	 * OnRep이 뜨지 않기 때문이다 — 틱 비교는 호스트와 클라 양쪽에서 똑같이 작동한다.
+	 */
+	void UpdateHitShakes();
+
+	/** 셰이크 표의 행 하나를 세기 1로 한 번 재생한다 — 행이나 애셋이 없으면 조용히 지나간다 */
+	void PlayShakeOnce(FName RowName);
+
 	/** 로컬 플레이어에서 재생 중인 피로 흔들림 인스턴스 — 쉬고 있을 때는 null */
 	UPROPERTY(Transient)
 	TObjectPtr<UCameraShakeBase> StaminaShakeInstance;
@@ -540,6 +563,12 @@ private:
 	ACL9PlayerState* GetCL9PlayerState() const;
 	float GetServerTime() const;
 
+	/**
+	 * 마지막으로 넘어진 뒤 지난 초 — `GetKnockdownElapsed()`와 달리 일어난 뒤에도 계속 커진다. 플래시·비네트는
+	 * 넘어짐이 풀린 뒤까지 이어질 수 있어야 하고, 넘어진 적이 없으면(−1000) 아주 큰 값이 되어 저절로 꺼진다.
+	 */
+	float GetHurtElapsed() const;
+
 	/** 이 폰이 연기할 캐릭터 행 — 스폰 시 서버가 정하고 모든 머신에 적용된다 */
 	UPROPERTY(ReplicatedUsing=OnRep_CharacterAlias)
 	FName CharacterAlias;
@@ -636,6 +665,27 @@ private:
 	 */
 	UPROPERTY(Replicated)
 	TArray<FCL9ActiveEffect> ActiveEffects;
+
+	// -- 타격감·피격감 표현 상태 (복제 없음, 머신마다 따로 굴러간다) --
+
+	/** 규칙 애셋에서 한 번 로드해 둔 피격 플래시 머티리얼(몬스터와 같은 것) — 행이 비었으면 null로 남는다 */
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInterface> HurtFlashMaterial;
+
+	/** 플래시 머티리얼을 이미 한 번 로드해 봤는가 */
+	bool bHurtFlashLoaded = false;
+
+	/** 지금 피격 오버레이가 켜져 있는가 — 내가 켠 것만 끈다(줍기 하이라이트 등 남의 오버레이를 건드리지 않는 가드) */
+	bool bHurtFlashOn = false;
+
+	/** 셰이크 비교 기준값을 한 번은 그냥 받아 적었는가 — 접속 직후 이미 지나간 사건으로 화면을 흔들지 않는다 */
+	bool bHitShakesPrimed = false;
+
+	/** 지난 틱에 본 SwingHitServerTime — 달라지면 타격 셰이크를 한 번 재생한다 */
+	float LastSeenSwingHitTime = -1000.f;
+
+	/** 지난 틱에 본 KnockdownStartServerTime — 달라지면 피격 셰이크를 한 번 재생한다 */
+	float LastSeenKnockdownTime = -1000.f;
 
 	/** 눈높이에서 캡슐에 붙어 있는 1인칭 카메라 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))

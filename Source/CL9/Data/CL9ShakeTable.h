@@ -45,9 +45,20 @@ public:
 	TMap<FName, FCL9ShakeInfo> Rows;
 };
 
-/** C++가 조회하는 행 이름들 — 그 외에는 전부 데이터 전용으로 남는다 */
+/**
+ * C++가 조회하는 행 이름들 — 그 외에는 전부 데이터 전용으로 남는다.
+ *
+ * 원샷 행(`Hit`·`Hurt`)에서 `StartAt`은 무시된다: 게이지가 없는 순간 사건이라 세기 1로 한 번 재생할 뿐이다.
+ * `StartAt`은 스태미나처럼 게이지가 구동하는 행에만 뜻이 있다.
+ */
 namespace CL9ShakeNames
 {
 	/** 지친 숨소리, 정규화된 스태미나로 구동된다 */
 	inline const FName Stamina(TEXT("Stamina"));
+
+	/** 휘두르기가 몬스터에 닿은 순간 공격자 카메라가 한 번 툭 — 짧고 날카롭게 (원샷) */
+	inline const FName Hit(TEXT("Hit"));
+
+	/** 잡혀 넘어진 순간 피해자 카메라가 한 번 크게 — 묵직하게 (원샷) */
+	inline const FName Hurt(TEXT("Hurt"));
 }

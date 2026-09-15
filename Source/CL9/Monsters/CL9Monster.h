@@ -11,6 +11,7 @@ enum class ECL9HitStun : uint8;
 
 class ACL9Character;
 class UCL9MonsterDef;
+class UMaterialInterface;
 class USphereComponent;
 class USkeletalMeshComponent;
 
@@ -182,6 +183,12 @@ private:
 	/** 모든 머신에서 일어나는, 상태 변화의 표현 측 부수 효과 */
 	void ApplyState();
 
+	/**
+	 * 모든 머신, 매 틱: 맞은 직후(Stun·Dead 진입 뒤 `HitFlashTime` 동안)의 몬스터에게 빨간 오버레이를 씌우고
+	 * 지나면 벗긴다 — 복제된 상태 시계에서 파생하므로 멀티캐스트가 필요 없다 (docs/systems/monster.md 타격 플래시).
+	 */
+	void TickHitFlash();
+
 	/** 게임 상태의 서버 시각 — 캐릭터와 같은 시계(ACL9Character::GetServerTime) */
 	float GetServerTime() const;
 
@@ -268,6 +275,16 @@ private:
 	TOptional<FVector> PendingInvestigateSpot;
 
 	// -- 표현 상태 (모든 머신) --
+
+	/** 규칙 애셋에서 한 번 로드해 둔 타격 플래시 머티리얼 — 행이 비었으면 null로 남고 플래시는 없다 */
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInterface> HitFlashMaterial;
+
+	/** 플래시 머티리얼을 이미 한 번 로드해 봤는가 — 매 타격마다 소프트 참조를 다시 해석하지 않는다 */
+	bool bHitFlashLoaded = false;
+
+	/** 지금 오버레이가 켜져 있는가 — 바뀔 때만 SetOverlayMaterial을 부르고, 내가 켠 것만 끈다 */
+	bool bHitFlashOn = false;
 
 	float DisplaySpeed = 0.f;
 	FVector SmoothedLocation = FVector::ZeroVector;

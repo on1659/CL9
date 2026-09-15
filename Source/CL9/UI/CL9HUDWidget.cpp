@@ -7,6 +7,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBox.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/Texture2D.h"
@@ -141,6 +142,8 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshCounter();
 	RefreshBuffs();
 	RefreshNightWarn(InDeltaTime);
+	// 비네트도 시간 함수다 — 잡힌 서버 시각에서 파생되므로 변경 이벤트가 없고 매 프레임 읽는다
+	RefreshHurtVignette();
 	// 양보했던 선택 화면을 다시 열 때가 됐는지 본다 — 화면이 닫혔다는 이벤트가 없어서 틱에서 본다
 	DeriveOrderScreen();
 }
@@ -989,5 +992,26 @@ void UCL9HUDWidget::RefreshNightWarn(float InDeltaTime)
 	else
 	{
 		NightWarnText->SetRenderOpacity(1.f);
+	}
+}
+
+void UCL9HUDWidget::RefreshHurtVignette()
+{
+	if (HurtVignette == nullptr)
+	{
+		return;   // WBP_HUD에 비네트 이미지를 두지 않은 판 — 아무것도 하지 않는다
+	}
+
+	// 폰이 없는 동안(스폰 전·폰 교체 사이)은 0으로 본다 — 붉은 기가 화면에 남지 않게 한다
+	const ACL9Character* Character = WiredCharacter.Get();
+	const float Flash = (Character != nullptr) ? Character->GetHurtFlash() : 0.f;
+
+	HurtVignette->SetRenderOpacity(Flash);
+
+	// 0이면 접는다: 불투명도 0짜리 전면 이미지를 계속 그리지 않게, 그리고 잔상이 남을 여지를 없앤다
+	const ESlateVisibility Wanted = (Flash > 0.f) ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+	if (HurtVignette->GetVisibility() != Wanted)
+	{
+		HurtVignette->SetVisibility(Wanted);
 	}
 }
