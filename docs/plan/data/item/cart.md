@@ -29,6 +29,8 @@
 | `GripBreakDistance` | cm | 손잡이가 목표점에서 이보다 벌어지면(수평 거리, 또는 미는 사람 캡슐 중심과의 높이 차) 손을 놓친다 | 90 |
 | `Friction` | 0..1 | (공통 열) 물리 재질 마찰 — 바퀴 시뮬 없이 등방 마찰로 미끄러진다(v1) | 0.15 |
 | `Restitution` | 0..1 | (공통 열) 물리 재질 반발 | 0.05 |
+| `AngularDamping` | 1/s | (공통 열) 몸체 각감쇠 — 수레는 `PushYawDamping`이 이미 yaw를 잡으므로 0 | 0 |
+| `LinearDamping` | 1/s | (공통 열) 몸체 선형 감쇠 — 수레는 `PushDamping`·마찰이 잡으므로 0 | 0 |
 | `CargoExtent` | cm ×3 | 소켓 `Cargo` 중심 적재 판정 상자의 **반폭**. art `manifest.json`의 `cargo_extent_cm`과 같아야 하고, 상자 밑면이 짐칸 바닥과 맞게 소켓을 바닥에서 Z 반폭만큼 올려 둔다 | (60, 40, 20) |
 | `Radius` | cm | (공통 열) 수레는 판정에 쓰지 않는다 — 로드 검사가 >0만 본다 | 유지 |
 | `Gravity` | cm/s² | (공통 열) 그대로 주입된다(질량 무관 가속) | 유지 |

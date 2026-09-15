@@ -141,6 +141,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
 	float Friction = 0.5f;
 
+	/**
+	 * 물리 행 전용 각감쇠 (1/s) — 몸체의 각속도가 매초 이 비율로 줄어든다. 구 몸체는 마찰만으로는 구르기가 서지 않아
+	 * 이 값이 구르기를 멈추게 한다 (2026-09-14 "무한히 회전"). 초안값, balance가 정한다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
+	float AngularDamping = 3.f;
+
+	/** 물리 행 전용 선형 감쇠 (1/s) — 공기 저항처럼 속도를 매초 이 비율로 줄인다. 초안값, balance가 정한다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Physics")
+	float LinearDamping = 0.3f;
+
 	// -- 수레(물리 몸체) — bMeshIsBody가 켜진 행만 읽는다 (docs/plan/data/item/cart.md). 자리표시 기본값이고 값은 balance가 정한다 --
 
 	/**

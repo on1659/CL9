@@ -11,6 +11,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedPlayerInput.h"
 #include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
@@ -291,7 +292,13 @@ void ACL9Character::DropStartInput()
 
 	// 달리기 키 + 놓기 키 = 던지기 차징. 조합은 고정이고 놓기 키만 리바인딩된다 (docs/systems/input.md 던지기 차징).
 	// 차징 시각은 호스트가 잰다 — 로컬 시각은 HUD 게이지용이다.
-	if (bRunHeld)
+	// 같은 틱에 두 키가 함께 눌리면 Enhanced Input이 Started 델리게이트를 바인딩 역순으로 쏘아 이 함수가 RunInputStart보다
+	// 먼저 온다(bRunHeld가 아직 false) — 액션 값은 델리게이트 전에 전부 갱신돼 있으므로 달리기 액션 값을 직접 읽어 보완한다
+	// (2026-09-14 리드 재현: 같은 틱 Run+Drop 주입이 차징되지 않음).
+	const APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	const UEnhancedPlayerInput* PlayerInput = PlayerController ? Cast<UEnhancedPlayerInput>(PlayerController->PlayerInput) : nullptr;
+	const bool bRunPressedThisTick = PlayerInput != nullptr && RunAction != nullptr && PlayerInput->GetActionValue(RunAction).Get<bool>();
+	if (bRunHeld || bRunPressedThisTick)
 	{
 		LocalThrowChargeStartTime = GetWorld()->GetTimeSeconds();
 		Server_ThrowChargeStart();
@@ -1169,7 +1176,7 @@ void ACL9Character::HostPickUp(ACL9Item* Item, int32 Slot)
 	HeldItem = Item;
 	Item->SetOwner(this);
 
-	// 손 소켓에 붙는다 — 위치는 행의 GripOffset이 정하고, CarryHeight는 이제 놓는 높이에만 쓰인다
+	// 손 소켓에 붙는다 — 위치는 행의 GripOffset이 정하고, CarryHeight는 칸에서 꺼내 스폰하는 높이에만 쓰인다(놓기는 조준점, Server_Drop)
 	Item->OnPickedUp(this);
 	CL9PlayerState->NotifyCarryChanged();
 }

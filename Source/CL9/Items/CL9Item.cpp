@@ -22,6 +22,15 @@ namespace
 {
 	/** 충돌 프레임 속도가 이 값 아래로 떨어지면 튀던 아이템이 멈춘다, cm/s 단위 */
 	constexpr float RestSpeed = 30.f;
+
+	/**
+	 * 물리 행의 자체 잠들기 판정 — 이만큼(cm·도) 안에서 이 시간(초) 동안 머물면 몸체를 재운다. 속도가 아니라 변위로 재는 이유:
+	 * 매 틱 주입하는 중력 힘 때문에 바닥에 선 몸체도 g·dt(100fps에 20cm/s, 30fps에 65cm/s)의 속도를 보고해 속도 문턱이
+	 * 프레임률을 탄다. 변위는 프레임률과 무관하다. (입력·엔진 상수, 밸런스 값이 아니다)
+	 */
+	constexpr float RestMoveTolerance = 1.f;
+	constexpr float RestTurnTolerance = 2.f;
+	constexpr float RestHoldTime = 0.5f;
 }
 
 ACL9Item::ACL9Item()
@@ -227,12 +236,23 @@ void ACL9Item::OnPlaced(const FVector& WorldLocation)
 		return;
 	}
 
+	// 물리 몸체는 손에 들린 동안에도 살아 있다(충돌만 꺼진 키네마틱). 텔레포트 없이 옮기면 키네마틱 목표점만 잡히고, 같은 틱에
+	// 시뮬레이션을 켜면 그 목표점은 버려져 몸체가 **손 자리에서** 깨어난다 — 놓은 계란이 놓기 지점이 아니라 오른손 자리(폰 25cm 앞·
+	// 24cm 오른쪽)에 떨어지던 원인이다 (2026-09-14 PIE 재현 셋 다 같은 자리). TeleportPhysics는 위치·회전을 바로 쓰고 속도도 0으로.
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	SetActorLocation(WorldLocation);
+	SetActorLocation(WorldLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	HoldState = ECL9ItemHoldState::Free;
 	SimVelocity = FVector::ZeroVector;
 	bAtRest = false;
 	ApplyHoldState();
+
+	// 손의 흔들림·그립 회전에서 물려받은 속도가 남지 않게 — 놓은 자리에서 그대로 떨어진다
+	UPrimitiveComponent* Body = GetBody();
+	if (Body->IsSimulatingPhysics())
+	{
+		Body->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		Body->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	}
 
 	OnReleased();
 }
@@ -244,8 +264,9 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 		return;
 	}
 
+	// OnPlaced와 같은 이유로 텔레포트 — 아니면 던지기 원점이 무시되고 손 자리에서 출발한다
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	SetActorLocation(Origin);
+	SetActorLocation(Origin, false, nullptr, ETeleportType::TeleportPhysics);
 	HoldState = ECL9ItemHoldState::Free;
 	SimVelocity = LaunchVelocity;
 	bAtRest = false;
@@ -257,6 +278,7 @@ void ACL9Item::OnThrown(const FVector& Origin, const FVector& LaunchVelocity)
 	if (Body->IsSimulatingPhysics())
 	{
 		Body->SetPhysicsLinearVelocity(LaunchVelocity);
+		Body->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 	}
 }
 
@@ -272,13 +294,28 @@ void ACL9Item::Tick(float DeltaSeconds)
 		return;
 	}
 
-	// 물리 행: 엔진이 시뮬레이션하고, 테이블이 정한 중력값만 (질량과 무관하도록
-	// 가속도로) 주입해 준다.
+	// 물리 행: 엔진이 시뮬레이션하고, 테이블이 정한 중력값만 (질량과 무관하도록 가속도로) 주입해 준다. 엔진에는 강체별 중력
+	// 배율이 없다(5.8: 중력 그룹 인덱스만 있고 그룹 가속은 월드 중력 그룹 0만 엔진이 채운다) — 그래서 힘 주입이고, 힘 주입은
+	// 엔진 잠들기를 막으므로(UpdatePhysicsRest 주석) 멈춤은 여기서 직접 판정해 재운다. 잠든 몸체는 힘을 받지 않고, 수레의
+	// 매 틱 깨우기·던지기·다른 몸체와의 충돌(Chaos 아일랜드 깨움)로 깨면 다음 틱부터 다시 중력을 받는다.
+	// 밀리는 수레(Pushed)는 재우지 않는다 — 수레 틱이 매 틱 힘을 주고 깨우므로 벽에 막혀 서 있어도 자고 깨기를 되풀이할 뿐이다.
 	if (ItemDef->bPhysicsEnabled)
 	{
 		UPrimitiveComponent* Body = GetBody();
 		if (Body->IsSimulatingPhysics() && Body->IsAnyRigidBodyAwake())
 		{
+			if (bRestAsleep)
+			{
+				// 누군가 깨웠다(수레·충돌·던지기) — 아직 1cm도 못 움직였을 첫 틱에 곧바로 다시 재우지 않도록 판정을 새로 시작한다
+				bRestAsleep = false;
+				ResetPhysicsRest();
+			}
+			if (HoldState == ECL9ItemHoldState::Free && UpdatePhysicsRest(DeltaSeconds))
+			{
+				Body->PutRigidBodyToSleep();
+				bRestAsleep = true;
+				return;
+			}
 			Body->AddForce(FVector(0.f, 0.f, -ItemDef->Gravity), NAME_None, true);
 		}
 		return;
@@ -311,6 +348,33 @@ void ACL9Item::Tick(float DeltaSeconds)
 			bAtRest = true;
 		}
 	}
+}
+
+bool ACL9Item::UpdatePhysicsRest(float DeltaSeconds)
+{
+	const UPrimitiveComponent* Body = GetBody();
+	const FVector Location = Body->GetComponentLocation();
+	const FQuat Rotation = Body->GetComponentQuat();
+	const bool bMoved = FVector::DistSquared(Location, RestAnchorLocation) > FMath::Square(RestMoveTolerance)
+		|| Rotation.AngularDistance(RestAnchorRotation) > FMath::DegreesToRadians(RestTurnTolerance);
+	if (bMoved)
+	{
+		RestAnchorLocation = Location;
+		RestAnchorRotation = Rotation;
+		RestTime = 0.f;
+		return false;
+	}
+	RestTime += DeltaSeconds;
+	return RestTime >= RestHoldTime;
+}
+
+void ACL9Item::ResetPhysicsRest()
+{
+	const UPrimitiveComponent* Body = GetBody();
+	RestAnchorLocation = Body->GetComponentLocation();
+	RestAnchorRotation = Body->GetComponentQuat();
+	RestTime = 0.f;
+	bRestAsleep = false;
 }
 
 void ACL9Item::HandleImpact(float ImpactSpeed)
@@ -374,11 +438,16 @@ void ACL9Item::ApplyHoldState()
 	{
 		// 테이블의 Gravity 열이 월드 중력을 대체한다 (Tick에서 주입됨)
 		Body->SetEnableGravity(false);
+		// 행의 감쇠 — 각감쇠가 구 몸체의 구르기를 세운다(마찰만으로는 안 선다, 엔진 기본 0). 선형 감쇠는 미끄러짐을 줄인다.
+		Body->SetAngularDamping(ItemDef->AngularDamping);
+		Body->SetLinearDamping(ItemDef->LinearDamping);
 		if (ItemDef->bMeshIsBody)
 		{
 			// 시뮬레이션을 켜며 질량 속성이 다시 계산된다 — 행의 질량이 살아남게 한 번 더 적용한다
 			Body->SetMassOverrideInKg(NAME_None, ItemDef->Mass, ItemDef->Mass > 0.f);
 		}
+		// 멈춤 판정은 새 자리에서 처음부터 — 놓기·던지기·수레 놓기 직후 지난 자리의 머문 시간이 이어지지 않게
+		ResetPhysicsRest();
 	}
 }
 

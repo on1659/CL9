@@ -23,6 +23,10 @@ void UCL9ItemDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("Gravity must be positive."));
 	}
+	if (AngularDamping < 0.f || LinearDamping < 0.f)
+	{
+		OutErrors.Add(TEXT("AngularDamping/LinearDamping must be 0 or more."));
+	}
 	if (bFragile && !(CrackSpeed < CrackedBreakSpeed && CrackedBreakSpeed < BreakSpeed))
 	{
 		OutErrors.Add(TEXT("Fragile items need CrackSpeed < CrackedBreakSpeed < BreakSpeed — cracked must be weaker (docs/plan/economy.md)."));

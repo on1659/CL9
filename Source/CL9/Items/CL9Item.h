@@ -189,6 +189,24 @@ private:
 	void HandleImpact(float ImpactSpeed);
 
 	/**
+	 * 호스트, 물리 행 전용: 몸체가 잠들 만큼 멈춰 있는지 판정한다 — 기준점에서 RestMoveTolerance·RestTurnTolerance 안에
+	 * RestHoldTime 동안 머물면 true. 엔진의 잠들기는 여기서 못 쓴다: 매 틱 게임 스레드에서 주는 힘(행 Gravity)이 Chaos의
+	 * 잠들기 판정 속도(VSmooth)를 매번 되돌려 몸체가 절대 잠들지 않는다 (2026-09-14 PIE: 놓은 지 5초 뒤에도 awake).
+	 */
+	bool UpdatePhysicsRest(float DeltaSeconds);
+
+	/** 멈춤 판정 기준점을 지금 자리로 되돌린다 — 놓기·던지기·시뮬레이션 켜기 직후 */
+	void ResetPhysicsRest();
+
+	/** 멈춤 판정 기준점(마지막으로 움직였다고 본 자리)과 그 자리에 머문 시간 */
+	FVector RestAnchorLocation = FVector::ZeroVector;
+	FQuat RestAnchorRotation = FQuat::Identity;
+	float RestTime = 0.f;
+
+	/** 우리가 재운 뒤 아직 깨는 걸 보지 못했으면 true — 깨어난 첫 틱에 판정을 처음부터 다시 시작한다(밀리기 시작한 몸체를 곧바로 다시 재우지 않게) */
+	bool bRestAsleep = false;
+
+	/**
 	 * bMeshIsBody 행: 메시를 루트이자 물리 몸체로 승격한다 — 구는 콜리전을 끄고 메시 아래로 내려간다. 모든 머신에서
 	 * 로드 때 한 번 일어나며(재로드는 무시), 복제 이동(bRepPhysics)이 새 루트를 따르도록 엔진 동기화를 다시 맞춘다.
 	 */
