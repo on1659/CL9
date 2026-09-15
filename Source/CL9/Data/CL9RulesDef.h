@@ -111,7 +111,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float ThrowChargeTime = 0.85f;
 
-	/** 바닥 위 손 높이, cm 단위 — 소지 아이템이 위치하는 곳 */
+	/** 칸에서 꺼내 스폰하는 높이, cm 단위 — 놓기에는 안 쓴다(놓기는 손 자리, 2026-09-14) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float CarryHeight = 120.f;
 
@@ -125,4 +125,19 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Carry")
 	float UseHoldTime = 0.4f;
+
+	// -- 휘두르기 히트 구간 (docs/plan/data/item/common.md 사용) --
+
+	/**
+	 * 휘두르기 히트 구간의 시작, 초 단위 — 좌클을 뗀 뒤(`GetSwingElapsed()`) 이 시각부터 손에 든 것의 히트박스가 몬스터를
+	 * 맞힌다. 휘두르기 클립은 ABP가 `SwingElapsed + 0.12`로 평가해 `[0, 0.347)` 동안만 돌아가므로 구간은 그 안이어야 한다
+	 * (`Validate`). 접촉 프레임에서 정한다 (docs/asset/character/farmer_a.md 026/031). 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingHitStart = 0.05f;
+
+	/** 휘두르기 히트 구간의 끝, 초 단위 — 이 시각부터는 맞지 않는다(구간은 반열림 `[Start, End)`). 초안값 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingHitEnd = 0.25f;
+
 };

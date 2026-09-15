@@ -58,7 +58,7 @@ struct FCL9CarriedItem : FCL9ItemRef { int32 Value; };   // 개체가 굴린 판
   복제되지 않는다) 팔과 같은 1인칭 렌더 공간(`FirstPersonPrimitiveType::FirstPerson` — FOV 70·스케일 0.6)으로
   그린다 — 팔 소켓이 카메라를 따라가니 든 물건도 시선을 따라간다. 액터 자체를 팔 메시(OnlyOwnerSee)에
   붙이지 않는 이유: 남의 화면에서는 그 메시가 그려지지 않아 애니메이션이 멈추고 소켓이 기준 포즈에 남는다.
-  `CarryHeight`(120cm)는 **놓는 높이**와 **칸에서 꺼내 스폰하는 높이**에 쓰인다.
+  `CarryHeight`(120cm)는 **칸에서 꺼내 스폰하는 높이**에만 쓰인다 — 놓기에는 안 쓴다(놓기는 손 자리, 아래 "조작", 2026-09-15).
 - **들면 팔이 올라온다 — 행의 `HoldPose` 범주가 자세를 고른다** (2026-09-12). `ECL9HoldPose`
   `Small`(한 손, 계란·고기·팬) · `Flashlight`(앞을 향해 쥠 — 팔을 뻗어 렌즈가 화면에 들어온다) ·
   `Large`(두 손, 냄비·램프) · `None`(빈손 — 전신은 템플릿 Idle 그대로, **1인칭 팔은 화면 밖이다**:
@@ -94,12 +94,12 @@ struct FCL9CarriedItem : FCL9ItemRef { int32 Value; };   // 개체가 굴린 판
 |---|---|---|
 | 줍기 | **E** (`IA_PickPlace`) | `PickRadius` 120cm. **활성 칸이 비었으면 활성 칸에, 아니면 첫 빈 칸에 넣고 그 칸을 활성으로**(리썰 규칙 — 손에 든 것이 새 아이템으로 바뀐다). 네 칸이 꽉 차면 "[E] 줍기"가 뜨지 않고 E도 무시된다. 걸으면서 주우면 조용, 뛰다 주우면 시끄럽다 (rules.md 소음 반경) |
 | 칸 전환 | **마우스 휠** (`IA_SlotScroll`, Axis1D) · **1~4** (`IA_Slot1..4`) | **즉시** — 잠금 시간 없음. 휠 **아래(−) = 다음 칸(오른쪽)**, 위(+) = 이전 칸, 양 끝은 순환하고 한 노치에 한 칸. 숫자키는 그 번호 칸으로. **빈 칸을 골라도 된다 = 빈손.** 휠은 리바인딩 대상이 아니고(IMC 행 `IgnoreSettings`) 숫자키는 리바인딩된다. 전환 자체는 호스트가 활성 칸 액터를 파괴하고 새 활성 칸을 다시 스폰해 손에 붙이는 것이다 |
-| 놓기 | **G** (`IA_Drop`) | 활성 칸의 아이템을 앞에(`CarryHeight`) 살며시 놓는다. **그 칸은 비고 활성 칸 번호는 그대로** — 다른 칸으로 자동 전환하지 않는다. 프롬프트가 없다(들고만 있을 때 "[E] 놓기"를 띄우지 않는다, 2026-09-13 사용자) |
-| 던지기 | **달리기 키 + G** | G를 누를 때 달리기 키가 눌려 있으면 차징 — `ThrowMinSpeed` 600 → `ThrowMaxSpeed` 1680(만충 `ThrowChargeTime` 0.85초), 떼면 던진다. 차징 중 달리기 키를 먼저 떼도 차징은 유지된다. 조합은 고정이고 설정에는 놓기(G) 행만 있다 — G를 리바인딩하면 던지기도 따라간다. 원점에 점프 높이 불가산 |
-| 사용 (좌클) | `IA_Use` | **누르면** 행의 `UseAction`대로: 손전등 `ToggleLight`는 누르는 순간 켜고 끈다(대기 없음), 프라이팬·고기 `Swing`은 **공격 대기**에 들어간다(`Server_UseStart` → `SwingWindupServerTime` 복제, 무한 대기, 팔이 대기 자세). **떼면** 휘두른다(`Server_UseRelease` → `HostSwing`: 정면 200cm 부채꼴의 몬스터에 행의 `HitDamage`·`HitStun` — 대기 시간과 무관하게 동일). 평범하게 클릭하면 대기 한 틱 뒤 바로 타격이라 평범한 공격이고, 누르고 있으면 타이밍을 고른다(리썰 삽 방식, 2026-09-13). **대기 중 칸 전환·놓기·던지기·먹기·잡힘이 오면 대기가 취소**되어 떼도 타격이 없다. 달걀·냄비·작업등·빈손 무동작. 먹기는 여기 없다 |
+| 놓기 | **G** (`IA_Drop`) | 활성 칸의 아이템을 **손 자리에 그대로** 놓는다(2026-09-15 사용자 "그자리에서 떨어지게" — 2026-09-14의 조준점 놓기·수레 특례 폐기): 아이템 액터의 루트는 어느 머신에서나 전신 메시의 손 소켓에 붙어 있으므로 **지금 있는 자리**가 곧 손의 자리다. 시선으로 옮기지 않고(스윕도 사거리도 없다) 회전도 지금 것 그대로, 속도 0으로 놓아(`OnPlaced`) 발 앞·오른쪽에 그대로 떨어진다. 손 자리는 캡슐 안쪽(폰 25cm 앞·24cm 오른쪽)이지만 아이템 몸체는 **폰 채널에 Overlap**이라(구 생성자) 캡슐에 막히지도 밀려나지도 않는다 — 그 자리에서 발밑으로 곧장 떨어진다. **수레를 보고 놓아도 짐칸에 들어가지 않는다 — 싣기는 던지기(Shift+G)뿐이다.** **그 칸은 비고 활성 칸 번호는 그대로** — 다른 칸으로 자동 전환하지 않는다. 프롬프트가 없다(들고만 있을 때 "[E] 놓기"를 띄우지 않는다, 2026-09-13 사용자) |
+| 던지기 | **달리기 키 + G** | G를 누를 때 달리기 키가 눌려 있으면 차징(같은 틱에 두 키가 함께 눌려도 — Enhanced Input이 Started 델리게이트를 바인딩 역순으로 쏘아 G가 먼저 오므로 달리기 **액션 값**을 직접 읽어 보완한다, 2026-09-14) — `ThrowMinSpeed` 600 → `ThrowMaxSpeed` 1680(만충 `ThrowChargeTime` 0.85초), 떼면 던진다. 차징 중 달리기 키를 먼저 떼도 차징은 유지된다. 조합은 고정이고 설정에는 놓기(G) 행만 있다 — G를 리바인딩하면 던지기도 따라간다. 원점에 점프 높이 불가산 |
+| 사용 (좌클) | `IA_Use` | **누르면** 행의 `UseAction`대로: 손전등 `ToggleLight`는 누르는 순간 켜고 끈다(대기 없음), 프라이팬·고기 `Swing`은 **공격 대기**에 들어간다(`Server_UseStart` → `SwingWindupServerTime` 복제, 무한 대기, 팔이 대기 자세). **떼면** 휘두른다(`Server_UseRelease` → `HostSwing`: 히트 구간을 연다 — 아래 "휘두르기 히트박스". 닿은 몬스터에 행의 `HitDamage`·`HitStun`, 대기 시간과 무관하게 동일). 평범하게 클릭하면 대기 한 틱 뒤 바로 타격이라 평범한 공격이고, 누르고 있으면 타이밍을 고른다(리썰 삽 방식, 2026-09-13). **대기 중 칸 전환·놓기·던지기·먹기·잡힘이 오면 대기가 취소**되어 떼도 타격이 없다. 달걀·냄비·작업등·빈손 무동작. 먹기는 여기 없다 |
 | 먹기 (우클 길게) | `IA_Scan` | 우클을 `CL9Rules.UseHoldTime`(0.4초) 넘게 누르면 활성 칸이 `Dish`일 때 먹는다(`Server_Eat` → `HostEat`, 호스트 재검사). 판정은 문턱을 넘는 순간이고 먹기 애니(0.6초, `GetEatElapsed()`)는 뒤따른다 — 먹는 동안 칸 전환을 막지 않는다. 먹은 칸은 비고 활성 칸은 그대로. 문턱 전에 떼면 탭 = 스캔(`ACL9PlayerController::RequestScan`) — 스캔이 최대 0.4초 늦을 수 있다. 문턱을 넘긴 뒤 떼도 스캔은 나가지 않는다 (2026-09-13 사용자: "우클 길게 = 먹기", [input.md](input.md)) |
 | 잠금 | — | `ACL9Character::CanSwitchSlot()`: **활성 칸에 `HoldPose == Large`(두 손: 냄비·작업등)가 들려 있거나 수레를 미는 중이면 false** → 휠·숫자키·줍기 전부 무시. 판정은 호스트가 같은 함수로 다시 하고, 클라의 검사는 프롬프트·헛 RPC 거르기의 보조다. G(놓기·던지기)는 잠기지 않는다 — 놓아야 풀린다 |
-| 수레 (E) | `ACL9Cart` | **활성 칸이 비어 있어야(빈손) 민다** — 다른 칸에 물건이 있어도 된다. 활성 칸에 물건이 든 채 조준하면 **프롬프트가 없고 E도 무시**된다("[E] 싣기"는 없다). 수레는 **실물 크기의 물리 강체**(행 `bMeshIsBody` — 메시 UCX 콜리전이 몸체, 반경 구·자동 스케일 없음)이고, 잡으면 호스트가 매 틱 손잡이 소켓 `Grip`을 **내 캡슐 앞 `GripDistance`의 목표점으로 끄는 스프링·감쇠 힘**(`PushSpring`·`PushDamping`, 감쇠는 나와의 상대 속도)과 **yaw 스프링 토크**(`PushYawSpring`·`PushYawDamping`)를 준다 — 걷기 시작하면 반 박자 늦게 따라오고, 멈추면 미끄러지다 서고, 제자리 회전이면 원호를 그린다. 수레는 폰을 막으므로(Pawn Block) 벽에 밀어붙이면 나도 수레에 막혀 선다; 손잡이가 목표점에서 `GripBreakDistance`보다 벌어지면(옆·뒤로 벗어남, 턱 아래로 떨어짐) **손을 놓친다**(`StopPull`, "[E] 수레 밀기"가 다시 뜬다). 다시 E로 놓으면 제 속도로 미끄러지다 선다 (2026-09-13 물리 수레, [../plan/data/item/cart.md](../plan/data/item/cart.md)). **싣기는 G(놓기)·달리기 키+G(던지기)로 짐칸 위에 떨어뜨리는 것뿐** — 소켓 `Cargo` 중심 `CargoExtent` 상자(`CargoVolume`)와 겹치는 자유 상태 아이템이 곧 실린 것이고(부착 없음, 미는 동안 매 틱 깨운다), 꺼내기는 바닥 아이템과 같은 "[E] 줍기"다(미는 중에는 줍기가 잠긴다). 짐칸 안에서도 깨짐 판정은 그대로다 |
+| 수레 (E) | `ACL9Cart` | **활성 칸이 비어 있어야(빈손) 민다** — 다른 칸에 물건이 있어도 된다. 활성 칸에 물건이 든 채 조준하면 **프롬프트가 없고 E도 무시**된다("[E] 싣기"는 없다). 수레는 **실물 크기의 물리 강체**(행 `bMeshIsBody` — 메시 UCX 콜리전이 몸체, 반경 구·자동 스케일 없음)이고, 잡으면 호스트가 매 틱 손잡이 소켓 `Grip`을 **내 캡슐 앞 `GripDistance`의 목표점으로 끄는 스프링·감쇠 힘**(`PushSpring`·`PushDamping`, 감쇠는 나와의 상대 속도)과 **yaw 스프링 토크**(`PushYawSpring`·`PushYawDamping`)를 준다 — 걷기 시작하면 반 박자 늦게 따라오고, 멈추면 미끄러지다 서고, 제자리 회전이면 원호를 그린다. 수레는 폰을 막으므로(Pawn Block) 벽에 밀어붙이면 나도 수레에 막혀 선다; 손잡이가 목표점에서 `GripBreakDistance`보다 벌어지면(옆·뒤로 벗어남, 턱 아래로 떨어짐) **손을 놓친다**(`StopPull`, "[E] 수레 밀기"가 다시 뜬다). 다시 E로 놓으면 제 속도로 미끄러지다 선다 (2026-09-13 물리 수레, [../plan/data/item/cart.md](../plan/data/item/cart.md)). **싣기는 달리기 키+G(던지기)로 짐칸 위에 떨어뜨리는 것뿐이다**(2026-09-15 — 2026-09-14의 "수레를 보고 G면 짐칸 안" 특례 폐기): G는 어디를 보고 있든 손 자리에 놓으므로 수레를 봐도 짐칸에 들어가지 않는다. 미는 자세에서는 짐칸을 향해 던져 넣는다. 소켓 `Cargo` 중심 `CargoExtent` 상자(`CargoVolume`)와 겹치는 자유 상태 아이템이 곧 실린 것이고(부착 없음, 미는 동안 매 틱 깨운다), 꺼내기는 바닥 아이템과 같은 "[E] 줍기"다(미는 중에는 줍기가 잠긴다). 짐칸 안에서도 깨짐 판정은 그대로다 |
 | 반납 | 항아리 E | 활성 칸의 것(+ 미는 수레의 짐칸 안 것 전부)을 넣는다 — 정전 시계가 `DarkAccel`만큼 당겨진다 ([raiding.md](raiding.md)) |
 | 잡힘 | — | 몬스터에게 잡혀 넘어지면 **네 칸 전부** 발밑에 흘린다(비활성 칸은 저장된 값 그대로 다시 스폰해 흘린다). 활성 칸 번호는 그대로다 ([character.md](character.md) 피격·넘어짐) |
 
@@ -109,10 +109,12 @@ struct FCL9CarriedItem : FCL9ItemRef { int32 Value; };   // 개체가 굴린 판
 E   → Server_PickPlace   → HostPickUp(Item, FindPickUpSlot())     // 활성 칸이 차 있으면 HostStowHeld로 먼저 데이터화
 휠  → Server_ScrollSlot(±1) ─┐
 1~4 → Server_SelectSlot(n)  ─┴→ HostSelectSlot(n): HostStowHeld → ActiveSlot=n → SpawnItem(…, Value) → HostPickUp
-G   → Server_Drop                 → OnPlaced          → HostClearActiveSlot
+G   → Server_Drop                 → OnPlaced(손 자리)  → HostClearActiveSlot
 Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostClearActiveSlot
 좌클 누름 → Server_UseStart   : Swing이면 SwingWindupServerTime = 지금 / ToggleLight면 즉시 토글
 좌클 뗌   → Server_UseRelease : 대기 중이었으면 HostSwing (칸 전환·놓기·던지기·먹기·잡힘은 HostCancelSwingWindup)
+            HostSwing         : SwingStartServerTime = 지금, 맞은 목록 비움 (타격은 여기서 나가지 않는다)
+매 틱(호스트) → HostTickSwingHit : 히트 구간이면 히트박스를 이전 자리→지금 자리로 스윕 → 닿은 몬스터마다 OnStrike 1회
 우클 길게 → Server_Eat (활성 칸 Dish) → HostEat → EatStartServerTime = 지금 → HostConsumeHeldItem
 먹기·항아리·창구 → HostConsumeHeldItem → HostClearActiveSlot     // 수레 싣기 경로는 없다 — G/던지기로 떨어뜨린다
 ```
@@ -121,6 +123,27 @@ Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostC
   한 칸 옮긴다(연속 노치가 같은 칸을 겨누지 않는다). 숫자키는 절대 번호라 `Server_SelectSlot`이다.
 - `ResolveFocus`·`GetFocusPrompt`·`Server_PickPlace`가 같은 `CanPickUpItem()`(= `CanSwitchSlot() && 빈 칸 있음`)으로
   판단하므로 하이라이트·프롬프트·실제 결과가 어긋나지 않는다.
+
+## 휘두르기 히트박스 (2026-09-15 — 옛 "뗀 순간 200cm 부채꼴에서 가장 가까운 하나" 폐기)
+
+타격은 **휘두르기 애니메이션을 따라다니는 히트박스**가 낸다. 판정은 전부 호스트이고 난수는 없다.
+
+- **구간**: 좌클을 뗀 뒤 `GetSwingElapsed()`가 `CL9Rules.SwingHitStart`~`SwingHitEnd`(초, 초안 0.05~0.25) 사이인 동안.
+  ABP는 같은 시계를 `SwingElapsed + 0.12`로 읽어 `[0, 0.347)` 동안 클립을 태우므로(→ [animation.md](animation.md))
+  구간은 그 안에 있어야 한다(`UCL9RulesDef::Validate`). 구간 도중 칸 전환·놓기·던지기로 손이 비면 구간도 끝난다.
+- **모양**: 손에 든 행의 `Mesh` 에셋 경계 구(× 메시 스케일)를 **전신 손에 붙었을 때의 자리**로 옮긴 것
+  (`ACL9Item::GetSwingHitSphere`). 행에 히트박스 열은 없다 — 보이는 것이 곧 맞는 것이다. 자리는 아이템 액터의
+  **루트 구**에서 뽑는다: 소유자 본인 화면에서는 메시만 1인칭 팔(카메라 자식)로 옮겨 붙어 있어(`UpdateFirstPersonView`)
+  메시의 월드 트랜스폼을 읽으면 호스트가 자기 폰을 판정할 때 눈앞 허공을 때린다.
+- **스윕**: 호스트의 매 틱, 히트박스를 **이전 틱 자리 → 지금 자리**로 스윕한다(`ACL9Character::HostTickSwingHit`).
+  단순 겹침이면 프레임이 긴 상황(PIE 자동화 3~8fps)에서 팬이 한 틱 사이에 닭을 지나쳐 관통한다. 휘두르기의 첫 틱은
+  이전 자리 = 지금 자리다(옛 자세에서 끌고 오지 않는다). 판정은 점이 아니라 구간 겹침이라, 이번 틱이 덮는 시간이
+  히트 구간과 겹치기만 하면 그 틱에 한 번 스윕한다 — 0.2초 폭이 틱 사이로 통째로 빠져도 헛스윙이 되지 않는다.
+- **한 번의 휘두르기에 몬스터마다 한 번**: 휘두르기 시작에 비우는 맞은 목록으로 거른다. 나란히 선 닭 둘은 한 번
+  휘둘러 둘 다 맞고, 같은 닭이 한 휘두르기에 두 번 맞지는 않는다. 대상은 `ACL9Monster`뿐이다(사람은 맞지 않는다).
+- **호스트에서 본이 돌아야 한다**: 전신 메시는 자기 폰에서 `OwnerNoSee`이고 남의 폰은 화면 밖일 수 있는데
+  `ACharacter` 기본값(`AlwaysTickPose`)은 렌더될 때만 본을 새로 쓴다 → 권한 쪽 전신 메시에만
+  `AlwaysTickPoseAndRefreshBones`를 준다(`BeginPlay`). 이게 빠지면 손 소켓이 얼어 히트박스가 제자리에 선다.
 
 ## 무게와 감속
 

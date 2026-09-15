@@ -13,6 +13,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedPlayerInput.h"
 #include "Engine/Engine.h"
+#include "Engine/HitResult.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
@@ -91,6 +92,20 @@ ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	SetNetUpdateFrequency(20.f);
 }
 
+void ACL9Character::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 호스트에서는 전신 메시의 본을 **화면에 없어도** 갱신한다. 휘두르기 판정이 손 소켓에 붙은 히트박스를 읽는데,
+	// ACharacter 기본값(AlwaysTickPose)은 포즈만 굴리고 본 트랜스폼은 렌더될 때만 새로 쓴다 — 전신 메시는 자기
+	// 폰에서 OwnerNoSee이고 남의 폰은 화면 밖일 수 있어서, 그대로 두면 호스트가 보는 손이 휘두르기 내내 얼어 있다.
+	// 클라이언트는 표시만 하므로 기본값 그대로 둔다(성능). (docs/systems/inventory.md 사용)
+	if (HasAuthority())
+	{
+		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	}
+}
+
 void ACL9Character::SetCharacterAlias(FName NewAlias)
 {
 	if (!HasAuthority())
@@ -133,6 +148,9 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, ThrowServerTime);
 	DOREPLIFETIME(ACL9Character, WornItem);
 	DOREPLIFETIME(ACL9Character, ActiveEffects);
+
+	// 카메라 킥은 때린 본인만 느낀다 — 남의 폰에 보낼 이유가 없는 유일한 값이라 조건부다
+	DOREPLIFETIME_CONDITION(ACL9Character, SwingHitServerTime, COND_OwnerOnly);
 }
 
 void ACL9Character::OnRep_CharacterAlias()
@@ -514,7 +532,7 @@ void ACL9Character::Server_UseRelease_Implementation()
 	{
 		return;
 	}
-	HostSwing(*Def);
+	HostSwing();
 }
 
 void ACL9Character::Server_Eat_Implementation()
@@ -599,6 +617,13 @@ AActor* ACL9Character::ResolveFocus() const
 void ACL9Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// 휘두르기 타격은 호스트에서만, 모든 폰에 대해 판정한다 — 아래의 "로컬 조작 중이 아니면 나간다"보다 먼저 와야
+	// 클라의 휘두르기도 호스트에서 판정된다 (docs/systems/inventory.md 사용).
+	if (HasAuthority())
+	{
+		HostTickSwingHit();
+	}
 
 	// 조준 하이라이트는 순전히 로컬 표시용이다 — 키가 눌렸을 때 호스트에서도
 	// 같은 resolver가 실행되므로, 윤곽선은 E가 실제로 할 일을 그대로 보여준다.
@@ -796,17 +821,15 @@ void ACL9Character::Server_ScrollSlot_Implementation(int32 Direction)
 
 void ACL9Character::Server_Drop_Implementation()
 {
-	const UCL9RulesDef* Rules = GetRules();
-	if (Rules == nullptr || HeldItem == nullptr)
+	if (HeldItem == nullptr)
 	{
 		return;
 	}
 
-	// 옛 E 놓기 규칙 그대로: 캡슐 앞, 손 높이(CarryHeight)에 살며시. 놓은 칸은 비고 활성 칸 번호는 그대로다.
-	const float ItemRadius = HeldItem->GetItemDef() ? HeldItem->GetItemDef()->Radius : 20.f;
-	const float ForwardOffset = GetCapsuleComponent()->GetScaledCapsuleRadius() + ItemRadius + 25.f;
-	const float HandZ = Rules->CarryHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	const FVector DropLocation = GetActorLocation() + GetActorForwardVector() * ForwardOffset + FVector(0.f, 0.f, HandZ);
+	// **든 자리에서 그대로 놓는다** (2026-09-15 사용자 "그자리에서 떨어지게" — 2026-09-14의 조준점 놓기·수레 특례 폐기).
+	// 아이템 액터의 루트는 어느 머신에서나 전신 메시의 손 소켓에 붙어 있으므로, 지금 위치가 곧 손의 자리다. 시선으로 옮기지
+	// 않고 회전도 지금 것 그대로 두며, OnPlaced가 속도를 0으로 만들어 그 자리에서 떨어지게 한다. 짐칸에 싣는 길은 던지기(Shift+G)뿐이다.
+	const FVector DropLocation = HeldItem->GetActorLocation();
 
 	ThrowChargeStartTime = -1.f;
 	HostCancelSwingWindup();
@@ -856,12 +879,10 @@ int32 ACL9Character::FindPickUpSlot() const
 	return CL9PlayerState->FindEmptySlot();
 }
 
-void ACL9Character::HostSwing(const UCL9ItemDef& Def)
+void ACL9Character::HostSwing()
 {
-	// 사거리·부채꼴·회복 시간은 아직 상수다(행 컬럼은 피해량과 경직 종류뿐 — 2026-09-12 결정);
-	// 경직 시간·넉백 거리는 몬스터 행에서 가져온다.
-	constexpr float SwingReach = 200.f;
-	constexpr float SwingHalfAngleDot = 0.3f;
+	// 회복 시간만 아직 상수다 — 무엇에 맞느냐는 히트박스(아이템 메시)가, 피해·경직 종류는 행이, 경직 시간·넉백 거리는
+	// 몬스터 행이 정한다. 사거리·부채꼴 상수는 2026-09-15에 사라졌다(휘두르기 = 애니메이션을 따르는 히트박스).
 	constexpr float SwingRecovery = 0.6f;
 
 	const float Now = GetServerTime();
@@ -872,36 +893,98 @@ void ACL9Character::HostSwing(const UCL9ItemDef& Def)
 	SwingReadyTime = Now + SwingRecovery;
 	SwingStartServerTime = Now;
 
-	// 사거리 안 정면에서 가장 가까운 몬스터 (몸체끼리 겹치므로 구체 쿼리를 쓴다)
-	const FVector Origin = GetActorLocation();
-	const FVector Forward = GetControlRotation().Vector();
-	TArray<FOverlapResult> Overlaps;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9Swing), false, this);
-	GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity,
-		FCollisionObjectQueryParams(ECC_WorldDynamic), FCollisionShape::MakeSphere(SwingReach), Params);
+	// 이번 휘두르기의 히트 구간을 연다 — 실제 타격은 HostTickSwingHit이 구간 동안 낸다. 맞은 목록을 비워 새 휘두르기에서는
+	// 같은 몬스터를 다시 맞힐 수 있게 하고, 이전 틱 자리는 "아직 없음"으로 둬 첫 틱이 옛 자세에서 스윕하지 않게 한다.
+	SwingHitItem = HeldItem;
+	SwingHitMonsters.Reset();
+	SwingHitPrevElapsed = -1.f;
+}
 
-	ACL9Monster* Target = nullptr;
-	float BestDot = SwingHalfAngleDot;
-	for (const FOverlapResult& Overlap : Overlaps)
+void ACL9Character::HostTickSwingHit()
+{
+	ACL9Item* Item = SwingHitItem.Get();
+	if (Item == nullptr)
 	{
-		ACL9Monster* Monster = Cast<ACL9Monster>(Overlap.GetActor());
-		if (Monster == nullptr)
-		{
-			continue;
-		}
-		const FVector ToMonster = (Monster->GetActorLocation() - Origin).GetSafeNormal();
-		const float Dot = FVector::DotProduct(Forward, ToMonster);
-		if (Dot > BestDot)
-		{
-			BestDot = Dot;
-			Target = Monster;
-		}
+		return;
 	}
 
-	UE_LOG(LogCL9, Verbose, TEXT("Swing: %d overlaps, target=%s"), Overlaps.Num(), *GetNameSafe(Target));
-	if (Target != nullptr)
+	// 구간 도중 칸 전환·놓기·던지기·먹기로 손의 것이 바뀌면 구간이 끝난다 — 사라진 물건으로 계속 때리지 않는다
+	const UCL9RulesDef* Rules = GetRules();
+	const UCL9ItemDef* Def = Item->GetItemDef();
+	if (Item != HeldItem || Rules == nullptr || Def == nullptr)
 	{
-		Target->OnStrike(Def.HitDamage, Def.HitStun, this);
+		SwingHitItem = nullptr;
+		return;
+	}
+
+	FVector Center = FVector::ZeroVector;
+	float Radius = 0.f;
+	if (!Item->GetSwingHitSphere(Center, Radius))
+	{
+		SwingHitItem = nullptr;
+		return;
+	}
+
+	const float Elapsed = GetSwingElapsed();
+	const float PrevElapsed = SwingHitPrevElapsed;
+	const FVector PrevCenter = PrevElapsed < 0.f ? Center : SwingHitPrevCenter;
+	SwingHitPrevElapsed = Elapsed;
+	SwingHitPrevCenter = Center;
+
+	// 판정은 점이 아니라 **구간 겹침**이다: 이번 틱이 덮는 시간 (PrevElapsed, Elapsed]가 히트 구간 [Start, End)와 겹치면
+	// 그 틱에 스윕한다. 점 판정(지금 Elapsed가 구간 안)이면 0.2초 폭이 틱 사이로 통째로 빠지는 낮은 프레임률(PIE 자동화
+	// 3~5fps)에서 닿는 거리인데도 헛스윙이 난다 (2026-09-15 리드).
+	const bool bWindowOver = Elapsed >= Rules->SwingHitEnd;
+	if (Elapsed >= Rules->SwingHitStart && PrevElapsed < Rules->SwingHitEnd)
+	{
+		// 이전 틱 자리 → 지금 자리로 히트박스를 끌고 간다. 단순 겹침이면 팬이 한 틱 사이에 닭을 지나쳐 관통한다.
+		// 몬스터 몸체는 WorldDynamic이지만 **오브젝트 질의를 쓰지 않는다** — 오브젝트 질의는 걸리는 것을 전부 "블로킹"으로
+		// 보고해 가장 가까운 하나에서 스윕이 잘리고, 나란히 선 닭 둘 중 하나만 맞는다. 대신 WorldDynamic 채널 스윕에
+		// 그 채널만 Overlap(나머지는 Ignore)으로 응답해 **겹침(touch)으로** 받는다: 닿은 전부가 돌아오고, 벽(WorldStatic)·
+		// 폰(나·남)은 애초에 결과에 들어오지 않는다. 자신과 든 아이템은 따로 뺀다.
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9SwingHit), false, this);
+		Params.AddIgnoredActor(Item);
+		FCollisionResponseParams ResponseParams(ECR_Ignore);
+		ResponseParams.CollisionResponse.SetResponse(ECC_WorldDynamic, ECR_Overlap);
+		TArray<FHitResult> Hits;
+		GetWorld()->SweepMultiByChannel(Hits, PrevCenter, Center, FQuat::Identity, ECC_WorldDynamic,
+			FCollisionShape::MakeSphere(Radius), Params, ResponseParams);
+
+		// 이번 휘두르기에서 아직 아무것도 못 맞혔는가 — 카메라 킥을 한 휘두르기에 한 번만 내기 위한 기준이다
+		const bool bFirstConnect = SwingHitMonsters.IsEmpty();
+
+		int32 Struck = 0;
+		for (const FHitResult& Hit : Hits)
+		{
+			// 대상은 몬스터뿐이다 — 사람은 맞지 않는다(플레이어끼리의 타격은 없다)
+			ACL9Monster* Monster = Cast<ACL9Monster>(Hit.GetActor());
+			if (Monster == nullptr || SwingHitMonsters.Contains(Monster))
+			{
+				continue;
+			}
+			// 시체는 타격이 아니다 — OnStrike가 이미 Dead를 무시하므로 맞은 것으로 세지도 않는다(시체를 쳐도 킥이 나면 안 된다)
+			if (Monster->GetState() == ECL9MonsterState::Dead)
+			{
+				continue;
+			}
+			SwingHitMonsters.Add(Monster);
+			Monster->OnStrike(Def->HitDamage, Def->HitStun, this);
+			++Struck;
+		}
+
+		// 맞은 순간을 찍어두면 소유 클라(와 리슨 호스트 자기 폰)가 그 변화를 보고 카메라를 한 번 튕긴다.
+		// 나란한 둘을 한 번에 맞혀도 킥은 한 번이고, 헛스윙이면 값이 그대로라 아무 일도 없다.
+		if (bFirstConnect && Struck > 0)
+		{
+			SwingHitServerTime = GetServerTime();
+		}
+
+		UE_LOG(LogCL9, Verbose, TEXT("SwingHit: t=%.3f r=%.1f hits=%d struck=%d"), Elapsed, Radius, Hits.Num(), Struck);
+	}
+
+	if (bWindowOver)
+	{
+		SwingHitItem = nullptr;
 	}
 }
 

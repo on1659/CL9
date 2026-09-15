@@ -12,6 +12,7 @@ enum class ECL9HoldPose : uint8;
 
 class ACL9Cart;
 class ACL9Item;
+class ACL9Monster;
 class ACL9PlayerState;
 class UCameraComponent;
 class UCL9CharacterDef;
@@ -281,6 +282,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -362,7 +364,7 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_ScrollSlot(int32 Direction);
 
-	/** G — 활성 칸의 아이템을 앞에(CarryHeight) 놓는다. 그 칸은 비고 활성 칸 번호는 그대로다 */
+	/** G — 활성 칸의 아이템을 지금 손이 있는 자리에 그대로 놓는다(옮기지 않는다). 그 칸은 비고 활성 칸 번호는 그대로다 */
 	UFUNCTION(Server, Reliable)
 	void Server_Drop();
 
@@ -388,8 +390,11 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_Eat();
 
-	/** 호스트 전용: 든 아이템을 정면으로 휘둘러 사거리·부채꼴 안 가장 가까운 몬스터에 OnStrike */
-	void HostSwing(const UCL9ItemDef& Def);
+	/**
+	 * 호스트 전용: 휘두르기를 시작한다 — 시작 시각을 복제해 애님을 태우고, 이번 휘두르기의 히트 구간 상태(맞은 목록·이전 틱
+	 * 히트박스)를 연다. 실제 타격은 `HostTickSwingHit`이 구간 동안 매 틱 스윕해서 낸다 (docs/systems/inventory.md 사용).
+	 */
+	void HostSwing();
 
 	/** 호스트에서 쓴 헤드램프를 켜고 끈다 (아이템 상태는 리플리케이트됨 — light.md) */
 	UFUNCTION(Server, Reliable)
@@ -518,6 +523,13 @@ private:
 	/** 호스트 전용: 좌클 공격 대기를 취소한다 — 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가 부른다 */
 	void HostCancelSwingWindup();
 
+	/**
+	 * 호스트 전용, 매 틱: 휘두르기 히트 구간이 열려 있으면 손에 든 것의 히트박스를 **이전 틱 자리 → 지금 자리**로 스윕해
+	 * 닿은 몬스터마다 한 번씩 OnStrike를 낸다. 겹침이 아니라 스윕인 이유는 낮은 프레임률(PIE 자동화 3~8fps)에서 팬이
+	 * 닭을 지나쳐 버리기 때문이다. 손이 비거나 바뀌면 구간이 닫힌다 (docs/systems/inventory.md 사용).
+	 */
+	void HostTickSwingHit();
+
 	/** 지금 E로 아이템을 주울 수 있는 상태인가 — 수레를 밀지 않고, 전환이 잠기지 않았고, 들어갈 칸이 있다 */
 	bool CanPickUpItem() const;
 
@@ -570,6 +582,26 @@ private:
 	/** 마지막 휘두르기의 서버 시각 — GetSwingElapsed의 원천. 음수 큰 값 = 아직 없음 */
 	UPROPERTY(Replicated)
 	float SwingStartServerTime = -1000.f;
+
+	/** 호스트 전용: 히트 구간이 열려 있는 휘두르기를 시작한 아이템 — null이면 판정할 것이 없다(구간이 닫혔거나 손이 바뀌었다) */
+	TWeakObjectPtr<ACL9Item> SwingHitItem;
+
+	/** 호스트 전용: 이번 휘두르기에서 이미 맞은 몬스터들 — 한 번 휘두를 때 같은 몬스터는 한 번만 맞는다. 휘두르기 시작에 비운다 */
+	TSet<TWeakObjectPtr<ACL9Monster>> SwingHitMonsters;
+
+	/** 호스트 전용: 직전 틱의 히트박스 중심(월드) — 이번 틱 중심까지 스윕해 틱 사이를 메운다 */
+	FVector SwingHitPrevCenter = FVector::ZeroVector;
+
+	/** 호스트 전용: 직전 틱의 SwingElapsed, 음수면 이번이 이 휘두르기의 첫 틱이다(옛 자세에서 스윕하지 않는다) */
+	float SwingHitPrevElapsed = -1.f;
+
+	/**
+	 * 이번 휘두르기가 **처음으로** 살아 있는 몬스터를 맞힌 서버 시각 — 공격자 카메라 킥의 원천이며 한 휘두르기에 한 번만
+	 * 갱신된다(헛스윙·시체 타격에는 찍히지 않는다). 남의 화면에는 쓸 데가 없어 COND_OwnerOnly로 보낸다.
+	 * 음수 큰 값 = 아직 없음.
+	 */
+	UPROPERTY(Replicated)
+	float SwingHitServerTime = -1000.f;
 
 	/** 좌클을 눌러 공격 대기를 시작한 서버 시각 — GetSwingWindupElapsed의 원천. 음수 큰 값 = 대기 중 아님 */
 	UPROPERTY(Replicated)

@@ -82,6 +82,11 @@
 - 플레이어의 대응: 도망(속도 부등식 A1·A4가 탈출을 보증), 든 아이템 휘두르기(좌클 —
   행의 `HitDamage`·`HitStun`이 `OnStrike`로 들어온다: 프라이팬 = `Push`(`PushStun` + `PushKnockback`),
   고기 = `Hit`(`HitStunMs`); 2026-09-12, [../plan/data/item/common.md](../plan/data/item/common.md) 사용).
+  **맞느냐 마느냐는 휘두르기 히트박스가 정한다** (2026-09-15 — 옛 "뗀 순간 200cm 부채꼴의 가장 가까운 하나" 폐기):
+  좌클을 뗀 뒤 `CL9Rules.SwingHitStart`~`SwingHitEnd` 구간 동안 든 물건의 메시 경계 구가 손을 따라 지나가고,
+  그 자리에 닿은 몬스터가 **한 번의 휘두르기에 각각 한 번씩** `OnStrike`를 받는다 — 나란히 선 둘은 한 번에 둘 다
+  맞고, 빗나가면 아무도 맞지 않는다. 판정은 호스트 전용이고 `OnStrike`의 의미(피해 먼저, 죽으면 경직 없음,
+  `Push`는 `OnShove`로 덮음)는 그대로다 ([inventory.md](inventory.md) 휘두르기 히트박스).
 
 ## 경보 (무리 반응)
 

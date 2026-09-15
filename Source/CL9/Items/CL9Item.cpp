@@ -502,6 +502,30 @@ UPrimitiveComponent* ACL9Item::GetBody() const
 	return CastChecked<UPrimitiveComponent>(GetRootComponent());
 }
 
+bool ACL9Item::GetSwingHitSphere(FVector& OutCenter, float& OutRadius) const
+{
+	const UStaticMesh* Mesh = MeshComponent->GetStaticMesh();
+	if (ItemDef == nullptr || Mesh == nullptr)
+	{
+		return false;
+	}
+
+	// 모양은 메시 에셋의 경계 구다 — 행에 히트박스 열을 두지 않고 "보이는 것이 곧 맞는 것"으로 간다. 스케일은 메시 컴포넌트의
+	// 상대 스케일(LoadData가 행 Radius에 맞춰 넣은 값)이고, 팔로 재부착돼도(SnapToTargetNotIncludingScale) 그대로 남는다.
+	const FVector MeshScale = MeshComponent->GetRelativeScale3D();
+	const FBoxSphereBounds Bounds = Mesh->GetBounds();
+	OutRadius = Bounds.SphereRadius * MeshScale.GetAbsMax();
+	if (OutRadius <= UE_KINDA_SMALL_NUMBER)
+	{
+		return false;
+	}
+
+	// 자리는 **루트 구**의 월드 트랜스폼에서 뽑는다(헤더 주석). 남의 화면에서 메시는 이 구에 상대 트랜스폼 0으로 붙으므로
+	// (UpdateFirstPersonView), 구의 트랜스폼으로 경계 중심을 옮기면 그것이 곧 전신 손에 들린 메시의 자리다.
+	OutCenter = SphereComponent->GetComponentTransform().TransformPosition(Bounds.Origin * MeshScale);
+	return true;
+}
+
 void ACL9Item::PromoteMeshToBody()
 {
 	if (GetRootComponent() == MeshComponent)
