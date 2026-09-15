@@ -55,6 +55,26 @@ namespace
 
 	/** 복제되는 "서버 시각" 필드의 비어 있음 값 — 서버 시각은 0 이상이라 음수면 "아직 없음/대기 중 아님"이다 */
 	constexpr float ServerTimeNever = -1000.f;
+
+	/**
+	 * 짐칸 놓기(수레를 보고 G)의 호 상수 — 표 열이 아니라 조작 상수다 (docs/plan/data/item/cart.md 적재).
+	 * 목표가 손보다 높을 때만 쓰는 여유 정점(cm). 짐칸이 손보다 낮은 보통의 경우에는 벽 넘기가 정점을 정한다.
+	 */
+	constexpr float CargoLobApexRise = 10.f;
+
+	/**
+	 * 짐칸 벽을 넘을 때 아이템 **밑면**이 벽 윗단 위로 떠야 하는 여유(cm) — 호는 이 여유를 지키는 가장 낮은 호다.
+	 * 8cm인 이유: 벽 윗단으로 삼는 `CargoVolume` 윗면이 실제 벽 윗단보다 3cm쯤 낮게 잡혀 있고(2026-09-15 PIE 실측
+	 * 89 vs 상자 86), 그 차이를 흡수하고도 5cm가 남아야 한다.
+	 */
+	constexpr float CargoLobWallClearance = 8.f;
+
+	/**
+	 * 짐칸 놓기의 수평 속도 절대 상한(cm/s) — 얹는 동작이지 던지기가 아니다. 이보다 세게 보내야 닿는 거리면
+	 * 손 자리 낙하로 되돌아간다. **되돌아가는 조건은 이것 하나뿐이다** (2026-09-15 사용자: 깨짐을 기준으로 한
+	 * CrackSpeed 상한은 폐기 — 놓기에서 계란에 금이 가는 것은 규칙으로 받아들인다).
+	 */
+	constexpr float CargoLobMaxSpeed = 600.f;
 }
 
 ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
@@ -839,7 +859,8 @@ void ACL9Character::Server_PickPlace_Implementation()
 
 void ACL9Character::Server_ThrowChargeStart_Implementation()
 {
-	if (HeldItem == nullptr)
+	// 누워 있는 동안은 손이 말을 듣지 않는다 — 사용·먹기와 같은 규칙 (2026-09-15 사용자, character.md 넘어짐)
+	if (HeldItem == nullptr || IsKnockedDown())
 	{
 		return;
 	}
@@ -850,7 +871,7 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 {
 	const UCL9RulesDef* Rules = GetRules();
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (Rules == nullptr || CL9PlayerState == nullptr || HeldItem == nullptr || ThrowChargeStartTime < 0.f)
+	if (Rules == nullptr || CL9PlayerState == nullptr || HeldItem == nullptr || ThrowChargeStartTime < 0.f || IsKnockedDown())
 	{
 		return;
 	}
@@ -904,15 +925,24 @@ void ACL9Character::Server_ScrollSlot_Implementation(int32 Direction)
 
 void ACL9Character::Server_Drop_Implementation()
 {
-	if (HeldItem == nullptr)
+	// 누워 있는 동안은 놓지도 던지지도 못한다 — 사용·먹기와 같은 규칙 (2026-09-15 사용자, character.md 넘어짐).
+	// 넘어질 때 짐을 그대로 들고 있게 된 뒤로는 이 검사가 없으면 누운 채로 물건을 내려놓을 수 있다.
+	if (HeldItem == nullptr || IsKnockedDown())
 	{
 		return;
 	}
 
 	// **든 자리에서 그대로 놓는다** (2026-09-15 사용자 "그자리에서 떨어지게" — 2026-09-14의 조준점 놓기·수레 특례 폐기).
 	// 아이템 액터의 루트는 어느 머신에서나 전신 메시의 손 소켓에 붙어 있으므로, 지금 위치가 곧 손의 자리다. 시선으로 옮기지
-	// 않고 회전도 지금 것 그대로 두며, OnPlaced가 속도를 0으로 만들어 그 자리에서 떨어지게 한다. 짐칸에 싣는 길은 던지기(Shift+G)뿐이다.
+	// 않고 회전도 지금 것 그대로 두며, OnPlaced가 속도를 0으로 만들어 그 자리에서 떨어지게 한다.
 	const FVector DropLocation = HeldItem->GetActorLocation();
+
+	// 예외는 하나다: **짐칸 쪽을 보고 있으면 그 짐칸으로 톡 얹는다** (2026-09-15 사용자 "수레 쪽에서 떨구면 그냥 밑으로
+	// 떨어지는 게 아니라 자연스럽게 들어가게"). 손 자리에서 낮은 호로 보내고 나머지는 물리에 맡긴다 — 짐칸 상자와
+	// 겹쳐 멈추면 그것이 실린 것이다(부착이 아니다, cart.md 적재). 짐칸이 멀어 세게 보내야 닿으면 아래 손 자리 낙하 그대로다.
+	FVector LobVelocity = FVector::ZeroVector;
+	const ACL9Cart* AimedCart = FindAimedCart();
+	const bool bLobIntoCargo = AimedCart != nullptr && ComputeCargoLobVelocity(*AimedCart, *HeldItem, DropLocation, LobVelocity);
 
 	ThrowChargeStartTime = -1.f;
 	HostCancelSwingWindup();
@@ -920,7 +950,111 @@ void ACL9Character::Server_Drop_Implementation()
 	HeldItem = nullptr;
 	HostClearActiveSlot();
 	Placed->SetOwner(nullptr);
+	if (bLobIntoCargo)
+	{
+		// 던지기가 아니라 놓기다 — ThrowServerTime(던지기 클립)은 건드리지 않는다. 손짓 없이 물건만 톡 간다.
+		Placed->OnThrown(DropLocation, LobVelocity);
+		return;
+	}
 	Placed->OnPlaced(DropLocation);
+}
+
+ACL9Cart* ACL9Character::FindAimedCart() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr)
+	{
+		return nullptr;
+	}
+
+	TArray<FOverlapResult> Overlaps;
+	const FCollisionObjectQueryParams ObjectParams(ECC_WorldDynamic);
+	const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(CL9CargoAim), false, this);
+	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity,
+		ObjectParams, FCollisionShape::MakeSphere(Rules->PickRadius), QueryParams);
+
+	// 잣대는 ResolveFocus와 같다 — 캡슐 중심에서 본 방향이 조준 방향과 FocusMinAimDot 이상. 다만 겨누는 점은
+	// 수레 중심이 아니라 **짐칸 지점**이다: 짐칸을 내려다보는 것과 수레 옆의 벽을 보는 것이 이걸로 갈린다.
+	const FVector AimDirection = GetControlRotation().Vector();
+	ACL9Cart* Best = nullptr;
+	float BestDot = FocusMinAimDot;
+	for (const FOverlapResult& Overlap : Overlaps)
+	{
+		ACL9Cart* Cart = Cast<ACL9Cart>(Overlap.GetActor());
+		if (Cart == nullptr)
+		{
+			continue;
+		}
+		const float AimDot = FVector::DotProduct(AimDirection,
+			(Cart->GetCargoDropPoint(0.f) - GetActorLocation()).GetSafeNormal());
+		if (AimDot > BestDot)
+		{
+			Best = Cart;
+			BestDot = AimDot;
+		}
+	}
+	return Best;
+}
+
+bool ACL9Character::ComputeCargoLobVelocity(const ACL9Cart& Cart, const ACL9Item& Item, const FVector& Origin, FVector& OutVelocity) const
+{
+	const UCL9ItemDef* Def = Item.GetItemDef();
+	// 아이템은 월드 중력이 아니라 **행의 Gravity**로 난다(CL9Item::Tick의 중력 주입) — 호도 그 중력으로 푼다
+	const float Gravity = Def == nullptr ? 0.f : (Def->Gravity > 0.f ? Def->Gravity : -GetWorld()->GetGravityZ());
+	if (Def == nullptr || Gravity <= 0.f)
+	{
+		return false;
+	}
+
+	const FVector Delta = Cart.GetCargoDropPoint(Def->Radius) - Origin;
+
+	// 바닥값: 정점을 손 자리(목표가 손보다 높으면 목표 위 CargoLobApexRise)에 두는 호 — 올라간 만큼만 더 떨어지므로
+	// 착지가 이 낙차에서 낼 수 있는 가장 느린 호다. 여기서 더 낮출 수는 없다.
+	const float ApexRise = FMath::Max<float>(Delta.Z + CargoLobApexRise, 0.f);
+	float FlightTime = (FMath::Sqrt(2.f * Gravity * ApexRise) + FMath::Sqrt(2.f * Gravity * (ApexRise - Delta.Z))) / Gravity;
+
+	// 그 호는 **짐칸 벽을 못 넘는다** (2026-09-15 PIE B4: 손이 벽 윗단보다 높아도, 벽에 이를 때쯤 이미 몇 cm 내려와
+	// 계란이 윗단에 맞고 튕겨 나왔다). 벽을 지나는 지점에서 아이템 **밑면**이 윗단 위에 있도록 비행 시간을 늘린다 —
+	// 같은 두 점을 잇는 호는 오래 날수록 높이 뜬다. 착지가 그만큼 빨라지는 것은 감수한다(2026-09-15 사용자: 금은 그대로 둔다).
+	float WallFraction = 0.f;
+	float WallTopZ = 0.f;
+	if (Cart.GetCargoWallCrossing(Origin, WallFraction, WallTopZ))
+	{
+		// 비율 f 지점의 높이: z(f) = 원점 + f·Δz + ½·g·T²·f(1−f) — 이것이 ClearZ 이상이 되는 가장 짧은 T를 푼다.
+		const float ClearZ = WallTopZ + Def->Radius + CargoLobWallClearance;
+		const float Needed = ClearZ - Origin.Z - WallFraction * Delta.Z;
+		const float Shape = 0.5f * Gravity * WallFraction * (1.f - WallFraction);
+		if (Needed > 0.f && Shape > UE_KINDA_SMALL_NUMBER)
+		{
+			FlightTime = FMath::Max(FlightTime, FMath::Sqrt(Needed / Shape));
+		}
+	}
+	if (FlightTime <= UE_KINDA_SMALL_NUMBER)
+	{
+		return false;
+	}
+
+	// 같은 두 점을 T초에 잇는 포물선의 초기 속도 — 수평은 거리/T, 수직은 낙차와 중력이 정한다.
+	const float LaunchUp = (Delta.Z + 0.5f * Gravity * FlightTime * FlightTime) / FlightTime;
+	const FVector Launch = FVector(Delta.X, Delta.Y, 0.f) / FlightTime + FVector(0.f, 0.f, LaunchUp);
+	const float LaunchSpeed = Launch.Size();
+
+	// 되돌아가는 조건은 하나뿐이다: 얹는 동작이 아니라 던지기가 되어 버리는 속도 (2026-09-15 사용자 — 깨짐을 기준으로
+	// 한 CrackSpeed 상한은 폐기. 놓기든 얹기든 계란에 금이 가는 것은 규칙으로 받아들인다). 벽 넘기가 호를 높이므로
+	// 상한은 수평만이 아니라 **보내는 힘 전체**에 건다 — 먼 짐칸일수록 수평은 느려지고 수직이 커지기 때문이다.
+	UE_LOG(LogCL9, Log, TEXT("Cargo lob '%s' → '%s': drop %.0f cm, wall %.0f%% @ %.0f cm, flight %.2f s, launch %.0f/%.0f cm/s (up %.0f), landing %.0f cm/s%s"),
+		*GetNameSafe(&Item), *GetNameSafe(&Cart), -Delta.Z, WallFraction * 100.f, WallTopZ, FlightTime,
+		LaunchSpeed, CargoLobMaxSpeed, LaunchUp,
+		FMath::Sqrt(Launch.SizeSquared2D() + FMath::Square(LaunchUp - Gravity * FlightTime)),
+		LaunchSpeed > CargoLobMaxSpeed ? TEXT(" — too far, placing at hand instead") : TEXT(""));
+
+	if (LaunchSpeed > CargoLobMaxSpeed)
+	{
+		return false;
+	}
+
+	OutVelocity = Launch;
+	return true;
 }
 
 int32 ACL9Character::GetActiveSlot() const
@@ -1453,7 +1587,18 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 
 	CL9PlayerState->Hp = FMath::Max(CL9PlayerState->Hp - Amount, 0);
 	CL9PlayerState->NotifyHpChanged();
-	HostDropEverything();
+
+	// 짐을 흘리는 것은 죽을 때뿐이다 (2026-09-15 사용자) — HP가 남는 타격은 넘어뜨리기만 하고, 손에 든 것과
+	// 퀵슬롯 네 칸은 그대로 둔다. 일어나면 들고 있던 그 물건을 그대로 들고 있다. 수레를 놓고 차징·대기를
+	// 취소하는 것은 두 경우 다 한다 — 넘어진 채 차징이 이어지면 안 된다.
+	if (CL9PlayerState->Hp <= 0)
+	{
+		HostDropEverything();
+	}
+	else
+	{
+		HostCancelCarryActions();
+	}
 
 	// 쓰러져서 움직일 수 없다; HP 0이면 다음 로비가 되살릴 때까지 쓰러진 채로 있는다
 	// (docs/systems/character.md 피격·넘어짐·죽음 — 부활은 없다).
@@ -1513,6 +1658,22 @@ bool ACL9Character::IsDead() const
 	return CL9PlayerState != nullptr && CL9PlayerState->IsDead();
 }
 
+void ACL9Character::HostCancelCarryActions()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	// 넘어지면 수레에서 손을 놓고(수레는 제 속도로 미끄러지다 선다), 차징하던 던지기와 대기하던 휘두르기가 사라진다.
+	if (PullingCart != nullptr)
+	{
+		PullingCart->StopPull(this);
+	}
+	ThrowChargeStartTime = -1.f;
+	HostCancelSwingWindup();
+}
+
 void ACL9Character::HostDropEverything()
 {
 	const UCL9RulesDef* Rules = GetRules();
@@ -1522,10 +1683,7 @@ void ACL9Character::HostDropEverything()
 		return;
 	}
 
-	if (PullingCart != nullptr)
-	{
-		PullingCart->StopPull(this);
-	}
+	HostCancelCarryActions();
 
 	// 발목 높이에서 옆으로 살짝 밀쳐서 흘린다 — 그다음부터는 실제 물리가 알아서
 	// 처리하고, 낮은 원점 덕분에 깨지기 쉬운 아이템도 CrackSpeed 아래에 머물러서
@@ -1552,8 +1710,6 @@ void ACL9Character::HostDropEverything()
 		Dropped->SetOwner(nullptr);
 		Spill(Dropped);
 	}
-	ThrowChargeStartTime = -1.f;
-	HostCancelSwingWindup();
 
 	// 네 칸 전부 흘린다 — 비활성 칸은 데이터뿐이라 저장된 값 그대로 다시 스폰해 흘린다. 활성 칸 번호는 그대로 둔다.
 	for (int32 Slot = 0; Slot < CL9PlayerState->Slots.Num(); ++Slot)

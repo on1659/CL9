@@ -525,8 +525,30 @@ private:
 	UFUNCTION()
 	void HandleMappingContextRegistered(const UInputMappingContext* Context);
 
-	/** 호스트 전용: 퀵슬롯 전 칸을 바닥에 흘리고 카트를 놓는다 (잡힘 짐 흘림) */
+	/**
+	 * 호스트 전용: 넘어질 때 손에서 끊기는 것들 — 수레를 놓고, 던지기 차징과 휘두르기 대기를 취소한다.
+	 * 짐은 건드리지 않는다: 넘어진 채로 차징·대기가 이어지면 안 되지만, 손에 든 것과 퀵슬롯은 그대로 남는다
+	 * (2026-09-15 — 짐 흘림은 죽을 때만, docs/systems/character.md 피격·넘어짐).
+	 */
+	void HostCancelCarryActions();
+
+	/** 호스트 전용: 손과 퀵슬롯 전 칸을 발밑에 흘린다 — 죽을 때만 부른다(동료가 시체 옆에서 주워 가게). 위의 취소도 함께 한다 */
 	void HostDropEverything();
+
+	/**
+	 * 호스트 전용: 놓기(G) 순간 짐칸에 얹어 줄 수레 — PickRadius 안에서 짐칸 쪽을 보고 있는 수레.
+	 * ResolveFocus는 쓸 수 없다: 손에 뭔가 든 채로는 수레의 CanInteract가 false라(프롬프트 규칙, cart.md)
+	 * 조준 대상에서 빠진다. 그래서 같은 반경·같은 조준 내적으로 수레만 따로 찾는다.
+	 */
+	ACL9Cart* FindAimedCart() const;
+
+	/**
+	 * 호스트 전용: 손 자리에서 짐칸 지점으로 톡 얹는 초기 속도를 낸다. **짐칸 벽을 넘는 가장 낮은 호**다 —
+	 * 벽을 지나는 지점에서 아이템 밑면이 벽 윗단 위에 있도록 비행 시간을 늘리고(2026-09-15 PIE B4: 더 낮은 호는
+	 * 벽 윗단에 맞고 튕겨 나왔다), 그 시간에 두 점을 잇는 포물선의 초기 속도를 돌려준다. 보내는 힘이
+	 * CargoLobMaxSpeed를 넘으면(짐칸이 멀다) false — 호출자가 손 자리 낙하로 되돌아간다.
+	 */
+	bool ComputeCargoLobVelocity(const ACL9Cart& Cart, const ACL9Item& Item, const FVector& Origin, FVector& OutVelocity) const;
 
 	/** 호스트 전용: 아이템을 그 칸에 기록하고 그 칸을 활성으로 해 손에 붙인다 — 손은 비어 있어야 한다 */
 	void HostPickUp(ACL9Item* Item, int32 Slot);

@@ -141,14 +141,22 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
 class ICL9Damageable {
   virtual void OnDamage(int32 Amount, AActor* Source) = 0;  // 호스트에서만 호출
 };
-// ACL9Character::OnDamage — HP 차감, HurtStun, 넘어짐, 짐 흘림
+// ACL9Character::OnDamage — HP 차감, HurtStun, 넘어짐, (죽을 때만) 짐 흘림
 // ACL9Monster::OnDamage  — HP 차감, HitStun, 죽음 (monster.md)
 ```
 
 - 호출은 **호스트 판정 코드에서만** (몬스터 잡기, 프라이팬 밀치기 등) — 클라 호출 금지.
 - HP는 PlayerState의 int (기본 3 — 값의 문제, character.md). 잡히면 `CatchDamage`만큼
-  OnDamage로 깎이고 `HurtStun`(0.35초) 비틀 + 넘어짐 + **짐 흘림(손+품 전부 — 초안)** —
-  판정은 호스트, 표현은 OnRep/Multicast
+  OnDamage로 깎이고 `HurtStun`(0.35초) 비틀 + 넘어짐 — 판정은 호스트, 표현은 OnRep/Multicast
+- **짐을 흘리는 것은 죽을 때뿐이다** (2026-09-15 사용자 — 2026-09-02의 "잡히면 손+품 전부 흘림" 폐기).
+  HP가 남는 타격은 넘어뜨리기만 하고 **손에 든 것과 퀵슬롯 네 칸을 그대로 둔다** — 일어나면 들고 있던 그
+  물건을 그대로 들고 있고(활성 칸도 그대로), 바닥에 흘린 것은 없다. 다만 두 경우 다 `HostCancelCarryActions()`가
+  수레를 놓고(`StopPull`) 던지기 차징·휘두르기 대기를 취소한다 — 넘어진 채 차징이 이어지면 안 된다.
+  HP 0이 되는 타격에서만 `HostDropEverything()`가 손과 네 칸을 전부 발밑에 흘린다(동료가 시체 옆에서 주워 가게).
+  **넘어져 있는 동안은 놓기(G)·던지기도 무시된다** (2026-09-15 사용자 — 사용·먹기와 같은 규칙):
+  `Server_Drop`·`Server_ThrowChargeStart`·`Server_ThrowRelease`가 `IsKnockedDown()`이면 조용히 돌아간다.
+  짐을 든 채 넘어지게 된 뒤로 필요해진 검사다 — 누운 채로 물건을 내려놓거나 던질 수는 없다.
+  이동은 CMC가 속도 0으로 묶고, 사용·휘두르기·먹기는 이전부터 같은 검사를 하고 있었다.
 - 넘어짐 동안 이동 불가 — CMC 최대 속도 0 방식으로 확정 (Replicated
   `KnockdownEndServerTime`을 양쪽 CMC가 읽는다; `KnockdownTime` 캐릭터 표 컬럼 —
   2026-09-03 decisions.md)

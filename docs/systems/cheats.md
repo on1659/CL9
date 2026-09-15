@@ -76,7 +76,7 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.list <종류>` | items · monsters · sites · orders · equipment · characters · sequences | 번호+Alias+상태 출력 — Broken 행은 `✗ (사유)` 표시 ([../data/schema.md](../data/schema.md) EDefStatus) |
 | `cl9.additem <alias\|번호> [수량]` | | 플레이어 전방에 아이템 실물 스폰 |
 | `cl9.addmonster <alias\|번호> [수량]` | | 전방 바닥에 몬스터 스폰 (AI 즉시 가동) |
-| `cl9.damage [양] [플레이어 번호]` | 기본 1 · 번호 생략 = 자기 | 캐릭터에 데미지 — 잡힘과 같은 OnDamage 경로(넘어짐·짐 흘림·죽음). 번호는 접속 순서(PlayerArray 인덱스, 호스트 0)라 리슨 호스트 콘솔에서 클라를 죽여 관전을 검증할 수 있다 (4a) |
+| `cl9.damage [양] [플레이어 번호]` | 기본 1 · 번호 생략 = 자기 | 캐릭터에 데미지 — 잡힘과 같은 OnDamage 경로(넘어짐·죽음 — 짐 흘림은 HP 0 일 때만, 2026-09-15). 번호는 접속 순서(PlayerArray 인덱스, 호스트 0)라 리슨 호스트 콘솔에서 클라를 죽여 관전을 검증할 수 있다 (4a) |
 | `cl9.day <N>` | 로비에서만 | 로비의 일차를 N으로 — 다음 `cl9.night`가 그 일차의 곡선으로 굴리고, 건너뛴 날의 주문 마감을 처리한 뒤(위약금) 제시를 다시 뽑는다 (4b 구현 · 4e 마감 처리, 구 bp_debug_day) |
 | `cl9.orders` | 로컬 읽기 | 로비 제시(번호·재료·보상·마감)와 수락한 주문(마감 일차) 출력 (4c) |
 | `cl9.pick <n> [m] …` | 로비에서만 | 제시 번호로 주문 확정 — 정확히 M개 (주문 선택 화면의 스탠드인, 4c) |

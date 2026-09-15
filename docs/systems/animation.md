@@ -189,7 +189,7 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
 |---|---|---|
 | 죽음 | HP 0 | 기본은 같은 메시의 죽는 모션 — 래그돌 등 다른 연출은 종별 선택 |
 | 경직 | `HitStunMs` / `PushStun` | 전용 애니메이션 필수 (plan/data/monster/common.md) — 타격 `HitReact` 0.3초 / 밀침 `PushReact` 0.8초 (2026-09-15) |
-| 잡힘·넘어짐 | CatchRadius 판정 · 캐릭터 `KnockdownTime` 1.5초 | 짐 흘림과 함께. 몬스터 `Catch` 0.8초, 캐릭터 `Knockdown` 0.5 → `Down` 루프 → `GetUp` 0.6 (2026-09-15) |
+| 잡힘·넘어짐 | CatchRadius 판정 · 캐릭터 `KnockdownTime` 1.5초 | 짐은 흘리지 않는다(죽을 때만, character.md). 몬스터 `Catch` 0.8초, 캐릭터 `Knockdown` 0.5 → `Down` 루프 → `GetUp` 0.6 (2026-09-15) |
 | 던지기 | 놓는 순간 판정 | `ThrowWindup` 루프(차징) → `Throw` 0.333초, 끝 = 기준 자세 (2026-09-15) |
 | 기상 예고 | `WakeTelegraph` 0.8s | 퍼덕임 + 울음 |
 | 거위 울음 예비 | `AlertWindup` 0.55s | |

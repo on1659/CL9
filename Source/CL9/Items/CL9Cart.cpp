@@ -246,6 +246,35 @@ bool ACL9Cart::HasLoadedItems() const
 	return Loaded.Num() > 0;
 }
 
+FVector ACL9Cart::GetCargoDropPoint(float ItemRadius) const
+{
+	// 상자 밑면이 짐칸 바닥과 맞게 소켓이 놓여 있다(cart.md CargoExtent) — 밑면에서 반지름만큼이 얹혀 멈출 높이다.
+	// 수레가 기울었을 때까지 따지지 않는다(넘어진 수레에 던져 넣는 것은 어차피 물리에 맡긴다) — 높이는 월드 Z로 잰다.
+	const FVector Center = CargoVolume->GetComponentLocation();
+	const float HalfHeight = CargoVolume->GetScaledBoxExtent().Z;
+	return FVector(Center.X, Center.Y, Center.Z - HalfHeight + FMath::Min(ItemRadius, HalfHeight));
+}
+
+bool ACL9Cart::GetCargoWallCrossing(const FVector& FromWorld, float& OutFraction, float& OutTopZ) const
+{
+	const FVector Center = CargoVolume->GetComponentLocation();
+	const FVector Extent = CargoVolume->GetScaledBoxExtent();
+	OutTopZ = Center.Z + Extent.Z;
+
+	// 상자 로컬 좌표(회전만 되돌린다 — 크기는 이미 GetScaledBoxExtent에 들어 있다). 가운데로 가는 직선 위의 점은
+	// 출발점의 로컬 좌표에 (1−비율)을 곱한 것이므로, 옆면에 닿는 비율은 "출발점이 반폭의 몇 배냐"로 바로 나온다.
+	const FVector Local = CargoVolume->GetComponentQuat().UnrotateVector(FromWorld - Center);
+	const double Reach = FMath::Max(
+		FMath::Abs(Local.X) / FMath::Max<double>(Extent.X, UE_KINDA_SMALL_NUMBER),
+		FMath::Abs(Local.Y) / FMath::Max<double>(Extent.Y, UE_KINDA_SMALL_NUMBER));
+	if (Reach <= 1.0)
+	{
+		return false;
+	}
+	OutFraction = static_cast<float>(1.0 - 1.0 / Reach);
+	return true;
+}
+
 void ACL9Cart::ReturnAllLoaded(ACL9GameState* GameState)
 {
 	if (!HasAuthority() || GameState == nullptr)
