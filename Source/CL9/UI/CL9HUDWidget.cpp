@@ -140,6 +140,8 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshItemLabel();
 	RefreshCookGauges();
 	RefreshCounter();
+	// 창구 재고는 남이 올려도 알림이 없다 — 주문 줄의 "올린 수"도 여기서 본다(바뀐 틱에만 다시 그린다)
+	PollCounterStock();
 	RefreshBuffs();
 	RefreshNightWarn(InDeltaTime);
 	// 비네트도 시간 함수다 — 잡힌 서버 시각에서 파생되므로 변경 이벤트가 없고 매 프레임 읽는다
@@ -669,29 +671,196 @@ void UCL9HUDWidget::RefreshOrders()
 	const UWorld* World = GetWorld();
 	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
 	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+	const TArray<FCL9AcceptedOrder>& Accepted = GameState->AcceptedOrders;
+
+	// 창구에 남아 있는 재고를 종류별로 센다 — "올린 수"의 출처는 이것뿐이다. 퀵슬롯이나 수레에 든 것은
+	// 세지 않는다: 정산도 창구 재고만 보기 때문에, 그것까지 세면 다 모은 것처럼 보이고 납품은 안 된다.
+	struct FStockLeft
+	{
+		FName Alias;
+		FName SubAlias;
+		int32 Count = 0;
+	};
+	TArray<FStockLeft> Left;
+	if (const ACL9Counter* Counter = FindDeliveryCounter())
+	{
+		for (const FCL9CounterItem& Entry : Counter->GetStock())
+		{
+			FStockLeft* Found = Left.FindByPredicate([&Entry](const FStockLeft& Line)
+			{
+				return Line.Alias == Entry.ItemAlias && Line.SubAlias == Entry.ItemSubAlias;
+			});
+			if (Found == nullptr)
+			{
+				Found = &Left.AddDefaulted_GetRef();
+				Found->Alias = Entry.ItemAlias;
+				Found->SubAlias = Entry.ItemSubAlias;
+			}
+			++Found->Count;
+		}
+	}
+
+	// 배정은 마감 오름차순 StableSort로 돈다 — 같은 재료를 두 주문이 노리면 마감이 급한 쪽이 먼저
+	// 가져간다(정산과 같다). 배정만 마감 순이고 줄의 표시 순서는 아래에서 AcceptedOrders 그대로다.
+	TArray<int32> ByDeadline;
+	for (int32 Index = 0; Index < Accepted.Num(); ++Index)
+	{
+		ByDeadline.Add(Index);
+	}
+	ByDeadline.StableSort([&Accepted](int32 A, int32 B)
+	{
+		return Accepted[A].DeadlineDay < Accepted[B].DeadlineDay;
+	});
+
+	// [주문][재료] = 창구에서 이 주문 몫으로 잡힌 수
+	TArray<TArray<int32>> Mine;
+	Mine.SetNum(Accepted.Num());
+	TArray<const UCL9OrderDef*> Orders;
+	Orders.SetNumZeroed(Accepted.Num());
+
+	auto FindLeft = [&Left](const FCL9ItemCount& Ingredient) -> FStockLeft*
+	{
+		return Left.FindByPredicate([&Ingredient](const FStockLeft& Line)
+		{
+			return Line.Alias == Ingredient.ItemAlias && Line.SubAlias == Ingredient.ItemSubAlias;
+		});
+	};
+
+	// ① **정산과 같은 단계** — 정산(ACL9GameMode::SettleOrdersAt)은 재료가 전부 있는 주문만 그 자리에서
+	//    통째로 소비하고, 하나라도 모자란 주문은 아무것도 가져가지 않는다(반쯤 낸 주문은 없다). 여기서도
+	//    그대로 한다. 부분 배정부터 하면 HUD가 거짓말을 한다: 익은 계란 1개가 남은 채 오믈렛(계란 3)과
+	//    계란후라이(계란 1)를 같은 마감으로 받으면 "오믈렛 1/3 · 계란후라이 0/1"로 보이지만, 다음 납품에서
+	//    정산은 오믈렛을 건너뛰고 그 계란을 계란후라이에 준다.
+	TArray<int32> Short;
+	for (int32 Index : ByDeadline)
+	{
+		const UCL9OrderDef* Order = (Registry != nullptr) ? Registry->FindOrder(Accepted[Index].OrderAlias) : nullptr;
+		Orders[Index] = Order;
+		if (Order == nullptr)
+		{
+			continue;
+		}
+		Mine[Index].SetNumZeroed(Order->Ingredients.Num());
+
+		bool bComplete = true;
+		for (const FCL9ItemCount& Ingredient : Order->Ingredients)
+		{
+			const FStockLeft* Found = FindLeft(Ingredient);
+			if (Found == nullptr || Found->Count < Ingredient.Count)
+			{
+				bComplete = false;
+				break;
+			}
+		}
+		if (!bComplete)
+		{
+			Short.Add(Index);
+			continue;
+		}
+
+		for (int32 Need = 0; Need < Order->Ingredients.Num(); ++Need)
+		{
+			const FCL9ItemCount& Ingredient = Order->Ingredients[Need];
+			Mine[Index][Need] = Ingredient.Count;
+			FindLeft(Ingredient)->Count -= Ingredient.Count;
+		}
+	}
+
+	// ② **미리보기 단계** — ①에서 다 못 채운 주문에만, 다시 마감 순으로(Short가 그 순서로 쌓였다) 남은
+	//    재고를 재료별 min(필요, 남은 수)로 나눠 준다. 정산에는 없는 단계다: 무엇을 얼마나 더 훔쳐 와야
+	//    하는지 보여주는 것이 이 줄의 일이라, 아직 못 채우는 주문에도 지금까지 모인 수를 보여준다. 완납
+	//    가능한 주문의 몫을 ①에서 먼저 떼어 낸 뒤에 나누므로, 다음 납품에 실제로 빠질 주문은 이미 n/n이다.
+	for (int32 Index : Short)
+	{
+		const UCL9OrderDef* Order = Orders[Index];
+		for (int32 Need = 0; Need < Order->Ingredients.Num(); ++Need)
+		{
+			const FCL9ItemCount& Ingredient = Order->Ingredients[Need];
+			FStockLeft* Found = FindLeft(Ingredient);
+			if (Found == nullptr)
+			{
+				continue;
+			}
+			Mine[Index][Need] = FMath::Min(Ingredient.Count, Found->Count);
+			Found->Count -= Mine[Index][Need];
+		}
+	}
 
 	TArray<FText> Lines;
-	for (const FCL9AcceptedOrder& Accepted : GameState->AcceptedOrders)
+	for (int32 Index = 0; Index < Accepted.Num(); ++Index)
 	{
-		const UCL9OrderDef* Order = (Registry != nullptr) ? Registry->FindOrder(Accepted.OrderAlias) : nullptr;
-		const FText Name = (Order != nullptr && !Order->DisplayName.IsEmpty()) ? Order->DisplayName : FText::FromName(Accepted.OrderAlias);
+		const FCL9AcceptedOrder& Entry = Accepted[Index];
+		const UCL9OrderDef* Order = (Registry != nullptr) ? Registry->FindOrder(Entry.OrderAlias) : nullptr;
+		const FText Name = (Order != nullptr && !Order->DisplayName.IsEmpty()) ? Order->DisplayName : FText::FromName(Entry.OrderAlias);
 		TArray<FText> Parts;
 		if (Order != nullptr)
 		{
-			for (const FCL9ItemCount& Ingredient : Order->Ingredients)
+			for (int32 Need = 0; Need < Order->Ingredients.Num(); ++Need)
 			{
+				const FCL9ItemCount& Ingredient = Order->Ingredients[Need];
 				const UCL9ItemDef* ItemDef = Registry->FindItem(Ingredient.ItemAlias, Ingredient.ItemSubAlias);
 				const FText ItemName = (ItemDef != nullptr && !ItemDef->DisplayName.IsEmpty()) ? ItemDef->DisplayName : FText::FromName(Ingredient.ItemAlias);
-				Parts.Add(FText::Format(LOCTABLE("CL9", "Hud.OrderIngredient"), ItemName, Ingredient.Count));
+				// 재료가 다 모이면 정산이 그 자리에서 소비하고 줄이 사라진다 — "완료" 표시는 따로 없다
+				Parts.Add(FText::Format(LOCTABLE("CL9", "Hud.OrderIngredientProgress"),
+					ItemName, Mine[Index].IsValidIndex(Need) ? Mine[Index][Need] : 0, Ingredient.Count));
 			}
 		}
 		// 보상은 수락할 때 굴려 확정된 값이다(2026-09-06 결정) — 카드의 범위가 아니라 실제로 받을 액수를 보여준다
 		Lines.Add(FText::Format(LOCTABLE("CL9", "Hud.OrderLine"),
-			Name, FText::Join(LOCTABLE("CL9", "Hud.OrderSep"), Parts), Accepted.DeadlineDay, Accepted.Reward));
+			Name, FText::Join(LOCTABLE("CL9", "Hud.OrderSep"), Parts), Entry.DeadlineDay, Entry.Reward));
 	}
 
 	OrdersText->SetText(FText::Join(FText::FromString(TEXT("\n")), Lines));
 	OrdersText->SetVisibility(Lines.Num() > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+}
+
+void UCL9HUDWidget::PollCounterStock()
+{
+	// 재고에는 OnRep이 없다 — 남이 올려도, 정산이 가져가도 알림이 오지 않는다. 그렇다고 매 틱 주문 줄을
+	// 다시 조립하면 바뀐 것이 없어도 SetText를 하게 되므로, 재고의 서명(항목 수 + 항목마다의 alias/sub)이
+	// 지난 틱과 다를 때만 다시 그린다. 값(Value)은 주문 줄에 쓰이지 않아 서명에 넣지 않는다.
+	const ACL9Counter* Counter = FindDeliveryCounter();
+	const int32 Num = (Counter != nullptr) ? Counter->GetStock().Num() : 0;
+
+	bool bChanged = Num != CounterStock.Num();
+	for (int32 Index = 0; !bChanged && Index < Num; ++Index)
+	{
+		const FCL9CounterItem& Entry = Counter->GetStock()[Index];
+		bChanged = Entry.ItemAlias != CounterStock[Index].ItemAlias || Entry.ItemSubAlias != CounterStock[Index].ItemSubAlias;
+	}
+	if (!bChanged)
+	{
+		return;
+	}
+
+	CounterStock.Reset(Num);
+	for (int32 Index = 0; Index < Num; ++Index)
+	{
+		CounterStock.Add(static_cast<const FCL9ItemRef&>(Counter->GetStock()[Index]));
+	}
+	RefreshOrders();
+}
+
+ACL9Counter* UCL9HUDWidget::FindDeliveryCounter()
+{
+	// 창구는 레벨에 하나다(BP_CL9Counter) — 한 번 찾아 들고 있는다. 클라에 아직 복제되지 않았거나
+	// 창구가 없는 레벨이면 nullptr가 돌아가고(재고를 빈 것으로 본다), 다음 틱에 다시 찾는다.
+	if (ACL9Counter* Cached = DeliveryCounter.Get())
+	{
+		return Cached;
+	}
+
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return nullptr;
+	}
+	for (TActorIterator<ACL9Counter> It(World); It; ++It)
+	{
+		DeliveryCounter = *It;
+		return *It;
+	}
+	return nullptr;
 }
 
 void UCL9HUDWidget::RefreshMoney()

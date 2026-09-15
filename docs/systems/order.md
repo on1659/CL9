@@ -62,7 +62,11 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
 
 - 주문서 선택 화면: N개 카드 중 M개 선택 (로비/정차 — `WBP_Main` 하위,
   [ui_system.md](ui_system.md))
-- 진행 중 주문: HUD에 남은 재료·마감 일수 표시 ([ui.md](ui.md))
+- 진행 중 주문: HUD 좌하단에 한 줄씩 — 재료마다 "창구에 올린 수/필요 수"와 마감 일수
+  ([ui.md](ui.md)). 올린 수는 창구 재고에서만 센다. 배정은 두 단계다: ① 아래 납품 판정과
+  똑같이 마감이 급한 주문부터 돌며 **재료를 전부 채울 수 있는 주문만** 통째로 가져가고,
+  ② 그러고도 남은 재고를 ①에서 못 채운 주문들에 다시 마감 순으로 `min(필요, 남은 수)`씩
+  나눠 진행도로 보여준다(②는 미리보기일 뿐 정산에는 없는 단계다)
 - 납품 결과: 창구 연출 + 이더 증가 표시
 
 ## 구현 상태 (4c 2026-09-05 · 4e 2026-09-06)
@@ -88,8 +92,11 @@ for (const FCL9ItemCount& Need : Order->Ingredients) {
   `GameState.AddIncome`으로 지급한다.
 - **위약금(4e)**: `ACL9GameMode::ExpireOrders` — 로비에서 날짜가 오른 직후, `DeadlineDay < CurrentDay`인
   주문을 지우고 `Reward × FailPenaltyRate`를 `GameState.Deduct`로 뺀다(잔액 하한 0 — 채무 없음).
-- **미구현**: 주문 선택 화면·HUD 진행 중 주문(UI 세션), 세이브.
-  주문을 안 골라도 밤은 시작된다(선택 화면 전까지 개발 편의).
+- **주문 선택 화면**: K3(2026-09-06) — 위 "UI" 절 참조. **HUD 진행 중 주문**: 2026-09-15 —
+  `UCL9HUDWidget::RefreshOrders`가 창구 재고를 정산과 같은 순서(마감 오름차순)로 배정해
+  재료마다 "올린 수/필요 수"를 쓴다.
+- **세이브**: 진행 중 주문은 판 세이브에 들어간다(`ACL9GameMode::SaveRun`/`RestoreRun` — [save.md](save.md)).
+- 주문을 안 골라도 밤은 시작된다 — 선택 화면이 있어도 막지 않는다(`StartNight`는 주문 수를 보지 않는다, 개발 편의).
 - 치트: `cl9.orders`(제시·수락 목록 + 확정 보상 + 자금), `cl9.pick <n> [m]`(번호로 확정),
   `cl9.money [양]`(자금 확인·지급·차감).
 

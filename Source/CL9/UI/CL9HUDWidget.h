@@ -9,6 +9,7 @@
 #include "CL9HUDWidget.generated.h"
 
 class ACL9Character;
+class ACL9Counter;
 class ACL9GameState;
 class ACL9Item;
 class ACL9Kitchen;
@@ -145,7 +146,7 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> HeadText;
 
-	/** 화면 좌하단: 수락한 주문들, 한 줄씩 — 이름 · 재료 · 마감일(docs/systems/order.md) */
+	/** 화면 좌하단: 수락한 주문들, 한 줄씩 — 이름 · 재료(올린 수/필요 수) · 마감일(docs/systems/order.md) */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> OrdersText;
 
@@ -263,7 +264,24 @@ private:
 	void RefreshCookGauges();
 
 	void RefreshHead();
+
+	/**
+	 * 수락한 주문 한 줄씩 — 재료는 "이름 올린 수/필요 수"다. 올린 수는 납품 창구의 재고에서만 나오고
+	 * (퀵슬롯·수레에 든 것은 세지 않는다 — 정산이 창구 재고만 보기 때문이다), 재고를 주문에 배정하는
+	 * 순서도 정산 `ACL9GameMode::SettleOrdersAt`과 같다: 마감이 급한 주문부터 가져간다. 줄의 표시
+	 * 순서는 `AcceptedOrders` 그대로다.
+	 */
 	void RefreshOrders();
+
+	/**
+	 * 창구 재고에는 변경 이벤트가 없다(남이 올려도 알림이 오지 않는다) — 매 틱 재고의 서명을 만들어
+	 * 지난 틱과 다를 때만 `RefreshOrders`를 부른다. 매 틱 `SetText`하지 않기 위한 것이다.
+	 */
+	void PollCounterStock();
+
+	/** 납품 창구를 찾아 캐시한다 — 레벨에 하나뿐이고, 아직 없으면(복제 전·창구 없는 레벨) nullptr를 주고 다음 틱에 다시 찾는다 */
+	ACL9Counter* FindDeliveryCounter();
+
 	void RefreshMoney();
 
 	/** 먹기 효과는 시각으로 만료되므로 변경 이벤트가 없다 — 스태미나와 같은 이유로 매 프레임 본다 */
@@ -299,6 +317,12 @@ private:
 
 	/** …또는 그 아래 행이 바뀔 때도(요리는 같은 액터 위에서 행을 바꿔치기한다) */
 	TWeakObjectPtr<const UCL9ItemDef> LabeledDef;
+
+	/** 주문 줄의 "올린 수"가 나오는 납품 창구 — 레벨에 하나다(BP_CL9Counter) */
+	TWeakObjectPtr<ACL9Counter> DeliveryCounter;
+
+	/** 마지막으로 주문 줄에 반영한 창구 재고의 서명 — 올린 순서대로의 alias+sub. 이것이 달라질 때만 줄을 다시 그린다 */
+	TArray<FCL9ItemRef> CounterStock;
 
 	/** 조리대 → 그 위에 띄운 게이지. 게이지는 CookLayer의 자식이라 소유는 캔버스가 한다 */
 	TMap<TWeakObjectPtr<ACL9Kitchen>, TWeakObjectPtr<UCL9CookGaugeWidget>> CookGauges;
