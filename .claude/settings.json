@@ -11,7 +11,37 @@
       "PowerShell(git log:*)",
       "PowerShell(git show:*)",
       "PowerShell(git branch:*)",
-      "mcp__unreal-mcp"
+      "mcp__unreal-mcp",
+      "Bash(py -3 .claude/hooks/cl9_lock.py:*)",
+      "Bash(py -3 .claude/hooks/render_roles.py:*)",
+      "Bash(py -3 .claude/hooks/cl9_audit.py:*)",
+      "Bash(py -3 -m unittest discover .claude/hooks:*)",
+      "PowerShell(py -3 .claude/hooks/cl9_lock.py:*)",
+      "PowerShell(py -3 .claude/hooks/render_roles.py:*)",
+      "PowerShell(py -3 .claude/hooks/cl9_audit.py:*)",
+      "PowerShell(py -3 -m unittest discover .claude/hooks:*)",
+      "Bash(py -3 .claude/hooks/cl9_status.py:*)",
+      "PowerShell(py -3 .claude/hooks/cl9_status.py:*)",
+      "Bash(py -3 Tools/Build/compile_check.py:*)",
+      "PowerShell(py -3 Tools/Build/compile_check.py:*)",
+      "Bash(py -3 .claude/hooks/cl9_run.py:*)",
+      "PowerShell(py -3 .claude/hooks/cl9_run.py:*)",
+      "Bash(py -3 Tools/Balance/check_inequalities.py:*)",
+      "PowerShell(py -3 Tools/Balance/check_inequalities.py:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|mcp__unreal-mcp__call_tool|mcp__blender-mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/cl9_scope_guard.py\"",
+            "timeout": 100
+          }
+        ]
+      }
     ]
   }
 }

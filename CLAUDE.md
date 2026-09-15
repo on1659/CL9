@@ -1,7 +1,8 @@
 # CL9 (UE 5.8)
 
-"양계장 습격" — 동물이 주인인 장소에서 재료를 훔쳐다 푸드트럭에서 요리해 파는 1~4인 협동
+CL9 — 동물이 주인인 장소에서 재료를 훔쳐다 푸드트럭에서 요리해 파는 1~4인 협동
 추출 게임의 Unreal Engine 5.8 네이티브 구현. 표적은 Steam 리슨 서버 협동 멀티.
+목적지는 여러 곳이고 양계장은 그중 하나다 — `docs/plan/data/site.md`.
 게임 기획은 `docs/plan/`, UE 설계는 `docs/conventions.md`+`docs/systems/`에 있다.
 프로젝트는 UE 5.8 1인칭 템플릿에서 생성됐고, 그 위에 CL9 게임 코드가 빌드 오더 순서대로
 올라가는 중이다 — 현재 어디까지 왔는지는 git log + `docs/plan/build-order.md`가 정본이다.
@@ -20,7 +21,9 @@
 | 무엇을 만드는가 (게임 기획) | [docs/plan/README.md](docs/plan/README.md) |
 | 게임 개요 | [docs/plan/overview.md](docs/plan/overview.md) |
 | UE 설계 규약 | [docs/conventions.md](docs/conventions.md) |
+| UE 시스템 설계 — 무엇을 어디서 고치나 (문자열·옵션·화면·치트…) | [docs/systems/README.md](docs/systems/README.md) |
 | 모델·애니메이션 제작 | [docs/asset/README.md](docs/asset/README.md) |
+| 세션 여러 개가 에디터·빌드·PIE를 나눠 쓰는 규약 (`/cl9`) | [docs/workflow/sessions.md](docs/workflow/sessions.md) |
 | 결정의 변경·번복 | [docs/decisions.md](docs/decisions.md) |
 
 ## 하지 말 것

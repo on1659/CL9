@@ -207,6 +207,7 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
 - [ ] 새 판정 로직을 만들 때: 액터의 자신 로직은 자신에서 (Monster.Die(), Item.OnPickup()), 게임 전체 진행은 GameMode에서만
 - [ ] 데이터를 읽을 때: 정적 표는 로컬 레지스트리(DefRegistry)로, 런타임 상태는 GameState로
 - [ ] 네트워크 테스트: 호스트 1명 + 클라 최소 1명으로 항상 검증
+- [ ] 새 기능을 만들 때: 플레이어가 바꿀 값인지 [plan/settings.md](plan/settings.md) 체크리스트로 판단 — 옵션이면 [systems/settings.md](systems/settings.md) "옵션 추가" 절대로. 어느 시스템 문서를 볼지는 [systems/README.md](systems/README.md)
 
 ---
 

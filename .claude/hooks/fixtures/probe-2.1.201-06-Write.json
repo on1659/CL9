@@ -1,0 +1,25 @@
+{
+ "note": "Claude Code 2.1.201 실제 훅 stdin(2026-09-13 프로브, 서브에이전트 cl9-probe). agent_type 이 레지스트리에 없으므로 가드는 deny. 필드 존재 검증이 목적.",
+ "expect": "deny",
+ "root_override": true,
+ "stdin": {
+  "session_id": "154043c7-e1b4-4e57-a1b7-ffeab715eb9b",
+  "transcript_path": "C:\\Users\\user\\.claude\\projects\\D--Work-unreal-CL9\\154043c7-e1b4-4e57-a1b7-ffeab715eb9b.jsonl",
+  "cwd": "D:\\Work\\unreal\\CL9",
+  "scratchpad_dir": "C:\\Users\\user\\AppData\\Local\\Temp\\claude\\D--Work-unreal-CL9\\154043c7-e1b4-4e57-a1b7-ffeab715eb9b\\scratchpad",
+  "prompt_id": "09bf9523-f206-4e9f-bc29-6b0a65cfb0eb",
+  "permission_mode": "bypassPermissions",
+  "agent_id": "a93d6696730003aed",
+  "agent_type": "cl9-probe",
+  "effort": {
+   "level": "xhigh"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+   "file_path": "D:\\Work\\unreal\\CL9\\.claude\\runs\\probe\\after-ask.txt",
+   "content": "6단계: `echo PROBE-ASK` 명령은 실행되지 않고 거부되었다.\n\n도구가 반환한 텍스트:\nPermission for this tool use was denied. The tool use was rejecte…(잘림)"
+  },
+  "tool_use_id": "toolu_01MpKaAbLRL5a7Wd44cUfRxz"
+ }
+}

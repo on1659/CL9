@@ -634,6 +634,218 @@ branches, are the isolation unit — and the post-run audit, not the hook, is th
    roles.
 6. Use on the next real multi-domain task; capture friction into TODOS.md.
 
+## Implementation record
+
+### Rollout 1 — probe + registry + loader + lock + hook + audit + tests (2026-09-13, session cl9 lead)
+
+**Built** (all under `.claude/`, 86 unit tests green via `py -3 -m unittest discover .claude/hooks`,
+one skipped = real-stdin fixtures pending the restart):
+- `.claude/cl9-roles.json` — six roles as in A; `lead_only_except: [Config/Localization/*]` added
+  because A gives ui `Config/Localization/*` while `Config/*` is lead-only (precedence: append_only >
+  lead_only(-except) > owns(-except) > shared(grant-gated needs a grant) > grants > outside).
+  Two paths the table did not place: `docs/plan/settings.md` → ui, `docs/plan/data/README.md` → docs.
+- `.claude/hooks/cl9_roles.py` — loader/matcher (fnmatchcase, `*` crosses `/`, braces/`**` rejected),
+  `to_rel` = realpath + normcase + commonpath, coverage/intersection helpers.
+- `.claude/hooks/cl9_lock.py` — G as specified: O_EXCL create → mkdir-mutex read-modify-write →
+  tmp + `os.replace` → re-read confirm (8-process race test: exactly one winner); process triple
+  via `OpenProcess/GetProcessTimes/QueryFullProcessImageName` (+ STILL_ACTIVE); `--pid` required for
+  build/commandlet; leases 30 min, exclusive 90/30 min; `--wait` capped 90 s; `release --force`
+  refused while the triple is alive; commandlet refuses while `UnrealEditor.exe`/`UnrealEditor-Cmd.exe`
+  are in `tasklist /FO CSV /NH` (Korean "정보:" line ignored by CSV-row parsing); `guard off|on`
+  (TTL 60 min); `status --nonce` marker; CLI without `--session` = hook-mediated — the hook
+  performs acquire/release from stdin `session_id` and leaves `hook-seen/last-lock-cmd.json`, which
+  the CLI checks (5 s) to say "훅이 처리함" vs "훅 비활성 — 재시작".
+- `.claude/hooks/cl9_scope_guard.py` — C as specified; extras: a role may write only its own
+  `.claude/runs/<slug>/report-<role>.md` inside `.claude/`; read-only list also has `rg`, `echo`,
+  `pwd`, `git rev-parse`; `find` with `-delete/-exec…` denied; roles may run `cl9_lock.py status`
+  only; `save`-named unreal tools are never denied; destructive-verb detection is per shell segment
+  and skips read-only programs (so `grep Build.bat docs/` passes); root is found by walking up from
+  stdin `cwd` to the registry (survives a lead that `cd`'d).
+- `.claude/hooks/cl9_audit.py` — baseline snapshot (porcelain, `baseline.patch`, mtime/sha1 of dirty
+  paths, copies of grant-gated docs) + delta audit (unclaimed = violation, reverted foreign dirt =
+  violation, `.claude/`/`Config/` delta and `guard.off` = violation) + `balance_diff_shape`
+  (numeric cell of an existing row only; renamed column / row key / new row / prose = violation).
+- `.gitignore` gets `.claude/runs/`. `settings.json` is **not** touched yet (user: after cl9-5b's
+  commits) — the exact merge is in `.claude/hooks/settings-merge.json`.
+
+**Probe 0 (success criterion 0), what could be verified without a restart:**
+- `py -3` → `C:\Windows\py.exe` → Python 3.9.13 (3.12 entry is the Store stub). Works from the Bash
+  tool (process chain python.exe ← py.exe ← bash.exe ← claude.exe).
+- **cp949 locale trap**: Python's pipe encoding is cp949 here — a hook printing Korean/`—` crashes
+  with UnicodeEncodeError and stdin with Korean mis-decodes. Rule for every hook/CLI: read
+  `sys.stdin.buffer` as UTF-8, write stdout JSON with `ensure_ascii=True`, `reconfigure(utf-8)` for
+  human output. Tests cover Korean in stdin and ASCII-only stdout.
+- **Agent definitions load with a delay on 2.1.201**: a new `.claude/agents/cl9-probe.md` was
+  "not found" for the rest of the turn in which it was created (also when copied to
+  `~/.claude/agents/`, and frontmatter `hooks:` added to an already-loaded agent were not
+  re-read on spawn) — it became available at the next user turn, ~30 min later. Rule: create
+  role files, then expect them from the next turn on; a restart is the sure path.
+- **Post-restart probe ran in-session (2026-09-13 00:23, subagent `cl9-probe`, 7 hook calls
+  captured to `.claude/hooks/fixtures/`)**:
+  - Hook shell = **Git Bash** (process chain python.exe ← py.exe ← bash.exe ← bash.exe ←
+    claude.exe; `SHELL=C:\Program Files\Git\bin\bash.exe`, `MSYSTEM=MINGW64`), cwd = the
+    project root, `CLAUDE_PROJECT_DIR=D:/Work/unreal/CL9` (forward slashes), plus
+    `CLAUDE_CODE_SESSION_ID`, `CLAUDE_PID`, `CLAUDE_EFFORT`, messaging socket/token in env.
+    `py -3` resolves there. Hook body time: 434 ms cold (first pyc), ~73 ms warm.
+  - stdin has `session_id` (**the parent session's id** — lock ownership by session works for
+    subagents as planned), `agent_id`, `agent_type: "cl9-probe"`, `permission_mode:
+    "bypassPermissions"`, `hook_event_name`, `tool_name`, `tool_input` (Write: file_path,
+    content · Edit: file_path, old_string, new_string, replace_all · Bash: command,
+    description), `cwd` with backslashes.
+  - `permissionDecision: "deny"` → the agent receives the reason verbatim as the tool error.
+  - `additionalContext` on an allow **reaches the model** as a system-reminder
+    ("PreToolUse:Bash hook additional context: …"); `systemMessage` does **not** (it is UI-only).
+  - `"ask"` under bypassPermissions **does surface a prompt** and blocked the agent for 16 min
+    until it was answered (denied). So `ask` is a stall, not a message channel. **Decision:**
+    lead internal-error polarity = `deny` for destructive verbs / StartPIE / StopPIE /
+    `cl9_lock.py` commands (the guard could not verify, so it blocks), `allow` +
+    `additionalContext` (the model sees the reason) + `guard-errors.log` for everything else.
+    Implemented in `lead_internal_error()`, tests updated.
+  - Under bypass mode every tool result carries a system-reminder telling the agent to prefer
+    Bash heredocs/sed over Write/Edit. A `cl9-*` role would then hit the shell allowlist (no
+    `>`/`sed -i`) and be denied — the rendered role bodies (rollout 4) must say explicitly
+    "파일 수정은 Edit/Write 도구로 — Bash 는 읽기 전용".
+- Docs (hooks.md, 2026-09-13): `ask` forces the prompt even in bypassPermissions when interactive
+  and degrades to allow when non-interactive; exit 0 + JSON is the decision channel, stderr never
+  reaches the model; Windows default hook shell is Git Bash when present, PowerShell otherwise,
+  `"shell"` selectable; `$CLAUDE_PROJECT_DIR` is the session's project root. Whether settings-file
+  hooks are file-watched on 2.1.201 is unverified — the rollout keeps the restart.
+- **Latency**: `py -3 -c pass` alone is ~80 ms on this box (launcher + interpreter + site with a
+  pywin32 .pth); the hook end-to-end is median ~115 ms via `py -3`, ~95 ms via the absolute
+  `python.exe`, ~79 ms with `-S`. The 100 ms budget is not reachable through the launcher; the
+  test budget is 150 ms. Switch the command to the absolute interpreter path if the 20 ms matter.
+- Tooling traps for the implementer: the Bash tool sends commands in cp949 (Korean literals in
+  heredocs corrupt) and unescapes `\\` in heredocs — write scripts with the Write tool; MSYS
+  converts `/FI`-style flags and `$$` is an MSYS pid, so tests spawn real Windows PIDs from Python.
+
+**Rollout 1 closed (2026-09-13 01:10)**: cl9-5b reported its commits done (HEAD 04fb84f) → hook +
+allowlist merged into the tracked `.claude/settings.json` → restart notice sent to the four live peers
+(cl9-37, cl9-2d, cl9-13, cl9-73; cl9-5b had already exited). Verified: the settings-file hook is
+**not** picked up by a running session on 2.1.201 (`status --nonce` still "비활성" after the edit) —
+the restart is required, as the rollout says.
+
+### Rollout 2 — protocol doc + `/cl9 role|status|handoff|commit` (2026-09-13, same session)
+
+- `docs/workflow/sessions.md` (Korean): component table, role summary table (registry is the source),
+  `#잠금` (lock rules, copy-paste build/PIE/commandlet blocks, "when blocked"), `#거부` (every deny
+  reason → what to do), brief + report examples, `/cl9` vs manual coexistence, commit convention,
+  handoff + resume prompt, runbooks (ghost editor, build failure → owning role, silent subagent,
+  stale lock, hook inactive, post-settings-change notice). `CLAUDE.md` gets a table row;
+  `memory/editor-kill-allowed.md` reduced to a pointer, `unreal-mcp-usage.md` gets a pointer line
+  (its MCP API quirks stay — they are not protocol).
+- `.claude/hooks/render_roles.py`: `--list`, `--print <role|alias>` (manual contract = agent body +
+  shared-resource block + announce line), `--write` (six `.claude/agents/cl9-*.md`, **not run yet** —
+  rollout 4), `--check` (rendered == committed, registry sha256 stamp). The body is the B-section
+  contract: owns/except/shared/grant-gated rendered from the registry, docs, must-NOT list, machine
+  quirks (incl. "파일 수정은 Edit/Write 도구로" against the bypass-mode Bash nudge), the seven report
+  headings, balance extras (표 행 · 검증(부등식), A4 미결).
+- `.claude/hooks/cl9_status.py`: lock/guard + runs of the last 48 h (state, roles, reports present,
+  denial count, flags, minutes since `touch-<role>`), guard-errors tail. Added to the allowlist.
+- `.claude/skills/cl9/SKILL.md`: usage, parsing rule (keyword + arity, else task), `role` (print
+  verbatim → adopt → `acquire editor` → announce to peers → manual run dir), `status` (nonce via
+  Bash first, then script, then ListAgents), `handoff`, `commit` (report file list only, user yes
+  only). `task`/`resume` print "롤아웃 4에서" and stop.
+- Tests: `test_render_roles.py` (paths verbatim, stamp, frontmatter without Agent/MCP tools, balance
+  sections, report order, write/check roundtrip, alias CLI, status script) → **95 tests green**.
+
+**Incident, 2026-09-13 01:35 (cl9-2d report)** — the hook command was the relative
+`py -3 .claude/hooks/cl9_scope_guard.py`; hooks run in the session shell's cwd, and cl9-2d's cwd was
+`Saved/Screenshots/WindowsEditor`, so Python exited with code 2 ("can't open file") — and **exit 2 is
+Claude Code's blocking code**, so every Bash/PowerShell call in that session was refused, including
+`cd`. Fix: `py -3 "$CLAUDE_PROJECT_DIR/.claude/hooks/cl9_scope_guard.py"` (hook shell is Git Bash,
+variable verified as `D:/Work/unreal/CL9`); reproduced from `Saved/` and covered by
+`test_cl9_scope_guard.Settings` (command must be absolute; relative script path → rc 2). Lesson
+recorded in the hook docstring: any hook launcher failure is a hard block, so the command line must
+not depend on cwd. Observation: cl9-2d's session picked up the corrected command **without a
+restart** — settings-file hooks are file-watched on 2.1.201 once a session has the hook loaded;
+this lead session (started before the hook existed) still reports 비활성, so a session without the
+hook does need the restart.
+
+### Rollout 3 — H probe: compile check with the editor open (2026-09-13 01:59–02:33, editor PID 10872 up throughout)
+
+**Verdict: positive, adopted.** `Build.bat CL9 Win64 Development -Project=… -WaitMutex` (the *game*
+target) compiles the same `Source/CL9` while `UnrealEditor.exe` stays open and MCP port 8000 keeps
+listening; it writes `Binaries/Win64/CL9.exe` (322 MB) + `Intermediate/Build/Win64/x64/CL9/` and never
+touches `UnrealEditor-CL9.dll`. Measured on this 16 GB box with the editor committing ~8 GB and the
+user's game/browser using ~3 GB more (free RAM 0.7–2 GB):
+
+| run | what | wall time |
+|---|---|---|
+| 1 | first game-target build (SharedPCH + module + link, 12 actions) | 10 min 02 s |
+| 2 | no change | 1 min 25 s |
+| 3 | one unity-member `.cpp` touched → whole `Module.CL9.cpp` recompiles | **20 min** — `cl.exe` sat at 1.7 s CPU for 9 min (paging), finished within 1 min once ~5 GB freed |
+| 4 | no change, via `Tools/Build/compile_check.py`, memory freed | 16 s |
+
+So the mechanism is sound and the cost is **memory, not the editor**: the same stall hit cl9-73's
+editor-target build at 01:24 (cl.exe 1.8 s CPU in 12 min, killed and retried, 20 min total). With
+≥ 3 GB free an incremental check is 1–3 min; below that it can crawl for tens of minutes. Adopted as
+follows:
+- `Tools/Build/compile_check.py` — takes the `compile` lock itself (session id from
+  `CLAUDE_CODE_SESSION_ID`, verified present in the Bash tool env), runs the game target in the
+  foreground (call with tool timeout 600000), kills the chain after `--timeout-min` (default 20),
+  prints a memory warning under 3 GB free, ends with `COMPILE OK|FAIL <s>` + up to 40 error lines,
+  logs to `.claude/runs/compile/`. Passes the role shell allowlist (`py -3 Tools/*.py`); added to the
+  settings allowlist. Not unit-tested (needs the engine) — validated end to end (run 4).
+- Role contracts (renderer) now say: after any C++ change run the check, paste the result line into
+  '빌드 필요 여부', and that it is a *syntax check* (`WITH_EDITOR=0`); the editor-target build stays
+  with the lead. `docs/workflow/sessions.md#잠금` gained a "컴파일 검사" block.
+- Blender is not on PATH here: contracts and the allowlist corpus use
+  `"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b Tools/Blender/<script>.py`.
+- Background-subagent permission stalls (the second half of H): a background `general-purpose`
+  agent on sonnet ran `py -3 -m unittest discover .claude/hooks` (97 tests, 18 s), `blender.exe -b
+  --version` and `py -3 Tools/Loc/sync_strings.py` under bypassPermissions with **no prompt and no
+  stall**. (Side effect to remember: `sync_strings.py` has no `--help` and runs the sync — harmless,
+  CL9.csv unchanged.)
+- Protocol observations from the same window, folded into `sessions.md`: cl9-73 took `acquire
+  compile` (30 min, no pid) for an editor-target build and the lock expired mid-build at 01:48 —
+  builds must use `acquire build --pid`; my own probe used `compile --pid` so liveness kept it.
+  Peers did use the lock unprompted (cl9-73 compile lock, a cl9-13/other editor lease), i.e. the
+  rollout-1 behavior change is in effect for restarted sessions.
+
+### Rollout 4 — dispatcher built, dry-runs pending (2026-09-13 02:40–03:20)
+
+- `.claude/agents/cl9-{gameplay,balance,ui,map,art,docs}.md` written by `render_roles.py --write`
+  (registry sha256 `22d5a0e9c7be498b`); `test_render_roles.test_committed_agents_match_registry`
+  fails if the registry changes without a re-render.
+- `.claude/hooks/cl9_run.py` — the lead's deterministic steps: `init` (slug + roles + grants.json,
+  TRIAGE), `overlap` (intra-run + cross-run grant intersections against every non-terminal run),
+  `dispatch` (refuses on overlap, snapshots the baseline, DISPATCHED), `state` (transition table;
+  `BUILDING` requires this session to hold the exclusive lock via `CLAUDE_CODE_SESSION_ID`),
+  `validate-report` (seven headings, +2 for balance, order checked), `audit` (delta vs baseline +
+  balance diff-shape → `audit.json`, flags.violations), `finish`, `show`, `latest --not-reported`.
+- `Tools/Balance/check_inequalities.py` — header-aware markdown table reader (`값`/`기본값`
+  column, `A / B / C | x / y / z` rows), A1 on unscaled ChaseSpeed, A2 on SightIn × DangerCurve
+  max (base also printed), A4 printed as `미결 — 식 없음`, monsters without a `CatchRadius` row
+  reported as 판정 불가 (goose). Current docs: 506.6 > 396/462, 3924 > 429/507 — all pass.
+- `Tools/Unreal/apply_table_rows.py` — parses `Asset.Row[/Sub].Column: old → new (unit)` from the
+  report's `## 표 행`, resolves `/Game/Data/<Asset>` (DefTable rows by Alias/SubAlias or a
+  standalone Def), coerces to the property's type, warns on old-value mismatch, never creates
+  rows/columns; `apply` saves and re-reads, `verify` compares assets to the report. Editor-side
+  via console `py` with `CL9_ROWS_REPORT`/`CL9_ROWS_APPLY` env, or headless under `acquire
+  commandlet`. Parser unit-checked; editor path not yet exercised.
+- `/cl9 task` and `/cl9 resume` in `SKILL.md`: intake → triage table → A/B/C/D → dispatch
+  (grants → overlap → init → briefs → dispatch → Agent per role, providers first) → integration
+  (validate → audit → requests re-stated → question loop → A/B/C → table rows → build under lock →
+  PIE → decisions → work-progress → finish) → report. `task` refuses to start when this session's
+  hook is inactive (the subagents' fence would be unenforced).
+- 109 unit tests green (`py -3 -m unittest discover .claude/hooks`).
+
+**Model policy addendum (user, 2026-09-13 03:40)**: planning (triage table) and review (report/audit
+judgment) run on **Fable** — inline when the lead session is Fable, otherwise as one foreground
+`general-purpose` subagent with `model: fable`; never both. Mechanical phases (lock, build wait, PIE,
+request relay) stay on the lead's model, so an Opus lead is the cheap default and Fable is spent only
+where the split can go wrong. Also added `--unattended` (밤샘): all questions and the full multi-run
+plan up front, one approval, then no prompts — mid-run questions defer that slice into
+`questions.md`, build failure gets one round-trip then ABORTED, PIE modal gets one WM_CLOSE retry,
+3 h/run and 8 h total caps, never commits, ends with `morning.md`. Multi-item tasks are split by the
+lead into roles and dependency-ordered runs — the user is never asked to pre-split.
+
+**Not done — needs a restarted session**: success criterion 2 (in-session hook checks), dry-run F
+("HUD 스태미나 바 색 문턱을 CL9Rules 컬럼으로": gameplay + ui + balance question path) and F2 (one A1
+operand, e.g. `raccoon.ChaseSpeed`, balance happy path with `apply_table_rows.py` and the PIE
+observable), the wall-time-vs-serial number, and spike I (Agent Teams). This lead session was
+started before the hook existed, so it cannot run F itself.
+
 ---
 
 ## Review Record — /autoplan 2026-09-12

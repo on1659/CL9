@@ -25,3 +25,6 @@ Content/DreamscapeSeries/
 # Blender backup files
 *.blend1
 __pycache__/
+
+# Claude Code 세션 조율 실행 산출물 (docs/goal/session-orchestration.md)
+.claude/runs/

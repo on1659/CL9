@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "doc": "docs/goal/session-orchestration.md A절 — 역할 레지스트리. 패턴 방언: 소문자·슬래시·저장소 상대 경로에 fnmatchcase, '*'는 '/'도 건넌다, 중괄호·'**' 금지, 폴더는 'a/b/*'. 로더 .claude/hooks/cl9_roles.py 가 유일한 해석기다.",
+  "defaults": { "model": "opus", "max_turns": 200, "default_mode": "C" },
+  "append_only": [ "docs/decisions.md" ],
+  "lead_only": [
+    "Config/*",
+    ".claude/*",
+    "CL9.uproject",
+    "Source/CL9/CL9.Build.cs",
+    "Source/CL9/CL9.h",
+    "Source/CL9/CL9.cpp",
+    "Content/Maps/*.umap",
+    "*.uasset",
+    "*.umap"
+  ],
+  "lead_only_except": [ "Config/Localization/*" ],
+  "grant_gated": [
+    "docs/plan/data/rules.md",
+    "docs/plan/data/progression.md",
+    "docs/plan/data/buff.md",
+    "docs/plan/data/equipment.md",
+    "docs/plan/data/order.md",
+    "docs/plan/data/item/*",
+    "docs/plan/data/monster/*"
+  ],
+  "aliases": {
+    "전투": "gameplay", "시스템": "gameplay", "게임플레이": "gameplay",
+    "유아이": "ui",
+    "맵": "map", "레벨": "map",
+    "아트": "art", "에셋": "art",
+    "문서": "docs",
+    "밸런스": "balance", "수치": "balance"
+  },
+  "roles": {
+    "gameplay": {
+      "title": "게임플레이 C++ + 데이터 표",
+      "owns": [
+        "Source/CL9/Character/*", "Source/CL9/Items/*", "Source/CL9/Monsters/*",
+        "Source/CL9/GameMode/*", "Source/CL9/Core/*", "Source/CL9/Data/*",
+        "docs/systems/character.md", "docs/systems/item.md", "docs/systems/inventory.md",
+        "docs/systems/monster.md", "docs/systems/cooking.md", "docs/systems/order.md",
+        "docs/systems/economy.md", "docs/systems/drop.md", "docs/systems/raiding.md",
+        "docs/systems/save.md", "docs/systems/session.md", "docs/systems/warning.md",
+        "docs/systems/cheats.md", "docs/systems/balance.md", "docs/systems/shop.md",
+        "docs/systems/sequence.md", "docs/systems/actor-base.md", "docs/systems/sound.md",
+        "docs/plan/data/sequence.md"
+      ],
+      "except": [
+        "Source/CL9/Data/CL9SiteDef.*", "Source/CL9/Data/CL9ModuleDef.*",
+        "Source/CL9/Data/CL9SegKindDef.*", "Source/CL9/Data/CL9PieceDef.*"
+      ],
+      "shared": [
+        "Source/CL9/UI/*",
+        "docs/plan/data/rules.md", "docs/plan/data/progression.md", "docs/plan/data/buff.md",
+        "docs/plan/data/equipment.md", "docs/plan/data/order.md",
+        "docs/plan/data/item/*", "docs/plan/data/monster/*"
+      ],
+      "note": "Source/CL9/UI/*는 게터 추가만. docs/plan/data 표는 열·enum·메커니즘·자리표시 기본값만 — 수치 셀은 balance가 정한다. balance.md는 코드가 값을 어떻게 읽는지만 적는 게임플레이 문서다.",
+      "docs": [
+        "docs/conventions.md", "docs/ue-cpp-conventions.md", "docs/plan/build-order.md",
+        "docs/systems/actor-base.md", "docs/systems/item.md", "docs/systems/inventory.md",
+        "docs/systems/monster.md", "docs/systems/cheats.md"
+      ],
+      "pie": [ "A", "B", "C", "D", "E", "H", "J", "K", "M", "N", "O", "P", "Q", "R" ],
+      "default_mode": "C"
+    },
+    "balance": {
+      "title": "밸런스 — docs/plan 이 정본, 표 수치를 정한다",
+      "owns": [ "docs/plan/economy.md" ],
+      "except": [],
+      "shared": [
+        "docs/plan/data/rules.md", "docs/plan/data/progression.md", "docs/plan/data/buff.md",
+        "docs/plan/data/equipment.md", "docs/plan/data/order.md",
+        "docs/plan/data/item/*", "docs/plan/data/monster/*",
+        "docs/plan/data/character.md", "docs/plan/data/site.md", "docs/plan/loop.md"
+      ],
+      "note": "기존 행의 수치 셀만 바꾼다(가격·무게·속도·감지·시간·개수) — 행 키·열 이름은 못 바꾼다. character.md는 몸 수치만, site.md는 부지별 기본 개수·밤 시계만, loop.md는 하루 길이·페이싱 수치만. Source/는 절대 안 만진다 — 새 메커니즘이 필요하면 gameplay에 요청. A4는 식이 없으니 '미결'로 둔다.",
+      "docs": [
+        "docs/plan/economy.md", "docs/plan/overview.md", "docs/plan/loop.md",
+        "docs/plan/data/README.md", "docs/plan/data/rules.md", "docs/plan/data/progression.md",
+        "docs/systems/balance.md", "docs/plan/build-order.md", "docs/reference/takeaways.md"
+      ],
+      "pie": [ "J", "K", "O", "P" ],
+      "default_mode": "A"
+    },
+    "ui": {
+      "title": "UI/UMG + 입력 + 문자열",
+      "owns": [
+        "Source/CL9/UI/*", "Content/Strings/*", "Config/Localization/*", "Tools/Loc/*",
+        "docs/systems/ui.md", "docs/systems/ui_system.md", "docs/systems/input.md",
+        "docs/systems/settings.md", "docs/systems/localization.md", "docs/plan/settings.md"
+      ],
+      "except": [],
+      "shared": [ "Source/CL9/GameMode/CL9PlayerController.*", "Source/CL9/Character/*" ],
+      "note": "PlayerController는 입력 바인딩만, Character는 입력 처리만. WBP·UITable 같은 .uasset은 요청으로 적는다.",
+      "docs": [
+        "docs/systems/ui.md", "docs/systems/ui_system.md", "docs/systems/input.md",
+        "docs/systems/settings.md", "docs/systems/localization.md",
+        "docs/review/ui-structure-2026-09-05.md", "docs/conventions.md"
+      ],
+      "pie": [ "F", "G", "I" ],
+      "default_mode": "C"
+    },
+    "map": {
+      "title": "맵/레벨 — World C++, 모듈·부지·구간 표, 맵 아트소스",
+      "owns": [
+        "Source/CL9/World/*",
+        "Source/CL9/Data/CL9SiteDef.*", "Source/CL9/Data/CL9ModuleDef.*",
+        "Source/CL9/Data/CL9SegKindDef.*", "Source/CL9/Data/CL9PieceDef.*",
+        "ArtSource/map/*",
+        "docs/systems/map.md", "docs/systems/light.md", "docs/systems/asset-swap.md",
+        "docs/plan/data/module.md", "docs/plan/data/site.md", "docs/plan/data/segkind.md"
+      ],
+      "except": [],
+      "shared": [ "Source/CL9/GameMode/CL9GameMode.*" ],
+      "note": "GameMode는 스폰·시드 훅만. .umap·ModuleTable 같은 .uasset은 요청으로 적는다.",
+      "docs": [
+        "docs/systems/map.md", "docs/systems/light.md", "docs/systems/asset-swap.md",
+        "docs/plan/data/module.md", "docs/plan/data/site.md", "docs/plan/data/segkind.md",
+        "docs/conventions.md"
+      ],
+      "pie": [ "L", "E" ],
+      "default_mode": "C"
+    },
+    "art": {
+      "title": "아트/에셋 — Blender 스크립트, 임포트 스크립트, 애니메이션",
+      "owns": [
+        "ArtSource/character/*", "ArtSource/item/*", "ArtSource/monster/*", "ArtSource/validation/*",
+        "Tools/Blender/*", "Tools/Unreal/*", "docs/asset/*",
+        "docs/systems/animation.md", "docs/plan/data/character.md"
+      ],
+      "except": [],
+      "shared": [ "Source/CL9/Data/CL9ItemDef.*", "Source/CL9/Data/CL9CharacterDef.*" ],
+      "note": "Def는 메시·애님 열만. Blender는 'blender -b Tools/Blender/<script>'로만(MCP 금지). ABP·머티리얼 같은 .uasset은 요청으로 적는다.",
+      "docs": [
+        "docs/asset/README.md", "docs/asset/workflow.md", "docs/asset/common.md",
+        "docs/systems/animation.md"
+      ],
+      "pie": [ "C" ],
+      "default_mode": "C"
+    },
+    "docs": {
+      "title": "문서 — 기획·규약·참고·리뷰·goal·테스트 시나리오",
+      "owns": [
+        "docs/plan/README.md", "docs/plan/overview.md", "docs/plan/loop.md", "docs/plan/build-order.md",
+        "docs/plan/data/README.md", "docs/conventions.md", "docs/ue-cpp-conventions.md",
+        "docs/reference/*", "docs/review/*", "docs/goal/*", "docs/testing/*",
+        "TODOS.md", "CLAUDE.md"
+      ],
+      "except": [],
+      "shared": [ "docs/systems/*" ],
+      "note": "systems 문서는 일관성 수정만 — 설계 변경은 소유 역할에 요청.",
+      "docs": [ "docs/plan/README.md", "docs/conventions.md", "docs/decisions.md" ],
+      "pie": [],
+      "default_mode": "A"
+    }
+  }
+}
