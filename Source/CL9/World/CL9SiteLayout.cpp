@@ -13,19 +13,9 @@ namespace
 
 	const FIntPoint SideDir[4] = {FIntPoint(0, 1), FIntPoint(1, 0), FIntPoint(0, -1), FIntPoint(-1, 0)};
 
-	/**
-	 * 이미 놓인 모듈끼리 맞닿았을 때 문을 뚫을 확률 — 여기서 고리(우회로)가 생긴다
-	 * (DunGen의 `DoorwayConnectionChance`에 해당). 0이면 순수한 나무 구조가 되어
-	 * 도망갈 길이 사라진다.
-	 */
-	constexpr float LoopChance = 0.25f;
-
-	/** 전체 모듈 중 본줄기가 차지하는 비율 — 나머지는 곁가지다 (리썰컴퍼니는 곁가지가 훨씬 많다) */
-	constexpr float MainPathShare = 0.4f;
-
-	/** 곁가지 단계에서 남은 예산을 나누는 비율 (REPO 타입 비율 N 31% · DE 25% · P 19%를 셋으로 정규화) */
-	constexpr float PassageShare = 0.28f;
-	constexpr float DeadEndShare = 0.32f;
+	// 고리 확률 · 본줄기 비율 · 통로/막다른 방 비율은 상수가 아니라 사이트 행의 컬럼이다
+	// (FCL9SiteParams::LoopChance · MainPathShare · PassageShare · DeadEndShare). 2026-09-15에
+	// 양계장이 작게 느껴지는 문제를 표 값으로 조정하려고 여기 있던 상수들을 끄집어냈다.
 
 	/** 이만큼 연달아 못 놓으면 격자가 꽉 찬 것으로 보고 판을 닫는다 */
 	constexpr int32 StallLimit = 48;
@@ -290,7 +280,7 @@ namespace
 	 * 리썰컴퍼니가 문틀을 3D 격자에 해시해서 얻는 성질이 여기서는 공짜로 성립한다.
 	 */
 	void OpenNeighbours(FCL9SiteLayout& Layout, int32 Floor, int32 ModuleIndex,
-		TArray<FFrontier>& Frontier, FRandomStream& Rng)
+		TArray<FFrontier>& Frontier, float LoopChance, FRandomStream& Rng)
 	{
 		const FCL9ModulePlacement Module = Layout.Modules[ModuleIndex];
 		ForEachBoundaryCell(Module, [&](FIntPoint Cell, int32 Side)
@@ -361,7 +351,7 @@ namespace
 	 */
 	bool PlaceAt(FCL9SiteLayout& Layout, int32 Floor, const FFrontier& Spot,
 		const TArray<const UCL9ModuleDef*>& Pool, bool bStairUp,
-		TArray<TArray<FFrontier>>& Frontiers, FRandomStream& Rng)
+		TArray<TArray<FFrontier>>& Frontiers, float LoopChance, FRandomStream& Rng)
 	{
 		if (Pool.Num() == 0)
 		{
@@ -377,11 +367,11 @@ namespace
 
 		const int32 Index = Occupy(Layout, *Chosen, Spot.Hops + 1, Floor, bStairUp);
 		SetEdge(Layout, Floor, Spot.Cell, Spot.Side, ECL9GridEdge::Door);
-		OpenNeighbours(Layout, Floor, Index, Frontiers[Floor], Rng);
+		OpenNeighbours(Layout, Floor, Index, Frontiers[Floor], LoopChance, Rng);
 		if (bStairUp)
 		{
 			// 위층 성장은 계단실의 위쪽 입구에서 시작한다 — 여기 말고는 올라올 길이 없다.
-			OpenNeighbours(Layout, Floor + 1, Index, Frontiers[Floor + 1], Rng);
+			OpenNeighbours(Layout, Floor + 1, Index, Frontiers[Floor + 1], LoopChance, Rng);
 		}
 		return true;
 	}
@@ -539,20 +529,20 @@ namespace
 			const int32 SpecialWant = FMath::Min(SpecialPool.Num(), Remaining);
 			Remaining -= SpecialWant;
 
-			WantPassage = FMath::RoundToInt(Remaining * PassageShare);
-			WantDeadEnd = FMath::RoundToInt(Remaining * DeadEndShare);
+			WantPassage = FMath::RoundToInt(Remaining * Params.PassageShare);
+			WantDeadEnd = FMath::RoundToInt(Remaining * Params.DeadEndShare);
 			WantNormal = FMath::Max(0, Remaining - WantPassage - WantDeadEnd);
 
 			TArray<const UCL9ModuleDef*> MainPool = Pools[static_cast<int32>(ECL9ModuleType::Passage)];
 			MainPool.Append(Pools[static_cast<int32>(ECL9ModuleType::Normal)]);
 
 			// ---- 1단계: 본줄기. 가장 깊은 자리만 이어 붙여서 한 줄기로 멀리 뻗는다.
-			const int32 MainCount = FMath::Min(Remaining, FMath::Max(2, FMath::RoundToInt(Params.ModuleCount * MainPathShare)));
+			const int32 MainCount = FMath::Min(Remaining, FMath::Max(2, FMath::RoundToInt(Params.ModuleCount * Params.MainPathShare)));
 			for (int32 Placed = 0; Placed < MainCount; ++Placed)
 			{
 				FFrontier Spot;
 				if (!TakeFrontier(Frontier, Layout, Floor, /*bDeepest*/ true, Rng, Spot)
-					|| !PlaceAt(Layout, Floor, Spot, MainPool, /*bStairUp*/ false, Frontiers, Rng))
+					|| !PlaceAt(Layout, Floor, Spot, MainPool, /*bStairUp*/ false, Frontiers, Params.LoopChance, Rng))
 				{
 					break;
 				}
@@ -573,7 +563,7 @@ namespace
 					{
 						break;
 					}
-					if (PlaceAt(Layout, Floor, Spot, One, /*bStairUp*/ false, Frontiers, Rng))
+					if (PlaceAt(Layout, Floor, Spot, One, /*bStairUp*/ false, Frontiers, Params.LoopChance, Rng))
 					{
 						break;
 					}
@@ -582,8 +572,8 @@ namespace
 		}
 		else
 		{
-			WantPassage = FMath::RoundToInt(Remaining * PassageShare);
-			WantDeadEnd = FMath::RoundToInt(Remaining * DeadEndShare);
+			WantPassage = FMath::RoundToInt(Remaining * Params.PassageShare);
+			WantDeadEnd = FMath::RoundToInt(Remaining * Params.DeadEndShare);
 			WantNormal = FMath::Max(0, Remaining - WantPassage - WantDeadEnd);
 		}
 
@@ -630,7 +620,7 @@ namespace
 				Quota = &WantDeadEnd;
 			}
 
-			if (PlaceAt(Layout, Floor, Spot, Pool, bStairUp, Frontiers, Rng))
+			if (PlaceAt(Layout, Floor, Spot, Pool, bStairUp, Frontiers, Params.LoopChance, Rng))
 			{
 				*Quota -= 1;
 				Stall = 0;
@@ -674,7 +664,7 @@ namespace
 	 * 무르기는 배치 직전의 칸·변·프론티어를 통째로 복사해 두었다가 되돌리는 방식이다 —
 	 * 격자가 22×22 정도라 복사 비용이 없다시피 하고, 되돌린 뒤의 상태가 정확하다.
 	 */
-	int32 SecureStairs(FCL9SiteLayout& Layout, int32 Floor, int32& UpperBudget,
+	int32 SecureStairs(FCL9SiteLayout& Layout, const FCL9SiteParams& Params, int32 Floor, int32& UpperBudget,
 		const TArray<const UCL9ModuleDef*>* Pools, TArray<TArray<FFrontier>>& Frontiers, FRandomStream& Rng)
 	{
 		const int32 Upper = Floor + 1;
@@ -741,7 +731,7 @@ namespace
 				{
 					continue;
 				}
-				if (PlaceAt(Layout, Upper, Spot, RoomPool, /*bStairUp*/ false, Frontiers, Rng))
+				if (PlaceAt(Layout, Upper, Spot, RoomPool, /*bStairUp*/ false, Frontiers, Params.LoopChance, Rng))
 				{
 					Region.Add(Layout.Modules.Num() - 1);
 					++Placed;
@@ -845,7 +835,7 @@ FCL9SiteLayout CL9SiteLayout::Generate(const FCL9SiteParams& Params, const TArra
 
 	TArray<TArray<FFrontier>> Frontiers;
 	Frontiers.SetNum(Layout.FloorCount);
-	OpenNeighbours(Layout, 0, StartIndex, Frontiers[0], Rng);
+	OpenNeighbours(Layout, 0, StartIndex, Frontiers[0], Params.LoopChance, Rng);
 
 	// ---- 층별 예산. **1층은 ModuleCount를 그대로 받고, 위층은 그 절반씩 덧붙는다**
 	//      (2026-09-10 사용자 결정). 층을 켠다고 1층이 좁아지지 않는다 — 2층을 켜는 게 곧
@@ -880,7 +870,7 @@ FCL9SiteLayout CL9SiteLayout::Generate(const FCL9SiteParams& Params, const TArra
 
 		// **계단마다 위층을 먼저 틔운다.** 자기 둘레에 방을 못 붙이는 계단은 되돌리므로,
 		// 살아남은 계단은 올라가면 반드시 갈 데가 있다. 하나도 못 살아남으면 위층은 없다.
-		if (SecureStairs(Layout, Floor, FloorBudget[Floor + 1], Pools, Frontiers, Rng) == 0)
+		if (SecureStairs(Layout, Params, Floor, FloorBudget[Floor + 1], Pools, Frontiers, Rng) == 0)
 		{
 			Layout.FloorCount = Floor + 1;
 			break;

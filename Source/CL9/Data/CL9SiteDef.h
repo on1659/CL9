@@ -161,6 +161,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
 	bool bBuildCeilings = true;
 
+	/**
+	 * 이미 놓인 모듈끼리 맞닿았을 때 문을 뚫을 확률 (0~1). 여기서 고리(우회로)가 생긴다 —
+	 * DunGen의 `DoorwayConnectionChance`에 해당한다. 0이면 순수한 나무 구조가 되어 도망갈
+	 * 길이 사라진다. (2026-09-15까지 생성기 상수 0.25였다.)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float LoopChance = 0.25f;
+
+	/**
+	 * 전체 모듈 중 본줄기(입구에서 가장 깊은 자리로 한 줄기로 뻗는 부분)가 차지하는 비율.
+	 * 나머지는 곁가지다 — 리썰컴퍼니는 곁가지가 훨씬 많다 (docs/plan/data/module.md 생성 알고리즘).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float MainPathShare = 0.4f;
+
+	/**
+	 * 곁가지 예산에서 통로(Passage — 복도·코너·계단 통로)가 차지하는 비율. DeadEndShare와
+	 * 합쳐 1을 넘지 않고, 둘을 뺀 나머지가 방(Normal)이다. 복도가 적어 방→문→방이 10m마다
+	 * 반복되면 이 값을 올린다 (2026-09-15 양계장 0.28 → 0.40 초안).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float PassageShare = 0.28f;
+
+	/** 곁가지 예산에서 막다른 방(DeadEnd)이 차지하는 비율 — 곁가지의 끝을 맺는 방이다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float DeadEndShare = 0.32f;
+
 	// -- 조명 (docs/systems/light.md). 어둠은 사이트의 성격이다 — 축사의 밤과 다른 목적지의
 	//    밤이 다르게 보인다. 값은 레벨 라이트에 곱하는 배율이라 레벨을 바꿔도 그대로 쓴다.
 

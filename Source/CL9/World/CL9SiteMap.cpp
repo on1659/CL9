@@ -294,6 +294,10 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	Params.StairCountMin = FMath::Max(1, Site.StairCountMin);
 	Params.StairCountMax = FMath::Max(Params.StairCountMin, Site.StairCountMax);
 	Params.bBuildCeilings = Site.bBuildCeilings;
+	Params.LoopChance = FMath::Clamp(Site.LoopChance, 0.f, 1.f);
+	Params.MainPathShare = FMath::Clamp(Site.MainPathShare, 0.f, 1.f);
+	Params.PassageShare = FMath::Clamp(Site.PassageShare, 0.f, 1.f);
+	Params.DeadEndShare = FMath::Clamp(Site.DeadEndShare, 0.f, 1.f - Params.PassageShare);
 
 	MeasurePieces(Site, Registry);
 

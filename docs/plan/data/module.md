@@ -58,12 +58,13 @@
 (asset-swap.md). 이 표가 정하는 건 "몇 칸짜리 방이고 어디가 뚫리나"까지다. 벽 두께는
 `barn` 조각의 얇은 축에서, 문 폭은 `door` 조각의 넓은 축에서 실측으로 온다.
 
-사이트 표(`UCL9SiteDef`) 쪽 맵 컬럼은 여덟이다 — `Generator` · `Theme`(모듈 표와 조각 표를
-함께 가리킨다) · `CellSize` · `BaseModuleCount` · `EntryOffset`, 그리고 2026-09-10에 층이
-돌아오면서 더한 `MaxFloors` · `StairCountMin` · `StairCountMax`. 옛 격자 컬럼 열세 개가
-앞의 다섯으로 줄었다.
+사이트 표(`UCL9SiteDef`) 쪽 맵 컬럼은 열둘이다 — `Generator` · `Theme`(모듈 표와 조각 표를
+함께 가리킨다) · `CellSize` · `BaseModuleCount` · `EntryOffset`, 2026-09-10에 층이
+돌아오면서 더한 `MaxFloors` · `StairCountMin` · `StairCountMax`, 그리고 2026-09-15에 생성기
+상수에서 끄집어낸 `LoopChance` · `MainPathShare` · `PassageShare` · `DeadEndShare`
+([site.md](site.md)). 옛 격자 컬럼 열세 개가 앞의 다섯으로 줄었다가 배치 비율 넷이 표로 올라왔다.
 
-## 양계장 모듈 17종 (1스테이지)
+## 양계장 모듈 19종 (1스테이지)
 
 REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 
@@ -86,6 +87,15 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 | 15 | `delivery` | Special | 2×2 | 반납 항아리 방 | 항아리 |
 | 16 | `kitchen` | Special | 2×3 | 조리대 방 | 조리대 · 냄비 · 선반 |
 | 17 | `stair_up` | Stair | 2×2 | 위층으로 올라가는 계단실 (2026-09-10) | 난간 · 자루 |
+| 18 | `corridor_3` | Passage | 1×3 | 곧은 긴 복도 (2026-09-15) | 〃 (아직 비움) |
+| 19 | `corridor_4` | Passage | 1×4 | 곧은 더 긴 복도 (2026-09-15) | 〃 (아직 비움) |
+
+**복도 행을 둘 더한 이유 (2026-09-15).** 복도가 1×2 하나뿐이라 직선 구간이 10 m를 못 넘고,
+시드 873 실측에서는 양옆이 벽인 복도 칸이 1층에 3개뿐이라 방→개구부→방이 10 m마다 반복됐다
+(리썰컴퍼니 직선 복도 타일은 28.5 u). 1×3 · 1×4로 직선 구간을 15~20 m까지 늘린다. 소켓은 짧은
+변 둘(N · S), Rarity는 `corridor` 2 · `corridor_3` 2 · `corridor_4` 1(초안). 소품 세트는 비워
+둔다 — 1×2 세트의 로컬 좌표를 그대로 못 쓴다(후속). 곁가지에서 통로가 뽑히는 비중은 사이트
+행의 `PassageShare`(양계장 0.40 초안)가 정한다.
 
 **소품은 이미 보유하고 있다** — Dreamscape Farmlands의 `Meshes/Props/Interior`(58) ·
 `Exterior`(84), 총 142종. 양계장에 필요한 게 거의 다 있다.
@@ -99,7 +109,9 @@ seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"�
 2. **본줄기**를 뻗는다 — 열린 소켓 하나를 골라, 맞는 타입(`Passage`/`Normal`)의 모듈을
    빈 칸에 놓는다. 칸 점유 검사로 겹침을 막는다.
 3. **곁가지**를 쳐서 `DeadEnd`로 끝낸다. 리썰컴퍼니는 **본줄기 8~22개에 가지 22~25개** —
-   지나는 곳 대부분이 막다른 곁가지다. 그 비율을 참고한다.
+   지나는 곳 대부분이 막다른 곁가지다. 그 비율을 참고한다. 본줄기 비율 · 통로/막다른 방 비율 ·
+   고리 확률은 사이트 행의 컬럼이다(`MainPathShare` · `PassageShare` · `DeadEndShare` ·
+   `LoopChance`, 2026-09-15 — 그전에는 생성기 상수였다).
 4. **`Special` 모듈**(납품·조리대)을 필요한 수만큼 배치.
 5. **안 쓴 소켓을 벽으로 막는다.**
 6. **모듈마다 소품 세트를 하나 뽑아 깐다.**

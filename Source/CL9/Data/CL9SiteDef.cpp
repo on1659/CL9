@@ -82,5 +82,14 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 			// 층이 둘 이상인데 계단이 없으면 위층으로 올라갈 길이 없다.
 			OutErrors.Add(TEXT("StairCountMin must be at least 1 and no greater than StairCountMax when MaxFloors > 1."));
 		}
+		if (LoopChance < 0.f || LoopChance > 1.f || MainPathShare < 0.f || MainPathShare > 1.f)
+		{
+			OutErrors.Add(TEXT("LoopChance and MainPathShare must be between 0 and 1."));
+		}
+		if (PassageShare < 0.f || DeadEndShare < 0.f || PassageShare + DeadEndShare > 1.f)
+		{
+			// 둘의 합이 1을 넘으면 방(Normal) 몫이 음수가 되어 곁가지에 방이 하나도 안 선다.
+			OutErrors.Add(TEXT("PassageShare and DeadEndShare must be non-negative and sum to at most 1 — the rest is the Normal share."));
+		}
 	}
 }

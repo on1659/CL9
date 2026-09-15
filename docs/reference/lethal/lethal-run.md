@@ -246,7 +246,10 @@ XP는 `SetPlayerLevel(isDead, mostProfitable, allPlayersDead)`가 계산한다. 
 
 ### 이동
 
-기본 속도는 `movementSpeed = 0.5f`이고, 실제 속도는 무게로 나누는 데서 출발한다.
+기본 속도는 코드 필드 초기값이 `movementSpeed = 0.5f`이지만, **플레이어 프리팹에 직렬화된
+실값은 4.6이다** (2026-09-15 에셋 실측 — `sharedassets3.assets`의 프리팹 원본과 `level3`의
+인스턴스 4개가 전부 4.6, `climbSpeed`도 코드 4f가 아니라 3.0). 1 유닛 = 1 m라 걷기 약 4.6 m/s,
+질주는 여기에 아래 `sprintMultiplier`(최대 2.25)가 곱해진다. 실제 속도는 무게로 나누는 데서 출발한다.
 
 ```csharp
 float speed = movementSpeed / carryWeight;

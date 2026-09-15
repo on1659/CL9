@@ -73,6 +73,22 @@ struct FCL9SiteParams
 	bool bBuildCeilings = true;
 
 	/**
+	 * 이미 놓인 모듈끼리 맞닿았을 때 문을 뚫을 확률 (UCL9SiteDef::LoopChance) — 여기서
+	 * 고리(우회로)가 생긴다 (DunGen의 `DoorwayConnectionChance`). 0이면 순수한 나무 구조다.
+	 */
+	float LoopChance = 0.25f;
+
+	/** 전체 모듈 중 본줄기가 차지하는 비율 (UCL9SiteDef::MainPathShare) — 나머지는 곁가지다 */
+	float MainPathShare = 0.4f;
+
+	/**
+	 * 곁가지 예산 중 통로(Passage)·막다른 방(DeadEnd)의 비율 (UCL9SiteDef::PassageShare ·
+	 * DeadEndShare) — 둘을 뺀 나머지가 방(Normal)이다.
+	 */
+	float PassageShare = 0.28f;
+	float DeadEndShare = 0.32f;
+
+	/**
 	 * 한 층의 높이 (cm) — 아래층 바닥에서 위층 바닥까지다. 모듈 천장 높이에
 	 * 천장 판과 바닥 판의 두께를 더한 값이고, 표가 아니라 ACL9SiteMap이 조각
 	 * 실측으로 채워 준다 (docs/systems/asset-swap.md).
