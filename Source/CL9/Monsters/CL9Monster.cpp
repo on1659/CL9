@@ -91,6 +91,8 @@ void ACL9Monster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ACL9Monster, State);
 	DOREPLIFETIME(ACL9Monster, Hp);
 	DOREPLIFETIME(ACL9Monster, DetectGauge);
+	DOREPLIFETIME(ACL9Monster, StateStartServerTime);
+	DOREPLIFETIME(ACL9Monster, bPushStun);
 }
 
 void ACL9Monster::LoadData()
@@ -415,6 +417,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			// EnterState를 거치지 않고 곧장 추격으로 돌아간다 — 예산과 놓침
 			// 타이머는 계속 흘러가며, 잡기는 이 값들을 다시 채워 주지 않는다.
 			State = ECL9MonsterState::Chase;
+			StateStartServerTime = GetServerTime();
 			ChaseRepathRemaining = 0.f;
 			ApplyState();
 		}
@@ -533,6 +536,7 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 {
 	PathPoints.Reset();
 	State = NewState;
+	StateStartServerTime = GetServerTime();
 
 	switch (NewState)
 	{
@@ -723,6 +727,7 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 	}
 	KnockbackRemaining = 0.f;
 	StunRemaining = MonsterDef->HitStunMs / 1000.f;
+	bPushStun = false;
 	EnterState(ECL9MonsterState::Stun);
 }
 
@@ -753,6 +758,7 @@ void ACL9Monster::OnShove(AActor* Shover)
 		DetectGauge = 1.f;
 	}
 	StunRemaining = MonsterDef->PushStun;
+	bPushStun = true;
 	EnterState(ECL9MonsterState::Stun);
 }
 
@@ -968,6 +974,18 @@ bool ACL9Monster::IsHeldByGaze() const
 void ACL9Monster::OnRep_State()
 {
 	ApplyState();
+}
+
+float ACL9Monster::GetStateElapsed() const
+{
+	// 클라의 서버 시각 추정이 조금 앞설 수 있어 0 아래로 내려가지 않게
+	return FMath::Max(0.f, GetServerTime() - StateStartServerTime);
+}
+
+float ACL9Monster::GetServerTime() const
+{
+	const AGameStateBase* GameState = GetWorld()->GetGameState();
+	return GameState ? GameState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
 }
 
 void ACL9Monster::ApplyState()

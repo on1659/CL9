@@ -87,6 +87,20 @@ public:
 		return DisplaySpeed;
 	}
 
+	/**
+	 * 지금 상태에 들어온 뒤 지난 초 — 원샷 애님(Catch·HitReact·PushReact·WakeTelegraph·Death)을 시퀀스 평가기로 트는 원천이라
+	 * 늦게 들어온 클라도 같은 프레임을 본다 (docs/systems/animation.md 몬스터 원샷). 모든 머신에서 유효하다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetStateElapsed() const;
+
+	/** 지금 경직이 밀침(프라이팬 — 행 `PushStun`)인가 — AnimBP 가 HitReact 대신 PushReact 를 고른다 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool IsPushStun() const
+	{
+		return bPushStun;
+	}
+
 	/** 호스트 전용(docs/systems/monster.md): HP 감소, HitStun 경직, 경보를 동반한 죽음 */
 	virtual void OnDamage(int32 Amount, AActor* Source) override;
 
@@ -168,6 +182,9 @@ private:
 	/** 모든 머신에서 일어나는, 상태 변화의 표현 측 부수 효과 */
 	void ApplyState();
 
+	/** 게임 상태의 서버 시각 — 캐릭터와 같은 시계(ACL9Character::GetServerTime) */
+	float GetServerTime() const;
+
 	// -- 컴포넌트 --
 
 	/** 몸통 구체 — 루트 컴포넌트이며 반지름은 행이 정한 판정값이다. 벽은 막고, 몸체끼리는 겹쳐 지나간다 */
@@ -193,6 +210,14 @@ private:
 	/** 감지 게이지 0..1 — 나중에 표현 단계에서 예고할 수 있도록 복제해 둔다 */
 	UPROPERTY(Replicated)
 	float DetectGauge = 0.f;
+
+	/** 지금 상태에 들어온 서버 시각 — GetStateElapsed의 원천. 호스트가 상태를 바꿀 때마다 찍는다 */
+	UPROPERTY(Replicated)
+	float StateStartServerTime = 0.f;
+
+	/** 지금 Stun 이 밀침(OnShove)인가, 타격(OnDamage)인가 — 경직 클립 선택용 */
+	UPROPERTY(Replicated)
+	bool bPushStun = false;
 
 	// -- 호스트 전용 이동/AI 상태 --
 

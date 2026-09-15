@@ -284,7 +284,9 @@
       "loop": false,
       "reference_speed_cm_s": 0,
       "root_motion": false,
-      "stance_samples": []
+      "stance_samples": [],
+      "sha256": "317ca3d38896ec988dbe81ebcce4b518c2b244f3932d56b014eb80d8778b9302",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     },
     "WakeTelegraph": {
       "action": "AN_Goose_WakeTelegraph",
@@ -350,6 +352,21 @@
       "reference_speed_cm_s": 0,
       "root_motion": false,
       "stance_samples": []
+    },
+    "PushReact": {
+      "action": "AN_Goose_PushReact",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": [],
+      "sha256": "889510deeccd764b2473ab0034ef75bfa78ccff19c909fb58a350ef1ff550e7c",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     }
   }
 }

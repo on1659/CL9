@@ -21,3 +21,5 @@
 걷기126cm/s, 달리기528cm/s. 전 프레임 바닥 관통 없음, root 고정, 5루프 경계 일치.
 UE 메시/10클립/재질 임포트와 길이 확인. AlertWindup 0.55초 보존.
 UE 발 위치와 Blender 차이 <0.000055cm. 실제 AnimBP·2인 PIE/LOD와 이동 영상·손전등은 미완료.
+
+2026-09-15 반응 클립 재작업(animate_creature_reacts.py, [README](README.md) 표): HitReact 0.3초 — 목이 S 자로 움츠러들며(neck −0.45/+0.25/−0.35rad) 부리 0.45·날개 0.8, 머리 두 번 흔들림 뒤 복귀; **PushReact 0.8초 신설** — 젖혀져 붕 뜸(몸 −16cm·+10cm, 피치 −0.5rad, 목 젖힘) → 착지 → 발 허우적(±10cm) → 복귀. Catch 는 잡지 않는 종이라 만들지 않는다(Honk 그대로). 바닥 최저점 +1.2cm.

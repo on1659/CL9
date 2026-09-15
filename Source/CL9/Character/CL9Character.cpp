@@ -128,6 +128,9 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, SwingWindupServerTime);
 	DOREPLIFETIME(ACL9Character, EatStartServerTime);
 	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
+	DOREPLIFETIME(ACL9Character, KnockdownStartServerTime);
+	DOREPLIFETIME(ACL9Character, ThrowChargeStartTime);
+	DOREPLIFETIME(ACL9Character, ThrowServerTime);
 	DOREPLIFETIME(ACL9Character, WornItem);
 	DOREPLIFETIME(ACL9Character, ActiveEffects);
 }
@@ -748,6 +751,7 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 	// 값은 판정에 절대 들어가지 않는다 (docs/systems/input.md 던지기 차징).
 	const float Charge = FMath::Clamp((GetServerTime() - ThrowChargeStartTime) / Rules->ThrowChargeTime, 0.f, 1.f);
 	ThrowChargeStartTime = -1.f;
+	ThrowServerTime = GetServerTime();
 	const float Speed = FMath::Lerp(Rules->ThrowMinSpeed, Rules->ThrowMaxSpeed, Charge);
 
 	const FVector Direction = GetControlRotation().Vector();
@@ -1117,6 +1121,31 @@ float ACL9Character::GetEatElapsed() const
 	return GetServerTime() - EatStartServerTime;
 }
 
+float ACL9Character::GetKnockdownElapsed() const
+{
+	return IsKnockedDown() ? FMath::Max(0.f, GetServerTime() - KnockdownStartServerTime) : -1.f;
+}
+
+float ACL9Character::GetKnockdownRemaining() const
+{
+	return IsKnockedDown() ? KnockdownEndServerTime - GetServerTime() : -1.f;
+}
+
+float ACL9Character::GetThrowWindupElapsed() const
+{
+	// 소유자는 키를 누른 로컬 시각으로 즉시 대기 자세에 들어간다(게이지와 같은 원천); 남은 복제된 호스트 시각을 읽는다
+	if (IsLocallyControlled() && LocalThrowChargeStartTime >= 0.f)
+	{
+		return FMath::Max(0.f, GetWorld()->GetTimeSeconds() - LocalThrowChargeStartTime);
+	}
+	return ThrowChargeStartTime < 0.f ? -1.f : FMath::Max(0.f, GetServerTime() - ThrowChargeStartTime);
+}
+
+float ACL9Character::GetThrowElapsed() const
+{
+	return GetServerTime() - ThrowServerTime;
+}
+
 float ACL9Character::GetAimPitch() const
 {
 	// 전신 ABP(ABP_Unarmed) 전용 — 1인칭 팔은 카메라 자식이라 시선을 저절로 따르므로 이 값을 쓰지 않는다(2026-09-13).
@@ -1247,7 +1276,8 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 	const float Duration = CL9PlayerState->Hp > 0
 		? (CharacterDef ? CharacterDef->KnockdownTime : 1.5f)
 		: TNumericLimits<float>::Max();
-	KnockdownEndServerTime = GetServerTime() + Duration;
+	KnockdownStartServerTime = GetServerTime();
+	KnockdownEndServerTime = KnockdownStartServerTime + Duration;
 
 	UE_LOG(LogCL9, Log, TEXT("'%s' caught by '%s': -%d HP → %d%s"),
 		*GetNameSafe(this), *GetNameSafe(Source), Amount, CL9PlayerState->Hp,

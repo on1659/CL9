@@ -464,7 +464,9 @@
       "loop": false,
       "reference_speed_cm_s": 0,
       "root_motion": false,
-      "stance_samples": []
+      "stance_samples": [],
+      "sha256": "0cd2f61cef25f9bf826021ce1c0f5dd1cbac700dfe838c23a88fd3218b2cad68",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     },
     "WakeTelegraph": {
       "action": "AN_Sheep_WakeTelegraph",
@@ -481,16 +483,18 @@
     },
     "Catch": {
       "action": "AN_Sheep_Catch",
-      "duration_seconds": 0.6,
+      "duration_seconds": 0.8,
       "frames": [
         1,
-        19
+        25
       ],
       "fps": 30,
       "loop": false,
       "reference_speed_cm_s": 0,
       "root_motion": false,
-      "stance_samples": []
+      "stance_samples": [],
+      "sha256": "2b8450bbc42c3301f2b09dbd4738dab3397f72b4b9df52c357a1173a65461095",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     },
     "Death": {
       "action": "AN_Sheep_Death",
@@ -504,6 +508,21 @@
       "reference_speed_cm_s": 0,
       "root_motion": false,
       "stance_samples": []
+    },
+    "PushReact": {
+      "action": "AN_Sheep_PushReact",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": [],
+      "sha256": "878c9fd3281dfb48ddf8a066befbdaee42a83c2f52d10c343b31a60e58de7b0b",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     }
   }
 }

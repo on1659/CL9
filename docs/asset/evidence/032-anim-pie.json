@@ -1,0 +1,613 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-14T17:29:52.637655+00:00",
+  "level": "/Game/Maps/UEDPIE_0_Lvl_Flat.Lvl_Flat",
+  "status": "done",
+  "phases": {
+    "knockdown": [
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          83.5
+        ],
+        "head": [
+          -45.2,
+          0.0,
+          130.2
+        ],
+        "hand_r": [
+          14.1,
+          40.4,
+          103.3
+        ],
+        "foot_l": [
+          52.3,
+          -14.0,
+          13.2
+        ],
+        "KnockdownElapsed": 0.333,
+        "KnockdownRemaining": 1.167,
+        "ThrowElapsed": 1050.333,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -3.7,
+          16.4,
+          -3.2
+        ],
+        "arms_KnockdownElapsed": 0.333,
+        "arms_ThrowElapsed": 1050.333,
+        "knocked": true,
+        "t": 0.33
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          18.2
+        ],
+        "head": [
+          -64.4,
+          0.0,
+          15.5
+        ],
+        "hand_r": [
+          -8.4,
+          58.3,
+          15.9
+        ],
+        "foot_l": [
+          64.1,
+          -14.3,
+          25.6
+        ],
+        "KnockdownElapsed": 0.667,
+        "KnockdownRemaining": 0.833,
+        "ThrowElapsed": 1050.667,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -49.1,
+          26.0,
+          -5.4
+        ],
+        "arms_KnockdownElapsed": 0.667,
+        "arms_ThrowElapsed": 1050.667,
+        "knocked": true,
+        "t": 0.67
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          31.7
+        ],
+        "head": [
+          -61.0,
+          0.0,
+          53.1
+        ],
+        "hand_r": [
+          -11.5,
+          56.3,
+          27.4
+        ],
+        "foot_l": [
+          61.0,
+          -14.4,
+          27.0
+        ],
+        "KnockdownElapsed": 1.0,
+        "KnockdownRemaining": 0.5,
+        "ThrowElapsed": 1051.0,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -14.3,
+          19.3,
+          -14.3
+        ],
+        "arms_KnockdownElapsed": 1.0,
+        "arms_ThrowElapsed": 1051.0,
+        "knocked": true,
+        "t": 1.0
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          31.7
+        ],
+        "head": [
+          -61.0,
+          0.0,
+          53.1
+        ],
+        "hand_r": [
+          -11.5,
+          56.3,
+          27.4
+        ],
+        "foot_l": [
+          61.0,
+          -14.4,
+          27.0
+        ],
+        "KnockdownElapsed": 1.0,
+        "KnockdownRemaining": 0.5,
+        "ThrowElapsed": 1051.0,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -14.3,
+          19.3,
+          -14.3
+        ],
+        "arms_KnockdownElapsed": 1.0,
+        "arms_ThrowElapsed": 1051.0,
+        "knocked": true,
+        "t": 1.0
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          31.7
+        ],
+        "head": [
+          -61.0,
+          0.0,
+          53.1
+        ],
+        "hand_r": [
+          -11.5,
+          56.3,
+          27.4
+        ],
+        "foot_l": [
+          61.0,
+          -14.4,
+          27.0
+        ],
+        "KnockdownElapsed": 1.0,
+        "KnockdownRemaining": 0.5,
+        "ThrowElapsed": 1051.0,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -14.3,
+          19.3,
+          -14.3
+        ],
+        "arms_KnockdownElapsed": 1.0,
+        "arms_ThrowElapsed": 1051.0,
+        "knocked": true,
+        "t": 1.0
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          31.7
+        ],
+        "head": [
+          -61.0,
+          0.0,
+          53.1
+        ],
+        "hand_r": [
+          -11.5,
+          56.3,
+          27.4
+        ],
+        "foot_l": [
+          61.0,
+          -14.4,
+          27.0
+        ],
+        "KnockdownElapsed": 1.0,
+        "KnockdownRemaining": 0.5,
+        "ThrowElapsed": 1051.0,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -14.3,
+          19.3,
+          -14.3
+        ],
+        "arms_KnockdownElapsed": 1.0,
+        "arms_ThrowElapsed": 1051.0,
+        "knocked": true,
+        "t": 1.0
+      },
+      {
+        "pelvis": [
+          2.3,
+          0.0,
+          59.6
+        ],
+        "head": [
+          6.7,
+          -0.0,
+          126.0
+        ],
+        "hand_r": [
+          24.2,
+          30.0,
+          74.4
+        ],
+        "foot_l": [
+          27.4,
+          -14.5,
+          21.3
+        ],
+        "KnockdownElapsed": 1.333,
+        "KnockdownRemaining": 0.167,
+        "ThrowElapsed": 1051.333,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -12.0,
+          18.3,
+          -14.6
+        ],
+        "arms_KnockdownElapsed": 1.333,
+        "arms_ThrowElapsed": 1051.333,
+        "knocked": true,
+        "t": 1.33
+      },
+      {
+        "pelvis": [
+          -1.1,
+          -1.6,
+          91.7
+        ],
+        "head": [
+          7.8,
+          -31.3,
+          146.8
+        ],
+        "hand_r": [
+          -3.6,
+          33.7,
+          110.9
+        ],
+        "foot_l": [
+          11.0,
+          -20.5,
+          6.4
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 1051.667,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -49.9,
+          26.0,
+          120.3
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 1051.667,
+        "knocked": false,
+        "t": 1.67
+      },
+      {
+        "pelvis": [
+          -1.1,
+          -1.6,
+          91.8
+        ],
+        "head": [
+          7.6,
+          -31.3,
+          146.9
+        ],
+        "hand_r": [
+          -4.0,
+          34.0,
+          112.0
+        ],
+        "foot_l": [
+          11.0,
+          -20.6,
+          6.4
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 1052.0,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -49.9,
+          26.0,
+          120.3
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 1052.0,
+        "knocked": false,
+        "t": 2.0
+      }
+    ],
+    "knockdown_summary": {
+      "pelvis_min_cm": 18.2,
+      "pelvis_end_cm": 91.8,
+      "pelvis_start_cm": 83.5,
+      "max_KnockdownElapsed": 1.333
+    },
+    "throw_held": "egg",
+    "throw_windup": [
+      {
+        "pelvis": [
+          -1.1,
+          -1.5,
+          91.6
+        ],
+        "head": [
+          -4.4,
+          -35.9,
+          143.1
+        ],
+        "hand_r": [
+          -29.9,
+          -11.7,
+          159.8
+        ],
+        "foot_l": [
+          11.0,
+          -20.5,
+          6.3
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 1054.0,
+        "ThrowWindupElapsed": 0.333,
+        "arms_hand_r": [
+          2.1,
+          22.0,
+          126.9
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 1054.0,
+        "knocked": false,
+        "t": 0.33
+      },
+      {
+        "pelvis": [
+          -0.9,
+          -1.4,
+          91.6
+        ],
+        "head": [
+          -4.0,
+          -35.8,
+          143.0
+        ],
+        "hand_r": [
+          -29.6,
+          -10.6,
+          158.4
+        ],
+        "foot_l": [
+          11.0,
+          -20.5,
+          6.3
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 1054.333,
+        "ThrowWindupElapsed": 0.667,
+        "arms_hand_r": [
+          0.5,
+          22.0,
+          126.3
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 1054.333,
+        "knocked": false,
+        "t": 0.67
+      }
+    ],
+    "throw": [
+      {
+        "pelvis": [
+          -0.7,
+          -1.3,
+          91.6
+        ],
+        "head": [
+          9.7,
+          -31.1,
+          146.3
+        ],
+        "hand_r": [
+          -4.4,
+          33.0,
+          109.6
+        ],
+        "foot_l": [
+          11.0,
+          -20.5,
+          6.3
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 0.333,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -49.5,
+          26.0,
+          120.4
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 0.333,
+        "knocked": false,
+        "t": 0.33
+      },
+      {
+        "pelvis": [
+          -0.9,
+          -1.3,
+          91.6
+        ],
+        "head": [
+          9.1,
+          -31.0,
+          146.5
+        ],
+        "hand_r": [
+          -5.1,
+          33.2,
+          109.3
+        ],
+        "foot_l": [
+          11.0,
+          -20.5,
+          6.3
+        ],
+        "KnockdownElapsed": -1.0,
+        "KnockdownRemaining": -1.0,
+        "ThrowElapsed": 0.667,
+        "ThrowWindupElapsed": -1.0,
+        "arms_hand_r": [
+          -49.9,
+          26.0,
+          120.3
+        ],
+        "arms_KnockdownElapsed": -1.0,
+        "arms_ThrowElapsed": 0.667,
+        "knocked": false,
+        "t": 0.67
+      }
+    ],
+    "hit": [
+      {
+        "state": "<CL9MonsterState.CHASE: 5>",
+        "StateElapsed": 0.0,
+        "IsPushStun": false,
+        "abp_StateElapsed": 0.333,
+        "abp_IsPushStun": 0.0,
+        "dist": 332.0,
+        "head_z": 62.0,
+        "t": 0.33
+      },
+      {
+        "state": "<CL9MonsterState.CHASE: 5>",
+        "StateElapsed": 0.333,
+        "IsPushStun": false,
+        "abp_StateElapsed": 0.333,
+        "abp_IsPushStun": 0.0,
+        "dist": 266.8,
+        "head_z": 62.0,
+        "t": 0.67
+      }
+    ],
+    "pan_held": "frying_pan",
+    "push": [
+      {
+        "state": "<CL9MonsterState.CHASE: 5>",
+        "StateElapsed": 2.35,
+        "IsPushStun": false,
+        "abp_StateElapsed": 2.35,
+        "abp_IsPushStun": 0.0,
+        "dist": 132.0,
+        "head_z": 43.3,
+        "t": 0.33,
+        "me_knocked": false
+      },
+      {
+        "state": "<CL9MonsterState.CHASE: 5>",
+        "StateElapsed": 2.683,
+        "IsPushStun": false,
+        "abp_StateElapsed": 2.683,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 45.5,
+        "t": 0.67,
+        "me_knocked": false
+      },
+      {
+        "state": "<CL9MonsterState.CATCH: 6>",
+        "StateElapsed": 0.0,
+        "IsPushStun": false,
+        "abp_StateElapsed": 3.016,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 44.4,
+        "t": 1.0,
+        "me_knocked": true
+      },
+      {
+        "state": "<CL9MonsterState.CATCH: 6>",
+        "StateElapsed": 0.333,
+        "IsPushStun": false,
+        "abp_StateElapsed": 0.333,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 53.7,
+        "t": 1.33,
+        "me_knocked": true
+      },
+      {
+        "state": "<CL9MonsterState.CATCH: 6>",
+        "StateElapsed": 0.667,
+        "IsPushStun": false,
+        "abp_StateElapsed": 0.667,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 62.0,
+        "t": 1.67,
+        "me_knocked": true
+      },
+      {
+        "state": "<CL9MonsterState.CHASE: 5>",
+        "StateElapsed": 0.0,
+        "IsPushStun": false,
+        "abp_StateElapsed": 1.0,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 62.0,
+        "t": 2.0,
+        "me_knocked": true
+      },
+      {
+        "state": "<CL9MonsterState.BREAK: 7>",
+        "StateElapsed": 0.0,
+        "IsPushStun": false,
+        "abp_StateElapsed": 0.333,
+        "abp_IsPushStun": 0.0,
+        "dist": 0.0,
+        "head_z": 61.9,
+        "t": 2.33,
+        "me_knocked": true
+      }
+    ],
+    "push_summary": {
+      "push_stun_samples": 0,
+      "catch_seen": false,
+      "swung": true
+    }
+  },
+  "log": [
+    [
+      50.0,
+      "cl9.damage 1"
+    ],
+    [
+      50.67,
+      "HighResShot 1"
+    ],
+    [
+      50.67,
+      "shot down"
+    ],
+    [
+      52.0,
+      "cl9.additem egg"
+    ],
+    [
+      55.0,
+      "cl9.addmonster chicken"
+    ],
+    [
+      55.67,
+      "cl9.hitmonster 1"
+    ],
+    [
+      56.33,
+      "cl9.additem frying_pan"
+    ]
+  ]
+}

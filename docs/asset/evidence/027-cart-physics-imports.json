@@ -1,0 +1,101 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-12T21:56:49.564310+00:00",
+  "assets": [
+    {
+      "id": "cart",
+      "path": "/Game/Items/CartA/SM_Cart_A.SM_Cart_A",
+      "reimported": false,
+      "previous_sha256": "02400161a25285a2e9fae093430d3a9255e69be85c8dd13c9d19dff81515735e",
+      "source_sha256": "02400161a25285a2e9fae093430d3a9255e69be85c8dd13c9d19dff81515735e",
+      "dimensions_cm": [
+        167.70001220703125,
+        97.20001602172852,
+        103.39999389648438
+      ],
+      "max_dimension_error_cm": 1.5735626220703125e-05,
+      "bounds_center_cm": [
+        0.0,
+        -1.9073486328125e-06,
+        0.0
+      ],
+      "lod_count": 3,
+      "convex_collision_hulls": 9,
+      "simple_collision_count": 0,
+      "expected_ucx": 9,
+      "collision_trace_flag": {
+        "before": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>",
+        "after": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+      },
+      "sockets": {
+        "Grip": {
+          "location_cm": [
+            80.14999628066913,
+            1.3058091865096367e-05,
+            48.00000190734863
+          ],
+          "expected_cm": [
+            80.15,
+            -0.0,
+            48.0
+          ],
+          "error_cm": 1.3058091865096367e-05,
+          "rotation_before": [
+            0.0,
+            90.0,
+            9.334667311122757e-06
+          ],
+          "scale": [
+            100.0,
+            100.00000000000004,
+            100.00000000000004
+          ]
+        },
+        "Cargo": {
+          "location_cm": [
+            -17.850005626678236,
+            -2.908135047809955e-06,
+            14.000004529953003
+          ],
+          "expected_cm": [
+            -17.85,
+            -0.0,
+            14.0
+          ],
+          "error_cm": 5.6266782344494e-06,
+          "rotation_before": [
+            0.0,
+            90.0,
+            9.334667311122757e-06
+          ],
+          "scale": [
+            100.0,
+            100.00000000000004,
+            100.00000000000004
+          ]
+        }
+      },
+      "deck_height_cm": -6.0,
+      "cargo_extent_cm": [
+        60.0,
+        40.0,
+        20.0
+      ],
+      "cargo_center_cm": [
+        -17.85,
+        0.0,
+        14.0
+      ],
+      "grip_cm": [
+        80.15,
+        0.0,
+        48.0
+      ],
+      "materials": [
+        "/Game/Items/CartA/M_CL9_Cart_Frame.M_CL9_Cart_Frame",
+        "/Game/Items/CartA/M_CL9_Cart_Rubber.M_CL9_Cart_Rubber"
+      ],
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

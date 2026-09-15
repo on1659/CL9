@@ -1,0 +1,143 @@
+{
+  "utc": "2026-09-15T03:48:38.553610+00:00",
+  "status": "done",
+  "shots": [
+    {
+      "t": 9.87,
+      "tag": "00_stand",
+      "pelvis_cm": 91.7,
+      "held": "None"
+    },
+    {
+      "t": 10.17,
+      "tag": "01_knockdown_0",
+      "pelvis_cm": 90.9,
+      "held": "None",
+      "elapsed": 0.3,
+      "knocked": true
+    },
+    {
+      "t": 10.62,
+      "tag": "01_knockdown_1",
+      "pelvis_cm": 18.4,
+      "held": "None",
+      "elapsed": 0.75,
+      "knocked": true
+    },
+    {
+      "t": 11.12,
+      "tag": "01_knockdown_2",
+      "pelvis_cm": 69.4,
+      "held": "None",
+      "elapsed": 1.25,
+      "knocked": true
+    },
+    {
+      "t": 13.87,
+      "tag": "02_hold_pan",
+      "pelvis_cm": 91.7,
+      "held": "frying_pan"
+    },
+    {
+      "t": 14.47,
+      "tag": "03_swing_windup",
+      "pelvis_cm": 91.6,
+      "held": "frying_pan"
+    },
+    {
+      "t": 14.57,
+      "tag": "04_swing_0",
+      "pelvis_cm": 91.6,
+      "held": "frying_pan",
+      "elapsed": 0.1
+    },
+    {
+      "t": 14.67,
+      "tag": "04_swing_1",
+      "pelvis_cm": 91.6,
+      "held": "frying_pan",
+      "elapsed": 0.2
+    },
+    {
+      "t": 14.82,
+      "tag": "04_swing_2",
+      "pelvis_cm": 91.6,
+      "held": "frying_pan",
+      "elapsed": 0.35
+    },
+    {
+      "t": 15.92,
+      "tag": "05_throw_windup",
+      "pelvis_cm": 91.7,
+      "held": "frying_pan"
+    },
+    {
+      "t": 16.02,
+      "tag": "06_throw_0",
+      "pelvis_cm": 91.7,
+      "held": "None",
+      "elapsed": 0.1
+    },
+    {
+      "t": 16.12,
+      "tag": "06_throw_1",
+      "pelvis_cm": 91.8,
+      "held": "None",
+      "elapsed": 0.2
+    },
+    {
+      "t": 18.52,
+      "tag": "07_chicken_front",
+      "pelvis_cm": 91.7,
+      "held": "None",
+      "state": "<CL9MonsterState.WANDER: 2>"
+    },
+    {
+      "t": 19.12,
+      "tag": "08_push_0",
+      "pelvis_cm": 91.7,
+      "held": "None",
+      "elapsed": 0.2,
+      "state": "<CL9MonsterState.CHASE: 5>",
+      "push": false,
+      "state_elapsed": 0.25
+    },
+    {
+      "t": 19.37,
+      "tag": "08_push_1",
+      "pelvis_cm": 97.7,
+      "held": "None",
+      "elapsed": 0.45,
+      "state": "<CL9MonsterState.CATCH: 6>",
+      "push": false,
+      "state_elapsed": 0.15
+    },
+    {
+      "t": 19.62,
+      "tag": "08_push_2",
+      "pelvis_cm": 51.0,
+      "held": "None",
+      "elapsed": 0.7,
+      "state": "<CL9MonsterState.CATCH: 6>",
+      "push": false,
+      "state_elapsed": 0.4
+    },
+    {
+      "t": 23.02,
+      "tag": "10_death_0",
+      "pelvis_cm": 91.7,
+      "held": "None",
+      "elapsed": 0.4,
+      "state": "<CL9MonsterState.DEAD: 10>"
+    },
+    {
+      "t": 23.62,
+      "tag": "10_death_1",
+      "pelvis_cm": 91.6,
+      "held": "None",
+      "elapsed": 1.0,
+      "state": "<CL9MonsterState.DEAD: 10>"
+    }
+  ],
+  "log": []
+}

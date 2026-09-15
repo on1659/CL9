@@ -181,14 +181,17 @@ def fp_pose_report(side='r', pitch_deg=0.0):
                    'elbow': fp_screen_uv(el, pitch_deg)}}
 
 
-def key_current_pose(action_bones, frame):
-    """지금 포즈에서 기준 포즈와 다른 뼈(또는 이미 키가 있는 뼈)에 회전 키를 찍는다"""
+def key_current_pose(action_bones, frame, locations=()):
+    """지금 포즈에서 기준 포즈와 다른 뼈(또는 이미 키가 있는 뼈)에 회전 키를 찍는다. locations 에 든 뼈(예: 넘어짐의 pelvis)는 위치 키도 찍는다"""
     for pb in rig.pose.bones:
         if pb.matrix_basis != Matrix.Identity(4) or pb.name in action_bones:
             action_bones.add(pb.name)
             pb.rotation_mode = 'QUATERNION'
             pb.rotation_quaternion = pb.matrix_basis.to_quaternion()
             pb.keyframe_insert('rotation_quaternion', frame=frame)
+        if pb.name in locations:
+            pb.location = pb.matrix_basis.to_translation()
+            pb.keyframe_insert('location', frame=frame)
 
 
 def new_action(name):
@@ -236,7 +239,19 @@ def export_action(action):
     copy.data.transform(Matrix.Scale(100, 4))
     stage.collection.objects.link(copy)
     copy.animation_data_create()
-    copy.animation_data.action = action
+    # 뼈 위치 키(넘어짐의 pelvis)는 m 단위 국부 이동이라 100배 리그에 그대로 얹으면 100배 작게 나간다(2026-09-15 실측: 78cm 가 0.78cm) —
+    # 위치 커브만 100배로 환산한 임시 액션으로 굽는다. 회전 키뿐인 클립은 그대로(sha 불변).
+    export_act = action
+    if any(fc.data_path.endswith('].location') for fc in action_fcurves(action)):
+        export_act = action.copy()
+        export_act.name = action.name + '_cm'
+        for fc in action_fcurves(export_act):
+            if fc.data_path.endswith('].location'):
+                for kp in fc.keyframe_points:
+                    kp.co[1] *= 100.0
+                    kp.handle_left[1] *= 100.0
+                    kp.handle_right[1] *= 100.0
+    copy.animation_data.action = export_act
     bpy.ops.object.select_all(action='DESELECT')
     copy.select_set(True)
     bpy.context.view_layer.objects.active = copy
@@ -247,6 +262,8 @@ def export_action(action):
                              bake_anim_use_nla_strips=False, bake_anim_use_all_actions=False, bake_anim_force_startend_keying=True,
                              bake_anim_step=1.0, bake_anim_simplify_factor=0.0, use_custom_props=False)
     bpy.data.objects.remove(copy, do_unlink=True)
+    if export_act is not action:
+        bpy.data.actions.remove(export_act)
     if occupied is not None:
         occupied.name = 'root'
     bpy.context.window.scene = scene
@@ -271,8 +288,8 @@ def _preview_scene():
     return preview, body, arms
 
 
-def render_front(tag, preview_dir):
-    """3/4 정면 전신 미리보기(960×720, 50mm) — 팔 메시는 몸과 겹치므로 숨긴다"""
+def render_front(tag, preview_dir, cam_location=(1.6, -2.4, 1.5), look_at=(0, 0, 1.15)):
+    """3/4 정면 전신 미리보기(960×720, 50mm) — 팔 메시는 몸과 겹치므로 숨긴다. cam_location 으로 다른 각도(예: 오른쪽 앞)도 찍는다"""
     preview, body, arms = _preview_scene()
     body.hide_render = False
     if arms is not None:
@@ -288,8 +305,8 @@ def render_front(tag, preview_dir):
     cam.data.lens_unit = 'MILLIMETERS'
     cam.data.lens = 50
     cam.data.clip_start = 0.1
-    cam.location = (1.6, -2.4, 1.5)
-    cam.rotation_euler = (Vector((0, 0, 1.15)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
+    cam.location = cam_location
+    cam.rotation_euler = (Vector(look_at) - Vector(cam.location)).to_track_quat('-Z', 'Y').to_euler()
     preview.render.filepath = str(Path(preview_dir) / f'{tag}_front.png')
     bpy.ops.render.render(write_still=True)
     bpy.context.window.scene = scene

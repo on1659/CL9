@@ -26,13 +26,18 @@
 | Idle | 예 | 대기·호흡. 발 고정 |
 | Walk / Run | 예 | 배회·추격. in-place, 기준 속도 필수 |
 | LookAround | 선택 | 조사/수색. 목과 시선 변화가 보임 |
-| Catch | 아니오 | **잡는 종만**. 접촉 표현, 판정 트리거 금지 |
-| HitReact | 아니오 | 전용 경직. 해당 행 `HitStunMs`에 맞춤 |
+| Catch | 아니오 | **잡는 종만**. 접촉 표현, 판정 트리거 금지. 길이 = 코드의 Catch 휴지 0.8초. 판정이 상태 진입 순간이라 예비동작 없이 첫 0.1초에 덮치고, 종별 2차 동작(쪼기·머리 흔들기·앞발) 뒤 돌아온다 (2026-09-15) |
+| HitReact | 아니오 | 전용 경직. 해당 행 `HitStunMs`에 맞춤. 맞는 순간 확 튀고(첫 0.05초) 나머지 동안 돌아온다 — sin 펄스 하나는 맞는 느낌이 없었다 (2026-09-15) |
+| PushReact | 아니오 | 밀침(프라이팬 Push) 경직 = 행 `PushStun`(0.8초). 코드가 이 시간 동안 액터를 뒤로 미끄러뜨리므로 젖혀져 붕 떴다가(0~0.15) 발을 허우적거리며 미끄러지고(0.15~0.55) 휘청이며 선다. 5종 공통 (2026-09-15 신설) |
 | WakeTelegraph | 아니오 | 쓰는 종만. 기상 예고 시간에 맞춤 |
 | Death | 아니오 | 끝 포즈 유지. 래그돌은 별도 선택 |
 | Sleep / AlertWindup / Alert | 종별 | 거위 등 실제 상태가 있는 종만 제작 |
 
 모든 종에 모든 클립을 억지로 만들지 않는다. 거위는 경보 역할을 먼저 확인하며 닭 Catch를 복사하지 않는다.
+Catch·HitReact·PushReact 는 `Tools/Blender/animate_creature_reacts.py --species <종>` 이 종 blend 를 열어 세 클립만 다시 굽는다(원본
+`animate_<종>_a.py` 는 로코모션·Death 의 정본으로 그대로). manifest `clips` 항목에 `reworked`·`sha256` 이 붙고, UE 재임포트는
+`Tools/Unreal/reimport_creature_clips.py`(reworked 표시 클립만 replace — 원본 임포트 스크립트는 sha 불일치를 assert 로 막는다).
+미리보기 시트 `preview/react_{catch,hitreact,pushreact}_sheet.png`.
 닭·돼지·양의 기존 팩 모션을 재사용할지, 새 모델에 리타깃할지 제작 카드에서 선택한다.
 
 ## 검수

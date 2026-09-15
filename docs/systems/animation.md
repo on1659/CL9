@@ -58,6 +58,21 @@
 | 이동 속도 | 액터 속도 (복제 위치에서 파생 — 클라 보간) |
 | 경직·기상 예고 | 상태 전이 (WakeTelegraph는 전 플레이어에게 보인다) |
 
+### 몬스터 원샷 — 상태 진입 시각 평가기 + 밀침 클립 (2026-09-15)
+
+`ABP_<종>_A` 는 상태→알파 부울 블렌드 체인이라 원샷 클립(Catch·HitReact·WakeTelegraph·Death)을 시퀀스 플레이어로 두면 가지가 켜질 때
+처음부터 재생된다는 보장이 없고 늦게 들어온 클라가 다른 프레임을 본다. 농부 휘두르기와 같은 규칙으로 간다: 호스트가 상태를 바꿀 때마다
+`StateStartServerTime`(복제 신설)을 찍고, ABP 는 `GetStateElapsed()` 를 **시퀀스 평가기의 ExplicitTime** 으로 쓴다(클립 끝을 넘으면 마지막
+프레임 유지 — Death 의 끝 자세, Catch 의 복귀 자세).
+
+- **경직 두 종류**: `OnDamage`(고기 등 Hit — 행 `HitStunMs` 0.3초)는 `AN_<종>_HitReact`(0.3초), `OnShove`(프라이팬 Push — 행 `PushStun` 0.8초 +
+  넉백)는 **`AN_<종>_PushReact`(0.8초, 신설)**. 어느 쪽인지는 `bPushStun`(복제)로 안다 — `IsPushStun()`. 그전엔 0.3초 HitReact 하나뿐이라 밀린
+  0.8초 중 0.5초를 선 자세로 미끄러졌다.
+- **Catch 는 0.8초** = 코드의 `CatchPauseSeconds`. 판정(OnDamage)이 상태 진입 순간이라 예비동작은 없다 — 첫 0.1초에 덮치고 종별 2차 동작
+  (닭 연속 쪼기·돼지/양 머리 흔들기·너구리 반대 앞발) 뒤 돌아온다. 거위는 잡지 않는 종이라 없다(Honk 그대로).
+- 클립 규격·제작은 [../asset/monster/README.md](../asset/monster/README.md) 표(`animate_creature_reacts.py`), 재임포트는
+  `Tools/Unreal/reimport_creature_clips.py`(reworked 표시 클립만 교체).
+
 ### 로코모션 재생 배율 — 풋 슬라이딩 방지 (기본 규칙)
 
 제자리(in-place) 이동 애님을 고정 배속으로 틀지 않는다. **모든 로코모션 애님은
@@ -86,12 +101,18 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
   든 아이템은 `FirstPersonMesh:HandGrip_R` 에 붙어 같이 돈다(시선·이동에 따라 손 자세가 흔들려 "아이템이 자꾸 회전"으로 보이던 것이
   사라진다). 리썰과 같이 두는 것: 스태미나 카메라 셰이크는 POV 만 흔들어 팔이 화면에 고정된 채 세상이 흔들려 보인다.
 - **전용 `ABP_FP_View`** — 몸과 무관한 카메라 로컬 클립만 튼다. 우선순위 순 부울 블렌드(BlendTime 0.15):
+  0. `KnockdownElapsed ≥ 0`(넘어짐·죽음, 2026-09-15) → `KnockdownElapsed < 0.5` 이면 시퀀스 평가기 `AN_Farmer_FPKnockdown`(두 손이 얼굴 앞으로
+     확 올라왔다 빠짐, `ExplicitTime = KnockdownElapsed`), `KnockdownRemaining < 0.6` 이면 평가기 `AN_Farmer_FPGetUp`(`ExplicitTime = 0.6 −
+     KnockdownRemaining`), 그 사이(누움·죽음)는 `AN_Farmer_FPArmsDown`(프레임 밖). 카메라 하강은 C++ Tick(DownedZ)이 이미 한다.
   1. `EatElapsed ∈ [0, 0.6)` → 시퀀스 평가기 `AN_Farmer_FPEat`(`ExplicitTime = EatElapsed`)
-  2. `SwingWindupElapsed ≥ 0` → 시퀀스 플레이어 `AN_Farmer_FPSwingWindup`(1.0초 루프)
-  3. `SwingElapsed ∈ [0, 0.347)` → 시퀀스 평가기 `AN_Farmer_FPSwing`(`ExplicitTime = SwingElapsed + 0.12` — 치켜든 자세부터, 클립 0.467초)
-  4. `HoldPose == None ? (IsRunning ? AN_Farmer_FPRun[루프, PlayRate = Speed / 654] : AN_Farmer_FPArmsDown[루프])
+  2. `ThrowElapsed ∈ [0, 0.333)`(2026-09-15) → 평가기 `AN_Farmer_FPThrow`(주먹이 화면 중앙 위로 뻗으며 펴지고 아래로 빠짐) ·
+     `ThrowWindupElapsed ≥ 0` → 플레이어 `AN_Farmer_FPThrowWindup`(1.0초 루프, 주먹이 오른쪽 가장자리)
+  3. `SwingWindupElapsed ≥ 0` → 시퀀스 플레이어 `AN_Farmer_FPSwingWindup`(1.0초 루프)
+  4. `SwingElapsed ∈ [0, 0.347)` → 시퀀스 평가기 `AN_Farmer_FPSwing`(`ExplicitTime = SwingElapsed + 0.12` — 치켜든 자세부터, 클립 0.467초)
+  5. `HoldPose == None ? (IsRunning ? AN_Farmer_FPRun[루프, PlayRate = Speed / 654] : AN_Farmer_FPArmsDown[루프])
      : (Large ? FPHoldLarge : Flashlight ? FPHoldFlashlight : FPHoldSmall)`
-  변수 `HoldPose`·`IsRunning`·`Speed`·`SwingElapsed`·`SwingWindupElapsed`·`EatElapsed` 는 매 틱 `ACL9Character` 게터로 채운다
+  변수 `HoldPose`·`IsRunning`·`Speed`·`SwingElapsed`·`SwingWindupElapsed`·`EatElapsed`·`KnockdownElapsed`·`KnockdownRemaining`·`ThrowElapsed`·
+  `ThrowWindupElapsed` 는 매 틱 `ACL9Character` 게터로 채운다
   (전신 ABP 와 같은 게터, `BlueprintUpdateAnimation → TryGetPawnOwner`). 빈손 규칙(기본값 19·20)은 그대로: 서 있거나 걸을 때는 손이
   안 보이고(`FPArmsDown` 은 프레임 밖 — 카메라 자식이라 피치와 무관하게 항상), 달릴 때만 주먹이 화면 아래 좌우로 번갈아(`FPRun`,
   "로코모션 재생 배율" 규칙). 걷기 전용 팔 클립은 없다.
@@ -132,8 +153,25 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
     HoldSmall 이라 튀지 않는다, 먹는 동안 칸 전환 허용 — 기본값 18) (2) `SwingWindupElapsed >= 0` → 시퀀스 플레이어 `AN_Farmer_SwingWindup`
     (1.0초 루프, 휘두르기 t=0.12 자세 + 손목 ±1cm; 무한 대기). 뗀 뒤는 휘두르기 가지가 치켜든 자세부터 잇는다 — 탭도 같은 경로라 "평범한
     공격"은 0.347초(기본값 17).
-  클립 제작 `Tools/Blender/animate_farmer_hold.py`(tp)·`animate_farmer_swing.py`·`animate_farmer_windup.py`·`animate_farmer_eat.py`,
-  30fps·Manny 스켈레톤 — [../asset/character/farmer_a.md](../asset/character/farmer_a.md) 025·026·028.
+  - **던지기 가지** (2026-09-15): Shift+G 차징·놓기의 표현. `ThrowChargeStartTime`(호스트 시각 — 이제 **복제**, 판정은 여전히 호스트 값만)과
+    `ThrowServerTime`(놓은 시각, 복제)에서 `GetThrowWindupElapsed()`(차징 중 아니면 −1, 소유자는 로컬 시각으로 즉시)·`GetThrowElapsed()` 가 나온다.
+    Hold 체인 머리에 (1) `ThrowElapsed ∈ [0, 0.333)` → 시퀀스 평가기 `AN_Farmer_Throw`(`ExplicitTime = ThrowElapsed`; 판정은 놓는 순간이라 t=0 에
+    이미 물건이 손을 떠났고 클립은 뻗기·팔로스루 뒤 **기준 자세(identity)로 끝난다** — 던지면 HoldPose=None 이라 레이어 가중치가 빠질 때 안 튀게)
+    (2) `ThrowWindupElapsed ≥ 0` → 플레이어 `AN_Farmer_ThrowWindup`(1.0초 루프, 오른손을 어깨 뒤로 당김·왼손 앞으로 조준). 상체 레이어 가중치는
+    `HoldPose != None OR 던지기 가지 활성`.
+  - **넘어짐 가지** (2026-09-15, 사용자 "피격 애님이 부족하다"): 잡힘(OnDamage → `KnockdownTime` 1.5초)과 죽음(무기한)의 표현. 그전엔 클립이 0개라
+    남이 보기엔 선 채로 얼어붙었고, 죽음은 "롤 90°" 계획만 있었다. `KnockdownStartServerTime`(복제 신설 — 끝 시각만으로는 죽음(끝 = 무한)의 경과를
+    못 구한다)에서 `GetKnockdownElapsed()`(넘어져 있지 않으면 −1)·`GetKnockdownRemaining()`(풀릴 때까지 남은 초, 죽었으면 큰 값)이 나온다.
+    **로코모션·Hold 레이어·발 IK 전부 뒤**(ControlRig 다음)에 부울 블렌드 한 단: `KnockdownElapsed ≥ 0` 이면 `KnockdownElapsed < 0.5` →
+    평가기 `AN_Farmer_Knockdown`(젖혀져 등으로 넘어감, `ExplicitTime = KnockdownElapsed`), `KnockdownRemaining < 0.6` → 평가기 `AN_Farmer_GetUp`
+    (`ExplicitTime = 0.6 − KnockdownRemaining`), 그 사이 → 평가기 `AN_Farmer_Down`(2초 루프 클립, 등을 대고 누움·숨쉬기; `ExplicitTime =
+    IsDead ? 1.0 : (KnockdownElapsed − 0.5) mod 2` — 시체는 한 프레임에 멈춘다. 플레이어 대신 평가기인 이유: PlayRate 핀 노출 없이 죽음 정지를 만들고
+    늦게 들어온 클라도 같은 위상을 보게). 전신 골반 위치 키가 든 유일한 클립들이라 발 IK 뒤에 둬야 한다(IK 가 누운 다리를 세우려 든다) —
+    실제 배선(2026-09-15): `ControlRig → [부울 블렌드 KnockdownElapsed≥0] → 출력`, 1인칭은 `HoldPose==None` 분기 위에 같은 블렌드.
+    타임라인(1.5초): 넘어짐 0~0.5 → 누움 0.5~0.9 → 일어남 0.9~1.5. 죽음: 넘어짐 → 누움 무기한.
+  클립 제작 `Tools/Blender/animate_farmer_hold.py`(tp)·`animate_farmer_swing.py`·`animate_farmer_windup.py`·`animate_farmer_eat.py`·
+  `animate_farmer_knockdown.py`·`animate_farmer_throw.py`, 30fps·Manny 스켈레톤 — [../asset/character/farmer_a.md](../asset/character/farmer_a.md)
+  025·026·028·032.
 - 데이터 연결: `UCL9CharacterDef`에 팔 메시·팔 AnimBP 컬럼 추가 필요 (미결 — 1c에서).
 
 ## 몽타주 사용처
@@ -143,8 +181,9 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
 | 몽타주 | 판정 값 | 비고 |
 |---|---|---|
 | 죽음 | HP 0 | 기본은 같은 메시의 죽는 모션 — 래그돌 등 다른 연출은 종별 선택 |
-| 경직 | `HitStunMs` / `PushStun` | 전용 애니메이션 필수 (plan/data/monster/common.md) |
-| 잡힘·넘어짐 | CatchRadius 판정 | 짐 흘림과 함께 |
+| 경직 | `HitStunMs` / `PushStun` | 전용 애니메이션 필수 (plan/data/monster/common.md) — 타격 `HitReact` 0.3초 / 밀침 `PushReact` 0.8초 (2026-09-15) |
+| 잡힘·넘어짐 | CatchRadius 판정 · 캐릭터 `KnockdownTime` 1.5초 | 짐 흘림과 함께. 몬스터 `Catch` 0.8초, 캐릭터 `Knockdown` 0.5 → `Down` 루프 → `GetUp` 0.6 (2026-09-15) |
+| 던지기 | 놓는 순간 판정 | `ThrowWindup` 루프(차징) → `Throw` 0.333초, 끝 = 기준 자세 (2026-09-15) |
 | 기상 예고 | `WakeTelegraph` 0.8s | 퍼덕임 + 울음 |
 | 거위 울음 예비 | `AlertWindup` 0.55s | |
 

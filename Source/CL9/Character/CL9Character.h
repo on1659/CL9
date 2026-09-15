@@ -182,6 +182,25 @@ public:
 	float GetEatElapsed() const;
 
 	/**
+	 * 넘어진 뒤 지난 초 — 넘어짐·죽음 애님(AN_Farmer_Knockdown → Down → GetUp)의 원천. 넘어져 있지 않으면 −1
+	 * (docs/systems/animation.md 넘어짐 가지). 죽음도 넘어짐이라 죽은 뒤로도 계속 커진다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetKnockdownElapsed() const;
+
+	/** 넘어짐이 풀릴 때까지 남은 초 — 일어나기 클립(AN_Farmer_GetUp 0.6초)을 끝에 맞춰 트는 데 읽는다. 죽었으면 큰 값, 넘어져 있지 않으면 −1 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetKnockdownRemaining() const;
+
+	/** 던지기 차징을 시작한 뒤 지난 초 — 대기 루프(AN_Farmer_ThrowWindup)를 켜는 데 읽는다. 소유자는 로컬 시각으로 즉시. 차징 중이 아니면 −1 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetThrowWindupElapsed() const;
+
+	/** 마지막 던지기(놓은 순간)부터 지난 초 — AN_Farmer_Throw 원샷의 원천. 던진 적 없으면 큰 값(1000 이상) */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetThrowElapsed() const;
+
+	/**
 	 * 시선 피치(도, -90..90 — 위가 양수). 소유자는 컨트롤 피치, 남의 화면에서는 복제된 `RemoteViewPitch`
 	 * (ACharacter 기본, `GetBaseAimRotation`)다. **전신 ABP(`ABP_Unarmed`) 전용** — Hold 레이어 뒤
 	 * `Transform (Modify) Bone`(spine_03)에 이 값 × 비율을 넣어 남의 화면에서 상체·손이 시선을 따르게 한다.
@@ -528,8 +547,13 @@ private:
 	UPROPERTY(Replicated)
 	TObjectPtr<ACL9Item> WornItem;
 
-	/** 현재 던지기 차징이 시작된 호스트 시각; 대기 중이면 음수 */
+	/** 현재 던지기 차징이 시작된 호스트 시각; 대기 중이면 음수. 복제는 남이 보는 대기 자세(AN_Farmer_ThrowWindup)용 — 판정은 호스트 값만 쓴다 */
+	UPROPERTY(Replicated)
 	float ThrowChargeStartTime = -1.f;
+
+	/** 마지막으로 던진(놓은) 서버 시각 — GetThrowElapsed의 원천. 음수 큰 값 = 아직 없음 */
+	UPROPERTY(Replicated)
+	float ThrowServerTime = -1000.f;
 
 	/** 같은 차징에 대한 소유 클라이언트의 로컬 시각 (게이지 전용, 판정에는 쓰이지 않음); 대기 중이면 음수 */
 	float LocalThrowChargeStartTime = -1.f;
@@ -569,6 +593,10 @@ private:
 	 */
 	UPROPERTY(Replicated)
 	float KnockdownEndServerTime = 0.f;
+
+	/** 마지막으로 넘어진 서버 시각 — GetKnockdownElapsed의 원천(끝 시각만으로는 죽음(끝 = 무한)의 경과를 못 구한다). 음수 큰 값 = 아직 없음 */
+	UPROPERTY(Replicated)
+	float KnockdownStartServerTime = -1000.f;
 
 	/**
 	 * 지금 걸려 있는 먹기 효과들 — 복제된다. CMC가 이동 공식에서 읽으므로 서버와 자율

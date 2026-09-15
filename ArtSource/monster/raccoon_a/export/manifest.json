@@ -464,7 +464,9 @@
       "loop": false,
       "reference_speed_cm_s": 0,
       "root_motion": false,
-      "stance_samples": []
+      "stance_samples": [],
+      "sha256": "432f325561b502aec233fb25eb81b71629b71d0aad0fb1717c26fb96579243dc",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     },
     "WakeTelegraph": {
       "action": "AN_Raccoon_WakeTelegraph",
@@ -481,16 +483,18 @@
     },
     "Catch": {
       "action": "AN_Raccoon_Catch",
-      "duration_seconds": 0.6,
+      "duration_seconds": 0.8,
       "frames": [
         1,
-        19
+        25
       ],
       "fps": 30,
       "loop": false,
       "reference_speed_cm_s": 0,
       "root_motion": false,
-      "stance_samples": []
+      "stance_samples": [],
+      "sha256": "d4f899bb3650dac4057e9d307a3c6ba4a1382d280c9fcf48f9854a8d51c50126",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     },
     "Death": {
       "action": "AN_Raccoon_Death",
@@ -504,6 +508,21 @@
       "reference_speed_cm_s": 0,
       "root_motion": false,
       "stance_samples": []
+    },
+    "PushReact": {
+      "action": "AN_Raccoon_PushReact",
+      "duration_seconds": 0.8,
+      "frames": [
+        1,
+        25
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": [],
+      "sha256": "d6fa8eb9c88058193648fed05cb13501be249b8943168017104673d012aa8f56",
+      "reworked": "2026-09-15 animate_creature_reacts.py"
     }
   }
 }

@@ -1,0 +1,248 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "folder": "/Game/Characters/FarmerA/Anims",
+  "clips": [
+    {
+      "name": "AN_Farmer_Swing",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Swing.AN_Farmer_Swing",
+      "seconds": 0.46666666865348816,
+      "frames": 14,
+      "sha256": "818207f0e218b12de87916791384249d66444f64229e3e8a2d85ea0db0ad0797",
+      "manifest_seconds": 0.4667,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_FPSwing",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwing.AN_Farmer_FPSwing",
+      "seconds": 0.46666666865348816,
+      "frames": 14,
+      "sha256": "714d424cb3b4daa080a14e60c16f82d66e32b61c33d3660365b2d81d869093d7",
+      "manifest_seconds": 0.4667,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_SwingWindup",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_SwingWindup.AN_Farmer_SwingWindup",
+      "seconds": 1.0,
+      "frames": 30,
+      "sha256": "0641294a54379298b53d20c3127a330819cacf697c190a2fd21d73da9c09779c",
+      "manifest_seconds": 1.0,
+      "loop": true
+    },
+    {
+      "name": "AN_Farmer_FPSwingWindup",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwingWindup.AN_Farmer_FPSwingWindup",
+      "seconds": 1.0,
+      "frames": 30,
+      "sha256": "a042716ab60b2741dad1ab5a802cc5b179ab01ed769d8ccaeab36e1a9aca7029",
+      "manifest_seconds": 1.0,
+      "loop": true
+    },
+    {
+      "name": "AN_Farmer_Knockdown",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Knockdown.AN_Farmer_Knockdown",
+      "seconds": 0.5,
+      "frames": 15,
+      "sha256": "01b373d16dc4e8404c392e8f964e2052a87929fde27c59ee98af2a73c3b52f0a",
+      "manifest_seconds": 0.5,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_Down",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Down.AN_Farmer_Down",
+      "seconds": 2.0,
+      "frames": 60,
+      "sha256": "27b9407fde70b3f5304b8bcd46ea9836938205376350e7bb67cb45b457b93cd7",
+      "manifest_seconds": 2.0,
+      "loop": true
+    },
+    {
+      "name": "AN_Farmer_GetUp",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_GetUp.AN_Farmer_GetUp",
+      "seconds": 0.6000000238418579,
+      "frames": 18,
+      "sha256": "4121bb84661db0d2c9be677e0a5901cecd460513b4773679eddd79d6f66adfc2",
+      "manifest_seconds": 0.6,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_FPKnockdown",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPKnockdown.AN_Farmer_FPKnockdown",
+      "seconds": 0.5,
+      "frames": 15,
+      "sha256": "3c8674595452a1facc330730762f1f7e0ef640724ec7f76ca02032b2dd3611ae",
+      "manifest_seconds": 0.5,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_FPGetUp",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPGetUp.AN_Farmer_FPGetUp",
+      "seconds": 0.6000000238418579,
+      "frames": 18,
+      "sha256": "88af81d7064dfa9bc9ea339fbb1165b664ce6b5e93ee7e2c4b7251806ff04dab",
+      "manifest_seconds": 0.6,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_ThrowWindup",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_ThrowWindup.AN_Farmer_ThrowWindup",
+      "seconds": 1.0,
+      "frames": 30,
+      "sha256": "5d599b6d237ac23f9a66f3beea29586a6dfa04568fe695fc8e6bbb76b528d37e",
+      "manifest_seconds": 1.0,
+      "loop": true
+    },
+    {
+      "name": "AN_Farmer_Throw",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Throw.AN_Farmer_Throw",
+      "seconds": 0.3333333432674408,
+      "frames": 10,
+      "sha256": "76890da0b3237d4503064560ca6f64abb0f69552e62518cc529bde61c2795cd8",
+      "manifest_seconds": 0.3333333333333333,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_FPThrowWindup",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPThrowWindup.AN_Farmer_FPThrowWindup",
+      "seconds": 1.0,
+      "frames": 30,
+      "sha256": "756ee909789b4c6338edc7d81de1a7aeba2b322c9d0b22c1a5b86b2a11b888f3",
+      "manifest_seconds": 1.0,
+      "loop": true
+    },
+    {
+      "name": "AN_Farmer_FPThrow",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPThrow.AN_Farmer_FPThrow",
+      "seconds": 0.3333333432674408,
+      "frames": 10,
+      "sha256": "ab5d72f2858ee7043870a5d2a4764e9012e725029f6fad35acfabe759d39abe4",
+      "manifest_seconds": 0.3333333333333333,
+      "loop": false
+    }
+  ],
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "folder": "/Game/Characters/FarmerA/Anims",
+    "clips": [
+      {
+        "name": "AN_Farmer_Swing",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Swing.AN_Farmer_Swing",
+        "seconds": 0.46666666865348816,
+        "frames": 14,
+        "sha256": "818207f0e218b12de87916791384249d66444f64229e3e8a2d85ea0db0ad0797",
+        "manifest_seconds": 0.4667,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPSwing",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwing.AN_Farmer_FPSwing",
+        "seconds": 0.46666666865348816,
+        "frames": 14,
+        "sha256": "714d424cb3b4daa080a14e60c16f82d66e32b61c33d3660365b2d81d869093d7",
+        "manifest_seconds": 0.4667,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_SwingWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_SwingWindup.AN_Farmer_SwingWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "0641294a54379298b53d20c3127a330819cacf697c190a2fd21d73da9c09779c",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPSwingWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPSwingWindup.AN_Farmer_FPSwingWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "a042716ab60b2741dad1ab5a802cc5b179ab01ed769d8ccaeab36e1a9aca7029",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_Knockdown",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Knockdown.AN_Farmer_Knockdown",
+        "seconds": 0.5,
+        "frames": 15,
+        "sha256": "f700d4aad2b38180c2af09d650760f7cae3969df3c7e154ea536496c58134a6b",
+        "manifest_seconds": 0.5,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_Down",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Down.AN_Farmer_Down",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "f72bcaa0d47a255f10fcc81fd3169de16eee06c7e75c442b2d97d7ecb7013f3d",
+        "manifest_seconds": 2.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_GetUp",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_GetUp.AN_Farmer_GetUp",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "6214beaf06e60facaabd6908b3a0a399b7d4bbb23aa2f8b696bf47f835370c15",
+        "manifest_seconds": 0.6,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPKnockdown",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPKnockdown.AN_Farmer_FPKnockdown",
+        "seconds": 0.5,
+        "frames": 15,
+        "sha256": "51ec16fe08c98c18bc4cd004d2cffa6d91c17c33eb1d69c21071514d713ce823",
+        "manifest_seconds": 0.5,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPGetUp",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPGetUp.AN_Farmer_FPGetUp",
+        "seconds": 0.6000000238418579,
+        "frames": 18,
+        "sha256": "d5d381be071c48bfa8156ab70ae9644e8db90399d814e13d707edfc399667234",
+        "manifest_seconds": 0.6,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_ThrowWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_ThrowWindup.AN_Farmer_ThrowWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "5d599b6d237ac23f9a66f3beea29586a6dfa04568fe695fc8e6bbb76b528d37e",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_Throw",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Throw.AN_Farmer_Throw",
+        "seconds": 0.3333333432674408,
+        "frames": 10,
+        "sha256": "76890da0b3237d4503064560ca6f64abb0f69552e62518cc529bde61c2795cd8",
+        "manifest_seconds": 0.3333333333333333,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_FPThrowWindup",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPThrowWindup.AN_Farmer_FPThrowWindup",
+        "seconds": 1.0,
+        "frames": 30,
+        "sha256": "756ee909789b4c6338edc7d81de1a7aeba2b322c9d0b22c1a5b86b2a11b888f3",
+        "manifest_seconds": 1.0,
+        "loop": true
+      },
+      {
+        "name": "AN_Farmer_FPThrow",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_FPThrow.AN_Farmer_FPThrow",
+        "seconds": 0.3333333432674408,
+        "frames": 10,
+        "sha256": "ab5d72f2858ee7043870a5d2a4764e9012e725029f6fad35acfabe759d39abe4",
+        "manifest_seconds": 0.3333333333333333,
+        "loop": false
+      }
+    ]
+  }
+}

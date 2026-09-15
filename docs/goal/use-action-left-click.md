@@ -19,7 +19,7 @@ User (2026-09-12): "우리 좌버튼으로 던지는거 없애자 이거좀 에�
 - Docs: input.md (IA table + key layout), inventory.md 조작 table, plan/data/item/common.md (3 columns), plan/data/item/cart.md (push), plan/data/item/flashlight.md + headlamp.md + systems/light.md (F → headlamp only, LMB toggles flashlight), systems/monster.md (player response = swing by item row), decisions.md.
 
 ## Out-of-scope
-- Swing / eat / toggle animations (no clips yet — HoldPose layer stays static).
+- Eat / toggle animations (no clips yet). Swing animation was added 2026-09-13 after the user reported "no action at all": `AN_Farmer_Swing`/`AN_Farmer_FPSwing` driven by replicated `SwingStartServerTime` → ABP `SwingElapsed` → sequence evaluator branch (see animation.md).
 - Thrown-item damage to monsters, noise from swinging, swing cooldown/reach as table columns (constants stay until asked).
 - HUD hint text changes beyond what existing prompts already show.
 - Player-vs-player hits.

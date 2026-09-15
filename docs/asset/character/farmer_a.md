@@ -169,3 +169,35 @@ UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin
 - 미리보기(게이트 15장): `hold_{Small,Flashlight,Large}_fp_fp.png`·`fparmsdown_f1_fp.png`·`fprun_f{1,5,10,14}_fp.png`·`windup_fp_f1_fp.png`·
   `swing_fp_f{1,5,9}_fp.png`·`eat_fp_f{1,5,9}_fp.png`(+ `_front`·`_hand` 보조).
 - 하지 않은 것: manifest `animations` 의 HoldIdle/FPHoldIdle 항목·Idle FBX·미리보기 삭제(리드 판단), 전신 Hold·SwingWindup·Eat 재수출.
+
+## 032 휘두르기 재작업 + 넘어짐·던지기 클립 (2026-09-15, 애니메이션 보강)
+
+사용자 "피격·공격 애님이 부족하다, 무기 공격이 어색하다". 분석: 휘두르기는 키 4개 직선 보간에 치켜든 자세가 옆으로 벌어진 팔(웨이터 팔), 타격이 허리 옆,
+몸통 정지가 원인. 넘어짐·죽음·던지기 클립은 0개였다(코드는 넘어지면 이동 불가 + 카메라 하강만). 만든 것(전부 30fps, `Tools/Blender/farmer_pose.py` 헬퍼):
+
+- **휘두르기 재작업** `animate_farmer_swing.py` — 키 6개(HoldSmall → 치켜듦 0.12 → 타격 직전 0.18 → 타격 0.25 → 팔로스루 0.31 → HoldSmall 0.467)에
+  구간별 완급(치켜듦까지 inout·타격까지 in·타격 linear·뒤 out3·복귀 inout). 전신은 손목이 오른쪽 어깨 위·뒤(−0.30, 0.10, 1.80)로 올라갔다가
+  몸 앞(−0.15, −0.50, 1.05)으로 뻗고, 몸통이 오른쪽으로 비틀며 젖혔다가(어깨 12.5cm 뒤) 왼쪽으로 비틀며 숙인다(10.8cm 앞) — 척추 3마디 분배, 머리는
+  반대로 돌려 정면 유지, 왼팔은 뒤로 흔든다. 시작·끝은 `farmer_hold_spec.json Small.tp` 그대로(옛 026 키는 HoldSmall 과 11cm 어긋나 가지 전환 때 튀었다).
+  팔 길이(0.55m)를 넘는 중간 프레임은 어깨 기준 0.54m 로 클램프(`clamp_reach`). 1인칭은 치켜든 주먹이 우상단(너클 (0.86, 0.17)) → 화면 중앙 오른쪽을
+  지나(f7 너클 (0.66, 0.50)) → 아래 중앙 가장자리(타격, 손목 v 0.98) → 왼쪽 아래로 빠졌다가 바닥 가장자리를 따라 Small 로 돌아온다. **ABP 상수
+  (오프셋 0.12·범위 0.347) 불변**. 공격 대기(`animate_farmer_windup.py`)는 새 치켜든 자세로 전신·1인칭 둘 다 재수출.
+  축 실측(`_measure_axes`): Manny 척추 뼈 국부 x = 비틀기, y = 옆 기울기(+ 왼쪽), z = 앞뒤(+ 뒤로) — 옛 스크립트의 `spine_03 [0.04,0,0]` "앞으로 기울기"는
+  실제로는 비틀기였다.
+- **넘어짐 3+2클립** `animate_farmer_knockdown.py` — 전신 `AN_Farmer_Knockdown`(0.5초: 맞아 젖혀짐 0.12 → 중력처럼 가속해 등으로 넘어짐 0.45 → 착지),
+  `AN_Farmer_Down`(2초 루프: 등을 대고 누움, 골반 z 0.12, 왼 무릎 세움, 팔 벌림, 숨쉬기 척추 ±0.03), `AN_Farmer_GetUp`(0.6초: 상체 일으킴 0.3 → 쭈그림 0.48 →
+  기준 자세). 전신 골반 위치 키 포함(`key_current_pose(locations=('pelvis',))` 신설 인자) — 로코메션·발 IK 를 통째로 대체하는 가지에만 쓴다. 바닥 관통은 몸
+  메시 최저점으로 골반을 올려 잡는다(최저점 +0.5cm). 1인칭 `AN_Farmer_FPKnockdown`(0.5초: 두 손이 얼굴 앞으로 확 올라왔다 빠짐)·`AN_Farmer_FPGetUp`
+  (0.6초: 두 손바닥이 아래에서 밀어 올리듯). 카메라 하강은 이미 C++ Tick 이 한다(DownedZ, 6/s 보간).
+- **던지기 2+2클립** `animate_farmer_throw.py` — 전신 `AN_Farmer_ThrowWindup`(1초 루프, 오른손을 어깨 뒤로 당김·왼손 앞으로 조준·손목 ±1cm)·
+  `AN_Farmer_Throw`(0.333초 = 11프레임: 앞·위로 뻗어 놓고(0.15) 팔로스루 뒤 **기준 자세(identity)로 끝난다** — 던지면 손이 비어 HoldPose=None 이라
+  레이어 가중치가 빠질 때 튀지 않게). 1인칭 `AN_Farmer_FPThrowWindup`(주먹이 오른쪽 가장자리)·`AN_Farmer_FPThrow`(화면 중앙 위로 뻗으며 손이 펴지고 아래로).
+- 검증 `verify_farmer_clip_fbx.py -- <13클립>`: 전부 30fps·길이 일치·sha 일치, 루프 이음새 ≤0.01cm. 미리보기 시트(`Tools/Blender/contact_sheet.py` 신설):
+  `preview/swing_{tp,fp}_strip.png`·`swing_{tp,fp}.gif`·`{knockdown,down,getup,throwwindup,throw}_sheet.png`·`fp{knockdown,getup,throwwindup,throw}_sheet.png`.
+  전신 미리보기 카메라는 `render_front(cam_location=, look_at=)` 인자로 오른쪽 앞(휘두르는 팔 쪽)에서 찍는다.
+- **함정(2026-09-15 PIE 실측)**: `farmer_pose.export_action` 은 리그를 100배(cm) 스테이징 사본에 얹어 굽는데, 뼈 **위치** 키(넘어짐의 pelvis)는 m 단위
+  국부 이동이라 그대로 얹으면 100배 작게(78cm → 0.78cm) 나갔다 — 회전만 쓰던 기존 클립엔 없던 문제. 위치 커브만 100배로 환산한 임시 액션으로 굽도록
+  고쳤고(회전만인 클립은 sha 불변), 재수출 뒤 PIE 에서 골반이 84 → 18cm 로 내려갔다 일어나는 것을 확인했다(`docs/asset/evidence/032-anim-pie.json`,
+  `Tools/Unreal/qa_anim_pass_pie.py` — 넘어짐·던지기 대기/던지기·몬스터 경직 변수 전달을 수치로 잰다; 자동 PIE 가 3fps 라 0.3초 경직·팬 밀침의 육안 확인은 사용자 몫).
+- UE 임포트(`Tools/Unreal/import_farmer_clips_032.py`, 13클립, 증거 `032-farmer-anim-pass.json`)·ABP 가지·C++ 복제값은
+  [../../systems/animation.md](../../systems/animation.md) "넘어짐 가지"·"던지기 가지" — 같은 태스크의 ④ 단계.
