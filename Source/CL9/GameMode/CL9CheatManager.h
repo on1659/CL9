@@ -75,6 +75,9 @@ public:
 	/** cl9.seed <N> — 시드 N으로 지금 즉시 사이트를 재생성하고(0이면 껍데기만), 다음 밤도 이 시드로 고정한다 (docs/systems/map.md 디버깅) */
 	void Seed(const TArray<FString>& Args);
 
+	/** cl9.wave <alias|enum> — 내 발밑에서 그 소음원의 파동을 한 번 낸다 (호스트 판정, docs/systems/wave.md) */
+	void Wave(const TArray<FString>& Args);
+
 private:
 	/** "egg", "egg+cooked", 또는 cl9.list 번호를 실제 사용 가능한 아이템 행으로 변환한다 */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;

@@ -8,6 +8,8 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9SiteDef.h"
+#include "Data/CL9WaveTable.h"
+#include "FX/CL9WaveRenderer.h"
 #include "GameMode/CL9GameInstance.h"
 #include "EngineUtils.h"
 #include "Items/CL9Item.h"
@@ -32,6 +34,54 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, SharedMoney);
 	DOREPLIFETIME(ACL9GameState, PeriodIncome);
 	DOREPLIFETIME(ACL9GameState, LastSettlement);
+}
+
+void ACL9GameState::HostReportNoise(ECL9NoiseSource Source, const FVector& Location, float Radius, AActor* NoiseInstigator)
+{
+	if (!HasAuthority() || Source == ECL9NoiseSource::None)
+	{
+		return;
+	}
+
+	// 꺼진 행(bEnabled false 또는 로드 검사로 비활성)은 사건 자체를 내지 않는다 — 걷기처럼 늘 나는 소음이
+	// 아무 그림도 없이 멀티캐스트로 오가지 않게 (2026-09-16 사용자). 몬스터 청각을 이 입구로 통일하면 다시 본다.
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9WaveTable* Table = GameInstance != nullptr ? GameInstance->GetWaveTable() : nullptr;
+	if (Table == nullptr || !Table->IsEnabled(Source))
+	{
+		return;
+	}
+
+	// 호스트의 화면은 여기서 그린다 — 아래 방송은 리슨 호스트에서도 실행되지만 그쪽은 곧바로 빠져나간다
+	// (그러지 않으면 클라이언트가 낸 소리가 호스트 화면에 두 번 핀다).
+	if (UCL9WaveRenderer* Renderer = UCL9WaveRenderer::Get(this))
+	{
+		Renderer->PlayWave(Source, Location, NoiseInstigator, false);
+	}
+
+	Multicast_Noise(Source, Location, NoiseInstigator);
+}
+
+void ACL9GameState::Multicast_Noise_Implementation(ECL9NoiseSource Source, FVector_NetQuantize Location, AActor* NoiseInstigator)
+{
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	UCL9WaveRenderer* Renderer = UCL9WaveRenderer::Get(this);
+	if (Renderer == nullptr)
+	{
+		return;
+	}
+
+	// 내가 낸 소리는 서버 왕복을 기다리지 않고 이미 로컬에서 그렸다 (docs/systems/wave.md 소유 클라의 예측)
+	if (Renderer->IsLocalInstigator(NoiseInstigator))
+	{
+		return;
+	}
+
+	Renderer->PlayWave(Source, Location, NoiseInstigator, false);
 }
 
 void ACL9GameState::AddIncome(int32 Amount)

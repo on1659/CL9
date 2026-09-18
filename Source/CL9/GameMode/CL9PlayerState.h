@@ -43,6 +43,14 @@ public:
 	/** 어느 칸이든 하나라도 들어 있으면 true */
 	bool HasAnyCarriedItem() const;
 
+	/**
+	 * 이 플레이어의 슬롯 색 — 어둠 속에서 누가 누구인지 아는 유일한 단서다
+	 * (docs/systems/wave.md 플레이어 고유색 · docs/plan/data/character.md TintColor).
+	 * 값은 이 사람이 연기하는 **캐릭터 행의 `TintColor`**에서 오며, C++는 색 배열을 갖지 않는다.
+	 * 행이 아직 도착하지 않았으면(스폰 직후·관전) `Fallback`을 그대로 돌려준다.
+	 */
+	FLinearColor GetSlotColor(const FLinearColor& Fallback = FLinearColor::White) const;
+
 	/** 호스트 측: Hp를 기록한 뒤 발동한다(OnRep은 클라이언트를 처리할 뿐 권한자는 처리하지 않는다) */
 	void NotifyHpChanged()
 	{

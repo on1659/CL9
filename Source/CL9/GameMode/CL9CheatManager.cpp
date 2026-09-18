@@ -14,6 +14,7 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
+#include "Data/CL9WaveTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
@@ -99,6 +100,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("seed"))
 	{
 		Seed(Tokens);
+	}
+	else if (Command == TEXT("wave"))
+	{
+		Wave(Tokens);
 	}
 	else
 	{
@@ -328,6 +333,36 @@ void UCL9CheatManager::Night(const TArray<FString>& Args)
 		UE_LOG(LogCL9, Log, TEXT("cl9.night: dawn is running — wait for the lobby."));
 		break;
 	}
+}
+
+void UCL9CheatManager::Wave(const TArray<FString>& Args)
+{
+	if (!Args.IsValidIndex(0))
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.wave: usage cl9.wave <run|walk|pickup_quiet|pickup_loud|push|decoy|throw_break|cart|land|monster_prox|monster_call>."));
+		return;
+	}
+
+	ECL9NoiseSource Source = ECL9NoiseSource::None;
+	if (!CL9Wave::FromAlias(Args[0], Source))
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.wave: '%s' is not a noise source (docs/systems/wave.md 소음원 enum)."), *Args[0]);
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	ACL9GameState* CL9GameState = World ? World->GetGameState<ACL9GameState>() : nullptr;
+	const APlayerController* Controller = GetOuterAPlayerController();
+	ACL9Character* Character = Controller ? Cast<ACL9Character>(Controller->GetPawn()) : nullptr;
+	if (CL9GameState == nullptr || Character == nullptr || !Character->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.wave: host only."));
+		return;
+	}
+
+	// 발신자는 나 자신이다 — 몬스터 행(monster_call)은 읽을 몬스터 행이 없어 반경 0으로 조용히 끝난다
+	CL9GameState->HostReportNoise(Source, Character->GetFootLocation(), 0.f, Character->GetPlayerState());
+	UE_LOG(LogCL9, Log, TEXT("cl9.wave: '%s' reported at your feet."), *CL9Wave::ToAlias(Source));
 }
 
 void UCL9CheatManager::Blackout(const TArray<FString>& Args)

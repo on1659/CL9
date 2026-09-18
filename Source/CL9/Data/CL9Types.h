@@ -94,6 +94,45 @@ enum class ECL9ActorKind : uint8
 };
 
 /**
+ * 소리를 내는 사건의 종류 (docs/systems/wave.md 소음원 enum). 파동 표의 행 키이자
+ * 소음 사건 방송(`ACL9GameState::Multicast_Noise`)에 실리는 1바이트다 — 이름을 FName으로
+ * 두지 않은 이유는 발걸음마다 도는 RPC에 문자열을 싣지 않기 위해서다.
+ *
+ * **여기(CL9Types.h)에 있는 이유**: 복제 RPC의 인자라 `ACL9GameState`가 알아야 하는데,
+ * 표 헤더(`CL9WaveTable.h`)는 UDataAsset과 나이아가라 참조를 끌고 오므로 널리 include되는
+ * 게임 상태 헤더에 넣기에 무겁다. 표에만 쓰이는 나머지 두 enum은 표 헤더에 남는다.
+ *
+ * 문서·표가 부르는 이름(alias)은 값 이름의 소문자 스네이크 표기다 — `PickupQuiet` ↔ `pickup_quiet`.
+ */
+UENUM(BlueprintType)
+enum class ECL9NoiseSource : uint8
+{
+	None,
+	/** 달리는 발걸음 */
+	Run,
+	/** 걸으면서 줍기 */
+	PickupQuiet,
+	/** 최근에 달렸으면(RecentRunTime) 줍기 */
+	PickupLoud,
+	/** 밀치기 */
+	Push,
+	/** 미끼가 놓임 (탄 요리 등) */
+	Decoy,
+	/** 던진 것이 깨짐 */
+	ThrowBreak,
+	/** 수레 끌기 */
+	Cart,
+	/** 점프 착지 */
+	Land,
+	/** 걷는 발걸음 (표에서 기본 꺼짐) */
+	Walk,
+	/** 몬스터 근접 소나 — 몬스터 자리에서 핀다 */
+	MonsterProx,
+	/** 몬스터 울음 (무리 경보가 실제로 나가는 순간) */
+	MonsterCall
+};
+
+/**
  * 마지막 정산의 결과 (docs/systems/balance.md). 신호(`OnSettled`)와 **같은 값을 복제로도** 들고 있는다 —
  * 새벽 화면이 신호보다 늦게 열려도(클라이언트에서는 화면 열기 RPC와 정산 멀티캐스트의 도착 순서가
  * 보장되지 않는다) 보여줄 숫자를 잃지 않게 하려는 것이다. Day가 0이면 아직 정산한 적이 없다.

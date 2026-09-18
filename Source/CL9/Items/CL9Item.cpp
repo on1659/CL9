@@ -9,6 +9,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "PhysicsEngine/BodyInstance.h"
@@ -17,6 +18,7 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9Types.h"
 #include "GameMode/CL9GameInstance.h"
+#include "GameMode/CL9GameState.h"
 
 namespace
 {
@@ -396,6 +398,13 @@ void ACL9Item::HandleImpact(float ImpactSpeed)
 	if (ImpactSpeed >= BreakThreshold)
 	{
 		SetAlias(GetAlias(), CL9::SubAliasBroken);
+
+		// 깨지는 소리 — 금 가는 것(Crack)에는 붙이지 않는다. 판정 반경이 아직 없어 0이고,
+		// 링 크기는 표의 FallbackRadius가 정한다 (docs/systems/wave.md 소음 이벤트 `ThrowBreak`)
+		if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+		{
+			GameState->HostReportNoise(ECL9NoiseSource::ThrowBreak, GetActorLocation(), 0.f, this);
+		}
 	}
 	else if (!bCracked && ImpactSpeed >= ItemDef->CrackSpeed)
 	{

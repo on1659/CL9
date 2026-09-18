@@ -85,6 +85,8 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.settle [force]` | 호스트 판정 | 정산 상태(일차·목표·기간 수입) 출력 + 정산일이면 판정 실행; `force`면 정산일이 아니어도 판을 지금 끝낸다 (정산) |
 | `cl9.money [양]` | 호스트 판정 | 판 공유 자금(GameState.SharedMoney) 출력; 양이 붙으면 지급(양수)하거나 차감(음수) — 4f 구매 검증 대역 (4e 구현) |
 | `cl9.seed <N>` | 0 = 외곽만 | 지금 그 시드로 맵을 다시 깔고 다음 밤도 그 시드로 고정 (호스트). **PIE 없이 에디터 콘솔에서 치면** 같은 생성기로 레벨에 트랜지언트 액터를 깐다 — 5a 맵 배치 툴의 창 없는 판 (`cl9.seed clear`로 제거, 두 번째 인자로 목적지 alias) |
+| `cl9.wave <alias\|enum>` | 호스트 판정 | 내 발밑에서 그 소음원의 파동을 한 번 낸다 — `run` · `pickup_loud` 처럼 표의 alias나 enum 이름(`PickupLoud`)을 받는다 ([wave.md](wave.md) 소음원 enum). 발신자가 사람이라 `monster_call`은 읽을 몬스터 행이 없어 조용히 끝난다 |
+| `cl9.shownoise` | 로컬 전용 | 소음 판정 반경을 디버그 원으로 그리고, 파동마다 반경·차폐 광선 수를 `LogCL9`에 찍는다 — 링이 멈추는 자리와 판정 반경이 같은지 대조하는 용도 ([wave.md](wave.md) PIE 확인) |
 | `cl9.lang [ko\|en\|ja\|zh-Hans]` | 로컬 전용 (에디터/PIE는 게임 언어 미리보기) | 인자 없으면 현재 언어 출력, 있으면 지금 바꾸고 `GameUserSettings.ini`에 저장 — 설정 화면 언어 항목과 같은 `UCL9GameUserSettings::ApplyLanguage`를 부른다 ([localization.md](localization.md)) |
 | `cl9.resetkeys` | 로컬 전용 | 키 리바인딩을 기본값으로 되돌리고 저장 — 프롬프트가 `[{0}]`로 현재 키를 찍으므로 "왜 `[F] 줍기`지?"가 생기면 이것 ([settings.md](settings.md) 개발 중 알아둘 것) |
 | `cl9.shownav` | **미구현** | 몬스터 이동·경로 시각화 (구 bp_show_cells) |

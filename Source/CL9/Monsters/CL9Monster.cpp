@@ -7,6 +7,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerState.h"
 #include "Materials/MaterialInterface.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
@@ -18,6 +19,7 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9WaveTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
@@ -194,6 +196,8 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	ChaseCooldownRemaining = FMath::Max(ChaseCooldownRemaining - DeltaSeconds, 0.f);
 	CatchCooldownRemaining = FMath::Max(CatchCooldownRemaining - DeltaSeconds, 0.f);
 	AlertCooldownRemaining = FMath::Max(AlertCooldownRemaining - DeltaSeconds, 0.f);
+
+	HostTickProxNoise(DeltaSeconds);
 
 	// 분노는 지속되는 동안 게이지를 고정한다 — 죽음의 비명 이후의 사냥 모드는
 	// ChaseCooldown을 우회하며 일찍 가라앉는 법이 없다 (docs/systems/monster.md 경보).
@@ -760,6 +764,16 @@ void ACL9Monster::OnShove(AActor* Shover)
 		LastSensedLocation = Attacker->GetActorLocation();
 		bHadSight = true;
 		DetectGauge = 1.f;
+
+		// 밀치는 소리는 밀린 몬스터가 아니라 **민 사람의 발밑**에서 난다 (docs/systems/wave.md 소음 이벤트)
+		const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+		const UCL9DefRegistry* Registry = GameInstance != nullptr ? GameInstance->GetDefRegistry() : nullptr;
+		const UCL9RulesDef* Rules = Registry != nullptr ? Registry->GetRules() : nullptr;
+		if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+		{
+			GameState->HostReportNoise(ECL9NoiseSource::Push, Attacker->GetFootLocation(),
+				Rules != nullptr ? Rules->PushNoiseRadius : 0.f, Attacker->GetPlayerState());
+		}
 	}
 	StunRemaining = MonsterDef->PushStun;
 	bPushStun = true;
@@ -862,8 +876,66 @@ void ACL9Monster::Die(AActor* Source)
 		*GetNameSafe(this), *GetAlias().ToString(), *GetNameSafe(Source), Hearers.Num());
 }
 
+void ACL9Monster::HostTickProxNoise(float DeltaSeconds)
+{
+	// 잠든 계열(Asleep·WakeTelegraph)은 소나를 내지 않는다 — 잠든 닭까지 자기 자리를 알려 주면 기상 예고로
+	// 배우던 것이 값싸진다 (2026-09-16 사용자). 깨어 있는 상태(순찰·조사·추격…)만 낸다. Dead는 HostTickAI가 먼저 거른다.
+	if (State == ECL9MonsterState::Asleep || State == ECL9MonsterState::WakeTelegraph)
+	{
+		return;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9WaveTable* Table = GameInstance != nullptr ? GameInstance->GetWaveTable() : nullptr;
+	const FCL9WaveInfo* Row = Table != nullptr ? Table->FindRow(ECL9NoiseSource::MonsterProx) : nullptr;
+	// 반복 간격이 없으면 근접 소나는 울리지 않는다 — 이 행은 반복으로만 나는 소음원이다
+	if (Row == nullptr || Row->RepeatInterval <= 0.f)
+	{
+		return;
+	}
+
+	ProxNoiseRemaining -= DeltaSeconds;
+	if (ProxNoiseRemaining > 0.f)
+	{
+		return;
+	}
+	ProxNoiseRemaining = Row->RepeatInterval;
+
+	// TriggerRadius 안에 산 플레이어가 있을 때만 — 0이면 조건 없음
+	if (Row->TriggerRadius > 0.f)
+	{
+		bool bPlayerNear = false;
+		for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+		{
+			const ACL9Character* Candidate = *It;
+			if (!Candidate->IsDead() && FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation()) <= Row->TriggerRadius)
+			{
+				bPlayerNear = true;
+				break;
+			}
+		}
+		if (!bPlayerNear)
+		{
+			return;
+		}
+	}
+
+	if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+	{
+		// 판정 반경이 없는 소음원이다 — 링 크기는 표의 FallbackRadius가 정하고, 몬스터 청각은 이 사건을 듣지 않는다
+		GameState->HostReportNoise(ECL9NoiseSource::MonsterProx, GetActorLocation(), 0.f, this);
+	}
+}
+
 void ACL9Monster::FirePackAlarm()
 {
+	// 울음 파동은 이 경보의 시각 표현이다 — 링 반경이 곧 PackAlarmRadius라
+	// 링이 닿은 동료가 실제로 깨어난다 (docs/systems/wave.md `monster_call`)
+	if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+	{
+		GameState->HostReportNoise(ECL9NoiseSource::MonsterCall, GetActorLocation(), MonsterDef->PackAlarmRadius, this);
+	}
+
 	const FVector AlarmSpot = SensedCharacter.IsValid() ? LastSensedLocation : GetActorLocation();
 	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
 	{

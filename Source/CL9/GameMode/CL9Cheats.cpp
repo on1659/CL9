@@ -16,6 +16,7 @@
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9SiteDef.h"
 #include "Core/CL9InputText.h"
+#include "FX/CL9WaveRenderer.h"
 #include "GameMode/CL9CheatManager.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameUserSettings.h"
@@ -242,6 +243,27 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSeed(
 		}
 #endif
 		RouteCL9Cheat(TEXT("seed"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatWave(
+	TEXT("cl9.wave"),
+	TEXT("cl9.wave <alias|enum> — plays that noise source's wave once at your feet (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("wave"), Args, World, false);
+	}));
+
+/**
+ * cl9.shownoise — 소음 판정 반경을 디버그 원으로 그리고, 파동 하나마다 반경·광선 수를 로그에 남긴다.
+ * 판정에 닿지 않는 로컬 표현 스위치라 치트 매니저를 거치지 않는다 (cl9.lang과 같은 자리).
+ */
+static FAutoConsoleCommand GCL9CheatShowNoise(
+	TEXT("cl9.shownoise"),
+	TEXT("cl9.shownoise — toggles the noise radius debug circles and the per-wave log (local)."),
+	FConsoleCommandDelegate::CreateLambda([]()
+	{
+		const bool bOn = UCL9WaveRenderer::ToggleShowNoise();
+		UE_LOG(LogCL9, Log, TEXT("cl9.shownoise: noise debug %s."), bOn ? TEXT("on") : TEXT("off"));
 	}));
 
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(

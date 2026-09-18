@@ -171,6 +171,13 @@ private:
 	/** 호스트 전용: PackAlarmRadius 안의 팩 동료들에게 감지 지점을 향한 경보를 보낸다 */
 	void FirePackAlarm();
 
+	/**
+	 * 호스트 전용, 매 틱: 파동 표 `monster_prox` 행의 `TriggerRadius` 안에 플레이어가 있으면
+	 * `RepeatInterval`마다 이 몬스터 자리에서 소음 사건을 낸다 — "근처에 뭔가 있다"만 말하는
+	 * 공포 발신기이며 판정에는 닿지 않는다 (docs/systems/wave.md 소음 이벤트 `MonsterProx`).
+	 */
+	void HostTickProxNoise(float DeltaSeconds);
+
 	/** 호스트 전용: 시선이 붙잡고 있지 않는 한 WakeTelegraph를 거쳐 Asleep에서 벗어난다 */
 	void TryWake();
 
@@ -261,6 +268,9 @@ private:
 
 	/** 죽음의 비명 이후 RageTime 동안의 사냥 모드 — 게이지를 고정하고 ChaseCooldown을 우회한다 */
 	float RageRemaining = 0.f;
+
+	/** 근접 소나(파동)의 다음 발동까지 남은 초 — 표현 전용이며 AI 판정에는 쓰이지 않는다 */
+	float ProxNoiseRemaining = 0.f;
 
 	/** 거위 울음: 경보가 발동하기 전 준비 동작, 그 뒤 울음 사이의 AlertCooldown */
 	float AlertWindupRemaining = 0.f;

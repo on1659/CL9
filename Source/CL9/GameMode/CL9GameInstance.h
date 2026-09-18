@@ -11,6 +11,7 @@ class UCL9DefRegistry;
 class UCL9SettingsTable;
 class UCL9ShakeTable;
 class UCL9UITable;
+class UCL9WaveTable;
 
 /**
  * 로컬 def 레지스트리를 소유한다 (docs/data/schema.md 조회). def 리스트 에셋은
@@ -49,6 +50,12 @@ public:
 		return ShakeTable;
 	}
 
+	/** 파동 렌더러와 소음원이 읽는 파동 표다 (docs/systems/wave.md) — null이면 파동이 하나도 그려지지 않는다 */
+	const UCL9WaveTable* GetWaveTable() const
+	{
+		return WaveTable;
+	}
+
 	/** 설정 화면·볼륨 적용이 읽는 에셋 참조 표다 (docs/systems/settings.md) — null이면 볼륨 슬라이더가 닿는 곳이 없다 */
 	const UCL9SettingsTable* GetSettingsTable() const
 	{
@@ -68,6 +75,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="UI")
 	TSoftObjectPtr<UCL9ShakeTable> ShakeTableAsset;
 
+	/** 파동 행 목록 — BP_CL9GameInstance에서 지정한다 */
+	UPROPERTY(EditAnywhere, Category="UI")
+	TSoftObjectPtr<UCL9WaveTable> WaveTableAsset;
+
 	/** 볼륨 믹스·사운드 클래스 참조 — BP_CL9GameInstance에서 지정한다 */
 	UPROPERTY(EditAnywhere, Category="UI")
 	TSoftObjectPtr<UCL9SettingsTable> SettingsTableAsset;
@@ -84,4 +95,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9SettingsTable> SettingsTable;
+
+	UPROPERTY()
+	TObjectPtr<const UCL9WaveTable> WaveTable;
 };

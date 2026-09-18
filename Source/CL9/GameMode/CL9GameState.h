@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "Data/CL9Types.h"
+#include "Engine/NetSerialization.h"
 #include "CL9GameState.generated.h"
 
 class UCL9RulesDef;
@@ -58,6 +59,25 @@ public:
 
 	/** 호스트 전용: 항아리 반납 하나를 기록한다 — 밤 동안이면 정전 시각도 앞당긴다(docs/plan/data/rules.md 밤) */
 	void RecordReturn(FName ItemAlias, FName ItemSubAlias);
+
+	/**
+	 * 호스트 전용: 소음 사건 하나를 알린다 — **소리가 나는 모든 곳이 지나는 단일 입구**다
+	 * (docs/systems/wave.md 소음 이벤트). 자기 렌더러에 바로 그리고, 나머지 머신에는 방송한다.
+	 *
+	 * `NoiseInstigator`는 소리를 낸 액터다 — 플레이어가 냈으면 그 `ACL9PlayerState`, 몬스터가 냈으면 그
+	 * `ACL9Monster`(이름이 `Instigator`가 아닌 것은 `AActor`의 같은 이름 멤버를 가리면 빌드가 실패하기
+	 * 때문이다). `Radius`는 그 행동의 판정 반경(없으면 0)이며 **파동은 이 값을 쓰지 않는다**
+	 * (각 머신이 표에서 다시 파생한다) — 몬스터 청각을 이 이벤트로 통일할 때 쓰려고 자리를 잡아 둔 인자다.
+	 */
+	void HostReportNoise(ECL9NoiseSource Source, const FVector& Location, float Radius, AActor* NoiseInstigator);
+
+	/**
+	 * 소음 사건 방송 — **Unreliable**이다: 발걸음 링 하나가 빠져도 다음 걸음이 오고, 신뢰 큐를
+	 * 발걸음으로 채우면 줍기·문 열기 같은 판정 RPC가 늦어진다 (docs/systems/wave.md 복제).
+	 * 반경은 싣지 않는다 — 각 머신이 같은 표에서 파생한다.
+	 */
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_Noise(ECL9NoiseSource Source, FVector_NetQuantize Location, AActor* NoiseInstigator);
 
 	/** 호스트 전용: 페이즈를 바꾸고 로컬 변경 훅을 발동한다(클라이언트는 OnRep을 통해 발동한다) */
 	void SetPhase(ECL9NightPhase NewPhase);

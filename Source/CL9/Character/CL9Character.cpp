@@ -35,8 +35,11 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9ShakeTable.h"
+#include "Data/CL9WaveTable.h"
+#include "FX/CL9WaveRenderer.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameState.h"
 #include "GameMode/CL9GameUserSettings.h"
 #include "GameMode/CL9PlayerController.h"
 #include "GameMode/CL9PlayerState.h"
@@ -644,6 +647,10 @@ void ACL9Character::Tick(float DeltaSeconds)
 	{
 		HostTickSwingHit();
 	}
+
+	// 발걸음 소음은 호스트(사건을 낸다)와 소유 클라이언트(같은 걸음을 예측해 먼저 그린다) 양쪽에서
+	// 누적한다 — 남의 폰이 내는 걸음은 방송으로 온다 (docs/systems/wave.md 소유 클라의 예측)
+	TickStepNoise();
 
 	// 피격 플래시는 남의 화면에서도 보여야 한다(동료가 잡히는 것을 알아채는 유일한 단서다) — 로컬 조작 여부와 무관하게 모든 폰에서
 	UpdateHurtFlash();
@@ -1485,6 +1492,122 @@ float ACL9Character::GetGroundSpeed() const
 	return GetVelocity().Size2D();
 }
 
+FVector ACL9Character::GetFootLocation() const
+{
+	return GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+}
+
+void ACL9Character::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	// 착지 속도 문턱은 두지 않는다 — 제자리 점프도 링을 내고, 연타는 행의 MinInterval이 억제한다
+	// (docs/systems/wave.md 소음 이벤트 `Land`). 판정 반경은 아직 없어 0이다.
+	EmitNoise(ECL9NoiseSource::Land, GetFootLocation(), 0.f);
+}
+
+float ACL9Character::GetNoiseStepDistance(ECL9NoiseSource Source) const
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9WaveTable* Table = GameInstance != nullptr ? GameInstance->GetWaveTable() : nullptr;
+	// 꺼진 행(기본값의 walk)은 간격도 0 — 사건 자체를 내지 않는다 (2026-09-16 사용자, HostReportNoise 입구와 같은 기준)
+	const FCL9WaveInfo* Row = (Table != nullptr && Table->IsEnabled(Source)) ? Table->FindRow(Source) : nullptr;
+	return Row != nullptr ? Row->StepDistance : 0.f;
+}
+
+void ACL9Character::EmitNoise(ECL9NoiseSource Source, const FVector& Location, float Radius)
+{
+	if (HasAuthority())
+	{
+		if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+		{
+			GameState->HostReportNoise(Source, Location, Radius, GetPlayerState());
+		}
+		return;
+	}
+
+	// 소유 클라이언트의 예측 — 표현 전용이라 호스트 판정과 어긋나도 링 하나가 헛돌 뿐이고,
+	// 몬스터가 무엇을 듣는가는 여전히 호스트의 사건만 정한다. 꺼진 행은 호스트 입구와 같은 기준으로 건너뛴다.
+	if (IsLocallyControlled())
+	{
+		const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+		const UCL9WaveTable* Table = GameInstance != nullptr ? GameInstance->GetWaveTable() : nullptr;
+		UCL9WaveRenderer* Renderer = UCL9WaveRenderer::Get(this);
+		if (Table != nullptr && Table->IsEnabled(Source) && Renderer != nullptr)
+		{
+			Renderer->PlayWave(Source, Location, GetPlayerState(), true);
+		}
+	}
+}
+
+void ACL9Character::TickStepNoise()
+{
+	const bool bHost = HasAuthority();
+	if (!bHost && !IsLocallyControlled())
+	{
+		return;
+	}
+
+	const UCL9CharacterMovement* Movement = GetCL9CharacterMovement();
+	const bool bRunning = Movement != nullptr && Movement->IsRunning();
+	if (bHost && bRunning)
+	{
+		// 줍기가 조용한지 시끄러운지를 가르는 기준 시각 (docs/plan/data/rules.md 소리 — RecentRunTime)
+		LastRunServerTime = GetServerTime();
+	}
+
+	const FVector Foot = GetFootLocation();
+	if (!LastStepLocation.IsSet())
+	{
+		LastStepLocation = Foot;
+		return;
+	}
+	const float Moved = FVector::Dist2D(LastStepLocation.GetValue(), Foot);
+	LastStepLocation = Foot;
+
+	// 땅을 딛고 움직일 때만 걸음이다 — 공중에서는 발이 바닥을 치지 않는다(착지는 Landed가 낸다)
+	if (Moved <= 0.f || Movement == nullptr || !Movement->IsMovingOnGround())
+	{
+		return;
+	}
+
+	const ECL9NoiseSource StepSource = bRunning ? ECL9NoiseSource::Run : ECL9NoiseSource::Walk;
+	if (StepSource != LastStepSource)
+	{
+		// 달리기와 걷기는 간격이 다르다 — 바뀌는 순간 누적을 버려야 새 간격이 그대로 적용된다
+		StepDistanceAccum = 0.f;
+		LastStepSource = StepSource;
+	}
+
+	const float StepDistance = GetNoiseStepDistance(StepSource);
+	if (StepDistance > 0.f)
+	{
+		StepDistanceAccum += Moved;
+		if (StepDistanceAccum >= StepDistance)
+		{
+			StepDistanceAccum = 0.f;
+			const UCL9RulesDef* Rules = GetRules();
+			// 걷기의 어그로는 0이다 — 판정 반경이 있는 것은 달리기뿐이다
+			const float Ruling = (bRunning && Rules != nullptr) ? Rules->RunNoiseRadius : 0.f;
+			EmitNoise(StepSource, Foot, Ruling);
+		}
+	}
+
+	// 수레는 사람 발밑이 아니라 수레 자리에서 난다 — 끄는 동안 걸음마다 링이 하나 더 핀다
+	const float CartStepDistance = PullingCart != nullptr ? GetNoiseStepDistance(ECL9NoiseSource::Cart) : 0.f;
+	if (CartStepDistance <= 0.f)
+	{
+		CartStepDistanceAccum = 0.f;
+		return;
+	}
+	CartStepDistanceAccum += Moved;
+	if (CartStepDistanceAccum >= CartStepDistance)
+	{
+		CartStepDistanceAccum = 0.f;
+		EmitNoise(ECL9NoiseSource::Cart, PullingCart->GetActorLocation(), 0.f);
+	}
+}
+
 void ACL9Character::HostCancelSwingWindup()
 {
 	if (HasAuthority())
@@ -1526,6 +1649,15 @@ void ACL9Character::HostPickUp(ACL9Item* Item, int32 Slot)
 	// 손 소켓에 붙는다 — 위치는 행의 GripOffset이 정하고, CarryHeight는 칸에서 꺼내 스폰하는 높이에만 쓰인다(놓기는 조준점, Server_Drop)
 	Item->OnPickedUp(this);
 	CL9PlayerState->NotifyCarryChanged();
+
+	// 줍는 소리 — 최근에 달렸으면(RecentRunTime) 달린 것과 같은 크기로 들린다
+	// (docs/plan/data/rules.md 소리 · docs/systems/wave.md 소음 이벤트)
+	if (const UCL9RulesDef* Rules = GetRules())
+	{
+		const bool bLoud = GetServerTime() - LastRunServerTime <= Rules->RecentRunTime;
+		EmitNoise(bLoud ? ECL9NoiseSource::PickupLoud : ECL9NoiseSource::PickupQuiet, GetFootLocation(),
+			bLoud ? Rules->PickupLoudRadius : Rules->PickupQuietRadius);
+	}
 }
 
 void ACL9Character::HostWear(ACL9Item* Item)

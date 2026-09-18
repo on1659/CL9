@@ -4,6 +4,7 @@
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ShakeTable.h"
+#include "Data/CL9WaveTable.h"
 #include "Misc/ConfigCacheIni.h"
 #include "UI/CL9SettingsTable.h"
 #include "UI/CL9UITable.h"
@@ -51,6 +52,18 @@ void UCL9GameInstance::Init()
 	{
 		UE_LOG(LogCL9, Warning, TEXT("'%s' has no shake table assigned — camera shakes stay silent."), *GetNameSafe(this));
 	}
+
+	// 검사는 표를 받은 이 자리에서 한 번만 돈다 — 깨진 행은 여기서 비활성이 된다 (docs/systems/wave.md 로드 검사)
+	UCL9WaveTable* LoadedWaveTable = WaveTableAsset.LoadSynchronous();
+	if (LoadedWaveTable == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("'%s' has no wave table assigned — no noise draws a ring."), *GetNameSafe(this));
+	}
+	else
+	{
+		LoadedWaveTable->ValidateRows();
+	}
+	WaveTable = LoadedWaveTable;
 
 	SettingsTable = SettingsTableAsset.LoadSynchronous();
 	if (SettingsTable == nullptr)

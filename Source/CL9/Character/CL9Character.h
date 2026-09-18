@@ -274,6 +274,9 @@ public:
 	/** 무브먼트 컴포넌트를 CL9 예측 무브먼트 타입으로 반환한다 */
 	UCL9CharacterMovement* GetCL9CharacterMovement() const;
 
+	/** 발밑 월드 위치 — 소음이 나는 자리다(캡슐 중심이 아니라 딛고 선 바닥). 밀치기 파동도 민 사람의 이 자리를 쓴다 */
+	FVector GetFootLocation() const;
+
 	/** 1인칭 메시를 반환한다 (소유한 플레이어에게만 보임) */
 	USkeletalMeshComponent* GetFirstPersonMesh() const
 	{
@@ -287,6 +290,9 @@ public:
 	}
 
 	virtual void Tick(float DeltaSeconds) override;
+
+	/** 착지 — 호스트는 소음 사건을 내고, 소유 클라는 같은 파동을 예측해 먼저 그린다 (docs/systems/wave.md `Land`) */
+	virtual void Landed(const FHitResult& Hit) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -575,6 +581,20 @@ private:
 	 */
 	void HostTickSwingHit();
 
+	/**
+	 * 매 틱, 호스트와 소유 클라이언트에서: 이동한 누적 거리가 행의 `StepDistance`를 넘을 때마다
+	 * 발걸음(달리기/걷기) 소음과, 수레를 끌고 있으면 수레 소음을 낸다 (docs/systems/wave.md 소음 이벤트).
+	 * 호스트는 `HostReportNoise`로 사건을 내고, 소유 클라이언트는 같은 걸음을 로컬에서 예측해 먼저 그린다 —
+	 * 발걸음은 짧은 간격으로 나므로 RTT만큼 늦으면 링이 걸음과 어긋나 보인다.
+	 */
+	void TickStepNoise();
+
+	/** 발걸음·착지·줍기 소음 하나 — 호스트면 사건으로, 소유 클라면 예측 재생으로 나간다 */
+	void EmitNoise(ECL9NoiseSource Source, const FVector& Location, float Radius);
+
+	/** 그 행의 `StepDistance`(cm), 행이 없으면 0 — 0이면 그 소음원은 걸음으로 나지 않는다 */
+	float GetNoiseStepDistance(ECL9NoiseSource Source) const;
+
 	/** 지금 E로 아이템을 주울 수 있는 상태인가 — 수레를 밀지 않고, 전환이 잠기지 않았고, 들어갈 칸이 있다 */
 	bool CanPickUpItem() const;
 
@@ -708,6 +728,23 @@ private:
 
 	/** 지난 틱에 본 KnockdownStartServerTime — 달라지면 피격 셰이크를 한 번 재생한다 */
 	float LastSeenKnockdownTime = -1000.f;
+
+	// -- 소음(파동) 상태: 호스트 또는 소유 클라이언트에서만 굴러간다 (docs/systems/wave.md) --
+
+	/** 걸음 누적을 잰 직전 위치 — 아직 재기 시작하지 않았으면 미설정 */
+	TOptional<FVector> LastStepLocation;
+
+	/** 발걸음 행(`Run`/`Walk`)의 누적 이동 거리(cm) — 행이 바뀌면 0으로 되돌린다 */
+	float StepDistanceAccum = 0.f;
+
+	/** 지난 틱의 발걸음 행 — 달리기와 걷기는 `StepDistance`가 달라 누적을 함께 쓸 수 없다 */
+	ECL9NoiseSource LastStepSource = ECL9NoiseSource::None;
+
+	/** 수레 행의 누적 이동 거리(cm) — 발걸음과 따로 잰다(간격이 다를 수 있다) */
+	float CartStepDistanceAccum = 0.f;
+
+	/** 호스트 전용: 마지막으로 달리는 것이 보인 서버 시각 — 줍기가 조용한지 시끄러운지(`RecentRunTime`)를 가른다 */
+	float LastRunServerTime = -1000.f;
 
 	/** 눈높이에서 캡슐에 붙어 있는 1인칭 카메라 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))

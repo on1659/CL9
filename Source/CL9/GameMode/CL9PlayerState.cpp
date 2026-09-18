@@ -2,6 +2,8 @@
 
 #include "GameMode/CL9PlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "Character/CL9Character.h"
+#include "Data/CL9CharacterDef.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9RulesDef.h"
 #include "GameMode/CL9GameInstance.h"
@@ -71,6 +73,14 @@ bool ACL9PlayerState::HasAnyCarriedItem() const
 		}
 	}
 	return false;
+}
+
+FLinearColor ACL9PlayerState::GetSlotColor(const FLinearColor& Fallback) const
+{
+	// 색의 출처는 캐릭터 행 하나뿐이다 — 폰이 물고 있는 행에서 그대로 읽는다(모든 머신에서 같은 값)
+	const ACL9Character* Character = Cast<ACL9Character>(GetPawn());
+	const UCL9CharacterDef* CharacterDef = Character != nullptr ? Character->GetCharacterDef() : nullptr;
+	return CharacterDef != nullptr ? CharacterDef->TintColor : Fallback;
 }
 
 void ACL9PlayerState::OnRep_Hp()
