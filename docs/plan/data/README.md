@@ -16,6 +16,7 @@
 | [segkind.md](segkind.md) | 맵 조각 11종 |
 | [module.md](module.md) | 맵 모듈 — 생성기가 조립하는 단위 |
 | [sequence.md](sequence.md) | 연출 시퀀스 — 전이 지점(밤 시작·정전·전멸·새벽). **표는 아직 없다** |
+| [wave.md](wave.md) | 파동 — 소음원마다 링의 리소스·속도·색·파워·차폐 광선 수. **아직 안 쓴 문서다** (행 스키마는 [../../systems/wave.md](../../systems/wave.md)) |
 
 ---
 

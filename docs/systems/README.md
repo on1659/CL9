@@ -33,6 +33,7 @@
 | 원정(진입·회수·탈출) 흐름 | [raiding.md](raiding.md) |
 | **맵을 만지고 싶다** (모듈 조립·배치 툴·시드) | [map.md](map.md) · 조각 표·에셋 팩 교체는 [asset-swap.md](asset-swap.md) |
 | 위험을 플레이어에게 알리는 연출 | [warning.md](warning.md) |
+| **소리 낸 자리에 퍼지는 링**(파동) — 소음원 추가·색·반경·벽 차폐 | [wave.md](wave.md) → 기획은 [../plan/wave.md](../plan/wave.md) |
 | 전이 연출(시퀀스) | [sequence.md](sequence.md) |
 | 판 저장·로드 (호스트) | [save.md](save.md) — 로컬 옵션은 여기 아님 → [settings.md](settings.md) |
 | 로비·세션·매칭 (미구현) | [session.md](session.md) |
@@ -73,6 +74,7 @@
 | [ui.md](ui.md) | 화면에 무엇을 띄우나 — HUD·각 화면의 내용 |
 | [ui_system.md](ui_system.md) | UI 코드 구조 — WBP_Main·UI 표·UIManager·화면 히스토리 |
 | [warning.md](warning.md) | 위험 전달 — 월드 연출 우선 |
+| [wave.md](wave.md) | 파동 — 소음 이벤트 하나로 모아 각 머신이 그리는 바닥 링 (미구현, 사전 문서) |
 
 ---
 

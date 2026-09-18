@@ -9,6 +9,7 @@
 | 전체 기획 | [economy.md](economy.md) | 돈·가격·난이도 곡선·지켜야 할 부등식 |
 | 작업 순서 | [build-order.md](build-order.md) | **뭘 만들지 착수하기 전에 반드시** |
 | 전체 기획 | [settings.md](settings.md) | 플레이어 옵션 — 무엇을 열고 무엇을 열지 않는가, 기능마다 옵션을 넣을지 판단할 때 |
+| 전체 기획 | [wave.md](wave.md) | 파동 — 소리를 낸 자리에 링이 퍼져 몬스터가 듣는 반경을 보여 준다 |
 | 세부 기획 | [data/](data/) | 표에 행을 추가하거나 컬럼을 만질 때 |
 
 ---
@@ -28,6 +29,7 @@
 | 살 수 있는 장비를 추가하고 싶다 | [data/equipment.md](data/equipment.md) |
 | **몇 일차에 몬스터가 몇 마리인지 정하고 싶다** | [data/progression.md](data/progression.md) |
 | 걷기 속도·스태미나·밤 길이를 바꾸고 싶다 | [data/rules.md](data/rules.md) |
+| **파동(소음 반경 시각화)을 만지고 싶다** | [wave.md](wave.md) (값은 [data/wave.md](data/wave.md)) |
 | **이 기능을 옵션으로 열어도 되나** | [settings.md](settings.md) 체크리스트 |
 | 플레이어 외형을 추가하고 싶다 | [data/character.md](data/character.md) |
 | 벽·상자 같은 맵 조각을 만지고 싶다 | [data/segkind.md](data/segkind.md) |
