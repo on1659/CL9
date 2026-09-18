@@ -1329,3 +1329,22 @@
   착지 ≈621cm/s(`CrackSpeed` 450)라 금이 가고, 짐칸에 얹어도 벽을 넘어 바닥(46~49cm)에 닿는 낙차만으로 ≈455~520cm/s 라 금이 갈 수 있다.
   표 값·짐칸 높이·"짐칸 착지 예외" 중 어느 것도 바꾸지 않는다 — 깨짐은 이 게임의 마찰이고, 깨짐 기준의 얹기 속도 상한(`CrackSpeed`×0.9)은
   그래서 폐기했다(1차 PIE: 손↔짐칸 94cm 안에서만 얹혀 수레 긴 변 밖에서는 거의 닿지 않았다).
+- **2026-09-16 — 파동 구현 완료(실행 wave-impl): 소음 사건의 단일 입구는 `ACL9GameState::HostReportNoise`, 파동은 반경을 복제하지 않는다.**
+  호스트가 enum + 양자화 좌표 + 발신 액터만 Unreliable 멀티캐스트로 뿌리고 각 머신이 `CL9Rules`·몬스터 표·파동 표에서 반경을 파생한다.
+  **꺼진 행(`bEnabled` false·로드 검사 비활성)은 사건도 내지 않는다**(걷기 RPC 절감 — 청각 통일 때 재검토). **근접 소나는 깨어 있는 몬스터만**
+  (`Asleep`·`WakeTelegraph`·`Dead` 제외). `throw_break` 발신자는 깨진 아이템. 로드 검사 Error 행은 그 자리에서 비활성. 슬롯 색은
+  `ACL9PlayerState::GetSlotColor(Fallback)` 이 캐릭터 행 `TintColor` 에서 읽는다(슬롯 번호는 아직 없음). 사용자 결정(2026-09-16).
+- **2026-09-16 — 파동의 벽 차폐는 나이아가라 CPU Collision(`CL9_Occlusion` 채널)이 하고, C++ 트레이스는 진단용이다.** 이 에디터의 MCP 로는
+  배열 DI 사용자 변수(`User.Distances`)를 못 만들어 원안을 보류했다. 벽 자국은 같은 이미터의 파티클 변형(닿으면 멈추고 `StampHeight` 세로 막대,
+  `StampHeight` 0 이면 죽음). 에셋 `NS_CL9_Wave`: 이미터 하나(Ring) — Minimal 템플릿 + SpawnBurst(User.RayCount) + CylinderLocation(반경 45cm·
+  높이 +20cm) + AddVelocityFromPoint(User.Speed) + Collision + SolveForces + SetVariables(정지·막대·정렬) + KillParticles. 수명 = (반경−45)/속도,
+  루프 Once. **링은 캡슐 밖 45cm 에서 시작한다** — 플레이어·몬스터 캡슐이 `CL9_Occlusion` 을 막아 발밑에서 태어나면 즉시 충돌하기 때문(후속:
+  폰 콜리전을 이 채널에서 Ignore 로 두면 45 를 줄일 수 있다). **미반영 후속**: `User.Power`(밝기 배율)와 알파 페이드 — HLSL 로 색을 만들면
+  파티클이 사라져(색 계열 HLSL 입력 실패) 뺐다. Power 는 C++ 에서 색 RGB 에 곱해 넘기는 한 줄, 페이드는 Color 모듈(커브)로. 표 `WaveTable`
+  (`/Game/Data/WaveTable`, 11행·전역 2, balance 초안 값 그대로)은 `BP_CL9GameInstance.WaveTableAsset` 에 물렸다.
+  PIE(T1·T4·T5·T7 계열, 1인): 달리기 링 390cm = `cl9.shownoise` 원, 걷기 981cm 동안 사건 0, `land` 378·`pickup_loud` 390, 몬스터 근접 소나
+  1.33초 간격 330cm(잠든 몬스터 제외는 코드로), 깨짐 파동은 표 색(주황)으로 표시. T2(벽 앞 자국)·T3(2인)·T6(정전)은 미확인.
+- **2026-09-16 — 파동 그림 정정(사용자 지적): 끝 지점 원 없음 · 점이 아니라 원 · 바닥 밀착.** 흰 끝 원은 `cl9.shownoise` 디버그였다(평소 꺼짐).
+  점 수를 표 열이 아니라 **둘레 ÷ (두께 × 0.35)** 로 이미터 안에서 정해(하한 `RayCount`) 점 간격이 점 크기보다 좁게 — 달리기 링은 583개로
+  끊김 없는 선이 된다. 스폰 높이 20cm → 3cm. 리본 렌더러·위를 향한 스프라이트·색 HLSL 은 이 MCP 경로에서 그려지지 않아 폐기
+  (docs/systems/wave.md "나이아가라 에셋의 실제 모양"). 두께는 표 `Thickness` 로 조절(줄이면 선이 날카로워지고 점 수는 자동 증가).
