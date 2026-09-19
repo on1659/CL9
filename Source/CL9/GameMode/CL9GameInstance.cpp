@@ -4,6 +4,7 @@
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ShakeTable.h"
+#include "Data/CL9SoundTable.h"
 #include "Data/CL9WaveTable.h"
 #include "Misc/ConfigCacheIni.h"
 #include "UI/CL9SettingsTable.h"
@@ -51,6 +52,13 @@ void UCL9GameInstance::Init()
 	if (ShakeTable == nullptr)
 	{
 		UE_LOG(LogCL9, Warning, TEXT("'%s' has no shake table assigned — camera shakes stay silent."), *GetNameSafe(this));
+	}
+
+	// 없으면 여기서 한 번만 알린다 — 재생 헬퍼(CL9Sound::PlayAt)는 매 호출 조용히 지나간다
+	SoundTable = SoundTableAsset.LoadSynchronous();
+	if (SoundTable == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("'%s' has no sound table assigned — sound effects stay silent."), *GetNameSafe(this));
 	}
 
 	// 검사는 표를 받은 이 자리에서 한 번만 돈다 — 깨진 행은 여기서 비활성이 된다 (docs/systems/wave.md 로드 검사)

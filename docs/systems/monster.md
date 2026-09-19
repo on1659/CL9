@@ -99,6 +99,31 @@
   맞고, 빗나가면 아무도 맞지 않는다. 판정은 호스트 전용이고 `OnStrike`의 의미(피해 먼저, 죽으면 경직 없음,
   `Push`는 `OnShove`로 덮음)는 그대로다 ([inventory.md](inventory.md) 휘두르기 히트박스).
 
+### 타격의 표현 (2026-09-18)
+
+판정 위에 얹은 표현 층이다 ([../goal/game-feel.md](../goal/game-feel.md) §1~§3) — 히트박스·경직·HP·드랍 표는
+그대로고, 전부 **이미 복제되는 시계·상태에서 파생**하므로 새 RPC·멀티캐스트가 없다 (conventions § 9). 수치는
+`CL9Rules`([../plan/data/rules.md](../plan/data/rules.md) 타격의 표현), 소리는 `SoundTable` 행(`CL9SoundNames`,
+[sound.md](sound.md)), 퍼프는 `CL9Rules.HitPuffSystem`.
+
+| 표현 | 원천(에지) | 어느 머신 | 어디서 | 무엇 |
+|---|---|---|---|---|
+| 타격 플래시 | Stun·Dead ∧ `GetStateElapsed() < HitFlashTime` (수준) | 모든 머신 | `TickHitFlash` | 빨간 오버레이 (2026-09-15 그대로) |
+| `Hit` 소리 · 타격 퍼프 | 위 창의 **상승 에지**, 또는 창 안에서 `StateStartServerTime`이 바뀜(경직 중 다시 맞음) | 모든 머신 | `TickHitFeel` → `SpawnHitPuff` | 몬스터 메시 중심(`spine` 소켓, 없으면 `Bounds.Origin`)에서 소리 한 번 + 나이아가라 `User.Scale` 1.0 |
+| `MonsterDeath` 소리 · 큰 퍼프 | 같은 에지인데 상태가 Dead | 모든 머신 | `TickHitFeel` | `Hit` **과 함께** `MonsterDeath`, 퍼프 `User.Scale` 3.0 |
+| 몬스터 히트스톱 | Stun·Dead ∧ `GetStateElapsed() < HitStopTime` (수준) | 모든 머신 | `TickHitFeel` | `MeshComponent->bPauseAnims` 켬→끔. 이동·AI·히트박스는 흐른다 |
+| 팔 히트스톱 | `SwingHitServerTime`(COND_OwnerOnly) 뒤 `HitStopTime` 동안 | 때린 사람 화면 | `ACL9Character::GetSwingAnimElapsed` | ABP 의 `SwingElapsed` 소스가 이 게터 — 명중 프레임에 머물다 이어서 돈다. `GetSwingElapsed`(판정)는 그대로 |
+| `Swing` 소리 | `SwingStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리. 맞든 빗나가든 |
+| `Hurt` 소리 | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리 |
+| `Place` 소리 | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown, 클라는 OnRep) | 아이템 자리. 수레 Pushed→Free·죽음 드랍은 아님 |
+| `Footstep` 소리 | 수평 이동 거리 누적 ≥ 보폭 (`FootstepStrideRun/Walk`) | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑, 피치 ±8 %. 폰은 속도 > `WalkSpeed`면 달리기 보폭, 몬스터는 Chase 면 달리기 보폭. 서 있으면·공중이면·시체면 안 난다. 클라의 몬스터는 보간된 메시 자리로 잰다 |
+| 죽음 발사 | `Die(Source)` | 호스트 (트랜스폼 복제) | `HostTickDeathLaunch` (`HostTickAI` 의 Dead 거름 앞) | 원점→몬스터 수평 `DeathLaunchSpeed` + 위 `DeathLaunchUp`, 월드 중력. 몸체 구 스윕·WorldStatic 오브젝트 질의는 바닥을 지나쳤다(2026-09-18 PIE — `Floor_0` 은 BlockAllDynamic = WorldDynamic) → **Visibility 채널** 선 트레이스로 검사한다(폰·아이템·몬스터에 맞으면 무시하고 뒤를 다시 긋는다) — 수평 선분이 막히면 그 자리에서 수평 속도 0, 발밑(중심 − Radius)까지 내려 그은 선이 닿으면 발을 바닥에 스냅하고 끝. 죽는 클립은 그대로 |
+| 드랍 호 | `Die` 의 `SpawnItem` 뒤 | 호스트 | `Die` → `ACL9Item::OnThrown` | 몬스터 중심 높이·옆 30~90cm 무작위 자리에서 `DeathLootSpeed`, 앙각 45~70°·요 무작위. 옆 오프셋은 둘 이상이 30cm 이상 떨어지게 하는 보장(호만으로는 3/4 확률). 이후는 아이템 물리 |
+
+에지 검출은 첫 틱에 기준값만 받아 적는다(`bHitFeelPrimed`·`bHitSoundsPrimed`) — 늦게 들어온 클라가 이미 지난
+타격·휘두르기를 되풀이하지 않는다. 표·행·애셋이 비면 소리·퍼프는 조용히 빠지고 나머지는 그대로 난다. 전역 시간
+지연·`CustomTimeDilation`은 쓰지 않는다(리슨 호스트에서 남에게 번지고 이동 예측을 깨뜨린다).
+
 ## 경보 (무리 반응)
 
 - **무리 경보**: 발각한 개체가 `PackAlarmRadius` 안 동료를 깨운다.

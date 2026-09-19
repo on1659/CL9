@@ -169,6 +169,15 @@ public:
 	float GetSwingElapsed() const;
 
 	/**
+	 * ABP 전용 휘두르기 경과 — 히트스톱이 얹힌 `GetSwingElapsed()`. 소유자 화면에서 이번 휘두르기가 맞은 뒤
+	 * (`SwingHitServerTime`, COND_OwnerOnly) `CL9Rules.HitStopTime` 동안 명중 시각의 경과값에 머물고, 지나면 실제 경과에서
+	 * 정지 길이를 뺀 값으로 이어진다 — 팔 클립이 그 프레임에 멈췄다 이어서 돈다. 판정(`HostTickSwingHit`)은 이 값을
+	 * 쓰지 않는다 — 히트박스 창은 그대로다. 남의 화면·헛스윙에서는 `GetSwingElapsed()`와 같다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetSwingAnimElapsed() const;
+
+	/**
 	 * 좌클을 누른 채 공격 대기 중이면 대기를 시작한 뒤 지난 서버 초, 대기 중이 아니면 -1 — ABP가 대기 자세
 	 * (`AN_Farmer_SwingWindup` 루프)를 켜는 데 읽는다. 대기는 무한이고 떼는 순간 휘두른다 (docs/systems/inventory.md 사용).
 	 */
@@ -434,6 +443,21 @@ protected:
 	 * OnRep이 뜨지 않기 때문이다 — 틱 비교는 호스트와 클라 양쪽에서 똑같이 작동한다.
 	 */
 	void UpdateHitShakes();
+
+	/**
+	 * 모든 머신, 매 틱: 복제된 휘두르기 시작 시각(`SwingStartServerTime`)·넘어짐 시각(`KnockdownStartServerTime`)이 지난 틱과
+	 * 달라졌으면 폰 자리에서 `Swing`·`Hurt` 소리를 한 번씩 튼다 — 셰이크와 같은 틱 비교 방식이지만 남의 폰에서도 들려야
+	 * 하므로 로컬 조작 게이트 앞에서 돈다 (docs/systems/character.md 피격, docs/systems/sound.md).
+	 */
+	void UpdateHitSounds();
+
+	/**
+	 * 모든 머신, 매 틱: 발소리 — 땅 위에서 움직인 수평 거리를 누적해 보폭마다 발밑에서 `Footstep` 행을 튼다. 보폭은
+	 * 수평 속도가 행의 `WalkSpeed`를 넘으면 `CL9Rules.FootstepStrideRun`, 아니면 `FootstepStrideWalk`(달리기 입력은 남의
+	 * 폰에 복제되지 않아 속도로 가른다). 서 있거나 공중이면 안 난다. 소음(파동)의 `TickStepNoise`와는 별개 누적이다 —
+	 * 그쪽은 호스트·소유 클라에서만 돌고 표의 간격을 쓴다.
+	 */
+	void TickFootstepSound();
 
 	/** 셰이크 표의 행 하나를 세기 1로 한 번 재생한다 — 행이나 애셋이 없으면 조용히 지나간다 */
 	void PlayShakeOnce(FName RowName);
@@ -728,6 +752,24 @@ private:
 
 	/** 지난 틱에 본 KnockdownStartServerTime — 달라지면 피격 셰이크를 한 번 재생한다 */
 	float LastSeenKnockdownTime = -1000.f;
+
+	/** 소리 비교 기준값을 한 번은 그냥 받아 적었는가 — 접속 직후 이미 지나간 사건으로 소리를 내지 않는다(모든 머신) */
+	bool bHitSoundsPrimed = false;
+
+	/** 지난 틱에 본 SwingStartServerTime — 달라지면 `Swing` 소리를 한 번 튼다 */
+	float LastSeenSwingStartTime = -1000.f;
+
+	/** 지난 틱에 본 KnockdownStartServerTime(소리용) — 달라지면 `Hurt` 소리를 한 번 튼다 */
+	float LastSeenHurtSoundTime = -1000.f;
+
+	/** 발소리 누적을 잰 직전 발 위치 — 아직 재기 시작하지 않았으면 미설정 */
+	TOptional<FVector> LastFootstepLocation;
+
+	/** 발소리 보폭의 누적 이동 거리(cm) — 달리기·걷기 보폭이 바뀌면 0으로 되돌린다 */
+	float FootstepDistanceAccum = 0.f;
+
+	/** 지난 틱의 발소리가 달리기 보폭이었는가 */
+	bool bLastFootstepRun = false;
 
 	// -- 소음(파동) 상태: 호스트 또는 소유 클라이언트에서만 굴러간다 (docs/systems/wave.md) --
 

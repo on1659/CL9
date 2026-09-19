@@ -10,6 +10,7 @@ class UCL9DefList;
 class UCL9DefRegistry;
 class UCL9SettingsTable;
 class UCL9ShakeTable;
+class UCL9SoundTable;
 class UCL9UITable;
 class UCL9WaveTable;
 
@@ -50,6 +51,12 @@ public:
 		return ShakeTable;
 	}
 
+	/** 표현 코드(`CL9Sound::PlayAt`)가 읽는 효과음 테이블이다 (docs/systems/sound.md) — null이면 효과음이 하나도 나지 않는다 */
+	const UCL9SoundTable* GetSoundTable() const
+	{
+		return SoundTable;
+	}
+
 	/** 파동 렌더러와 소음원이 읽는 파동 표다 (docs/systems/wave.md) — null이면 파동이 하나도 그려지지 않는다 */
 	const UCL9WaveTable* GetWaveTable() const
 	{
@@ -75,6 +82,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="UI")
 	TSoftObjectPtr<UCL9ShakeTable> ShakeTableAsset;
 
+	/** 효과음 행 목록 — BP_CL9GameInstance에서 지정한다 */
+	UPROPERTY(EditAnywhere, Category="UI")
+	TSoftObjectPtr<UCL9SoundTable> SoundTableAsset;
+
 	/** 파동 행 목록 — BP_CL9GameInstance에서 지정한다 */
 	UPROPERTY(EditAnywhere, Category="UI")
 	TSoftObjectPtr<UCL9WaveTable> WaveTableAsset;
@@ -92,6 +103,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9ShakeTable> ShakeTable;
+
+	UPROPERTY()
+	TObjectPtr<const UCL9SoundTable> SoundTable;
 
 	UPROPERTY()
 	TObjectPtr<const UCL9SettingsTable> SettingsTable;

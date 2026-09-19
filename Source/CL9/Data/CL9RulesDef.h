@@ -7,6 +7,7 @@
 #include "CL9RulesDef.generated.h"
 
 class UMaterialInterface;
+class UNiagaraSystem;
 
 /**
  * 유일한 전역 규칙 애셋 — 어떤 캐릭터도 다르게 가질 수 없는 값들이다: 소음,
@@ -172,4 +173,61 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
 	TSoftObjectPtr<UMaterialInterface> HitFlashMaterial;
+
+	// -- 타격의 표현 (2026-09-18, docs/goal/game-feel.md §2·§3, docs/systems/monster.md 타격의 표현) --
+
+	/**
+	 * 히트스톱, 초 단위 — 맞은 몬스터의 메시가 Stun·Dead 진입 뒤 이 시간 동안 애니메이션을 멈추고(모든 머신,
+	 * `bPauseAnims`), 때린 사람의 1인칭 팔은 `SwingHitServerTime` 뒤 같은 시간 동안 그 프레임에 머문다
+	 * (`GetSwingAnimElapsed`, 소유자 화면). 이동·AI·히트박스는 멈추지 않는다 — 전역 시간 지연은 쓰지 않는다.
+	 * 0.08 = `HitFlashTime` 0.15 안에 끝나고(정지 ⊂ 빨강), 히트박스 창 폭 0.20 의 절반 아래. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float HitStopTime = 0.08f;
+
+	/**
+	 * 죽는 타격에 몸이 날아가는 수평 속도, cm/s 단위 — 방향은 타격 원점(`Die(Source)`) → 몬스터. 호스트가 넉백과 같은
+	 * 방식으로 매 틱 적분하고(수직은 월드 중력 980) 트랜스폼 복제로 퍼진다. 0이면 제자리에서 죽는다.
+	 * 300 = 체공 2·260/980 = 0.53초 동안 수평 159cm — 복도 한 칸(500cm)에서 가로로 맞아도 벽 앞에 눕는다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float DeathLaunchSpeed = 300.f;
+
+	/**
+	 * 죽음 발사의 위쪽 초기 속도, cm/s 단위 — 월드 중력(`GetGravityZ`)이 끌어내려 포물선을 그린다.
+	 * 260 = 정점 34.5cm ≈ 닭 몸통(`Radius` 36), 체공 0.53초라 죽음 클립이 나는 동안 보인다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float DeathLaunchUp = 260.f;
+
+	/**
+	 * 죽을 때 흩어지는 드랍 아이템의 발사 속도, cm/s 단위 — 몬스터 중심 높이·옆 30~90cm 자리에서 앙각 45~70°·요 무작위로
+	 * `OnThrown`. 이후는 아이템 물리·멈춤 규칙 그대로다. 0이면 던지지 않고 놓인다.
+	 * 300 = 계란 표 중력 1950·앙각 70°·낙차 15cm 에서 착지 371 < `CrackSpeed` 450 — 평지에서 금이 가지 않는다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float DeathLootSpeed = 300.f;
+
+	/**
+	 * 폰이 달릴 때 발소리 한 번의 보폭, cm 단위 — 수평 이동 거리를 누적해 이 값마다 `Footstep` 행을 발밑에서 한 번 튼다.
+	 * 폰은 수평 속도가 행의 `WalkSpeed`를 넘으면 달리기 보폭, 몬스터는 Chase 상태에서 달리기 보폭.
+	 * 196 = `RunSpeed` 654 × 0.3초(`AN_Farmer_FPRun` 0.6초 루프 = 두 걸음) — 팔 펌프마다 한 발. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float FootstepStrideRun = 196.f;
+
+	/**
+	 * 걸을 때 발소리 한 번의 보폭, cm 단위 — 0이면 발소리가 나지 않는다.
+	 * 150 = `WalkSpeed` 396 에서 2.64 걸음/초(0.38초 간격) — 달리기 0.30초와 케이던스만으로 갈린다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float FootstepStrideWalk = 150.f;
+
+	/**
+	 * 타격 퍼프 나이아가라 — Stun·Dead 진입 에지(타격 플래시·`Hit` 소리와 같은 자리)에 몬스터 메시 중심(`spine` 소켓,
+	 * 없으면 경계 중심)에서 스폰한다. `User.Scale`(float)을 Dead 는 3.0, 아니면 1.0 으로 준다. 비어 있으면 건너뛴다 —
+	 * 애셋 경로는 C++에 없다(conventions § 5).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	TSoftObjectPtr<UNiagaraSystem> HitPuffSystem;
 };

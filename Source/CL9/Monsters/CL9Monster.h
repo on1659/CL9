@@ -12,6 +12,7 @@ enum class ECL9HitStun : uint8;
 class ACL9Character;
 class UCL9MonsterDef;
 class UMaterialInterface;
+class UNiagaraSystem;
 class USphereComponent;
 class USkeletalMeshComponent;
 
@@ -196,6 +197,26 @@ private:
 	 */
 	void TickHitFlash();
 
+	/**
+	 * 모든 머신, 매 틱: 타격의 표현 (docs/systems/monster.md 타격의 표현). Stun·Dead 진입의 **상승 에지**(플래시 조건이
+	 * 거짓→참, 또는 상태 시각이 바뀜 = 경직 중 다시 맞음)에서 `Hit` 소리(+ Dead 면 `MonsterDeath`)와 타격 퍼프를 몬스터
+	 * 자리에서 한 번 내고, 진입 뒤 `HitStopTime` 동안 메시 애니메이션을 멈춘다(히트스톱). 접속 직후 이미 지난 사건은
+	 * 처음 한 틱을 기준값으로만 받아 적어 되풀이하지 않는다.
+	 */
+	void TickHitFeel();
+
+	/** 타격 퍼프 스폰 — 메시 중심(`spine` 소켓, 없으면 경계 중심)에서, `User.Scale` 을 Dead 면 3.0 아니면 1.0 */
+	void SpawnHitPuff(bool bDeath);
+
+	/**
+	 * 모든 머신, 매 틱: 발소리 — 수평 이동 거리를 누적해 보폭(`FootstepStrideRun`: Chase, 그 외 `FootstepStrideWalk`)마다
+	 * 발밑에서 `Footstep` 행을 한 번 튼다. 클라는 보간된 메시 자리로 재서 20Hz 스냅에 걸음이 뭉치지 않는다. 서 있으면 안 난다.
+	 */
+	void TickFootstep();
+
+	/** 호스트 전용, Dead 상태: 죽음 발사 비행을 한 틱 적분한다 — 넉백과 같은 스윕 이동에 중력을 더한 것 */
+	void HostTickDeathLaunch(float DeltaSeconds);
+
 	/** 게임 상태의 서버 시각 — 캐릭터와 같은 시계(ACL9Character::GetServerTime) */
 	float GetServerTime() const;
 
@@ -269,6 +290,9 @@ private:
 	/** 죽음의 비명 이후 RageTime 동안의 사냥 모드 — 게이지를 고정하고 ChaseCooldown을 우회한다 */
 	float RageRemaining = 0.f;
 
+	/** 죽음 발사의 남은 속도(cm/s) — 0이면 비행이 끝났거나 시작하지 않았다. 스윕에 막히거나 바닥에 닿으면 0으로 */
+	FVector DeathLaunchVelocity = FVector::ZeroVector;
+
 	/** 근접 소나(파동)의 다음 발동까지 남은 초 — 표현 전용이며 AI 판정에는 쓰이지 않는다 */
 	float ProxNoiseRemaining = 0.f;
 
@@ -295,6 +319,31 @@ private:
 
 	/** 지금 오버레이가 켜져 있는가 — 바뀔 때만 SetOverlayMaterial을 부르고, 내가 켠 것만 끈다 */
 	bool bHitFlashOn = false;
+
+	/** 타격 표현의 에지 기준값을 한 번은 그냥 받아 적었는가 — 접속 직후 이미 지나간 타격으로 소리·퍼프를 내지 않는다 */
+	bool bHitFeelPrimed = false;
+
+	/** 지난 틱에 "맞은 직후 창(Stun·Dead ∧ 경과 < HitFlashTime)" 안이었는가 — 거짓→참이 타격 에지다 */
+	bool bHitFeelInWindow = false;
+
+	/** 지난 틱에 본 StateStartServerTime — 창 안에서 값이 바뀌면 경직 중 다시 맞은 것이라 에지로 친다 */
+	float LastSeenStateStartTime = 0.f;
+
+	/** 지금 히트스톱으로 애니메이션을 멈춰 두었는가 — 내가 멈춘 것만 푼다 */
+	bool bHitStopOn = false;
+
+	/** 규칙 애셋에서 한 번 로드해 둔 타격 퍼프 — 행이 비었으면 null로 남고 퍼프는 없다 */
+	UPROPERTY(Transient)
+	TObjectPtr<UNiagaraSystem> HitPuffSystem;
+
+	/** 퍼프를 이미 한 번 로드해 봤는가 */
+	bool bHitPuffLoaded = false;
+
+	/** 발소리 누적을 잰 직전 자리(호스트는 액터, 클라는 보간된 메시) — 아직 재기 시작하지 않았으면 미설정 */
+	TOptional<FVector> LastFootstepLocation;
+
+	/** 발소리 보폭의 누적 이동 거리(cm) */
+	float FootstepDistanceAccum = 0.f;
 
 	float DisplaySpeed = 0.f;
 	FVector SmoothedLocation = FVector::ZeroVector;

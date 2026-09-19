@@ -35,6 +35,7 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9ShakeTable.h"
+#include "Data/CL9SoundTable.h"
 #include "Data/CL9WaveTable.h"
 #include "FX/CL9WaveRenderer.h"
 #include "GameMode/CL9GameInstance.h"
@@ -654,6 +655,9 @@ void ACL9Character::Tick(float DeltaSeconds)
 
 	// 피격 플래시는 남의 화면에서도 보여야 한다(동료가 잡히는 것을 알아채는 유일한 단서다) — 로컬 조작 여부와 무관하게 모든 폰에서
 	UpdateHurtFlash();
+	// 휘두르기·피격 소리와 발소리도 남의 폰에서 들려야 한다 — 같은 자리
+	UpdateHitSounds();
+	TickFootstepSound();
 
 	// 조준 하이라이트는 순전히 로컬 표시용이다 — 키가 눌렸을 때 호스트에서도
 	// 같은 resolver가 실행되므로, 윤곽선은 E가 실제로 할 일을 그대로 보여준다.
@@ -726,12 +730,13 @@ void ACL9Character::UpdateStaminaShake()
 		{
 			if (UClass* ShakeClass = Info->Shake.LoadSynchronous())
 			{
-				StaminaShakeInstance = CameraManager->StartCameraShake(ShakeClass, 1.f);
+				StaminaShakeInstance = CameraManager->StartCameraShake(ShakeClass, Intensity * Info->Scale);
 			}
 		}
 		if (StaminaShakeInstance != nullptr)
 		{
-			StaminaShakeInstance->ShakeScale = Intensity;
+			// 게이지 세기 × 표의 배율 열 — 진폭 자체는 에셋에 있다 (CL9ShakeTable.h Scale)
+			StaminaShakeInstance->ShakeScale = Intensity * Info->Scale;
 		}
 	}
 	else if (StaminaShakeInstance != nullptr)
@@ -813,10 +818,81 @@ void ACL9Character::PlayShakeOnce(FName RowName)
 		return;
 	}
 
-	// 원샷이라 StartAt은 보지 않는다 — 게이지가 없는 순간 사건이므로 세기 1로 한 번 재생할 뿐이다
+	// 원샷이라 StartAt은 보지 않는다 — 게이지가 없는 순간 사건이므로 표의 배율(`Scale`, 기본 1)로 한 번 재생할 뿐이다
 	if (UClass* ShakeClass = Info->Shake.LoadSynchronous())
 	{
-		CameraManager->StartCameraShake(ShakeClass, 1.f);
+		CameraManager->StartCameraShake(ShakeClass, Info->Scale);
+	}
+}
+
+void ACL9Character::UpdateHitSounds()
+{
+	// 셰이크(UpdateHitShakes)와 같은 "지난 틱 값과 비교" — 호스트 자기 폰에는 OnRep이 뜨지 않으므로. 접속 직후의 첫 틱은
+	// 기준값만 받아 적어 이미 지나간 휘두르기·넘어짐을 되풀이하지 않는다
+	if (!bHitSoundsPrimed)
+	{
+		bHitSoundsPrimed = true;
+		LastSeenSwingStartTime = SwingStartServerTime;
+		LastSeenHurtSoundTime = KnockdownStartServerTime;
+		return;
+	}
+
+	// 휘두르기 시작에 난다 — 맞았는지는 모른다(맞으면 몬스터 쪽에서 `Hit`이 따로 난다)
+	if (SwingStartServerTime != LastSeenSwingStartTime)
+	{
+		LastSeenSwingStartTime = SwingStartServerTime;
+		CL9Sound::PlayAt(this, CL9SoundNames::Swing, GetActorLocation());
+	}
+	if (KnockdownStartServerTime != LastSeenHurtSoundTime)
+	{
+		LastSeenHurtSoundTime = KnockdownStartServerTime;
+		CL9Sound::PlayAt(this, CL9SoundNames::Hurt, GetActorLocation());
+	}
+}
+
+void ACL9Character::TickFootstepSound()
+{
+	const FVector Foot = GetFootLocation();
+	if (!LastFootstepLocation.IsSet())
+	{
+		LastFootstepLocation = Foot;
+		return;
+	}
+	const float Moved = FVector::Dist2D(LastFootstepLocation.GetValue(), Foot);
+	LastFootstepLocation = Foot;
+
+	// 서 있거나 공중이면 걸음이 아니다 — 남의 폰도 이동 모드가 복제되므로 IsMovingOnGround 는 어느 머신에서나 맞다
+	const UCharacterMovementComponent* Movement = GetCharacterMovement();
+	if (Moved <= 0.f || Movement == nullptr || !Movement->IsMovingOnGround() || IsKnockedDown() || IsDead())
+	{
+		FootstepDistanceAccum = 0.f;
+		return;
+	}
+
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr)
+	{
+		return;
+	}
+	// 달리기 입력(bWantsToRun)은 남의 폰에 복제되지 않는다 — 걷기 상한을 넘는 속도를 달리기로 친다(모든 머신이 같은 답)
+	const bool bRun = CharacterDef != nullptr && GetGroundSpeed() > CharacterDef->WalkSpeed;
+	if (bRun != bLastFootstepRun)
+	{
+		// 보폭이 바뀌면 누적을 버려야 새 보폭이 그대로 적용된다
+		FootstepDistanceAccum = 0.f;
+		bLastFootstepRun = bRun;
+	}
+	const float Stride = bRun ? Rules->FootstepStrideRun : Rules->FootstepStrideWalk;
+	if (Stride <= 0.f)
+	{
+		FootstepDistanceAccum = 0.f;
+		return;
+	}
+	FootstepDistanceAccum += Moved;
+	if (FootstepDistanceAccum >= Stride)
+	{
+		FootstepDistanceAccum = 0.f;
+		CL9Sound::PlayAt(this, CL9SoundNames::Footstep, Foot, CL9Sound::FootstepPitchJitter);
 	}
 }
 
@@ -1415,6 +1491,23 @@ void ACL9Character::HostClearActiveSlot()
 float ACL9Character::GetSwingElapsed() const
 {
 	return GetServerTime() - SwingStartServerTime;
+}
+
+float ACL9Character::GetSwingAnimElapsed() const
+{
+	const float Elapsed = GetSwingElapsed();
+	// 이번 휘두르기의 명중만 본다 — 지난 휘두르기의 명중 시각은 시작 시각보다 앞서 있다. 남의 화면에서는 COND_OwnerOnly 라
+	// 값이 오지 않아 항상 여기서 빠진다
+	const UCL9RulesDef* Rules = GetRules();
+	if (Rules == nullptr || Rules->HitStopTime <= 0.f || SwingHitServerTime < SwingStartServerTime)
+	{
+		return Elapsed;
+	}
+	// 명중 뒤 HitStopTime 동안은 명중 순간의 프레임에 머물고, 지나면 그만큼 늦게 이어서 돈다
+	const float HitAt = SwingHitServerTime - SwingStartServerTime;
+	const float SinceHit = GetServerTime() - SwingHitServerTime;
+	// 클라의 서버 시각 추정이 뒤처져 명중 시각이 아직 미래면 실제 경과를 넘기지 않는다
+	return SinceHit < Rules->HitStopTime ? FMath::Min(HitAt, Elapsed) : Elapsed - Rules->HitStopTime;
 }
 
 float ACL9Character::GetSwingWindupElapsed() const

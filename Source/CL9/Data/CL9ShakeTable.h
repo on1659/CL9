@@ -15,7 +15,10 @@ struct FCL9ShakeInfo
 {
 	GENERATED_BODY()
 
-	/** 진폭, 주파수, 블렌드 시간은 모두 이 애셋 안에 있다 — 여기 컬럼으로는 절대 두지 않는다 */
+	/**
+	 * 진폭, 주파수, 블렌드 시간은 모두 이 애셋 안에 있다 — 여기 컬럼으로는 두지 않는다. 유일한 예외가 아래 `Scale`
+	 * 배율 열이다(2026-09-18 사용자): 애셋을 다시 만들지 않고 표에서 세기만 조절하기 위한 것
+	 */
 	UPROPERTY(EditAnywhere, Category="Shake")
 	TSoftClassPtr<UCameraShakeBase> Shake;
 
@@ -25,6 +28,13 @@ struct FCL9ShakeInfo
 	 */
 	UPROPERTY(EditAnywhere, Category="Shake")
 	float StartAt = 0.5f;
+
+	/**
+	 * 진폭·주파수는 에셋, 이 열은 그 위에 곱하는 배율(표에서 세기 조절). 원샷 행은 `Scale`로 한 번, 게이지 행은
+	 * 게이지 세기 × `Scale`로 재생된다 (`StartCameraShake`의 Scale 인자 → `ShakeScale`). 1.0 = 에셋 그대로
+	 */
+	UPROPERTY(EditAnywhere, Category="Shake")
+	float Scale = 1.f;
 };
 
 /**
@@ -48,7 +58,7 @@ public:
 /**
  * C++가 조회하는 행 이름들 — 그 외에는 전부 데이터 전용으로 남는다.
  *
- * 원샷 행(`Hit`·`Hurt`)에서 `StartAt`은 무시된다: 게이지가 없는 순간 사건이라 세기 1로 한 번 재생할 뿐이다.
+ * 원샷 행(`Hit`·`Hurt`)에서 `StartAt`은 무시된다: 게이지가 없는 순간 사건이라 세기 `Scale`로 한 번 재생할 뿐이다.
  * `StartAt`은 스태미나처럼 게이지가 구동하는 행에만 뜻이 있다.
  */
 namespace CL9ShakeNames

@@ -16,6 +16,7 @@
 #include "CL9.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
+#include "Data/CL9SoundTable.h"
 #include "Data/CL9Types.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
@@ -419,6 +420,16 @@ void ACL9Item::OnRep_HoldState()
 
 void ACL9Item::ApplyHoldState()
 {
+	// 손을 떠나는 순간(놓기·던지기·수레에 얹기 — Held·Worn → Free)에 `Place` 소리가 아이템 자리에서 난다. 호스트는
+	// OnPlaced/OnThrown 이 여기로 오고 클라는 OnRep_HoldState 가 오므로 모든 머신에서 같은 전이가 잡힌다. 수레의
+	// Pushed → Free 나 죽음 드랍(Free → Free)은 손을 떠난 게 아니라 소리가 없다 (docs/systems/sound.md)
+	const bool bWasInHand = PresentedHoldState == ECL9ItemHoldState::Held || PresentedHoldState == ECL9ItemHoldState::Worn;
+	if (bWasInHand && HoldState == ECL9ItemHoldState::Free)
+	{
+		CL9Sound::PlayAt(this, CL9SoundNames::Place, GetActorLocation());
+	}
+	PresentedHoldState = HoldState;
+
 	// 손에 든 아이템은 소지자의 캡슐에 얹혀 있다 — 자기 자신의 충돌체가 켜져
 	// 있으면 소지자를 밀어내 버리므로 충돌을 꺼 둔다.
 	SetActorEnableCollision(HoldState != ECL9ItemHoldState::Held && HoldState != ECL9ItemHoldState::Worn);

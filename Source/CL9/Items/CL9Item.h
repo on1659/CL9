@@ -197,6 +197,12 @@ protected:
 	bool bAtRest = false;
 
 private:
+	/**
+	 * 이 머신에서 마지막으로 ApplyHoldState 가 적용한 소지 상태 — 손(Held·Worn)→Free 전이를 잡아 `Place` 소리를 내는
+	 * 기준이다. 호스트는 OnPlaced/OnThrown 안에서, 클라는 OnRep_HoldState 에서 같은 함수로 잡힌다(새 RPC 없음).
+	 */
+	ECL9ItemHoldState PresentedHoldState = ECL9ItemHoldState::Free;
+
 	/** 호스트 전용: 균열/파손 전이 — 세 문턱값에 따라 SubAlias를 바꾼다 */
 	void HandleImpact(float ImpactSpeed);
 

@@ -12,6 +12,9 @@
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "CL9.h"
 #include "Character/CL9Character.h"
 #include "Character/CL9CharacterMovement.h"
@@ -19,7 +22,9 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SoundTable.h"
 #include "Data/CL9WaveTable.h"
+#include "Items/CL9Item.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
@@ -156,14 +161,18 @@ void ACL9Monster::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// 타격 플래시는 호스트와 클라 모두에서 같은 복제 시계로 굴러간다 — 아래 호스트 분기가 먼저 돌아가 버리기 전에 부른다
+	// 타격 플래시·소리·퍼프·히트스톱은 호스트와 클라 모두에서 같은 복제 시계로 굴러간다 — 아래 호스트 분기가 먼저 돌아가
+	// 버리기 전에 부른다
 	TickHitFlash();
+	TickHitFeel();
 
 	if (HasAuthority())
 	{
 		const FVector Before = GetActorLocation();
+		HostTickDeathLaunch(DeltaSeconds);
 		HostTickAI(DeltaSeconds);
 		DisplaySpeed = (GetActorLocation() - Before).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
+		TickFootstep();
 		return;
 	}
 
@@ -184,6 +193,196 @@ void ACL9Monster::Tick(float DeltaSeconds)
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
 	const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 	MeshComponent->SetWorldLocationAndRotation(SmoothedLocation + FVector(0.f, 0.f, MeshZ), SmoothedRotation + FRotator(0.f, YawOffset, 0.f));
+	TickFootstep();
+}
+
+void ACL9Monster::HostTickDeathLaunch(float DeltaSeconds)
+{
+	if (DeathLaunchVelocity.IsZero())
+	{
+		return;
+	}
+	// Dead 는 HostTickAI 가 먼저 걸러 이동이 없다 — 죽음 비행만 여기서 적분한다. 수직은 월드 중력이 끌어내린다.
+	// 몸체 구(AddActorWorldOffset 스윕)와 WorldStatic 오브젝트 질의는 둘 다 PIE 에서 바닥을 지나쳤다(2026-09-18 리드 측정 —
+	// Lvl_Flat 바닥 `Floor_0` 은 프로필 BlockAllDynamic = 오브젝트 타입 WorldDynamic 이고 맵 조각도 프로필이 제각각일 수 있다).
+	// 그래서 **Visibility 채널** 선 트레이스로 벽(수평)·바닥(수직)을 검사하고, 세상 지형이 아닌 것(폰·아이템·다른 몬스터)은
+	// 맞아도 무시하고 그 뒤를 다시 긋는다
+	const float Radius = MonsterDef ? MonsterDef->Radius : 0.f;
+	DeathLaunchVelocity.Z += GetWorld()->GetGravityZ() * DeltaSeconds;
+	const FVector Start = GetActorLocation();
+	FVector Next = Start + DeathLaunchVelocity * DeltaSeconds;
+
+	auto TraceWorld = [World = GetWorld(), Self = this](const FVector& From, const FVector& To, FHitResult& OutHit) -> bool
+	{
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9DeathLaunch), false, Self);
+		// 앞을 가린 폰·아이템·몬스터를 하나씩 무시 목록에 넣고 다시 긋는다 — 시체가 사람 몸이나 계란 위에서 멈추지 않게
+		for (int32 Retry = 0; Retry < 4; ++Retry)
+		{
+			if (!World->LineTraceSingleByChannel(OutHit, From, To, ECC_Visibility, Params))
+			{
+				return false;
+			}
+			AActor* HitActor = OutHit.GetActor();
+			if (HitActor == nullptr
+				|| (!HitActor->IsA<ACL9Character>() && !HitActor->IsA<ACL9Item>() && !HitActor->IsA<ACL9Monster>()))
+			{
+				return true;
+			}
+			Params.AddIgnoredActor(HitActor);
+		}
+		return false;
+	};
+	FHitResult Hit;
+
+	// 벽: 지금 자리 → 다음 자리의 수평 선분이 막히면 그 자리에서 수평 속도 0 (남은 낙하만 이어진다)
+	if (!FVector2D(DeathLaunchVelocity).IsNearlyZero())
+	{
+		const FVector HorizontalEnd(Next.X, Next.Y, Start.Z);
+		if (TraceWorld(Start, HorizontalEnd, Hit))
+		{
+			Next.X = Start.X;
+			Next.Y = Start.Y;
+			DeathLaunchVelocity.X = 0.f;
+			DeathLaunchVelocity.Y = 0.f;
+		}
+	}
+
+	// 바닥: 몸체 중심에서 다음 자리의 발밑(중심 − Radius)까지 내려 그으며 닿으면 발이 바닥에 오도록 스냅하고 비행 끝
+	if (DeathLaunchVelocity.Z < 0.f)
+	{
+		const FVector FloorStart(Next.X, Next.Y, Start.Z);
+		const FVector FloorEnd(Next.X, Next.Y, Next.Z - Radius);
+		if (TraceWorld(FloorStart, FloorEnd, Hit))
+		{
+			Next.Z = Hit.ImpactPoint.Z + Radius;
+			DeathLaunchVelocity = FVector::ZeroVector;
+		}
+	}
+
+	SetActorLocation(Next, false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void ACL9Monster::TickHitFeel()
+{
+	if (MeshComponent == nullptr)
+	{
+		return;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+	if (Rules == nullptr)
+	{
+		return;
+	}
+
+	// TickHitFlash 와 같은 "맞은 직후" 창 — 그 창의 상승 에지가 타격의 순간이다. 창 안에서 상태 시각만 바뀌면 경직 중에
+	// 다시 맞은 것(둘이 동시에 때림)이라 그것도 에지다
+	const bool bStruckState = State == ECL9MonsterState::Stun || State == ECL9MonsterState::Dead;
+	const float Elapsed = GetStateElapsed();
+	const bool bInWindow = bStruckState && Elapsed < Rules->HitFlashTime;
+	const bool bEdge = bInWindow && (!bHitFeelInWindow || StateStartServerTime != LastSeenStateStartTime);
+	const bool bPrimed = bHitFeelPrimed;
+	bHitFeelPrimed = true;
+	bHitFeelInWindow = bInWindow;
+	LastSeenStateStartTime = StateStartServerTime;
+
+	// 접속 직후·스폰 직후의 첫 틱은 기준값만 적는다 — 이미 지나간 타격을 되풀이하지 않는다
+	if (bEdge && bPrimed)
+	{
+		const bool bDeath = State == ECL9MonsterState::Dead;
+		const FVector Center = MeshComponent->Bounds.Origin;
+		CL9Sound::PlayAt(this, CL9SoundNames::Hit, Center);
+		if (bDeath)
+		{
+			CL9Sound::PlayAt(this, CL9SoundNames::MonsterDeath, Center);
+		}
+		SpawnHitPuff(bDeath);
+	}
+
+	// 히트스톱: 진입 뒤 HitStopTime 동안 메시가 그 프레임에 머문다. 판정·이동·AI는 그대로 흐른다 (전역 시간 지연 금지)
+	const bool bWantStop = bStruckState && Elapsed < Rules->HitStopTime;
+	if (bWantStop != bHitStopOn)
+	{
+		bHitStopOn = bWantStop;
+		MeshComponent->bPauseAnims = bWantStop;
+	}
+}
+
+void ACL9Monster::SpawnHitPuff(bool bDeath)
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+	if (Rules == nullptr)
+	{
+		return;
+	}
+	if (!bHitPuffLoaded)
+	{
+		bHitPuffLoaded = true;
+		HitPuffSystem = Rules->HitPuffSystem.LoadSynchronous();
+	}
+	// 행이 비어 있으면 퍼프는 없다 — 소리·플래시·히트스톱은 그대로 난다
+	if (HitPuffSystem == nullptr)
+	{
+		return;
+	}
+
+	// 메시 중심: `spine` 소켓(뼈)이 있으면 그것, 없으면 경계 중심 — 발밑(액터 자리)이 아니라 몸통에서 터진다
+	static const FName SpineSocket(TEXT("spine"));
+	const FVector Location = MeshComponent->DoesSocketExist(SpineSocket)
+		? MeshComponent->GetSocketLocation(SpineSocket)
+		: MeshComponent->Bounds.Origin;
+	UNiagaraComponent* Puff = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitPuffSystem, Location, FRotator::ZeroRotator, FVector::OneVector, true, true);
+	if (Puff != nullptr)
+	{
+		// 나이아가라가 받는 것은 파라미터 이름과 파생된 값뿐이다 — 죽는 타격은 세 배 크게
+		Puff->SetVariableFloat(TEXT("User.Scale"), bDeath ? 3.f : 1.f);
+	}
+}
+
+void ACL9Monster::TickFootstep()
+{
+	// 호스트는 액터 자리, 클라는 보간된 메시 자리 — 20Hz 스냅으로 한 틱에 뭉쳐 오는 거리에 걸음이 몰리지 않게
+	const FVector Foot = HasAuthority() ? GetActorLocation() : SmoothedLocation;
+	if (!LastFootstepLocation.IsSet())
+	{
+		LastFootstepLocation = Foot;
+		return;
+	}
+	const float Moved = FVector::Dist2D(LastFootstepLocation.GetValue(), Foot);
+	LastFootstepLocation = Foot;
+
+	// 서 있으면 안 난다. 죽은 몸이 날아가는 것도 걸음이 아니다
+	if (Moved <= 0.f || State == ECL9MonsterState::Dead)
+	{
+		FootstepDistanceAccum = 0.f;
+		return;
+	}
+
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+	if (Rules == nullptr)
+	{
+		return;
+	}
+	// 종별 보폭 열은 없다 — 추격은 달리기 보폭, 나머지는 걷기 보폭 (docs/plan/data/rules.md FootstepStride*)
+	const float Stride = State == ECL9MonsterState::Chase ? Rules->FootstepStrideRun : Rules->FootstepStrideWalk;
+	if (Stride <= 0.f)
+	{
+		FootstepDistanceAccum = 0.f;
+		return;
+	}
+	FootstepDistanceAccum += Moved;
+	if (FootstepDistanceAccum >= Stride)
+	{
+		FootstepDistanceAccum = 0.f;
+		const float FootZ = MonsterDef ? MonsterDef->Radius : 0.f;
+		CL9Sound::PlayAt(this, CL9SoundNames::Footstep, Foot - FVector(0.f, 0.f, FootZ), CL9Sound::FootstepPitchJitter);
+	}
 }
 
 void ACL9Monster::HostTickAI(float DeltaSeconds)
@@ -814,11 +1013,34 @@ void ACL9Monster::Die(AActor* Source)
 {
 	EnterState(ECL9MonsterState::Dead);
 	DetectGauge = 0.f;
+	KnockbackRemaining = 0.f;
 
-	// 사냥 보상은 아이템으로 떨어질 뿐, 직접 에테르로 주어지는 법은 없다 (docs/plan/data/monster/common.md)
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+
+	// 죽음 발사: 타격 원점 반대편으로 날아간다 — 비행은 HostTickDeathLaunch 가 매 틱 적분하고 트랜스폼 복제로 퍼진다
+	// (docs/systems/monster.md 타격의 표현). 원점이 없거나 겹쳐 있으면 몬스터의 뒤쪽으로
+	DeathLaunchVelocity = FVector::ZeroVector;
+	if (Rules != nullptr && (Rules->DeathLaunchSpeed > 0.f || Rules->DeathLaunchUp > 0.f))
+	{
+		FVector Away = Source != nullptr ? GetActorLocation() - Source->GetActorLocation() : -GetActorForwardVector();
+		Away.Z = 0.f;
+		FVector Dir = Away.GetSafeNormal();
+		if (Dir.IsNearlyZero())
+		{
+			Dir = -GetActorForwardVector();
+		}
+		DeathLaunchVelocity = Dir * Rules->DeathLaunchSpeed + FVector(0.f, 0.f, Rules->DeathLaunchUp);
+	}
+
+	// 사냥 보상은 아이템으로 떨어질 뿐, 직접 에테르로 주어지는 법은 없다 (docs/plan/data/monster/common.md).
+	// 몬스터 중심 높이·옆 30~90cm 자리에서 앙각 45~70°·요 무작위로 던져 흩어진다 — 옆 오프셋을 남기는 이유: 비거리
+	// 30~46cm 호만으로는 둘이 30cm 이상 떨어질 확률이 3/4 뿐이라 C5 검수가 흔들린다(balance 2026-09-18). 이후는 아이템 물리 그대로
 	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
 	{
-		const float FloorZ = GetActorLocation().Z - MonsterDef->Radius;
+		const FVector Center = GetActorLocation();
+		const float LootSpeed = Rules != nullptr ? Rules->DeathLootSpeed : 0.f;
 		for (const FDropItem& Drop : MonsterDef->DropItems)
 		{
 			if (FMath::FRand() > Drop.DropChance)
@@ -829,8 +1051,13 @@ void ACL9Monster::Die(AActor* Source)
 			for (int32 Index = 0; Index < Quantity; ++Index)
 			{
 				const FVector Sideways = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f).Vector() * FMath::FRandRange(30.f, 90.f);
-				GameMode->SpawnItem(Drop.ItemAlias, Drop.ItemSubAlias,
-					FTransform(FVector(GetActorLocation().X + Sideways.X, GetActorLocation().Y + Sideways.Y, FloorZ + 25.f)));
+				const FVector Origin = Center + Sideways;
+				ACL9Item* Item = GameMode->SpawnItem(Drop.ItemAlias, Drop.ItemSubAlias, FTransform(Origin));
+				if (Item != nullptr && LootSpeed > 0.f)
+				{
+					const FRotator Lob(FMath::FRandRange(45.f, 70.f), FMath::FRandRange(0.f, 360.f), 0.f);
+					Item->OnThrown(Origin, Lob.Vector() * LootSpeed);
+				}
 			}
 		}
 	}
