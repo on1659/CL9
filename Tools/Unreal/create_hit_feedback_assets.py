@@ -10,9 +10,14 @@
    CDO 의 흔들림 값만 덮어쓴다. CS_StaminaShake 는 `UDefaultCameraShakeBase` 를 상속한 블루프린트이고,
    그 `RootShakePattern` 은 기본 서브오브젝트인 `UPerlinNoiseCameraShakePattern` 이다 — 그래서 `oscillation_duration`
    (ULegacyCameraShake 의 것) 이 아니라 `duration` / `blend_in_time` / `blend_out_time` / `pitch.amplitude` … 를 쓴다.
+   **패턴 클래스는 상수의 `pattern` 키가 정한다** — `"perlin"`(`UPerlinNoiseCameraShakePattern`, 축 값은 `FPerlinNoiseShaker`)
+   또는 `"wave"`(`UWaveOscillatorCameraShakePattern`, 축 값은 `FWaveOscillator` — 사인파, `initial_offset_type` Zero 로 0 위상 시작).
+   CDO 의 `root_shake_pattern` 이 다른 클래스면 `unreal.new_object(cls, outer=CDO)` 로 새 인스턴스를 만들어 갈아 끼운다
+   (에디터에서 패턴 클래스를 바꾸는 것과 같다 — 옛 기본 서브오브젝트는 생성자가 매번 다시 만들 뿐 참조되지 않는다).
+   2026-09-18: CS_HitShake 는 펄린 → 사인파(balance: 펄린은 임의 위상이라 "정점 ≥2°" 를 보장 못 한다). CS_HurtShake 는 펄린 그대로.
 3. `/Game/Data/ShakeTable` 의 `Rows` 에 `Hit`·`Hurt` 행(`FCL9ShakeInfo`) 추가. 기존 `Stamina` 행은 건드리지 않는다.
 
-흔들림 수치는 balance 가 확정한 값이다(2026-09-15) — 바꿀 일이 생기면 에디터에서 손으로 만지지 말고
+흔들림 수치는 balance 가 확정한 값이다(Hurt 2026-09-15, Hit 2026-09-18) — 바꿀 일이 생기면 에디터에서 손으로 만지지 말고
 아래 HIT_SHAKE·HURT_SHAKE 상수를 고치고 다시 돌린다. 손으로 만진 값은 다음 실행에서 덮어쓰인다.
 실행 로그 맨 앞에 비교 기준으로 원본 CS_StaminaShake CDO 의 실측값(Duration·Pitch/Roll/Yaw 진폭·주파수·배속)을 찍는다.
 
@@ -32,20 +37,24 @@ SHAKE_TABLE = "/Game/Data/ShakeTable"
 FLASH_OPACITY = 0.6
 FLASH_COLOR = (1.0, 0.05, 0.05, 1.0)
 
-# 흔들림 값 — balance 확정 (2026-09-15, 리드 cl9-96 전달). 회전 진폭은 도(°), 위치 진폭은 cm,
-# 주파수는 펄린 노이즈의 진행 배속이다. 패턴은 복제한 그대로(Perlin) 두고 값만 바꾼다.
-# 타격 = 짧고 날카로운 한 번. 블렌드 인 0 이라 맞는 순간 바로 튄다.
+# 흔들림 값 — 회전 진폭은 도(°), 위치 진폭은 cm. 축 값은 (진폭, 주파수) 쌍이고 뜻은 패턴에 따라 다르다:
+#   perlin — 주파수는 펄린 노이즈의 진행 배속.  wave — 주파수는 Hz(사인파), 0 위상에서 시작해 정점 = 진폭 × 블렌드 포락선.
+# 타격 = 사인파 반주기 킥 하나 (balance 2026-09-18, .claude/runs/feel-hit-kill/report-balance.md "CS_HitShake — 에셋 값").
+# 4Hz 반주기 0.125 ≈ 길이 0.12, 정점 t=0.0625 가 블렌드 아웃 시작(0.08) 앞이라 포락선 1.0 → 30fps 실측 ≥2.2°.
+# 진폭 부호는 방향일 뿐(− = 먼저 아래로, 팬을 내려치는 방향). FOV −3° 는 반주기 동안 화각이 좁아졌다 돌아오는 펀치 인.
 HIT_SHAKE = {
-    "duration": 0.15,
+    "pattern": "wave",
+    "duration": 0.12,
     "blend_in_time": 0.0,
-    "blend_out_time": 0.10,
-    "location": {"x": (0.0, 1.0), "y": (0.0, 1.0), "z": (0.0, 1.0)},  # 타격은 회전만
-    # Pitch 2.2 는 balance 권고 1.5 에 펄린 위상 손실 보정을 더한 값이다 (상한 2.5 — 넘기지 않는다)
-    "rotation": {"pitch": (2.2, 20.0), "yaw": (0.5, 18.0), "roll": (1.0, 16.0)},
-    "fov": (0.0, 1.0),
+    "blend_out_time": 0.04,
+    "location": {"x": (0.0, 4.0), "y": (0.0, 4.0), "z": (0.0, 4.0)},  # 타격은 회전만 — 1인칭 위치 흔들림은 멀미
+    "rotation": {"pitch": (-3.0, 4.0), "yaw": (0.0, 4.0), "roll": (0.0, 4.0)},  # Pitch 주역(2026-09-15 결정 유지)
+    "fov": (-3.0, 4.0),
 }
-# 피격 = 묵직하게 오래. 진폭을 키우고 주파수를 낮춰 굼뜨게, 블렌드 아웃 0.30 으로 천천히 잦아든다.
+# 피격 = 묵직하게 오래 (balance 2026-09-15, 리드 cl9-96 전달 — 펄린 그대로). 진폭을 키우고 주파수를 낮춰 굼뜨게,
+# 블렌드 아웃 0.30 으로 천천히 잦아든다.
 HURT_SHAKE = {
+    "pattern": "perlin",
     "duration": 0.50,
     "blend_in_time": 0.0,
     "blend_out_time": 0.30,
@@ -113,15 +122,34 @@ def build_flash_material():
     return material
 
 
-def shaker(amplitude, frequency):
-    value = unreal.PerlinNoiseShaker()
+# 패턴 종류 → (패턴 클래스, 축 값 구조체). 두 패턴 다 USimpleCameraShakePattern 이라 duration/blend_*·축 이름·배속 이름이 같다
+# (Engine/Plugins/Cameras/EngineCameras/.../Shakes/PerlinNoiseCameraShakePattern.h · WaveOscillatorCameraShakePattern.h).
+PATTERN_KINDS = {
+    "perlin": (unreal.PerlinNoiseCameraShakePattern, unreal.PerlinNoiseShaker),
+    "wave": (unreal.WaveOscillatorCameraShakePattern, unreal.WaveOscillator),
+}
+
+
+def kind_of(pattern):
+    for kind, (pattern_class, _) in PATTERN_KINDS.items():
+        if isinstance(pattern, pattern_class):
+            return kind
+    return type(pattern).__name__
+
+
+def shaker(kind, amplitude, frequency):
+    """축 값 하나. perlin → FPerlinNoiseShaker(amplitude, frequency=배속). wave → FWaveOscillator(amplitude, frequency=Hz,
+    initial_offset_type=Zero — 0 위상에서 시작해야 정점이 결정적이다; 기본값 Random 은 펄린과 같은 문제를 다시 만든다)."""
+    value = PATTERN_KINDS[kind][1]()
     value.set_editor_property("amplitude", amplitude)
     value.set_editor_property("frequency", frequency)
+    if kind == "wave":
+        value.set_editor_property("initial_offset_type", unreal.InitialWaveOscillatorOffsetType.ZERO)
     return value
 
 
 def pattern_of(asset_path, name):
-    """블루프린트 생성 클래스의 CDO 에서 RootShakePattern(펄린 노이즈 패턴) 인스턴스를 꺼낸다.
+    """블루프린트 생성 클래스의 CDO 에서 RootShakePattern 인스턴스(펄린 또는 사인파)를 꺼낸다.
 
     CDO 는 **모듈 함수** `unreal.get_default_object(cls)` 로만 얻는다 — `unreal.Class` 에는
     `get_default_object()` 메서드가 없고, 클래스 객체에 대고 부르면 CDO 가 아니라 클래스가 그대로
@@ -136,6 +164,21 @@ def pattern_of(asset_path, name):
     return cdo, pattern
 
 
+def ensure_pattern_kind(cdo, pattern, kind, name):
+    """CDO 의 RootShakePattern 이 kind 의 클래스가 아니면 새 인스턴스(outer=CDO)로 갈아 끼운다. 같은 클래스면 그대로."""
+    pattern_class = PATTERN_KINDS[kind][0]
+    if isinstance(pattern, pattern_class):
+        return pattern
+    replaced = unreal.new_object(pattern_class, outer=cdo)
+    assert replaced is not None, "%s: %s 패턴 인스턴스를 못 만들었다" % (name, kind)
+    cdo.modify()
+    cdo.set_editor_property("root_shake_pattern", replaced)
+    current = cdo.get_editor_property("root_shake_pattern")
+    assert isinstance(current, pattern_class), "%s: root_shake_pattern 교체가 안 됐다(%s)" % (name, kind_of(current))
+    log("패턴 교체 %s: %s → %s" % (name, kind_of(pattern), kind))
+    return current
+
+
 def axes(pattern, names, unit):
     return ", ".join("%s %.3f%s@%.2f" % (name, pattern.get_editor_property(name).get_editor_property("amplitude"), unit,
                                          pattern.get_editor_property(name).get_editor_property("frequency"))
@@ -143,8 +186,10 @@ def axes(pattern, names, unit):
 
 
 def describe(pattern):
-    # 축별 진폭에 배속이 곱해진 것이 실제 세기다 — 배속까지 찍어야 셰이크끼리 비교가 된다
-    return "길이 %.3f초 (블렌드 인 %.3f / 아웃 %.3f) · 회전 [%s] ×진폭 %.3f ×주파수 %.3f · 위치 [%s] ×진폭 %.3f ×주파수 %.3f · FOV %.3f@%.2f" % (
+    # 축별 진폭에 배속이 곱해진 것이 실제 세기다 — 배속까지 찍어야 셰이크끼리 비교가 된다.
+    # 사인파(wave)의 주파수는 Hz, 펄린의 주파수는 배속 — 패턴 이름을 앞에 찍어 구분한다.
+    return "패턴 %s · 길이 %.3f초 (블렌드 인 %.3f / 아웃 %.3f) · 회전 [%s] ×진폭 %.3f ×주파수 %.3f · 위치 [%s] ×진폭 %.3f ×주파수 %.3f · FOV %.3f@%.2f" % (
+        kind_of(pattern),
         pattern.get_editor_property("duration"), pattern.get_editor_property("blend_in_time"),
         pattern.get_editor_property("blend_out_time"),
         axes(pattern, ("pitch", "roll", "yaw"), "도"),
@@ -163,8 +208,10 @@ def build_shake(name, values):
         assert lib.duplicate_asset(SOURCE_SHAKE, path) is not None, "복제 실패: %s → %s" % (SOURCE_SHAKE, path)
         log("셰이크 생성(%s 복제): %s" % (SOURCE_SHAKE, path))
 
+    kind = values["pattern"]
     cdo, pattern = pattern_of(path, name)
     cdo.modify()
+    pattern = ensure_pattern_kind(cdo, pattern, kind, name)
     pattern.modify()
     pattern.set_editor_property("duration", values["duration"])
     pattern.set_editor_property("blend_in_time", values["blend_in_time"])
@@ -172,15 +219,16 @@ def build_shake(name, values):
     # 배속은 1 로 고정하고 축별 진폭·주파수만 쓴다 — 읽을 값이 한 군데에만 있게.
     # 이 네 줄은 필수다: 복제 원본 CS_StaminaShake 의 회전 배속이 **0** 이라(실측 2026-09-15,
     # 스태미나는 위치 z 흔들림만 쓰는 지속형) 그대로 두면 아래 회전 진폭이 전부 0 이 곱해져 죽는다.
+    # (사인파 패턴도 같은 이름의 배속 넷을 가진다 — 새 인스턴스는 기본 1 이지만 명시해 둔다.)
     pattern.set_editor_property("location_amplitude_multiplier", 1.0)
     pattern.set_editor_property("location_frequency_multiplier", 1.0)
     pattern.set_editor_property("rotation_amplitude_multiplier", 1.0)
     pattern.set_editor_property("rotation_frequency_multiplier", 1.0)
     for axis, pair in values["location"].items():
-        pattern.set_editor_property(axis, shaker(*pair))
+        pattern.set_editor_property(axis, shaker(kind, *pair))
     for axis, pair in values["rotation"].items():
-        pattern.set_editor_property(axis, shaker(*pair))
-    pattern.set_editor_property("fov", shaker(*values["fov"]))
+        pattern.set_editor_property(axis, shaker(kind, *pair))
+    pattern.set_editor_property("fov", shaker(kind, *values["fov"]))
     assert lib.save_asset(path, False), "셰이크 저장 실패: " + path
     return path
 
@@ -224,9 +272,16 @@ def verify(shake_paths):
     log("검증 — 재질 파라미터: Opacity %.3f · Color %s" % (
         mel.get_material_default_scalar_parameter_value(material, "Opacity"),
         mel.get_material_default_vector_parameter_value(material, "Color")))
+    expected_kinds = dict(SHAKES)
     for path in shake_paths:
         name = path.rsplit("/", 1)[1]
         _, pattern = pattern_of(path, name)
+        expected = expected_kinds[name]["pattern"]
+        assert kind_of(pattern) == expected, "%s 패턴이 %s 가 아니다: %s" % (name, expected, kind_of(pattern))
+        if expected == "wave":
+            for axis in ("x", "y", "z", "pitch", "yaw", "roll", "fov"):
+                offset = pattern.get_editor_property(axis).get_editor_property("initial_offset_type")
+                assert offset == unreal.InitialWaveOscillatorOffsetType.ZERO, "%s.%s 의 initial_offset_type 이 Zero 가 아니다: %s" % (name, axis, offset)
         log("검증 — 셰이크 %s: %s" % (path, describe(pattern)))
     table = unreal.load_asset(SHAKE_TABLE)
     rows = table.get_editor_property("rows")
@@ -263,7 +318,7 @@ def main():
     shake_paths = [build_shake(name, values) for name, values in SHAKES]
     add_table_rows()
     verify(shake_paths)
-    log("완료 — 재질 1개 · 셰이크 2개 · 표 행 2개. 셰이크 수치는 balance 확정값(2026-09-15)이다.")
+    log("완료 — 재질 1개 · 셰이크 2개(Hit 사인파 · Hurt 펄린) · 표 행 2개. 셰이크 수치는 balance 확정값(Hurt 2026-09-15 · Hit 2026-09-18)이다.")
 
 
 main()
