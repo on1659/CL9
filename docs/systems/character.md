@@ -29,8 +29,8 @@
   Hold 레이어 뒤 `Transform (Modify) Bone`(`spine_03`, 컴포넌트 공간 피치 = AimPitch × 비율, 초안 0.6)에
   넣어 상체를 기울인다. 헤드램프는 그대로 카메라 부착이다([light.md](light.md)).
   ABP가 읽는 게터: `GetAimPitch()`(전신만) · `IsRunning()`(CMC 위임 — 소유자·호스트에서만 참) ·
-  `GetGroundSpeed()`(cm/s 수평 속도) · `GetHoldPose()` · `GetSwingElapsed()`/`GetSwingWindupElapsed()`/
-  `GetEatElapsed()`.
+  `GetGroundSpeed()`(cm/s 수평 속도) · `GetHoldPose()` · `GetSwingAnimElapsed()`(2026-09-18 — 히트스톱이 얹힌
+  `GetSwingElapsed()`, 피격 절)/`GetSwingWindupElapsed()`/`GetEatElapsed()`.
 - 3인칭 카메라 충돌 검사(segkind.md의 `bBlocksSight` 세 용도 중 하나)는 관전 시점 등
   3인칭 상황에서만 의미가 있다.
 - 관전은 동료 시점 관전 (1인칭 그대로 — 초안).
@@ -80,7 +80,7 @@ UI용 미러만 복제한다.
 - 셋 중 하나라도 빠지면 "지친 빈손 지속 속도 506" 산수가 무너진다 — 로드 검사 A1의 전제
 - HUD에 바를 그리지 않는다 — 화면 흔들림 진폭으로만 (rules.md). 구현: 소유 클라 로컬 틱이
   셰이크 표(`UCL9ShakeTable`, GameInstance 주입)의 `CL9ShakeNames::Stamina` 행을 읽어,
-  `Stamina < StartAt`면 그 행의 셰이크를 재생하고 스케일을 `(StartAt−Stamina)/StartAt`로
+  `Stamina < StartAt`면 그 행의 셰이크를 재생하고 스케일을 `(StartAt−Stamina)/StartAt`(× 행 `Scale`, 2026-09-18)로
   키운다 (표시 전용·복제 무접촉 — 셰이크는 규칙 컬럼이 아니라 표의 행이다,
   [../plan/data/rules.md](../plan/data/rules.md) 스태미나 표시).
 
@@ -122,8 +122,13 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
   손 뷰모델 흔들림. **바·게이지 UI는 없다** — 화면 흔들림이 곧 게이지 표시다 (rules.md).
 - 타인 시점: 게이지는 복제하지 않고, 달리기+취약물 소지 상태에서 파생한 애님 흔들림만.
 - **셰이크 표의 `Hit`·`Hurt` 행은 일회성이라 `StartAt`을 읽지 않는다** — 게이지 문턱은 `Stamina`처럼
-  값이 계속 구동하는 지속형 행에만 뜻이 있고, 순간 사건인 원샷 행은 세기 1로 한 번 재생할 뿐이다
-  (`ACL9Character::PlayShakeOnce`, 2026-09-15).
+  값이 계속 구동하는 지속형 행에만 뜻이 있고, 순간 사건인 원샷 행은 행의 `Scale` 세기로 한 번 재생할 뿐이다
+  (`ACL9Character::PlayShakeOnce`, 2026-09-15 — 옛 "세기 1"은 아래 `Scale` 열로 바뀌었다).
+- **셰이크 표 행마다 배율 `Scale`이 있다** (2026-09-18 사용자 결정, `FCL9ShakeInfo.Scale`, 기본 1.0). 진폭·주파수·블렌드
+  시간은 여전히 에셋(`CS_*`) 안에 있고, 표는 그 위에 곱하는 배율만 갖는다 — 세기를 재빌드도 에셋 교체도 없이 표에서
+  맞추기 위한 유일한 예외 열이다. 원샷 행(`Hit`·`Hurt`)은 `Scale` 세기로 한 번(`StartCameraShake(Class, Scale)`),
+  게이지 행(`Stamina`)은 시작 세기와 매 틱 `ShakeScale`이 **게이지 세기 × `Scale`**이다(`UpdateStaminaShake`).
+  1.0이면 에셋 그대로다.
 
 ## 점프
 
@@ -200,7 +205,19 @@ class ICL9Damageable {
   뜨지 않는다 — 지난 틱에 본 값과 다르면 한 번 재생하는 방식이 호스트·클라 양쪽에서 똑같이 돈다
   (`UpdateHitShakes`). 접속 직후 첫 틱은 값을 받아 적기만 하고 재생하지 않는다.
 - **셰이크는 표의 행이다.** `CL9ShakeNames::Hit`·`Hurt` (rules.md 셰이크 표) — 원샷이라 `StartAt`은
-  보지 않고 세기 1로 한 번 재생한다. 행이 없으면 조용히 지나간다.
+  보지 않고 행의 `Scale` 세기로 한 번 재생한다(2026-09-18 — 옛 세기 1, 위 "흔들림" 절). 행이 없으면 조용히 지나간다.
+- **셰이크 에셋 값** (정본은 `Tools/Unreal/create_hit_feedback_assets.py`의 `HIT_SHAKE`·`HURT_SHAKE` — 에디터에서 손으로
+  만진 값은 재실행이 덮어쓴다. 2026-09-15 결정대로 실측값도 여기 적는다):
+
+  | 에셋 | 패턴 | 길이 / BlendIn / BlendOut | 회전 | FOV | 위치 | 실측 |
+  |---|---|---|---|---|---|---|
+  | `CS_HitShake` | **사인파 오실레이터**(`WaveOscillatorCameraShakePattern`, 모든 축 InitialOffset Zero — 2026-09-18) | 0.12 / 0 / 0.04초 | Pitch −3.0°@4Hz, Yaw·Roll 0 | −3.0°@4Hz | 0 | 펄린이던 2026-09-15: 0.66°(진폭 2.2°의 0.30). 사인파 실측은 PIE 뒤 채운다(기대 30fps ≥2.2°, 60fps ≈3.0°) |
+  | `CS_HurtShake` | 펄린 노이즈 (그대로) | 0.50 / 0 / 0.30초 | Pitch 2.5°@7Hz, Yaw 1.5°@6Hz, Roll 3.5°@5Hz | 0 | 0 | 0.98°(2026-09-15) |
+
+  타격만 펄린에서 사인파로 바꾼 이유(balance 2026-09-18): 펄린은 임의 위상에서 시작해 순간값이 진폭에 못 미치고 블렌드
+  아웃이 길이의 2/3를 깎아, 진폭을 키워도 "정점 ≥2°"가 매번 나오지 않으면서 드물게 조준을 잃을 만큼 튄다. 사인파는
+  0 위상에서 시작해 정점 = 진폭 × 블렌드 포락선으로 결정적이다. 부호 −는 먼저 아래로 꺾인다는 방향일 뿐이고, FOV −3°는
+  반주기 동안 화각이 좁아졌다 돌아오는 펀치 인이다(팔 메시는 자체 FOV 70이라 따라 줄지 않는다 — PIE에서 어색하면 FOV만 0).
 - **빨간 오버레이는 `HitFlashMaterial` 하나를 사람과 몬스터가 같이 쓴다** (`SetOverlayMaterial` —
   줍기 하이라이트와 같은 기제). 캐릭터 몸에는 하이라이트를 걸지 않지만(그쪽은 아이템 메시다),
   **내가 켠 것만 끈다**는 가드를 둔다 — 켜고 끌 때만 세팅하고, 켠 적이 없으면 지우지 않는다.
@@ -208,6 +225,40 @@ class ICL9Damageable {
   플래시가 영원히 켜진 것으로 읽힌다. 플래시·비네트는 `GetHurtElapsed()`(= 서버 시각 − 넘어진 시각,
   일어난 뒤에도 계속 커진다)를 쓴다. 넘어진 적이 없으면 −1000 기본값 덕에 아주 큰 값이 되어 꺼져 있다.
 - HUD 비네트 이미지는 `GetHurtFlash()`를 불투명도로 읽는다 ([ui.md](ui.md)).
+
+### 소리·팔 히트스톱·발소리 (2026-09-18 구현)
+
+2026-09-15 표 위에 얹은 층이다 ([../goal/game-feel.md](../goal/game-feel.md) §1·§2). 새로 복제하는 값은 없고, 전부
+이미 복제된 시계에서 파생한다. 몬스터 쪽(`Hit`·`MonsterDeath` 소리·몬스터 히트스톱·퍼프·죽음 발사)은
+[monster.md](monster.md) "타격의 표현", 표·에셋·재생 헬퍼는 [sound.md](sound.md).
+
+| 무엇 | 누가 보나 | 원천 | 어디서 |
+|---|---|---|---|
+| `Swing` 소리 (폰 자리, 맞든 빗나가든) | 전원 | `SwingStartServerTime` 변화 | `UpdateHitSounds` |
+| `Hurt` 소리 (폰 자리) | 전원 | `KnockdownStartServerTime` 변화 | `UpdateHitSounds` |
+| 1인칭 팔 히트스톱 | 때린 본인 | `SwingHitServerTime` 뒤 `CL9Rules.HitStopTime`(0.08초) | `GetSwingAnimElapsed()` → ABP `SwingElapsed` |
+| 발소리 `Footstep` (발밑) | 전원 | 수평 이동 거리 누적 ≥ 보폭 | `TickFootstepSound` |
+
+- **소리도 셰이크와 같은 틱 비교다** — `UpdateHitSounds()`가 지난 틱과 값이 다르면 `CL9Sound::PlayAt`으로 한 번 튼다.
+  다만 셰이크의 `UpdateHitShakes`는 소유자 전용인데 소리는 **남의 폰에서도 들려야** 하므로 로컬 조작 게이트 **앞**에서
+  모든 머신이 돌고, 비교값도 따로 둔다(`LastSeenSwingStartTime`·`LastSeenHurtSoundTime`). 접속 직후 첫 틱은 기준값만
+  받아 적는다(`bHitSoundsPrimed`). `Hurt`는 넘어지는 순간 한 번이고 일어날 때는 없다.
+- **팔 히트스톱은 판정 시계가 아니라 ABP 전용 게터다.** `GetSwingAnimElapsed()`(BlueprintPure)는 이번 휘두르기가 맞은 뒤
+  (`SwingHitServerTime >= SwingStartServerTime`, `COND_OwnerOnly`라 때린 본인 화면에서만) `HitStopTime` 동안 명중 시각의
+  경과값에 머물고, 지나면 실제 경과에서 정지 길이를 뺀 값으로 이어진다 — 팔 클립이 명중 프레임에 0.08초 멈췄다가 이어서
+  끝까지 돈다. 남의 화면·헛스윙·표 없음이면 `GetSwingElapsed()`와 같다. **`ABP_FP_View`·`ABP_Unarmed`의 `SwingElapsed`
+  변수 소스가 `GetSwingElapsed` → `GetSwingAnimElapsed`로 바뀐다** — 분기 조건 `SwingElapsed ∈ [0, 0.347)`도 같은 변수를
+  보므로 클립이 0.08초 늦게 끝까지 간다([animation.md](animation.md) 휘두르기 가지). 판정 `HostTickSwingHit`은 여전히
+  `GetSwingElapsed()`를 쓴다 — 히트박스 창은 그대로다. 전역 시간 지연·`CustomTimeDilation`은 쓰지 않는다(리슨 호스트에서
+  남에게 번지고 이동 예측을 깨뜨린다).
+- **발소리는 애님 노티파이가 아니라 거리 누적기다** (클립에 노티파이가 없다). `TickFootstepSound()`가 모든 머신에서 매 틱
+  `GetFootLocation()`의 수평 이동 거리를 누적(`FootstepDistanceAccum`)해 보폭에 닿을 때마다 발밑에서 `Footstep` 행을 피치
+  ±8 %로 튼다. `IsMovingOnGround()`일 때만 — 서 있거나 공중이거나 넘어졌거나 죽었으면 안 난다. 보폭은 수평 속도가 행의
+  `WalkSpeed`를 넘으면 `CL9Rules.FootstepStrideRun`(196cm = 654 × 0.3초, `AN_Farmer_FPRun` 0.6초 루프의 반 — 주먹이 앞
+  극점에 올 때마다 한 발), 아니면 `FootstepStrideWalk`(150cm, 2.64 걸음/초) — 달리기 입력 `bWantsToRun`은 남의 폰에
+  복제되지 않아 속도로 가른다. 보폭 종류가 바뀌면 누적을 0으로 되돌린다. 무게로 느려지면 간격이 같이 벌어진다.
+  소음 판정의 `TickStepNoise`(파동, 호스트·소유 클라만, 표의 간격)와는 **별개 누적**이다 — 발소리는 연출이지 몬스터
+  청각이 아니다.
 
 ## 네트워크 정리
 

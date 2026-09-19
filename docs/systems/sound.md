@@ -23,13 +23,22 @@
 - 동기화는 **호스트발 Multicast RPC(Unreliable — 사운드는 유실 허용)** 또는 Replicated
   상태의 OnRep에서
 - 클라발 Server RPC로 사운드를 요청하지 않는다 (비소유 액터 함정 — actor-base.md)
+- **구현된 효과음(2026-09-18)은 Multicast도 OnRep도 아니다** — 이미 복제되는 시계·상태(`SwingStartServerTime`·
+  `KnockdownStartServerTime`·몬스터 `StateStartServerTime`·아이템 `HoldState`)를 매 틱 지난 틱과 비교해 **상승 에지**에서
+  모든 머신이 각자 튼다. 새 RPC가 없고, 리슨 호스트도 자기 폰에서 같은 길을 탄다(OnRep은 호스트 자신에게 뜨지 않는다 —
+  character.md 피격 절의 셰이크와 같은 이유). 아래 "구현 — `SoundTable`" 절.
 
 ## 주요 사운드 이벤트 (현 기획 기준)
 
+이름이 **표 행**(`Pickup`처럼 접두사 없는 이름)이면 `SoundTable`에 행·에셋이 있고 코드에 재생 지점이 붙은 것이고,
+`SFX_…`·`UI_…`·`VoiceSet`은 아직 **계획 이름**이다(에셋도 재생 지점도 없다). 행이 된 옛 이름은 괄호에 남겼다.
+
 **운반 (inventory.md · raiding.md):**
-- `SFX_Pickup` — 줍기 (걷기 줍기는 조용, 달리기 줍기는 시끄러움 — 소음 반경은 rules.md 판정 값,
-  사운드는 그 표현)
-- `SFX_Place` / `SFX_Throw` — 놓기 / 던지기
+- `Pickup` 행 (옛 `SFX_Pickup`) — 줍기 (걷기 줍기는 조용, 달리기 줍기는 시끄러움 — 소음 반경은 rules.md 판정 값,
+  사운드는 그 표현). **행과 에셋은 있지만 재생 지점은 아직 없다** — 다음 실행(game-feel §4)에서 `PickupServerTime`이
+  생기면 그 변화에서 튼다.
+- `Place` 행 (옛 `SFX_Place`·`SFX_Throw` — 하나로 합침) — 놓기·던지기·수레 짐칸에 얹기(G) 모두. 아이템 `HoldState`가
+  Held·Worn에서 Free로 바뀌는 순간 아이템 자리에서. 수레를 놓는 것(Pushed→Free)과 죽음 드랍(Free→Free)에는 안 난다.
 - `SFX_Crack` / `SFX_Break` — 금 감 / 깨짐
 - `SFX_JarDeposit` — 항아리 반납
 - `SFX_Swap` — 손↔품 교체 (1.2초 동작음)
@@ -42,21 +51,36 @@
 **몬스터 (monster.md):**
 - `SFX_WakeTelegraph` — 기상 예고 퍼덕임·울음 (0.8초 — 전 플레이어에게 들린다)
 - `SFX_Alert` — 경보 울음 (거위 `AlertWindup` 뒤)
-- `SFX_Catch` — 잡힘 (플레이어 넘어짐과 함께)
-- `SFX_MonsterDeath` — 사살 (사살 경보의 소리 그 자체)
-- `SFX_Footstep_Monster` — 몬스터 발소리 (읽히는 위협의 청각 채널)
+- `SFX_Catch` — 잡힘, 몬스터가 덮치는 소리 (플레이어 넘어짐과 함께 — 맞은 몸의 소리는 아래 `Hurt` 행)
+- `MonsterDeath` 행 (옛 `SFX_MonsterDeath`) — 사살 (사살 경보의 소리 그 자체). 몬스터가 Dead에 들어오는 순간 `Hit`과
+  **함께** 몬스터 자리에서 (monster.md "타격의 표현").
+- `Footstep` 행 (옛 `SFX_Footstep_Monster`) — 몬스터 발소리 (읽히는 위협의 청각 채널). 사람과 **같은 행·같은 보폭**을
+  쓴다(2026-09-18 사용자 — 종별 보폭 열은 이번엔 두지 않는다). Chase면 달리기 보폭, 그 외는 걷기 보폭, Dead·정지면 안 난다.
 
-**타격·피격 (goal/hit-feedback.md — 계획 이름만, 음원 에셋 없음):**
-- `SFX_Hit` — 팬이 몬스터에 닿는 순간 (몬스터가 빨개지고 카메라가 킥하는 바로 그 순간 —
-  testing/pie-scenarios.md C4 ⑩)
-- `SFX_Hurt` — 잡혀 넘어지는 순간, 맞은 사람 쪽 (`SFX_Catch`가 몬스터가 덮치는 소리라면
-  이쪽은 맞은 몸의 소리다 — C3 피격감)
-- 위 둘은 **이름만 잡아둔 것**이다. 2026-09-15 hit-feedback 실행은 시각 표현(빨간 플래시·
-  비네트·카메라 셰이크)까지만 넣었고 음원은 만들지 않았다 — 실행 범위 밖.
+**타격·피격 (goal/game-feel.md §1 — 2026-09-18 구현):**
+- `Swing` 행 — 휘두르기 시작(`SwingStartServerTime` 변화). **맞든 빗나가든** 난다 — 헛스윙에는 이것만 나고 `Hit`은 없다.
+- `Hit` 행 (옛 `SFX_Hit`) — 팬·고기가 몬스터에 닿는 순간 = 몬스터가 Stun·Dead에 들어오는 상승 에지(빨간 플래시·히트스톱·
+  퍼프와 같은 에지 — testing/pie-scenarios.md C4 ⑩). 경직 중 다시 맞으면(`StateStartServerTime`이 바뀜) 또 난다. 나란한 둘을
+  한 번에 치면 **닭마다 하나씩** 난다(카메라 킥은 휘두르기당 한 번이지만 소리는 맞은 몬스터가 낸다). 시체를 쳐도 안 난다.
+- `Hurt` 행 (옛 `SFX_Hurt`) — 잡혀 넘어지는 순간, 맞은 사람 쪽(`KnockdownStartServerTime` 변화 — C3 피격감). 일어날 때는
+  없다. 남의 화면에서도 그 폰 자리에서 들린다.
+
+| 행 | 에지 | 어느 머신 | 어디서 | 위치 |
+|---|---|---|---|---|
+| `Swing` | `SwingStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
+| `Hurt` | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
+| `Hit` | Stun·Dead ∧ `GetStateElapsed() < HitFlashTime` 창의 상승 에지, 또는 창 안에서 `StateStartServerTime` 변화 | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심(`Bounds.Origin`) |
+| `MonsterDeath` | 같은 에지인데 상태가 Dead | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심, `Hit`과 함께 |
+| `Place` | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown 경유, 클라는 OnRep) | 아이템 |
+| `Footstep` | 수평 이동 거리 누적 ≥ 보폭 | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑 |
+| `Pickup` | (없음 — 다음 실행 `PickupServerTime`) | — | — | — |
 
 **캐릭터:**
 - `VoiceSet` 반응 음성 — 잡힘·넘어짐·탈진 (동료 상황을 귀로 알리는 채널 — character.md)
-- `FootstepSet` 발소리 (연출 전용 — 몬스터 청각 판정과 무관)
+- `Footstep` 행 (옛 `FootstepSet`) — 발소리 (연출 전용 — 몬스터 청각 판정과 무관). **애님 노티파이가 아니라 거리 누적기**다:
+  땅 위에서 움직인 수평 거리가 보폭(`CL9Rules.FootstepStrideRun` 196cm / `FootstepStrideWalk` 150cm)에 닿을 때마다
+  발밑에서 한 번, 피치 ±8 %. 속도가 행의 `WalkSpeed`를 넘으면 달리기 보폭(달리기 입력은 남의 폰에 복제되지 않아 속도로
+  가른다), 서 있거나 공중이거나 넘어졌으면 안 난다. 소음 판정(파동, `TickStepNoise`)과는 별개 누적이다 — character.md 피격 절.
 
 **거래·전이:**
 - `SFX_Sell` / `SFX_Buy` — 창구 판매 / 트럭 패널 구매
@@ -70,7 +94,7 @@
 
 ```
 Content/Sounds/
-  ├─ SFX/          (Carry/ Cooking/ Monster/ Trade/)
+  ├─ SFX/          (Carry/ Character/ Monster/ — 2026-09-18 실재 · Cooking/ Trade/ — 계획)
   ├─ VO/           (캐릭터별 VoiceSet)
   ├─ UI/
   ├─ Ambience/     (Henhouse/ — 목적지별)
@@ -78,9 +102,51 @@ Content/Sounds/
   └─ Master/       (MasterSoundMix — 클래스별 게인)
 ```
 
+효과음 에셋 → 행 연결은 `Content/Data/SoundTable`이 갖는다(아래 구현 절의 표). 원본 WAV는 `ArtSource/audio/sfx/`.
+
+## 구현 — `SoundTable` (2026-09-18, game-feel §1)
+
+**표.** `UCL9SoundTable`(`Source/CL9/Data/CL9SoundTable.h`, DataAsset — `UCL9ShakeTable`과 같은 틀)은
+`TMap<FName, TSoftObjectPtr<USoundBase>> Rows` 하나다. 효과음을 추가한다는 것은 사운드 에셋을 만들고 여기에 행을 더하는
+것이지 rules 에셋에 열이 늘어나는 일이 아니다. C++가 조회하는 행 이름은 `CL9SoundNames` 상수 7개 — `Pickup`·`Place`·`Swing`·
+`Hit`·`Hurt`·`MonsterDeath`·`Footstep` — 그 외 행은 데이터 전용이다. 에셋은 `/Game/Data/SoundTable`이고
+`BP_CL9GameInstance.SoundTableAsset`(`UCL9GameInstance`, `ShakeTableAsset`과 같은 자리)이 가리킨다 — C++에는 에셋 경로가
+없다(conventions § 5). `UCL9GameInstance::Init`이 한 번 로드해 `GetSoundTable()`로 내주고, 비어 있으면 Warning 한 줄이다.
+
+**재생.** 게임 코드는 `UGameplayStatics`를 직접 부르지 않고 `CL9Sound::PlayAt(WorldContext, Row, Location, PitchJitter = 0)`
+하나로 튼다: 전용 서버면 return, 표·행·에셋이 없으면 **로그 없이 조용히** return(없는 행은 오류가 아니다 — 소리는 있어도
+그만 없어도 그만인 표현이다), 있으면 `PlaySoundAtLocation(World, Sound, Location, 1.0, 1 ± PitchJitter)`. 볼륨·감쇠·
+동시 발성 제한은 전부 행이 가리키는 에셋 쪽이고 코드는 볼륨 1.0으로 튼다. 코드가 흔드는 것은 `Footstep`의 피치뿐
+(`CL9Sound::FootstepPitchJitter` 0.08 = ±8 % — 걸음마다 조금씩 다르게 들리기 위한 것이지 밸런스 값이 아니다).
+
+**에지.** 재생 지점은 전부 위 "주요 사운드 이벤트" 표대로 복제된 시계·상태의 틱 비교다. 첫 틱은 기준값만 받아 적는다
+(`bHitSoundsPrimed`·`bHitFeelPrimed`) — 늦게 들어온 클라가 이미 지난 휘두르기·타격을 접속 순간 되풀이하지 않는다.
+
+**에셋 — 전부 합성 임시 음원이다.** 실음원이 0개라 `Tools/Audio/synth_sfx.py`(순수 파이썬, 44.1 kHz·16-bit 모노·피크
+−3 dBFS, 고정 시드라 두 번 돌리면 바이트가 같다)가 `ArtSource/audio/sfx/*.wav` 9개를 만들고,
+`Tools/Unreal/import_sfx.py`(에디터 파이썬, 멱등)가 `/Game/Sounds/SFX/…`로 임포트해 클래스 `SC_Effects`·
+Concurrency `SCC_Effects4`(`USoundConcurrency`, `MaxCount` 4 — 같은 음이 다섯 번째부터는 겹쳐 나지 않는다)를 건다.
+발소리 변형 3개는 SoundCue `S_Footstep`의 Random 노드 하나로 묶여 있어 **행은 하나**다 — `Footstep2/3` 같은 다중 행은
+코드가 고르지 않는다. 실음원으로 바꾸는 절차(같은 이름의 WAV를 덮어쓰고 `import_sfx.py` 재실행 — 행은 그대로)는
+[../../ArtSource/audio/README.md](../../ArtSource/audio/README.md).
+
+| 행 | 에셋 | 원본 WAV | 길이 |
+|---|---|---|---|
+| `Pickup` | `/Game/Sounds/SFX/Carry/S_Pickup` | `pickup.wav` | 0.12초 |
+| `Place` | `/Game/Sounds/SFX/Carry/S_Place` | `place.wav` | 0.15초 |
+| `Swing` | `/Game/Sounds/SFX/Carry/S_SwingWhoosh` | `swing_whoosh.wav` | 0.25초 |
+| `Hit` | `/Game/Sounds/SFX/Monster/S_HitPan` | `hit_pan.wav` | 0.35초 |
+| `Hurt` | `/Game/Sounds/SFX/Character/S_Hurt` | `hurt.wav` | 0.20초 |
+| `MonsterDeath` | `/Game/Sounds/SFX/Monster/S_MonsterDeath` | `monster_death.wav` | 0.50초 |
+| `Footstep` | `/Game/Sounds/SFX/Character/S_Footstep` (SoundCue, Random → `S_Footstep_1/2/3`) | `footstep_1/2/3.wav` | 0.09~0.11초 |
+
 ## 재생 API (표현 계층)
 
 ```cpp
+// CL9 게임 코드 — 표의 행을 이름으로 (위 구현 절). 효과음은 전부 이 길로 간다
+CL9Sound::PlayAt(this, CL9SoundNames::Hit, MeshComponent->Bounds.Origin);
+CL9Sound::PlayAt(this, CL9SoundNames::Footstep, GetFootLocation(), CL9Sound::FootstepPitchJitter);
+
 // 2D (UI·음악)
 UGameplayStatics::PlaySound2D(World, Sound, Volume, Pitch, StartTime /*, Concurrency...*/);
 
