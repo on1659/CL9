@@ -142,7 +142,7 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
   뒤); 변수 생성은 `BlueprintEditorLibrary.add_member_variable` + `EdGraphPinType.import_text('(PinCategory="byte",
   PinSubCategoryObject="/Script/CL9.ECL9HoldPose")')`(MCP `add_variable` 은 프리미티브만 받는다).
   - **휘두르기 가지** (2026-09-13, 사용자 "아예 액션을 안 해"): 좌클 `Swing` 의 표현. 몽타주·RPC 가 아니라 **상태 파생** — `ACL9Character::
-    SwingStartServerTime`(복제)에서 `GetSwingElapsed()` 가 지난 초를 주고 ABP 변수 `SwingElapsed` 가 매 틱 받는다. Hold 체인 머리 앞에
+    SwingStartServerTime`(복제)에서 `GetSwingElapsed()` 가 지난 초를 주고 ABP 변수 `SwingElapsed` 가 매 틱 받는다(2026-09-18 — ABP 변수 소스는 `GetSwingAnimElapsed()`, 히트스톱 0.08초가 얹힌 값. 판정은 여전히 `GetSwingElapsed()` — character.md 피격 절). Hold 체인 머리 앞에
     부울 블렌드 한 단: `InRange(SwingElapsed, 0, 0.347)` 이면 **시퀀스 평가기** `AN_Farmer_Swing`(`ExplicitTime = SwingElapsed + 0.12`),
     아니면 Hold 체인. 원샷을 평가기+경과 시각으로 트는 이유: 시퀀스 플레이어는 가지가 켜질 때 처음부터 재생된다는 보장이 없고, 복제된 시작
     시각이면 모든 머신이 같은 프레임을 본다. 클립은 Small 들기 자세에서 치켜들었다(t=0.12) 내려치는 15프레임 30fps **0.467초**(031 에서

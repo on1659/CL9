@@ -1348,3 +1348,29 @@
   점 수를 표 열이 아니라 **둘레 ÷ (두께 × 0.35)** 로 이미터 안에서 정해(하한 `RayCount`) 점 간격이 점 크기보다 좁게 — 달리기 링은 583개로
   끊김 없는 선이 된다. 스폰 높이 20cm → 3cm. 리본 렌더러·위를 향한 스프라이트·색 HLSL 은 이 MCP 경로에서 그려지지 않아 폐기
   (docs/systems/wave.md "나이아가라 에셋의 실제 모양"). 두께는 표 `Thickness` 로 조절(줄이면 선이 날카로워지고 점 수는 자동 증가).
+- **2026-09-18 — 타격감·사살감 1차(실행 feel-hit-kill, 사용자 "타격감·파밍·때려잡는 기분이 부족하다").** 진단: 소리 0개·히트스톱 없음·킥 0.66°·
+  타격 파티클 없음·죽음 연출 없음. 판정(히트박스·경직·HP·드랍)은 그대로 두고 표현 층만 얹었다 — 효과음은 rules 열이 아니라 `SoundTable` 행
+  (`CL9SoundNames` 7개, `Content/Data/SoundTable`, `BP_CL9GameInstance.SoundTableAsset`)이며 재생은 전부 복제된 시계·상태의 틱 비교(상승 에지)로
+  모든 머신에서 파생한다(새 RPC·멀티캐스트 없음). `Place` 는 OnPlaced/OnThrown 이 호스트 전용이라 `ApplyHoldState` 의 Held·Worn→Free 전이에서
+  낸다. 없는 행은 조용히 무시. 정본 `docs/systems/sound.md`·`monster.md` "타격의 표현".
+- **2026-09-18 — 효과음 7종은 파이썬 합성 임시 음원이다** (`Tools/Audio/synth_sfx.py`, numpy 아닌 순수 파이썬·고정 시드·멱등, `ArtSource/audio/sfx/*.wav`
+  → `Tools/Unreal/import_sfx.py` → `/Game/Sounds/SFX/…`, `SC_Effects`, Concurrency 4, 발소리 3개는 SoundCue Random `S_Footstep` 하나). 실음원이
+  들어오면 같은 이름의 WAV 를 덮어쓰고 임포트 스크립트를 재실행하면 행 편집 없이 바뀐다(`ArtSource/audio/README.md`).
+- **2026-09-18 — 히트스톱은 전역 시간 지연·`CustomTimeDilation` 이 아니라 액터별이다.** 몬스터는 `bPauseAnims`(모든 머신, `CL9Rules.HitStopTime` 0.08초),
+  1인칭 팔은 ABP 전용 게터 `GetSwingAnimElapsed()` 가 명중 시각에 머무는 방식(때린 본인만) — 판정 게터 `GetSwingElapsed()` 와 히트박스 창은 불변,
+  `ABP_FP_View`·`ABP_Unarmed` 의 `SwingElapsed` 변수 소스만 바꿨다. PIE 실측: 정지 0.05→0.11초, 팔 차이 0.08.
+- **2026-09-18 — `CS_HitShake` 는 사인파 오실레이터(`WaveOscillatorCameraShakePattern`, 모든 축 InitialOffset Zero)다** — 2026-09-15 "펄린으로 통일" 을
+  타격 하나만 번복(사용자 결정). 펄린은 임의 위상이라 실측 0.66°/진폭 2.2°(30%)로 정점을 보장 못 한다. 값은 Pitch −3°@4Hz·0.12초·블렌드 아웃 0.04·
+  FOV −3°@4Hz, 정본은 `Tools/Unreal/create_hit_feedback_assets.py` `HIT_SHAKE`. PIE 실측 피치 정점 2.83°·FOV 90→87.15. `CS_HurtShake` 는 펄린 그대로.
+- **2026-09-18 — `ShakeTable` 행에 배율 `Scale`(기본 1.0)을 둔다(사용자 "꺾이는 정도를 표에서 세팅").** 원샷 행은 `Scale` 세기로, 게이지 행은 게이지 ×
+  `Scale` 로 재생 — 진폭·주파수·블렌드는 여전히 에셋이고 표는 배율만 갖는다(2026-09-05 "셰이크 값은 표 열로 두지 않는다"의 유일한 예외).
+- **2026-09-18 — 죽음 발사는 호스트 적분이다(월드 중력 980, `DeathLaunchSpeed` 300·`DeathLaunchUp` 260).** 래그돌(물리 에셋 없음)·`LaunchCharacter`
+  (Character 아님) 기각. 벽·바닥 검사는 몸체 구 스윕도 WorldStatic 오브젝트 질의도 아닌 **Visibility 채널 선 트레이스**다 — 바닥·맵 조각의 콜리전
+  프로필이 제각각(Lvl_Flat `Floor_0` 은 BlockAllDynamic = WorldDynamic)이라 오브젝트 타입을 믿을 수 없다. 폰·아이템·몬스터에 맞으면 무시하고 뒤를
+  다시 긋는다. 드랍은 몬스터 중심 높이·옆 30~90cm 오프셋에서 `OnThrown` 호(`DeathLootSpeed` 300 — 계란 표 중력 1950·앙각 70° 착지 371 < `CrackSpeed`
+  450). PIE 실측: 정점 +28cm·0.55초·수평 150cm 착지(z 37.7→35.5).
+- **2026-09-18 — 발소리는 애님 노티파이가 아니라 거리 누적기다** (`TickFootstepSound`·`TickFootstep`, 모든 머신, 소음 판정 `TickStepNoise` 와 별개).
+  보폭은 종별 열 없이 `CL9Rules.FootstepStrideRun` 196(= 654 × 0.3초, `AN_Farmer_FPRun` 루프 반 = 팔 펌프와 잠금)/`FootstepStrideWalk` 150 공용 —
+  폰은 속도 > `WalkSpeed` 로, 몬스터는 Chase 로 가른다. 몬스터 보폭도 이번엔 사람과 같은 값(사용자 "이번엔 이대로 들어본다" — 종별 열은 다음에).
+- **2026-09-18 — 타격 연출 수치는 판정 시계와 표 물리에서 역산한다(balance, 초안).** `HitStopTime` 0.08 = `HitFlashTime` 0.15 안·히트박스 창 폭 0.20 의
+  절반 아래. `DeathLaunchSpeed` 300 = 복도 한 칸 500cm 에서 가로로 맞아도 벽 앞에 눕는 수평 159cm. `HpPipsTime` 2.0(다음 실행).
