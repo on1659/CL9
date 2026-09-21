@@ -442,6 +442,61 @@
       "eye_height_m": 1.56,
       "layer": "full rig (camera-local view model, spine identity)",
       "view": "first-person arms"
+    },
+    "AN_Farmer_Executed_Pig": {
+      "fbx_sha256": "1312e42077d3a481cfa2481b868f0ec08d3b119cea0ceb7e4265c929a8e15f0f",
+      "loop": false,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "layer": "full body incl. pelvis translation (Executed branch — held on the last frame until respawn)",
+      "view": "full body",
+      "pelvis_location_keys": true,
+      "end_pose": "DOWN",
+      "execute_anchor": {
+        "victim_space": "origin = victim capsule centre on floor, +X victim forward (rig -Y), cm",
+        "monster_clip": "AN_Pig_Execute",
+        "monster_xy_cm": [
+          100.0,
+          0.0
+        ],
+        "monster_yaw_deg": 180.0,
+        "contact_s": 0.5,
+        "farmer_times": {
+          "brace": 0.4,
+          "hit": 0.5,
+          "react": 0.62,
+          "land": 1.1,
+          "down": 1.4
+        }
+      }
+    },
+    "AN_Farmer_Executed_Raccoon": {
+      "fbx_sha256": "c1eb29548153dd981368b5a7b476e27f9172ea807e8476438a613b2f7e1ae84c",
+      "loop": false,
+      "seconds": 2.0,
+      "fps": 30,
+      "frames": 61,
+      "layer": "full body incl. pelvis translation (Executed branch — held on the last frame until respawn)",
+      "view": "full body",
+      "pelvis_location_keys": true,
+      "end_pose": "PRONE",
+      "execute_anchor": {
+        "victim_space": "origin = victim capsule centre on floor, +X victim forward (rig -Y), cm",
+        "monster_clip": "AN_Raccoon_Execute",
+        "monster_xy_cm": [
+          -120.0,
+          0.0
+        ],
+        "monster_yaw_deg": 0.0,
+        "contact_s": 0.6,
+        "farmer_times": {
+          "hit": 0.6,
+          "react": 0.72,
+          "fall": 1.0,
+          "prone": 1.25
+        }
+      }
     }
   },
   "hold_spec": {
@@ -1806,6 +1861,152 @@
           0.8,
           0.0,
           -0.4
+        ]
+      }
+    }
+  },
+  "executed_keys": {
+    "brace": {
+      "pelvis_pitch": 0.0,
+      "pelvis_z": 0.9589678049087524,
+      "spine": 0.05,
+      "spine_yaw": 0.0,
+      "head": 0.05,
+      "head_yaw": 0.0,
+      "hip_l": 0.0,
+      "knee_l": 0.1,
+      "hip_r": 0.0,
+      "knee_r": 0.1,
+      "arm_r": {
+        "wrist": [
+          -0.28,
+          -0.4,
+          1.15
+        ],
+        "pole": [
+          -1.0,
+          -0.2,
+          -0.3
+        ]
+      },
+      "arm_l": {
+        "wrist": [
+          0.28,
+          -0.4,
+          1.15
+        ],
+        "pole": [
+          1.0,
+          -0.2,
+          -0.3
+        ]
+      }
+    },
+    "hit_front": {
+      "pelvis_pitch": -0.15,
+      "pelvis_z": 0.8,
+      "spine": -0.4,
+      "spine_yaw": 0.0,
+      "head": 0.2,
+      "head_yaw": 0.0,
+      "hip_l": 0.35,
+      "knee_l": 0.45,
+      "hip_r": 0.35,
+      "knee_r": 0.45,
+      "arm_r": {
+        "wrist": [
+          -0.45,
+          0.25,
+          1.05
+        ],
+        "pole": [
+          -1.0,
+          0.3,
+          -0.2
+        ]
+      },
+      "arm_l": {
+        "wrist": [
+          0.45,
+          0.25,
+          1.05
+        ],
+        "pole": [
+          1.0,
+          0.3,
+          -0.2
+        ]
+      }
+    },
+    "fall_front": {
+      "pelvis_pitch": -1.0,
+      "pelvis_z": 0.45,
+      "spine": -0.2,
+      "spine_yaw": 0.0,
+      "head": 0.2,
+      "head_yaw": 0.0,
+      "hip_l": 0.3,
+      "knee_l": 0.4,
+      "hip_r": 0.3,
+      "knee_r": 0.4,
+      "arm_r": {
+        "wrist": [
+          -0.4,
+          -0.55,
+          0.35
+        ],
+        "pole": [
+          -0.6,
+          -0.3,
+          0.7
+        ]
+      },
+      "arm_l": {
+        "wrist": [
+          0.35,
+          -0.65,
+          0.3
+        ],
+        "pole": [
+          0.6,
+          -0.3,
+          0.7
+        ]
+      }
+    },
+    "prone": {
+      "pelvis_pitch": -1.5707963267948966,
+      "pelvis_z": 0.12,
+      "spine": 0.1,
+      "spine_yaw": 0.0,
+      "head": 0.15,
+      "head_yaw": 0.8,
+      "hip_l": -0.05,
+      "knee_l": 0.05,
+      "hip_r": 0.05,
+      "knee_r": 0.15,
+      "arm_r": {
+        "wrist": [
+          -0.55,
+          -0.6,
+          0.05
+        ],
+        "pole": [
+          -0.6,
+          -0.3,
+          0.7
+        ]
+      },
+      "arm_l": {
+        "wrist": [
+          0.3,
+          -0.9,
+          0.05
+        ],
+        "pole": [
+          0.5,
+          -0.2,
+          0.7
         ]
       }
     }

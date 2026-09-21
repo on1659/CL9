@@ -1,7 +1,7 @@
 """임시 효과음 합성 — ArtSource/audio/sfx/*.wav (44.1 kHz · 16-bit · 모노).
 
 정본: docs/goal/game-feel.md §1. 이 프로젝트에는 음원 에셋이 없어서(2026-09-18 사용자 결정) 게임 느낌 실행이 쓸
-효과음 9개를 파이썬으로 합성한다. 나중에 실음원이 들어오면 같은 이름의 WAV 만 갈아끼우고
+효과음 9개(+ 잡기 예고 3개)를 파이썬으로 합성한다. 나중에 실음원이 들어오면 같은 이름의 WAV 만 갈아끼우고
 Tools/Unreal/import_sfx.py 를 다시 돌린다 — SoundTable 행은 그대로다(ArtSource/audio/README.md).
 
 백엔드: **순수 파이썬**(`wave`·`struct`·`math`·`random`) 이다 — numpy 를 쓰지 않는다.
@@ -16,7 +16,11 @@ Tools/Unreal/import_sfx.py 를 다시 돌린다 — SoundTable 행은 그대로�
   hurt.wav           0.20초  몸에 맞는 "퍽" — 저역 노이즈 버스트 + 60~90 Hz 사인 감쇠
   monster_death.wav  0.50초  꽥+쿵 — 앞 0.2초 톱니파 피치 급강하, 뒤 0.3초 저역 쿵
   footstep_1/2/3.wav 0.10초  흙바닥 발소리 — 필터 노이즈 버스트, 셋은 필터 중심·길이만 다르다
-공통: 시작·끝 2 ms 페이드(클릭 방지), 피크 -3 dBFS 정규화.
+몬스터 잡기 예고(2026-09-20 monster-pounce-hurt-readability, docs/goal/monster-pounce-hurt-readability.md A·D):
+  monster_pounce.wav 0.45초  꽥+퍼덕임 — 예고(Pounce) 시작. 톱니파 620→1050→620 Hz 꽥 + 날개짓 4번. 피크 -5 dBFS
+  monster_catch.wav  0.50초  덮치는 꽥+퍼덕임 — 잡는 순간. pounce 보다 낮고 거칠게(600→300 Hz) + 110→60 Hz 쿵 + 낮은 날개짓 5번. 피크 -3 dBFS
+  monster_near.wav   0.16초  짧은 꼬꼬댁 — 근접 소나(monster_prox, 0.65초마다). 부드러운 블립 두 개. 피크 -10 dBFS(반복돼도 안 거슬리게)
+공통: 시작·끝 2 ms 페이드(클릭 방지), 피크 -3 dBFS 정규화(SOUNDS 항목에 세 번째 값을 적으면 그 dBFS).
 
 실행:  py -3 Tools/Audio/synth_sfx.py
   끝에 파일별 길이·피크 dBFS·SHA-256 표를 찍고, 메모리에서 두 번 렌더한 결과와 디스크에 쓴 바이트가 같은지
@@ -71,14 +75,14 @@ def sine_sweep(seconds, freq_start, freq_end, curve=1.0):
     return out
 
 
-def sawtooth_sweep(seconds, freq_start, freq_end, harmonics=12, vibrato_hz=0.0, vibrato_depth=0.0):
-    """가산 톱니파(배음 1/k) 피치 슬라이드 — 나이브 톱니파의 앨리어싱을 피한다."""
+def sawtooth_sweep(seconds, freq_start, freq_end, harmonics=12, vibrato_hz=0.0, vibrato_depth=0.0, freq_fn=None):
+    """가산 톱니파(배음 1/k) 피치 슬라이드 — 나이브 톱니파의 앨리어싱을 피한다. freq_fn(0..1) 을 주면 직선 대신 그 곡선을 따른다."""
     n = seconds_to_samples(seconds)
     out = []
     phase = 0.0
     for i in range(n):
         t = i / n
-        freq = freq_start + (freq_end - freq_start) * t
+        freq = freq_fn(t) if freq_fn is not None else freq_start + (freq_end - freq_start) * t
         if vibrato_hz > 0.0:
             freq *= 1.0 + vibrato_depth * math.sin(2.0 * math.pi * vibrato_hz * i / SAMPLE_RATE)
         value = 0.0
@@ -154,15 +158,15 @@ def biquad(signal, kind, freq, q, freq_of_t=None):
     return out
 
 
-def finish(signal):
-    """2 ms 페이드 인/아웃 → 피크 -3 dBFS 정규화 → 16-bit 정수 리스트."""
+def finish(signal, peak_dbfs=PEAK_DBFS):
+    """2 ms 페이드 인/아웃 → 피크 정규화(기본 -3 dBFS) → 16-bit 정수 리스트."""
     fade = seconds_to_samples(FADE_SECONDS)
     n = len(signal)
     for i in range(min(fade, n)):
         signal[i] *= i / fade
         signal[n - 1 - i] *= i / fade
     peak = max(abs(s) for s in signal)
-    target = 10.0 ** (PEAK_DBFS / 20.0)
+    target = 10.0 ** (peak_dbfs / 20.0)
     gain = target / peak if peak > 0.0 else 0.0
     return [max(-32768, min(32767, int(round(s * gain * 32767.0)))) for s in signal]
 
@@ -252,6 +256,59 @@ def synth_footstep(seed, seconds, center_hz):
     return mix_into(body, heel, 0.0, 0.6)
 
 
+def flutter(seconds, count, seed, center_hz, burst_seconds=0.05):
+    """퍼덕임 — 날개짓 count 번을 seconds 에 고르게 깐다. 날개짓 하나 = 대역 노이즈 버스트(산 모양 포락선), 짝수·홀수 번째는 중심이 조금 다르다."""
+    out = silence(seconds)
+    period = seconds / count
+    for k in range(count):
+        center = center_hz * (1.12 if k % 2 else 0.92)
+        burst = apply(biquad(noise(burst_seconds, seed=seed + k), "bandpass", center, 0.9), hill(burst_seconds, 1.5))
+        mix_into(out, burst, k * period, 1.0)
+    return out
+
+
+def synth_monster_pounce():
+    """꽥+퍼덕임(잡기 예고 시작) — 0.25초 톱니파가 620→1050→620 Hz 로 치솟았다 내려오는 꽥, 그 위에 0.45초 동안 날개짓 4번."""
+    seconds = 0.45
+    out = silence(seconds)
+    squawk = apply(sawtooth_sweep(0.25, 0.0, 0.0, harmonics=10, vibrato_hz=32.0, vibrato_depth=0.05,
+                                  freq_fn=lambda t: 620.0 + 430.0 * math.sin(math.pi * t) ** 0.7),
+                   exp_decay(0.25, 0.14, 0.01))
+    squawk = biquad(squawk, "lowpass", 4000.0, 0.7)
+    mix_into(out, squawk, 0.0, 0.8)
+    mix_into(out, flutter(seconds, 4, seed=107, center_hz=1300.0), 0.0, 0.55)
+    return out
+
+
+def synth_monster_catch():
+    """덮치는 꽥+퍼덕임(잡는 순간) — pounce 보다 낮고 거칠게: 0.3초 톱니파 600→300 Hz 급강하(깊은 비브라토), 0.02초에 110→60 Hz 쿵(몸을 덮침),
+    0.5초 동안 낮은 날개짓 5번. 피크는 -3 dBFS(pounce 는 -5) 라 같은 거리에서 더 크게 들린다."""
+    seconds = 0.5
+    out = silence(seconds)
+    squawk = apply(sawtooth_sweep(0.3, 600.0, 300.0, harmonics=14, vibrato_hz=24.0, vibrato_depth=0.08), exp_decay(0.3, 0.16, 0.006))
+    squawk = biquad(squawk, "lowpass", 3200.0, 0.7)
+    mix_into(out, squawk, 0.0, 0.85)
+    thump = apply(sine_sweep(0.2, 110.0, 60.0, curve=0.6), exp_decay(0.2, 0.07, 0.002))
+    thump_noise = apply(biquad(noise(0.05, seed=108), "lowpass", 320.0, 0.9), exp_decay(0.05, 0.018, 0.002))
+    mix_into(out, thump, 0.02, 1.0)
+    mix_into(out, thump_noise, 0.02, 1.0)
+    mix_into(out, flutter(seconds, 5, seed=109, center_hz=900.0, burst_seconds=0.06), 0.0, 0.7)
+    return out
+
+
+def synth_monster_near():
+    """짧은 꼬꼬댁(다가오는 소리, 0.65초마다 반복) — 0.06초 톱니파 블립 두 개(700→450 Hz, 0.08초 뒤 600→420 Hz 를 작게), 배음 6개·3 kHz 로우패스로
+    부드럽게. 피크 -10 dBFS — 반복돼도 다른 소리 밑에 깔리게."""
+    seconds = 0.16
+    out = silence(seconds)
+    first = apply(sawtooth_sweep(0.06, 700.0, 450.0, harmonics=6), hill(0.06, 1.2))
+    second = apply(sawtooth_sweep(0.06, 600.0, 420.0, harmonics=6), hill(0.06, 1.2))
+    mix_into(out, first, 0.0, 1.0)
+    mix_into(out, second, 0.08, 0.7)
+    return biquad(out, "lowpass", 3000.0, 0.7)
+
+
+# (파일, 합성 함수[, 피크 dBFS]) — 피크를 안 적으면 -3. 몬스터 3종은 서로 크기 차이를 두려고 적는다(예고 -5 < 잡기 -3, 근접 -10 은 반복음)
 SOUNDS = [
     ("pickup.wav", synth_pickup),
     ("place.wav", synth_place),
@@ -262,13 +319,16 @@ SOUNDS = [
     ("footstep_1.wav", lambda: synth_footstep(201, 0.10, 900.0)),
     ("footstep_2.wav", lambda: synth_footstep(202, 0.09, 1250.0)),
     ("footstep_3.wav", lambda: synth_footstep(203, 0.11, 700.0)),
+    ("monster_pounce.wav", synth_monster_pounce, -5.0),
+    ("monster_catch.wav", synth_monster_catch, -3.0),
+    ("monster_near.wav", synth_monster_near, -10.0),
 ]
 
 
 # ---------------------------------------------------------------- 실행
 
-def render(builder):
-    samples = finish(builder())
+def render(builder, peak_dbfs=PEAK_DBFS):
+    samples = finish(builder(), peak_dbfs)
     return samples, to_wav_bytes(samples)
 
 
@@ -287,9 +347,11 @@ def main():
     print("out dir: %s" % OUT_DIR)
     print("%-18s %8s %10s %-10s %s" % ("file", "length", "peak dBFS", "status", "sha256"))
     all_ok = True
-    for name, builder in SOUNDS:
-        samples, data = render(builder)
-        _, data_again = render(builder)          # 같은 프로세스에서 두 번 렌더 — 결정성 1차 검증
+    for entry in SOUNDS:
+        name, builder = entry[0], entry[1]
+        peak = entry[2] if len(entry) > 2 else PEAK_DBFS
+        samples, data = render(builder, peak)
+        _, data_again = render(builder, peak)    # 같은 프로세스에서 두 번 렌더 — 결정성 1차 검증
         path = OUT_DIR / name
         previous = path.read_bytes() if path.exists() else None
         if previous != data:

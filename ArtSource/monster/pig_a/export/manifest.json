@@ -523,6 +523,48 @@
       "stance_samples": [],
       "sha256": "8133736ed812b2885275f8c92faca1a22495075107bef8a91f7fb9a362245883",
       "reworked": "2026-09-15 animate_creature_reacts.py"
+    },
+    "Execute": {
+      "action": "AN_Pig_Execute",
+      "duration_seconds": 2.0,
+      "frames": [
+        1,
+        61
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": [],
+      "sha256": "b5e6c4381dc3de383ef1c418d2588715204ae1934b0e4290e98aac38dc6c0188",
+      "reworked": "2026-09-21 animate_creature_reacts.py",
+      "execute_anchor": {
+        "victim_space": "origin = victim capsule centre on floor, +X victim forward, cm",
+        "monster_xy_cm": [
+          100.0,
+          0.0
+        ],
+        "monster_yaw_deg": 180.0,
+        "contact_s": 0.5,
+        "farmer_clip": "AN_Farmer_Executed_Pig",
+        "contact_probe_cm": {
+          "nose": [
+            7.4,
+            -0.0,
+            111.4
+          ],
+          "front_l_paw": [
+            68.3,
+            -21.5,
+            11.8
+          ],
+          "front_r_paw": [
+            68.3,
+            21.5,
+            11.8
+          ]
+        }
+      }
     }
   }
 }

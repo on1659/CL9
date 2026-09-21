@@ -349,6 +349,21 @@
       "stance_samples": [],
       "sha256": "7354a4f34da99def9247e38483a753d5f08ed205f9ca83ba31443fe2b20ece1d",
       "reworked": "2026-09-15 animate_creature_reacts.py"
+    },
+    "PounceWindup": {
+      "action": "AN_Chicken_PounceWindup",
+      "duration_seconds": 0.6,
+      "frames": [
+        1,
+        19
+      ],
+      "fps": 30,
+      "loop": false,
+      "reference_speed_cm_s": 0,
+      "root_motion": false,
+      "stance_samples": [],
+      "sha256": "60778a82a8f74e6a9ef98ecf91b3315d96600bbcef877ebf95d4128e9b933e46",
+      "reworked": "2026-09-20 animate_creature_reacts.py"
     }
   }
 }

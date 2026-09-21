@@ -5,7 +5,8 @@
 `create_asset` 을 기존 경로에 부르면 "오버라이드" 모달로 에디터가 멈추므로, 있음/없음을 먼저 보고 갈린다.
 
 만드는 것:
-  1. USoundWave 9개 — 아래 WAVES 표. 전부 `sound_class_object = SC_Effects`(있어야 한다 — 없으면 멈춘다),
+  1. USoundWave 12개(타격감 9 + 잡기 예고 3: S_MonsterPounce·S_MonsterCatch·S_MonsterNear) — 아래 WAVES 표. 전부
+     `sound_class_object = SC_Effects`(있어야 한다 — 없으면 멈춘다),
      `concurrency_set = {SCC_Effects4}`.
   2. USoundConcurrency `/Game/Sounds/Master/SCC_Effects4` — max_count 4(같은 소리 4 보이스까지). 없으면 생성, 있으면 값만 다시 쓴다.
   3. USoundCue `/Game/Sounds/SFX/Character/S_Footstep` — 발소리 3개를 Random 노드로 묶는다.
@@ -52,6 +53,10 @@ WAVES = [
     ("footstep_1.wav", "/Game/Sounds/SFX/Character", "S_Footstep_1"),
     ("footstep_2.wav", "/Game/Sounds/SFX/Character", "S_Footstep_2"),
     ("footstep_3.wav", "/Game/Sounds/SFX/Character", "S_Footstep_3"),
+    # 잡기 예고(2026-09-20 monster-pounce-hurt-readability) — 예고 시작·잡는 순간·다가오는 소리
+    ("monster_pounce.wav", "/Game/Sounds/SFX/Monster", "S_MonsterPounce"),
+    ("monster_catch.wav", "/Game/Sounds/SFX/Monster", "S_MonsterCatch"),
+    ("monster_near.wav", "/Game/Sounds/SFX/Monster", "S_MonsterNear"),
 ]
 FOOTSTEP_CUE_DIR = "/Game/Sounds/SFX/Character"
 FOOTSTEP_CUE_NAME = "S_Footstep"
@@ -66,6 +71,9 @@ TABLE_ROWS = [
     ("Hit", "/Game/Sounds/SFX/Monster/S_HitPan"),
     ("Hurt", "/Game/Sounds/SFX/Character/S_Hurt"),
     ("MonsterDeath", "/Game/Sounds/SFX/Monster/S_MonsterDeath"),
+    ("MonsterPounce", "/Game/Sounds/SFX/Monster/S_MonsterPounce"),
+    ("MonsterCatch", "/Game/Sounds/SFX/Monster/S_MonsterCatch"),
+    ("MonsterNear", "/Game/Sounds/SFX/Monster/S_MonsterNear"),
 ]
 
 
