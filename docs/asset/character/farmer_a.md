@@ -1,6 +1,9 @@
 # 농부 A — 작업복 풀바디와 1인칭 팔
 
-현재 행 farmer_a의 Manny/SK_Mannequin·ABP_Unarmed·ABP_FP_Copy 계약을 유지한다.
+상태: 게임 연결 검수됨 — 2026-09-11 `CharacterTable.farmer_a` `SkeletalMesh`/`ArmsMesh` → `SK_Farmer_A_Body`/`_Arms`; 클립 전신 12·1인칭 12 + `ABP_FP_View`(09-14) 임포트, 032 PIE(넘어짐·던지기 수치); 09-21 처형당함 전신 2클립 제작(034 절 — UE 임포트·ABP 는 리드 대기). 4슬롯 `TintColor`·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
+현재 행 farmer_a의 Manny/SK_Mannequin·ABP_Unarmed 계약을 유지한다. 1인칭 팔 ABP 는 `Content/Characters/FarmerA/Anims/ABP_FP_View`
+(2026-09-13 밤 신설 — 카메라 자식 뷰모델, 031 절; 옛 `ABP_FP_Copy`·`CtrlRig_FPWarp` 는 2026-09-14 삭제).
 캡슐 반경39cm/반높이90cm·눈높이156cm·메시 Yaw-90도는 변경하지 않는다.
 작업복 몸, 고무 장화, 작업 장갑, 짧은 챙 모자와 단순한 얼굴을 새 기하로 제작한다.
 참고 마네킹의 얼굴·몸 표면을 복제해서 신규 외형이라고 납품하지 않는다. 기존 뼈/레스트만 재사용한다.
@@ -12,8 +15,8 @@
 - 리그 원본은 실제 UE에서 추출한89뼈. Blender88뼈+root 오브젝트를 FBX root로 내보낸다.
   뼈 이름/부모/레스트와 bone scale1을 [cm 임시 내보내기 왕복](../evidence/024-rig-roundtrip-cm.json)에서 확인했다.
   원본 m 단위는 유지하고 export 복사본만 cm로 바꾼다. 일반 m FBX는 UE root scale100으로 실패했다.
-- 몸과 팔은 같은 관절/장갑 원본을 공유하되 별도 메시로 납품한다. 기존 팔 소비처는 몸 리그 Copy Pose 방식이므로
-  같은89뼈 계약을 유지하고 시점 가시성을 실제 UE에서 확인한다.
+- 몸과 팔은 같은 관절/장갑 원본을 공유하되 별도 메시로 납품한다. 팔은 2026-09-13 부터 카메라 자식 뷰모델(`ABP_FP_View`, 031 절)이라
+  몸 포즈를 복사하지 않지만 같은89뼈 계약을 유지하고 시점 가시성을 실제 UE에서 확인한다(024 당시는 Copy Pose 방식이었다).
 
 기존 로코모션의 첫 Walk 호환 확인 후 Carry/Use/HitReact/Knockdown/GetUp/Death/Exhausted 등 필요한 상태를 만든다.
 팔은 Pickup/Drop/Swap/Throw/Use와 운반물 그립을 검수한다. Notify가 판정·재고를 바꾸지 않는다.
@@ -199,5 +202,31 @@ UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin
   국부 이동이라 그대로 얹으면 100배 작게(78cm → 0.78cm) 나갔다 — 회전만 쓰던 기존 클립엔 없던 문제. 위치 커브만 100배로 환산한 임시 액션으로 굽도록
   고쳤고(회전만인 클립은 sha 불변), 재수출 뒤 PIE 에서 골반이 84 → 18cm 로 내려갔다 일어나는 것을 확인했다(`docs/asset/evidence/032-anim-pie.json`,
   `Tools/Unreal/qa_anim_pass_pie.py` — 넘어짐·던지기 대기/던지기·몬스터 경직 변수 전달을 수치로 잰다; 자동 PIE 가 3fps 라 0.3초 경직·팬 밀침의 육안 확인은 사용자 몫).
-- UE 임포트(`Tools/Unreal/import_farmer_clips_032.py`, 13클립, 증거 `032-farmer-anim-pass.json`)·ABP 가지·C++ 복제값은
+- UE 임포트(`Tools/Unreal/import_farmer_clips_032.py`, 13클립, 증거 [032-farmer-anim-pass.json](../evidence/032-farmer-anim-pass.json); PIE 시각 확인
+  [032-anim-visual.json](../evidence/032-anim-visual.json)·`032-anim-pie-down.png`·`032-anim-pie-visual.png`)·ABP 가지·C++ 복제값은
   [../../systems/animation.md](../../systems/animation.md) "넘어짐 가지"·"던지기 가지" — 같은 태스크의 ④ 단계.
+
+## 034 처형당함 클립 — 종별 2인 클립의 농부 짝 (2026-09-21, execute-clips)
+
+사용자 "몬스터 제작 목록에 공격 모션 — 처형과 공격은 같은 모션". 처형 종(돼지·너구리)의 `AN_<종>_Execute` 와 짝이 되는 전신 2클립, 각 2.0초 = 행
+`ExecuteDuration`(초안 — `Tools/Blender/execute_anchor.py` `DURATION`, balance 가 바꾸면 그 값만 고쳐 다시 굽는다). `animate_farmer_executed.py`
+(`animate_farmer_knockdown.py` 의 `apply_full`·`lerp_params`·`STAND/HIT/LAND/DOWN` 을 import, 30fps, 골반 위치 키 포함, 바닥 관통은 몸 메시 최저점으로 보정
++0.5cm). 두 리그는 각자 자기 blend 에서 저작하고 **액터 공간 앵커 표 `execute_anchor.py`**(원점 = 피해자 캡슐 중심 바닥, +X 피해자 전방 = 리그 −Y,
+몬스터 자리·접촉 시각·구간)만 공유한다(goal D7). 피해자 요는 처형 진입 때 서버가 맞춰 주므로 "정면"·"등 뒤"를 그대로 가정했다(gameplay 인터페이스).
+
+- **`AN_Farmer_Executed_Pig`** — 정면(+100) 박치기. 0~0.40 선 채(카메라 블렌드 0.3 동안 피해자는 못 본다) → 0.50 두 손을 가슴 앞으로 반쯤 올려 막으려
+  함(BRACE 신설: 손목 (∓0.28, −0.40, 1.15), 척추 +0.05, 무릎 0.10) → **접촉 0.50** → 0.62 척추 뒤로 젖혀지고 팔이 앞으로 튐(032 의 HIT) → 뒤로(−X 로 머리)
+  넘어져 1.10 LAND → 1.40 DOWN → 2.0 까지 DOWN 유지. **끝 = `AN_Farmer_Down` 첫 프레임과 같은 자세**(같은 DOWN 키·숨쉬기 0 — 보통 죽음 시체와 같은
+  그림). 완급 linear·out·out·in(중력)·out·linear. 끝 프레임 실측: 골반 (0, −2.3, 17.7)cm, 머리 y +64(리그 +Y = 액터 −X).
+- **`AN_Farmer_Executed_Raccoon`** — 등 뒤(−120) 덮침. 0~0.55 선 채 → **접촉 0.60** → 0.72 척추 앞으로 −0.40rad, 팔 뒤·옆(손목 (∓0.45, +0.25, 1.05)),
+  무릎 0.45 꺾여 골반 0.80(HIT_FRONT 신설) → 1.00 앞으로 엎어지는 중(FALL_FRONT: 골반 피치 −1.0·z 0.45, 팔 앞·아래) → 1.25 **PRONE 신설** → 2.0 까지 유지.
+  PRONE = 골반 피치 −π/2(엎드림), 얼굴 옆으로(head_yaw 0.80, 머리 +0.15·척추 +0.10 으로 얼굴이 바닥에 박히지 않게), 오른팔 옆(−0.55, −0.60, 0.05)·왼팔
+  앞(0.30, −0.90, 0.05), 다리 거의 펴짐(무릎 0.05/0.15), 골반 z 초안 0.12 → 바닥 보정 19.5cm. 끝 프레임 실측: 머리 y −68.5(액터 +X — "앞으로 머리"), z 27.
+- 농부 골반 XY 는 두 클립 모두 0(`apply_full` 관례 — 규칙 3, 데스캠이 캡슐 중심을 본다). 마지막 프레임은 부활까지 유지된다 — `ABP_Unarmed` Executed 가지
+  Run 2 사양(`IsExecuted` 단독 조건 + `ExecutedByPig` 로 두 클립 중 하나, `ExplicitTime = ExecuteElapsed`)은 [../../systems/animation.md](../../systems/animation.md).
+- 산출: `export/AN_Farmer_Executed_Pig.fbx`(sha256 `1312e420…`)·`AN_Farmer_Executed_Raccoon.fbx`(`c1eb2954…`), 61프레임·30fps, `verify_farmer_clip_fbx.py`
+  fps 30·길이 2.0·sha 일치·75뼈. manifest `animations` 2항목(`end_pose`·`execute_anchor` 포함) + `executed_keys`(brace·hit_front·fall_front·prone), blend 재저장.
+  미리보기 `preview/executed_{pig,raccoon}_f{01,10,16|19,22|25,28,34,43,52,61}_front.png` + `executed_{pig,raccoon}_sheet.png`(카메라 (−2.9, −2.7, 1.9) →
+  (0, 0, 0.8) — 선 머리와 누운 몸이 다 들어온다).
+- UE 임포트 `Tools/Unreal/import_farmer_clips_034.py`(2클립, 증거 [034-farmer-executed.json](../evidence/034-farmer-executed.json) — 리드가 채운다),
+  에셋 `/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_{Pig,Raccoon}`. 몬스터 짝은 [../monster/pig_a.md](../monster/pig_a.md)·[../monster/raccoon_a.md](../monster/raccoon_a.md).

@@ -78,7 +78,7 @@ UI용 미러만 복제한다.
 
 - 소모/회복은 시간 기반: 만충→0 `StaminaDrainTime`(6.0초), 0→만충 `StaminaRegenTime`(8.0초)
 - 셋 중 하나라도 빠지면 "지친 빈손 지속 속도 506" 산수가 무너진다 — 로드 검사 A1의 전제
-- HUD에 바를 그리지 않는다 — 화면 흔들림 진폭으로만 (rules.md). 구현: 소유 클라 로컬 틱이
+- HUD 바(`UCL9HUDWidget::StaminaBar`)와 화면 흔들림을 **함께** 쓴다(2026-09-05 번복 — rules.md 스태미나 표시). 셰이크 구현: 소유 클라 로컬 틱이
   셰이크 표(`UCL9ShakeTable`, GameInstance 주입)의 `CL9ShakeNames::Stamina` 행을 읽어,
   `Stamina < StartAt`면 그 행의 셰이크를 재생하고 스케일을 `(StartAt−Stamina)/StartAt`(× 행 `Scale`, 2026-09-18)로
   키운다 (표시 전용·복제 무접촉 — 셰이크는 규칙 컬럼이 아니라 표의 행이다,
@@ -128,7 +128,8 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
   시간은 여전히 에셋(`CS_*`) 안에 있고, 표는 그 위에 곱하는 배율만 갖는다 — 세기를 재빌드도 에셋 교체도 없이 표에서
   맞추기 위한 유일한 예외 열이다. 원샷 행(`Hit`·`Hurt`)은 `Scale` 세기로 한 번(`StartCameraShake(Class, Scale)`),
   게이지 행(`Stamina`)은 시작 세기와 매 틱 `ShakeScale`이 **게이지 세기 × `Scale`**이다(`UpdateStaminaShake`).
-  1.0이면 에셋 그대로다.
+  1.0이면 에셋 그대로다. 셰이크 클래스는 `UCL9GameInstance::Init` 이 미리 올려 `WarmAssets` 로 붙든다 — 첫 재생 자리(잡히는 순간의
+  틱)에서 로드하면 BP 컴파일까지 붙어 0.6초를 세웠다(2026-09-21 실측, [performance.md](performance.md) "첫 사용 동기 로드 금지").
 
 ## 점프
 
@@ -176,14 +177,138 @@ class ICL9Damageable {
     자동으로 다음 생존자로 넘어간다.
   - 관전 시점은 동료의 1인칭 그대로 — 동료 폰이 뷰 타깃이 되면 OnlyOwnerSee/OwnerNoSee가
     뷰 타깃 기준으로 풀려 그 동료의 팔·시야를 본다.
+- **데스캠** (2026-09-20 밤, 실행 death-camera — D6 의 "죽은 뒤 뷰 타깃을 폰으로 되돌리지 않는다"를 **번복**): 죽은 순간부터
+  관전이 시작되기 전까지(혼자면 밤이 끝날 때까지) 피해자 화면은 **자기 시체를 3인칭으로** 본다 — 처형 즉사·보통 사망 공통.
+  - **컴포넌트** `ACL9Character::DeathCamera`(`UCameraComponent`, 생성자에서 캡슐에 부착, `bAutoActivate` false). 자리 =
+    `CL9Rules.DeathCameraOffset`(**액터 공간**, X = 전방·Y = 오른쪽·Z = 위 — 처형 카메라와 같은 규약), 회전 = 그 자리에서
+    `(0,0,DeathCameraLookAtZ)`(캡슐 중심 기준)를 보는 `FRotationMatrix::MakeFromX` — 둘 다 액터 공간이라 한 번 계산이고,
+    캡슐이 돌아도(컨트롤 요를 따른다) 시체는 화면의 같은 자리에 잡힌다. 1인칭 카메라와 **별개 컴포넌트**라 D6 이 피하려던
+    "넘어짐 카메라가 보이는 몸 속에 앉는" 문제가 없다.
+  - **켜기/끄기 `ApplyDeathCamera()`** (넘어짐·처형과 같은 "복제된 상태에서 파생" 틀): `ShouldUseDeathCamera()` =
+    `IsDead()`(PlayerState HP, 이미 복제) ∧ `DeathCameraOffset ≠ (0,0,0)`. 참이면 1인칭 카메라 `SetActive(false)`·데스캠
+    `SetActive(true)`(+자리·회전), 아니면 반대(1인칭 복구). 뷰 타깃이 폰이고 활성 카메라가 데스캠뿐이면 `CalcCamera` 가 그것을
+    쓴다(둘 다 활성이면 첫 것 — 그래서 1인칭을 끈다). 호출 자리: 호스트는 `HostApplyDamage`(HP 0 이 되는 자리)·`HostRevive`,
+    소유 클라(와 늦게 도착한 PlayerState)는 `Tick` 의 `bDeathCameraOn != ShouldUseDeathCamera()` 비교 — `OnRep_Hp` 가 캐릭터에
+    닿는 경로가 없어서다. `HostApplyDamage` 는 PlayerState 를 `ForceNetUpdate` 해 HP 와 뷰 타깃 RPC 가 같은 틱에 가게 한다.
+  - **뷰 타깃**: HP 0 이 되는 순간 서버가 `PC->SetViewTargetWithBlend(폰, CL9Rules.DeathCameraBlend)` — 처형 중이었으면 몬스터
+    카메라에서 데스캠으로 블렌드(`HostBeginExecuted` 의 짝). 보통 사망은 뷰 타깃이 이미 자기 폰이라 엔진이 블렌드하지 않는다 =
+    넘어짐 카메라에서 데스캠으로 **즉시 전환**(같은 액터 안의 두 카메라 사이엔 `SetViewTargetWithBlend` 가 없다). `SpectateDelay`
+    뒤 `BeginSpectating` 의 `SetViewTarget(동료)` 는 그대로(데스캠 → 동료 1인칭); 혼자면 데스캠 유지 → 전멸 → 밤 종료.
+  - **몸·팔** `ApplyThirdPersonMeshes()`(`ApplyExecuted` 와 공통부): 처형 중 ∨ 데스캠이면 몸 `FirstPersonPrimitiveType`
+    `WorldSpaceRepresentation → None` + `SetOwnerNoSee(false)`·팔(과 손의 아이템) 숨김, 아니면 1인칭(타입 복구). 타입을 같이
+    내리는 이유: `WorldSpaceRepresentation` 프록시는 `bOwnerNoSee` 를 강제로 true 로 덮어써서(엔진 `PrimitiveSceneProxy.cpp`)
+    OwnerNoSee 토글만으로는 몸이 안 보이고 그림자만 남는다(2026-09-21 PIE 에서 발견). 처형 표시가 먼저 걷혀도(`HostEndExecuted`)
+    데스캠이 켜져 있으면 3인칭 그대로 — 부활이 되돌린다.
+  - **게이트**: 넘어짐 카메라(1인칭을 바닥으로 내리는 `Tick`)는 데스캠이 켜져 있으면 건너뛴다(살아 있는 넘어짐은 그대로).
+    `UCL9HurtLookModifier`·`PlayShakeOnce`·스태미나 셰이크·`GetHurtFlash`·`HasHurtDirection`·조준 대상/프롬프트는
+    `ShouldUseDeathCamera()` 면 아무것도 하지 않는다(처형 게이트 옆) — 데스캠 위에 1인칭 표현을 얹지 않는다. 마우스 시선은
+    막지 않는다 — 캡슐 요가 컨트롤 요를 따르므로 죽은 채 마우스를 돌리면 데스캠이 시체를 중심에 둔 채 함께 돈다.
+  - **부활** `HostRevive` 가 `ApplyDeathCamera()` 로 1인칭·팔을 되돌린다(뷰 타깃은 이미 자기 폰; 관전 중이었으면 `ReviveDead` 가
+    되돌린다). 죽은 채 로비로 가는 길은 전부 `EnterLobby → ReviveDead` 를 지난다.
+  - **롤백** `DeathCameraOffset (0,0,0)`: 데스캠 없음 — 옛 동작(넘어짐 카메라가 바닥으로, 처형이면 몬스터 카메라에 머묾, 피격
+    카메라·셰이크 유지). 뷰 타깃도 건드리지 않는다. 빌드 없이.
+  - 처형한 몬스터는 `SpectateDelay` 까지 시체 옆에 머문다(D6 유지) — 데스캠에 시체와 몬스터가 함께 잡히는 그림.
+  - 값: `DeathCameraOffset`(−320, 140, 260)·`DeathCameraLookAtZ`(−60)·`DeathCameraBlend`(0.5) —
+    [../plan/data/rules.md](../plan/data/rules.md) 죽음과 회복, 아트 튜닝. 로드 검사: 오프셋·높이 유한, 블렌드 유한·비음수.
 - **부활은 없다** — 다음 로비(`EnterLobby`)에서 `ReviveDead()`: 죽은 전원을 `HostRevive()`
-  (HP = `MaxHp`, 넘어짐 해제)하고 트럭 패드 위로 옮기며 관전을 끝낸다(뷰 타깃 = 자기 폰).
+  (HP = `MaxHp`, 넘어짐 해제, 데스캠 끔)하고 트럭 패드 위로 옮기며 관전을 끝낸다(뷰 타깃 = 자기 폰).
 - **트럭 패드 회복** (`ACL9TruckPad`, Source/CL9/World): HealZone 안에 **살아 있고 다친**
   캐릭터가 `TruckPadHealTime`초 연속으로 서 있으면 HP가 `MaxHp`로 찬다. 벗어나면 카운트
   초기화. 죽은 사람은 여기서 안 살아난다. 호스트 전용 틱, 복제 없음(HP는 PlayerState로 도착).
 - `MaxHp`는 PlayerState에 HP와 함께 한 번 굴린다(`HpMin..HpMax`). `IsDead()` = MaxHp>0 && Hp≤0
   (굴리기 전 0은 죽음이 아니다).
 - 치트 `cl9.damage [n]` — 몬스터 없이 죽음→관전→패드 회복을 검증한다 ([cheats.md](cheats.md)).
+  2026-09-20부터 **가장 가까운 살아 있는 몬스터를 `Source`로** 넘긴다(없으면 null) — 피격 사건이 진짜 잡힘과 같은
+  그림(카메라·방향 호)이 된다.
+- **넘어진 동안은 무적이다** (2026-09-20 사용자 결정): `OnDamage` 머리의 `IsKnockedDown()` 게이트가 HP·넘어짐 시계·
+  피격 사건을 전부 그대로 두고 로그 한 줄만 남긴다. 다른 닭의 덮침도 `cl9.damage`도 같은 문이라 **우회가 없다**.
+  몬스터 쪽은 넘어진 타깃에 예고·잡기를 시작하지 않는다 ([monster.md](monster.md) 잡기 = 공격).
+  유일한 예외는 아래 처형의 `HostKill` — 이 문을 아예 거치지 않는다.
+- **처형 — 종 전용 즉사** (2026-09-20, [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) D2·D3·D6·D9;
+  몬스터 쪽은 [monster.md](monster.md) 스토킹과 처형 — 너구리는 스토커, 돼지는 잡히면 처형이지만 캐릭터 쪽 흐름은 같다):
+  - **상태** = `ExecuteStartServerTime`(float, `ReplicatedUsing=OnRep_ExecuteStartServerTime`, 모두에게 — 남의 ABP 와
+    CMC 가 읽는다; −1000 = 아님) + `ExecutedBy`(`TObjectPtr<ACL9Monster>`, Replicated). 게터(BlueprintPure):
+    `IsExecuted()`(= 시각 ≥ 0) · `GetExecuteElapsed()`(처형 아니면 −1) · `GetExecuteDuration()`(`ExecutedBy` 행의
+    `ExecuteDuration`, 없으면 0) · `GetExecutedByAlias()`(`ExecutedBy` 행의 `Alias` — `pig`/`raccoon`, 없으면 `None`;
+    ABP 가 종별 2인 클립을 고른다, 2026-09-21); C++ `IsIncapacitated()`(= 넘어짐 ∨ 처형) · `GetExecutedBy()`. **`ExecutedBy` 는
+    죽은 뒤에도 남는다**(ABP·카메라 게이트 — 게터들도 그동안 같은 값) — 로비 정리·부활이 걷는다.
+  - **`HostBeginExecuted(Executioner)`** (호스트, 몬스터가 부른다): 두 필드 세팅 → `HostCancelCarryActions()`
+    (**수레는 진입 순간 놓는다** — 무력화된 사람이 수레를 끌 수 없다; 던지기 차징·휘두르기 대기도 취소. 짐은 죽는
+    순간 흘린다) → `ApplyExecuted()` → **피해자 요 정렬**(아래) → 소유 PC 에 서버 `SetViewTargetWithBlend(Executioner, CL9Rules.ExecuteCameraBlend)`
+    (관전과 같은 경로 — 엔진이 `ClientSetViewTarget` 으로 전달, 리슨 호스트 자기 폰도 같은 호출) → `ForceNetUpdate`.
+  - **피해자 요 정렬** (2026-09-21 사용자 결정 — 2인 클립은 두 리그의 상대 요를 가정한다): 잡히면 처형인 종(`bExecuteOnCatch` — 돼지 클립은
+    "정면에서 박힘")이면 요 = (처형자 − 피해자).Yaw 로 **처형자를 정면으로**, 앵커 텔레포트 처형(스토커 — 너구리 클립은 "등 뒤")이면
+    요 = (피해자 − 처형자).Yaw 로 **처형자를 등진 채**(앵커가 피해자 전방 기준이라 서버 요는 이미 등 — 클라 요와의 오차만 없앤다).
+    갈림은 `ExecutedBy` 행의 `bExecuteOnCatch` 열이지 종 이름이 아니다. 피치·롤 0, 처형자가 같은 XY 위면 요 그대로. 적용은 **액터 요 +
+    컨트롤 회전 양쪽**: 피해자는 자율 프록시라 서버 `SetActorRotation` 만으로는 다음 `ServerMove` 가 되돌린다(CMC `ServerMove_HandleMoveData` 가
+    매 이동마다 `SetControlRotation(클라 컨트롤 회전)` → `UpdateRotation` → `FaceRotation`, 캡슐 요는 `bUseControllerRotationYaw`). 그래서
+    서버 `SetActorRotation` + `PC->SetControlRotation`(서버 사본 즉시 — 조준·`GetBaseAimRotation`) + `PC->ClientSetRotation`(엔진 Client RPC:
+    클라 `SetControlRotation` + `Pawn->FaceRotation`; 리슨 호스트 자기 폰은 로컬 호출). 피치는 지금 값 유지. 이후 마우스는 `LookInput` 의
+    `IsExecuted()` 게이트(D2)와 내려간 IMC 가 막으므로 별도 요 잠금은 없다. 클라의 RPC 도착 전에 보낸 `ServerMove` 한두 개가 서버 요를 잠깐
+    되돌릴 수 있으나 RPC 가 닿으면 다시 맞는다(≤ RTT).
+  - **`ApplyExecuted()`** (OnRep 과 호스트 양쪽 — `HostSetSpectating` 패턴): 소유 클라면
+    `PC->SetGameplayInputEnabled(!IsExecuted())`, 몸·팔은 `ApplyThirdPersonMeshes()`(처형 중 ∨ 데스캠: 몸
+    `FirstPersonPrimitiveType None` + `SetOwnerNoSee(false)` — 처형 카메라에서 자기 몸이 보인다, 팔 `FirstPersonMesh->SetVisibility(false, 자식까지)` — 팔과 손의
+    아이템이 사라진다). 죽은 뒤 관전 전환 때 몸이 보이는 채로 남아도 관전은 남의 시점이라 무방.
+  - **잠금**: `UCL9CharacterMovement::GetMaxSpeed()` 가 `IsExecuted()` 면 0(넘어짐 옆), `LookInput` 은 처형 중
+    무시. **서버 RPC 게이트는 `IsIncapacitated()`** — 사용 시작/뗌·던지기 차징/놓기·놓기(G)·먹기(`HostEat`)·**줍기(E)·
+    칸 전환(숫자·휠)·헤드램프(F)** 전부. 뒤의 셋은 이전에 넘어짐 검사가 없었으므로 **넘어진 동안도 새로 막힌다**(D2).
+  - **`HostKill(Source)`**: 넘어짐 무적 게이트를 거치지 않고 남은 HP 전부를 `HostApplyDamage`(= `OnDamage` 의 게이트
+    뒤 공통부: HP 차감 → 짐 흘림 → 넘어짐 ∞ → 피격 사건 → 로그 `executed by` → `HandlePlayerDeath`)로 넣는다.
+    `OnDamage` 는 같은 공통부를 `caught by` 로 부른다. 이미 죽었으면 아무 일도 없다.
+  - **카메라·HUD 게이트** (D6): `GetHurtFlash()` → 0, `HasHurtDirection()` → false, 조준 대상·프롬프트 없음(`Tick`),
+    스태미나 셰이크·`PlayShakeOnce` 재생 안 함, `UCL9HurtLookModifier::ModifyCamera` 는 아무것도 더하지 않는다.
+    HUD 파일은 무변경 — 게터로만 게이트한다.
+  - **`HostEndExecuted()`**: 두 필드를 비우고 `ApplyExecuted()`; **관전 중이 아니면** 뷰 타깃을 자기 폰으로(관전 중이면
+    관전 흐름의 것 — 로비 부활이 되돌린다). `ClearNightPopulation` 이 몬스터를 파괴하기 **전에** 전 캐릭터에,
+    `ReviveDead` 도 전 캐릭터에(D9). 처형과 무관하면 아무 일도 없다. 죽어서 데스캠이 켜져 있으면 뷰 타깃은 이미 자기 폰이라
+    아무것도 바뀌지 않고, 몸·팔도 데스캠 쪽 토글이 유지한다.
+  - 죽음 뒤 흐름은 보통 죽음과 같다 — `HostKill` → `HostApplyDamage` 가 HP 0 이 되는 순간 **데스캠**(자기 폰)으로
+    `SetViewTargetWithBlend(폰, DeathCameraBlend)` → `HandlePlayerDeath` → `SpectateDelay` → `BeginSpectating` 이 뷰 타깃을 덮어쓴다.
+    처형한 몬스터는 그때까지 시체 위에 머문다(데스캠에 함께 잡힌다). 옛 D6 문장 "뷰 타깃은 죽은 자기 폰으로 돌아오지 않는다
+    (넘어짐 카메라가 이제 보이는 몸 속에 앉는다)"는 2026-09-20 밤 데스캠으로 번복 — 데스캠은 넘어짐 카메라와 별개 컴포넌트다
+    (위 데스캠 항목).
+  - ABP(리드): `ABP_Unarmed` Executed 가지 — 넘어짐 가지보다 출력에 가까운 자리. **Run 2**(2026-09-21): 조건 `IsExecuted` 단독(구간 검사
+    없음 — 죽은 뒤 부활까지 마지막 프레임 유지), 포즈 = `GetExecutedByAlias()` 로 고른 종별 2인 클립 `AN_Farmer_Executed_Pig`/
+    `AN_Farmer_Executed_Raccoon` 평가기(`ExplicitTime = GetExecuteElapsed`, 길이 = `GetExecuteDuration`). Run 1 은 조건
+    `IsExecuted ∧ InRange(GetExecuteElapsed, 0, GetExecuteDuration)` + Idle 평가기 0 프레임 고정 → 킬 뒤 넘어짐 사슬이었다.
+  - 치트 `cl9.execute` ([cheats.md](cheats.md)).
+
+### 잡히는 순간 카메라가 범인을 본다 — 피격 사건 + 카메라 모디파이어 (2026-09-20)
+
+"엥 뭐지, 왜 맞았지"를 없애는 층이다 ([../goal/monster-pounce-hurt-readability.md](../goal/monster-pounce-hurt-readability.md) B).
+판정·조작은 하나도 건드리지 않는다.
+
+- **피격 사건** `FCL9HurtEvent { float ServerTime; FVector_NetQuantize From; TObjectPtr<AActor> Attacker; uint16 Seq; }` —
+  `ACL9Character::HurtEvent`, `COND_OwnerOnly` 복제(잡힌 본인만 쓴다). `OnDamage`가 넘어짐 시각과 함께 채운다:
+  `ServerTime = KnockdownStartServerTime`, `From = Source ? Source 위치 : 자기 위치`, `Attacker = Source`, `Seq++`.
+  방향의 원천은 **위치**(`From`)라 공격자가 파괴·이동해도 그 순간의 방향이 남고, `ServerTime == KnockdownStartServerTime`
+  (`IsHurtEventCurrent()`)이 "이번 넘어짐의 사건"을 보증한다 — 옛 사건이 새 넘어짐에 잔존하지 않는다. `Attacker`는
+  `IsValid()`로만 읽는다(파괴 직후 pending-kill).
+- **게터** (HUD·ABP 용): `GetHurtEvent()` · `HasHurtDirection()`(이번 넘어짐의 사건 ∧ `IsValid(Attacker)` ∧ 관전 중 아님 —
+  치트 null·관전이면 false) · `GetHurtDirectionAngle()`(도, `FRotator::NormalizeAxis(공격자 방향 요 − 카메라 요)`, 0 =
+  화면 위, 시계 방향 양수, 없으면 0; 카메라 요는 카메라 매니저의 실제 POV 요) · 기존 `GetHurtFlash()`. 방향 호를 그릴지는
+  `CL9Rules.bHurtDirectionIndicator`(기본 true — 장르 톤이 안 맞으면 빌드 없이 끈다, [ui.md](ui.md)).
+- **카메라 모디파이어** `UCL9HurtLookModifier : UCameraModifier` (`Source/CL9/GameMode/`): 소유 클라(리슨 호스트의 자기 폰
+  포함)에서 `NotifyControllerChanged`(PossessedBy·UnPossessed·클라 `OnRep_Controller`)가 `PlayerCameraManager->
+  AddNewCameraModifier`로 등록하고, 소유가 풀리거나 매니저가 바뀌거나 `EndPlay`면 뗀다. `ModifyCamera`가
+  `GetKnockdownElapsed() ∈ [0, KnockdownTime)` 동안 **POV에만** 두 오프셋을 더한다:
+  - 피치: 목표 `CL9Rules.HurtLookPitch`(−25°)까지 `HurtLookTime`(0.45초) 동안 EaseOut — **도달 보장**(`FInterpTo` 아님).
+    넘어짐 시계만으로 시작하므로 사건 복제가 늦어도 피치는 먼저 간다.
+  - 요: 사건의 `From` 방향으로, **공격자가 화면 가장자리에 걸칠 때까지만**(|Δ요| − 가로 반각 FOV), `±HurtLookYawMax`(60°)
+    안에서. 사건 순간의 컨트롤 요 기준으로 목표를 한 번 재고 같은 EaseOut으로 간다 — 그 뒤 마우스를 돌려도 오프셋은
+    상수라 시선이 밀리지 않는다. 가로 FOV 90° + 60° = 시선에서 105° 안의 공격자만 화면에 걸친다; 그 밖(등 뒤)은
+    방향 호가 답한다.
+  - 일어나기 구간(넘어짐 끝 `CL9HurtLook::GetUpSeconds` 0.6초 = `AN_Farmer_GetUp`)에 둘 다 EaseOut으로 0.
+  - 재피격(`Seq` 변화)은 요 목표만 지금 값에서 새 목표로 갱신, 피치 진입은 다시 시작하지 않는다(덜컹 방지 — 넘어짐 무적
+    뒤로는 같은 넘어짐 안의 재피격이 없지만 규칙은 남긴다). 죽음은 데스캠이 켜지면(`ShouldUseDeathCamera()`) 아무것도 더하지
+    않는다 — 오프셋 0 롤백이면 옛대로 넘어짐 카메라에 진입 뒤 유지. 관전(카메라 매니저의 뷰 타깃이 남의 폰)이면 아무것도
+    더하지 않는다.
+  - **컨트롤 회전·`LookInput`·조준(`GetControlRotation`)은 그대로다** — 스태미나 셰이크와 같은 "POV만" 원칙. 1인칭 팔은
+    카메라 **컴포넌트**의 자식이라 POV 오프셋을 따라가지 않는다(넘어짐 0~0.5초의 손이 25° 위에 보인다 — PIE 육안 항목).
+- **값**: `CL9Rules` `HurtLookTime`(0.45, **0 = 끔**)·`HurtLookPitch`(−25)·`HurtLookYawMax`(60)·`bHurtDirectionIndicator`(true)
+  — balance 초안. **로드 검사** `HurtLookTime + 0.6 <= CharacterDef.KnockdownTime`(1.5): 규칙 표와 캐릭터 행이 둘 다 보이는
+  `ApplyCharacterDef`에서 Warning — 어기면 진입·복귀 보간이 겹쳐 카메라가 떤다.
 
 ### 맞는 느낌 — 타격감·피격감 (2026-09-15 구현)
 
@@ -265,11 +390,15 @@ class ICL9Damageable {
 | 상태 | 위치 | 이유 |
 |---|---|---|
 | 달리기 플래그·스태미나·유효 무게 속도 | **CMC (예측 경로)** | FSavedMove로 서버·클라 동기 |
-| HP·넘어짐·운반 목록·탈진 표시 | PlayerState (Replicated + OnRep) | 판정·UI·타 클라 표시 |
+| HP(`Hp`·`MaxHp`)·퀵슬롯 목록(`Slots`·`ActiveSlot`)·머리 장비(`HeadItem`) | PlayerState (Replicated + OnRep) | 판정·UI·타 클라 표시 |
+| 넘어짐 시계 `KnockdownStartServerTime`/`KnockdownEndServerTime` · 처형 `ExecuteStartServerTime`/`ExecutedBy` · 소지 실물 `HeldItem`/`WornItem`/`PullingCart` · 휘두르기·먹기·던지기 시각 | **Character** (Replicated) | 표현 파생용 서버 시각과 실물 참조 — conventions § 4 의 명시된 예외 (decisions.md 2026-09-13·09-15·09-20). PlayerState 는 미러만 |
 | 위치·회전 | ACharacter 표준 (네트워크 스무딩 내장) | |
 | 잡힘·피격 판정 | 호스트 전용 (몬스터 → 캐릭터 함수 직접 호출) | |
 | 타격 킥 시각 | `SwingHitServerTime` (Replicated, `COND_OwnerOnly`) | 때린 본인만 느끼는 연출 |
 | 빨간 플래시·비네트·셰이크 | 복제 없음 — 위 시각들에서 각 머신이 파생 | 표현은 시계에서 나온다 |
+| 피격 사건 `HurtEvent` | Replicated `COND_OwnerOnly` | 카메라 모디파이어·방향 호 — 잡힌 본인만 |
+| 처형 `ExecuteStartServerTime`(OnRep)·`ExecutedBy` | Replicated (모두) | 남의 ABP·CMC 속도 0·처형 카메라 게이트. 뷰 타깃은 서버 `SetViewTarget`(관전 경로) |
+| 데스캠 | 복제 없음 — 각 머신이 PlayerState HP(`IsDead`)에서 파생(호스트 자기 폰은 죽음·부활 자리, 소유 클라는 `Tick` 비교). 뷰 타깃은 서버 `SetViewTargetWithBlend(폰)` | 표현은 상태에서 나온다 |
 
 ## 구현 스텝 매핑 (build-order ①)
 
@@ -320,3 +449,5 @@ class ICL9Damageable {
 `ToggleLight`는 누르는 순간 토글이고 대기가 없다. 대기 중 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가
 `HostCancelSwingWindup()`으로 대기를 지우므로 떼도 타격이 없다. 표현: `GetSwingWindupElapsed()`(대기 아니면 −1)로
 ABP가 대기 자세(`AN_Farmer_SwingWindup` 루프)를, `GetSwingElapsed()`로 휘두르기 클립을 태운다 ([animation.md](animation.md)).
+히트박스 반경 = 손에 든 메시의 경계 구(`GetSwingHitSphere`) × `CL9Rules.SwingHitScale` — `HostTickSwingHit`의 호스트 스윕에만
+적용하고 중심은 그대로다(값·근거는 [../plan/data/rules.md](../plan/data/rules.md)).

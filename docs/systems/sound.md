@@ -26,7 +26,9 @@
 - **구현된 효과음(2026-09-18)은 Multicast도 OnRep도 아니다** — 이미 복제되는 시계·상태(`SwingStartServerTime`·
   `KnockdownStartServerTime`·몬스터 `StateStartServerTime`·아이템 `HoldState`)를 매 틱 지난 틱과 비교해 **상승 에지**에서
   모든 머신이 각자 튼다. 새 RPC가 없고, 리슨 호스트도 자기 폰에서 같은 길을 탄다(OnRep은 호스트 자신에게 뜨지 않는다 —
-  character.md 피격 절의 셰이크와 같은 이유). 아래 "구현 — `SoundTable`" 절.
+  character.md 피격 절의 셰이크와 같은 이유). 아래 "구현 — `SoundTable`" 절. 예외 하나(2026-09-20): `MonsterNear`는 파동
+  멀티캐스트(`Multicast_Noise`, Unreliable)에 얹혀 온다 — 파동 표 행의 `SoundRow` 열이 "이 소음이 나면 낼 소리"를 가리킨다.
+  파동이 이미 그 채널을 쓰고 있어 새 RPC는 여기에도 없다([wave.md](wave.md)).
 
 ## 주요 사운드 이벤트 (현 기획 기준)
 
@@ -41,7 +43,6 @@
   Held·Worn에서 Free로 바뀌는 순간 아이템 자리에서. 수레를 놓는 것(Pushed→Free)과 죽음 드랍(Free→Free)에는 안 난다.
 - `SFX_Crack` / `SFX_Break` — 금 감 / 깨짐
 - `SFX_JarDeposit` — 항아리 반납
-- `SFX_Swap` — 손↔품 교체 (1.2초 동작음)
 
 **요리 (cooking.md):**
 - `SFX_Sizzle` — 열원 위에서 익는 소리 (루프)
@@ -51,7 +52,13 @@
 **몬스터 (monster.md):**
 - `SFX_WakeTelegraph` — 기상 예고 퍼덕임·울음 (0.8초 — 전 플레이어에게 들린다)
 - `SFX_Alert` — 경보 울음 (거위 `AlertWindup` 뒤)
-- `SFX_Catch` — 잡힘, 몬스터가 덮치는 소리 (플레이어 넘어짐과 함께 — 맞은 몸의 소리는 아래 `Hurt` 행)
+- `MonsterPounce` 행 (2026-09-20) — **잡기 예고**에 들어가는 순간 몬스터 자리에서(꽥+퍼덕임). 몬스터 `State`가 `Pounce`로
+  **전이**하는 것을 모든 머신이 감지해 튼다(아래 표). 예고가 헛치면 이 소리 뒤에 아무것도 없다.
+- `MonsterCatch` 행 (옛 `SFX_Catch`, 2026-09-20) — 잡힘, 몬스터가 덮치는 소리. 몬스터 `State`가 `Catch`로 전이하는 순간 몬스터
+  자리에서 — 잡힌 사람 쪽 `Hurt`(맞은 몸의 소리)와 **같은 순간에 겹친다**(둘 다 `SCC_Effects4` 안이라 함께 난다).
+- `MonsterNear` 행 (2026-09-20) — 다가오는 소리(짧은 꼬꼬댁). 재생 지점이 몬스터 코드가 아니라 **파동**이다: 근접 소나 사건
+  `monster_prox`([wave.md](wave.md))의 `SoundRow` 열이 이 행을 가리켜 링과 같은 박자(`RepeatInterval` 1.2초)로 난다. 링이
+  안 그려져도(컬링 밖) 소리는 나고, 행이 꺼지면 사건 자체가 없어 소리도 없다. 잠든 계열은 소나가 없으니 조용하다.
 - `MonsterDeath` 행 (옛 `SFX_MonsterDeath`) — 사살 (사살 경보의 소리 그 자체). 몬스터가 Dead에 들어오는 순간 `Hit`과
   **함께** 몬스터 자리에서 (monster.md "타격의 표현").
 - `Footstep` 행 (옛 `SFX_Footstep_Monster`) — 몬스터 발소리 (읽히는 위협의 청각 채널). 사람과 **같은 행·같은 보폭**을
@@ -71,6 +78,9 @@
 | `Hurt` | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
 | `Hit` | Stun·Dead ∧ `GetStateElapsed() < HitFlashTime` 창의 상승 에지, 또는 창 안에서 `StateStartServerTime` 변화 | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심(`Bounds.Origin`) |
 | `MonsterDeath` | 같은 에지인데 상태가 Dead | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심, `Hit`과 함께 |
+| `MonsterPounce` | **상태 전이** `State == Pounce ∧ (지난 틱 State != Pounce ∨ StateStartServerTime 변화)` — 창(elapsed)이 아니라 전이라 늦게 온 복제도 놓치지 않는다. 첫 틱은 기준값만(`bStateSoundPrimed`) | 모든 머신 | `ACL9Monster::TickStateSounds` (`TickHitFeel` 다음) | 몬스터 메시 중심 |
+| `MonsterCatch` | 같은 전이 감지, 상태가 Catch. `TickHitFeel`의 Stun·Dead 창과 별개라 Catch가 관측 전에 Stun·Dead로 덮이면(같은 틱 피격) 그 잡기 소리는 빠진다 — `Hurt`가 이미 나므로 허용 | 모든 머신 | `ACL9Monster::TickStateSounds` | 몬스터 메시 중심, 잡힌 폰의 `Hurt`와 같은 순간 |
+| `MonsterNear` | 근접 소나 사건 `monster_prox`가 이 머신에 도착할 때(호스트는 `HostReportNoise` 직후, 클라는 `Multicast_Noise`) — 파동 행의 `SoundRow` | 모든 머신 | `UCL9WaveRenderer::PlayWave` (`MinInterval` 뒤·시각 게이트 앞) | 소음 발원지(몬스터 자리) |
 | `Place` | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown 경유, 클라는 OnRep) | 아이템 |
 | `Footstep` | 수평 이동 거리 누적 ≥ 보폭 | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑 |
 | `Pickup` | (없음 — 다음 실행 `PickupServerTime`) | — | — | — |
@@ -108,10 +118,16 @@ Content/Sounds/
 
 **표.** `UCL9SoundTable`(`Source/CL9/Data/CL9SoundTable.h`, DataAsset — `UCL9ShakeTable`과 같은 틀)은
 `TMap<FName, TSoftObjectPtr<USoundBase>> Rows` 하나다. 효과음을 추가한다는 것은 사운드 에셋을 만들고 여기에 행을 더하는
-것이지 rules 에셋에 열이 늘어나는 일이 아니다. C++가 조회하는 행 이름은 `CL9SoundNames` 상수 7개 — `Pickup`·`Place`·`Swing`·
-`Hit`·`Hurt`·`MonsterDeath`·`Footstep` — 그 외 행은 데이터 전용이다. 에셋은 `/Game/Data/SoundTable`이고
+것이지 rules 에셋에 열이 늘어나는 일이 아니다. C++가 조회하는 행 이름은 `CL9SoundNames` 상수 10개 — `Pickup`·`Place`·`Swing`·
+`Hit`·`Hurt`·`MonsterDeath`·`Footstep`·`MonsterPounce`·`MonsterCatch`·`MonsterNear`(뒤 셋은 2026-09-20) — 그 외 행은 데이터
+전용이다. 다만 **파동 표의 `SoundRow` 열은 어느 행이든 이름으로 가리킬 수 있다**([wave.md](wave.md)) — `MonsterNear`는 C++
+상수가 있지만 재생 지점은 그 열이다. 에셋은 `/Game/Data/SoundTable`이고
 `BP_CL9GameInstance.SoundTableAsset`(`UCL9GameInstance`, `ShakeTableAsset`과 같은 자리)이 가리킨다 — C++에는 에셋 경로가
 없다(conventions § 5). `UCL9GameInstance::Init`이 한 번 로드해 `GetSoundTable()`로 내주고, 비어 있으면 Warning 한 줄이다.
+**`Init`은 `Rows`의 음원을 전부 `LoadSynchronous`로 미리 올린다**(2026-09-20) — 첫 잡힘에서 소프트 참조를 동기 로드하느라
+프레임이 끊기지 않게(콜드 로드, testing/pie-scenarios.md C3-다마리). 2026-09-21 부터는 올린 음원을 `WarmAssets` 로 붙들어 GC 에
+풀리지 않게 하고, 같은 자리에서 셰이크·파동·rules·몬스터·캐릭터 행의 소프트 참조도 함께 올린다 — 규칙은 [performance.md](performance.md)
+"첫 사용 동기 로드 금지".
 
 **재생.** 게임 코드는 `UGameplayStatics`를 직접 부르지 않고 `CL9Sound::PlayAt(WorldContext, Row, Location, PitchJitter = 0)`
 하나로 튼다: 전용 서버면 return, 표·행·에셋이 없으면 **로그 없이 조용히** return(없는 행은 오류가 아니다 — 소리는 있어도
@@ -123,9 +139,11 @@ Content/Sounds/
 (`bHitSoundsPrimed`·`bHitFeelPrimed`) — 늦게 들어온 클라가 이미 지난 휘두르기·타격을 접속 순간 되풀이하지 않는다.
 
 **에셋 — 전부 합성 임시 음원이다.** 실음원이 0개라 `Tools/Audio/synth_sfx.py`(순수 파이썬, 44.1 kHz·16-bit 모노·피크
-−3 dBFS, 고정 시드라 두 번 돌리면 바이트가 같다)가 `ArtSource/audio/sfx/*.wav` 9개를 만들고,
-`Tools/Unreal/import_sfx.py`(에디터 파이썬, 멱등)가 `/Game/Sounds/SFX/…`로 임포트해 클래스 `SC_Effects`·
+−3 dBFS가 기본이고 항목마다 피크를 따로 둘 수 있다, 고정 시드라 두 번 돌리면 바이트가 같다)가 `ArtSource/audio/sfx/*.wav`
+12개를 만들고, `Tools/Unreal/import_sfx.py`(에디터 파이썬, 멱등)가 `/Game/Sounds/SFX/…`로 임포트해 클래스 `SC_Effects`·
 Concurrency `SCC_Effects4`(`USoundConcurrency`, `MaxCount` 4 — 같은 음이 다섯 번째부터는 겹쳐 나지 않는다)를 건다.
+크기 차이는 합성 피크로 둔다(예고 −5 < 잡기 −3, 근접 −10 dBFS — 1.2초마다 반복되는 `MonsterNear`가 깔리게) — 임포트
+스크립트도 코드도 볼륨을 만지지 않는다.
 발소리 변형 3개는 SoundCue `S_Footstep`의 Random 노드 하나로 묶여 있어 **행은 하나**다 — `Footstep2/3` 같은 다중 행은
 코드가 고르지 않는다. 실음원으로 바꾸는 절차(같은 이름의 WAV를 덮어쓰고 `import_sfx.py` 재실행 — 행은 그대로)는
 [../../ArtSource/audio/README.md](../../ArtSource/audio/README.md).
@@ -139,6 +157,13 @@ Concurrency `SCC_Effects4`(`USoundConcurrency`, `MaxCount` 4 — 같은 음이 �
 | `Hurt` | `/Game/Sounds/SFX/Character/S_Hurt` | `hurt.wav` | 0.20초 |
 | `MonsterDeath` | `/Game/Sounds/SFX/Monster/S_MonsterDeath` | `monster_death.wav` | 0.50초 |
 | `Footstep` | `/Game/Sounds/SFX/Character/S_Footstep` (SoundCue, Random → `S_Footstep_1/2/3`) | `footstep_1/2/3.wav` | 0.09~0.11초 |
+| `MonsterPounce` | `/Game/Sounds/SFX/Monster/S_MonsterPounce` | `monster_pounce.wav` (톱니파 꽥 + 날개짓 4번, 피크 −5 dBFS) | 0.45초 |
+| `MonsterCatch` | `/Game/Sounds/SFX/Monster/S_MonsterCatch` | `monster_catch.wav` (급강하 꽥 + 쿵 + 날개짓, 피크 −3 dBFS — 예고보다 낮고 크게) | 0.50초 |
+| `MonsterNear` | `/Game/Sounds/SFX/Monster/S_MonsterNear` | `monster_near.wav` (블립 두 개 꼬꼬댁, 피크 −10 dBFS) | 0.16초 |
+
+뒤 세 행(2026-09-20)은 WAV·임포트 스크립트까지 art가 냈고 **에셋 임포트와 `SoundTable` 행 추가는 리드가 에디터에서 한다**
+(`import_sfx.py` 실행 → `SoundTable.Rows`에 `MonsterPounce`·`MonsterCatch`·`MonsterNear`). 행이 들어오기 전까지는 재생
+지점이 조용히 통과한다 — 소리만 없다.
 
 ## 재생 API (표현 계층)
 
@@ -182,4 +207,5 @@ UGameplayStatics::PushSoundMixModifier(World, Mix);   // 믹스 활성화는 별
 
 - 모든 사운드 에셋은 로열티 프리 또는 자작
 - 같은 음이 너무 자주 나면 피로 → Concurrency로 제한
-- 사운드 데이터 정의(FSoundEffect)는 `../data/schema.md` 참고
+- 사운드 표·행 이름의 정의는 `Source/CL9/Data/CL9SoundTable.h`(`UCL9SoundTable`·`CL9SoundNames`) — 이 문서의
+  "구현 — `SoundTable`" 절이 정본이고, [../data/schema.md](../data/schema.md)는 색인일 뿐이다

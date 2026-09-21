@@ -1,6 +1,8 @@
 <!-- 원본: /autoplan 계획 2026-09-19 (~/.claude/plans/giggly-wishing-penguin.md) -->
 # 잡히는 순간을 보이게 — 예고 + 피격 읽기 계획
 
+**상태**: 구현 완료 2026-09-20(실행 monster-pounce-hurt-readability — decisions 09-20 "잡기 예고(`Pounce`) 도입"·"넘어진 동안 무적"·"잡히는 순간 카메라는 `UCameraModifier`"·"피격 방향 호"·"소리는 상태 전이 감지" 항목; PIE `docs/testing/pie-scenarios.md` C3-예고·C3·C3-다마리). 코드는 2026-09-21 현재 **미커밋**(HEAD 의 `CL9MonsterDef.h` 에 `Pounce` 열이 없다). 본문의 초안 잔재·TODO 는 지우지 않고 정정 표기만 덧붙였다.
+
 ## 배경
 
 사용자(2026-09-19): "몬스터한테 맞을 때 몬스터가 때리는 모션을 내가 못 봐. 그래서 '엥 뭐지, 왜 맞았지?' 느낌이야."
@@ -40,8 +42,13 @@
 
 ### 하지 않는 것
 - 요 강제 회전 전면 적용(가장자리 걸치기까지만, TASTE).
-- 넘어진 동안 무적(연속 잡힘 방지) — 기존 규칙 변경, TODO 로 사용자에게(`OnDamage :1808` 에 넘어짐 검사 없음, 몬스터도 `IsKnockedDown` 을 안 본다).
 - 3인칭/보디캠, 닭을 얼굴 높이로 뛰게 하기(모델·리그·콜리전 재작업 — 별건).
+- (정정 2026-09-20) "넘어진 동안 무적" 은 원래 여기에 TODO 로 있었으나 **사용자 결정으로 이번 실행에 포함**됐다 — 아래 "넘어짐 무적" 절.
+
+### 넘어짐 무적 (사용자 결정 2026-09-20 — 실행 중 추가)
+- `ACL9Character::OnDamage` 머리(권한·HP 검사 바로 뒤)에 `IsKnockedDown()` 게이트 — HP·넘어짐 시계·`HurtEvent` 전부 불변, 로그 한 줄. **`cl9.damage` 도 같은 `OnDamage` 를 타므로 치트도 게이트에 걸린다**(우회 없음).
+- 몬스터 쪽은 **진입 검사에서 건너뛰기**: Chase 틱의 잡기·예고 조건에 `!Target->IsKnockedDown()` — 넘어진 타깃엔 Pounce 도 Catch 도 시작하지 않고 추격(예산·놓침 시계·경로)은 그대로 이어져 타깃이 서는 순간 다시 예고. 타깃 선택(`SenseTick`)에서 빼지 않은 이유·이미 예고 중이던 닭의 처리(덮치되 재검사에서 헛침)는 `docs/systems/monster.md` 잡기 = 공격.
+- 다마리의 긴장은 연타가 아니라 **재예고·마릿수**로 — 일어서는 순간 옆에서 기다리던 닭이 예고에 들어간다. 표 스위치는 없다(규칙).
 
 ### A. 잡기 예고 상태 `Pounce` — "덮치기 전에 몸을 세운다, 뒤로 한 발 물러나면 피한다" (사용자 결정 D1·D2)
 - 새 상태 `ECL9MonsterState::Pounce`(enum 끝에 추가 — 모든 `switch` 에 case). Chase 틱에서 `Dist2D <= PounceRadius` 이고 `CatchCooldownRemaining <= 0` 이고 `PounceMissRemaining <= 0` 이면 `EnterState(Pounce)`: 이동 0, 매 틱 타깃을 향해 회전, `PounceWindup` 대기(`ChaseBreak`·`ChaseBudget` 시계는 계속 흐른다 — Pounce 는 Chase 의 부분 상태).
@@ -51,7 +58,8 @@
 - 예고 중 `OnStrike/OnShove`: Stun 이 이긴다(예고 취소, `CatchCooldown` 그대로 → 경직 뒤 다시 예고) — 반격 창. 예고 중 타깃 소실(시야·죽음): Chase 의 놓침 규칙으로.
 - 애님: `AN_Chicken_PounceWindup`(0.6초 원샷 — 몸을 뒤로 젖히고 날개를 벌리는 "덮치기 전 자세", `Tools/Blender/animate_creature_reacts.py` 표에 행, 헤드리스) → 덮침은 `Catch` 클립 그대로, 헛침은 `Catch` 클립 앞 0.3초(`bPounceMissed` 로 ABP 가 고른다). ABP `ABP_Chicken_A` 는 상태 진입 시각 평가기 체인에 가지 하나(리드 MCP). 다른 종은 자기 `Catch` 첫 프레임을 유지(클립 없이 동작).
 - 소리·파동: `SoundTable` 행 `MonsterPounce`(꽥+퍼덕임) 를 Pounce 진입 전이에서 모든 머신(D 의 Catch 와 같은 감지). `WaveTable` 행 `monster_pounce`(`ECL9NoiseSource::MonsterPounce`, `HostReportNoise` 한 줄, `SoundRow` 는 비움 — 소리는 상태 전이가 낸다) — 링이 "뒤에서 온다" 를 바닥에 그린다.
-- 다마리: 예고가 겹치면 각자 예고·각자 헛침. 넘어진 동안 다른 닭의 덮침은 지금처럼 맞는다(무적은 TODO — 사용자 결정 대기).
+- 다마리: 예고가 겹치면 각자 예고·각자 헛침. ~~넘어진 동안 다른 닭의 덮침은 지금처럼 맞는다(무적은 TODO — 사용자 결정 대기)~~ → **넘어진 동안 무적**(2026-09-20 사용자 결정, 위 "넘어짐 무적" 절) — 다른 닭은 옆에 서서 기다리다 일어서는 순간 예고.
+- `WaveTable.monster_pounce` 행의 값(`FallbackRadius`·`Thickness`·`Color`·`Power`·`OcclusionRays`·`MinInterval`)은 **balance 초안**이다(사용자 결정) — balance 가 채우기 전까지 `docs/plan/data/wave.md` 의 "(balance 초안)" 자리 그대로. `RadiusFrom None` 이라 `FallbackRadius > 0` 이어야 행이 산다.
 
 #### A 의 구현 계약 (Codex 기술 재검토 반영 — 구현자가 지킬 것)
 - **전이**: `EnterState(Chase)` 는 추격 예산·시계를 리셋하므로 헛침 복귀는 그것을 쓰지 않는다 — Catch 가 지금 하는 직접 쓰기(`State = Chase; StateStartServerTime=…; ChaseRepathRemaining=0; ApplyState()`, `CL9Monster.cpp:626-629`)를 **`ResumeChase()` 헬퍼**로 뽑아 Catch·Pounce 헛침이 같이 쓴다(예산·놓침 시계 보존). Pounce 틱은 **덮치기 전에** Chase 의 탈출 조건(타깃 소실·`DeaggroRadius`·`HomeRange`·`ChaseBudget`)을 먼저 평가하고, Dead·Stun 은 예고를 취소한다. Rage 진입은 진행 중인 Pounce/Stun 과 두 쿨다운을 건드리지 않는다. **타깃 고정**: Pounce 진입 때 `PounceTarget`(TWeakObjectPtr)을 잠그고 `SenseTick` 의 재타깃팅은 예고 동안 무시 — 덮침은 그 타깃의 현재 위치로.
@@ -101,11 +109,11 @@
 **모델 권고: A 먼저, B 의 예고는 뒤에. → 게이트에서 사용자가 B(한 번에)를 택했다(User Challenge 1 기각, D2 = 걷기로 물러나도 피한다).** A 절의 값은 Codex 지적(0.35초·Reach 200 은 대응 불가)을 반영해 0.6초·Lunge 110 으로 다시 잡았다.
 
 ## 검토 모드: 선택적 확장
-수용(blast radius 안·<1일 CC): `cl9.damage` 에 `LastAttacker` 채우기(치트 한 줄), `MonsterNear` 를 기존 소나 사건에 얹기(표 행 하나). 보류(TODOS): 넘어짐 중 무적, 종별 예고 클립, 2단계 Pounce.
+수용(blast radius 안·<1일 CC): `cl9.damage` 에 `LastAttacker` 채우기(치트 한 줄), `MonsterNear` 를 기존 소나 사건에 얹기(표 행 하나). 보류(TODOS): ~~넘어짐 중 무적~~, 종별 예고 클립, ~~2단계 Pounce~~. (정정 2026-09-21 — 넘어짐 중 무적은 2026-09-20 사용자 결정으로 이번 실행에 포함·구현됐다(위 "넘어짐 무적" 절, decisions 09-20); 2단계 Pounce 도 게이트에서 합쳐졌다(아래 "이번에 하지 않는 것"). 남은 보류는 종별 예고 클립만.)
 
 ## 구현 중 마주칠 결정 (미리 정한 것)
-- 첫 시간(기초): `LastAttacker` 는 `TObjectPtr<AActor>` + `COND_OwnerOnly`(UE 복제는 `TWeakObjectPtr` 를 직접 안 받는다) — 파괴되면 null 이 온다. `KnockdownStartServerTime` 과 같은 `GetLifetimeReplicatedProps` 블록.
-- 2~3시간(핵심 로직): 피치 보간이 `bUsePawnControlRotation` 카메라와 싸우지 않게 `SetControlRotation` 만 쓰고, `LookInput` 무시는 함수 머리에 게이트 한 줄. 복제 순서 역전(`LastAttacker` 가 시계보다 늦음): 피치는 시계만으로 시작하고 요/호는 둘 다 있을 때.
+- ~~첫 시간(기초): `LastAttacker` 는 `TObjectPtr<AActor>` + `COND_OwnerOnly`(UE 복제는 `TWeakObjectPtr` 를 직접 안 받는다) — 파괴되면 null 이 온다. `KnockdownStartServerTime` 과 같은 `GetLifetimeReplicatedProps` 블록.~~ **초안 잔재** — 최종은 B 절의 `FCL9HurtEvent{ServerTime, From, Attacker, Seq}`(결정 7). 단, "`Attacker` 는 `IsValid()` 로만 읽고 방향은 `From`" 은 그대로다.
+- ~~2~3시간(핵심 로직): 피치 보간이 `bUsePawnControlRotation` 카메라와 싸우지 않게 `SetControlRotation` 만 쓰고, `LookInput` 무시는 함수 머리에 게이트 한 줄.~~ **초안 잔재** — 최종은 `UCL9HurtLookModifier`(POV 오프셋만, 결정 6): **컨트롤 회전 불변·`LookInput` 게이트 없음**. 복제 순서 역전(사건이 시계보다 늦음)의 처리는 유효하다: 피치는 넘어짐 시계만으로 시작하고 요/호는 사건이 있을 때. (아래 "데이터 흐름" 그림과 "검증 (PIE)" 자동 항목의 `LastAttacker`·`LookInput 게이트` 도 같은 초안 표기다 — 최종 이름은 `HurtEvent`·`HasHurtDirection()`·`GetHurtDirectionAngle()`, 게이트 해제 시각은 없다.)
 - 4~5시간(통합): `Catch` 에지 소리 — `TickHitFeel` 의 창은 `Stun|Dead` 라 `Catch` 는 별도 창. 잡힌 쪽 `Hurt`·잡는 쪽 `MonsterCatch` 가 같은 순간 겹치므로 Concurrency 4 안. `PlayWave` 는 `bPredicted`(호스트 자기 것)와 멀티캐스트 수신 둘 다 지나므로 리슨 호스트 이중 재생 가드가 이미 있는지 확인(wave-impl 은 호스트 멀티캐스트를 버린다 — 소리도 같은 가드 안에서).
 - 6시간 이후(마무리): 2인 PIE 상대 화면(호는 소유자만, 소리는 전원), 늦게 접속한 클라 첫 틱 무음(`bPrimed`), 관전 카메라에선 호 숨김.
 
@@ -187,7 +195,7 @@
 ## 검증 (PIE)
 - **C3-예고(신설)**: 닭이 130cm 에서 0.6초 멈춰 몸을 세우고 `MonsterPounce` 가 난다(파동 링, 2인 PIE 상대 화면에도). ① 서 있으면 110cm 덮쳐 잡힘 ② 예고 순간 뒤로 걸으면 헛침(`PounceResultServerTime`·`bPounceHit=false`) → 계속 물러나면 재예고 없음, 멈추면 간격이 좁혀져 재예고 ③ 옆으로 걸어도 헛침 ④ 예고 중 팬으로 치면 경직이 예고를 끊는다 ⑤ 벽 너머(문틈)에선 덮치지 않는다(재검사). 자동: `GetState` Chase→Pounce→Catch/Chase, Pounce 길이 0.6±0.05, 헛침 케이스 `bPounceHit=false`·`KillCooldown` 변화 없음·예고 중 `TurnRate` 제한 회전; `net.PktLag 100` 에서 클라 체감 예고 ≥0.5초; 3마리 동시·예고 만료 순간 피격·타깃 사망·문·높이 차·연속 헛침.
 - **C3(갱신)**: 닭에게 잡히면 ① 그 순간 `MonsterCatch`(잡는 소리)와 `Hurt`(맞는 소리)가 함께 나고, ② 0.45초 안에 카메라가 −25° 로 내려가 덮치는 닭의 `Catch` 클립이 보이며(뒤에서 잡혔으면 요가 60° 안에서 닭 쪽으로 걸치고 호가 뒤를 가리킨다), ③ 가장자리 빨간 호가 닭 방향을 가리키고 비네트와 함께 사라지고, ④ 일어나면 피치 0·시선 입력 복귀. `cl9.damage 1`(치트)도 가장 가까운 닭을 범인으로 같은 그림. 2인 PIE: 상대 화면엔 소리만(호·카메라는 본인만).
-- **C1(갱신)**: 닭이 330cm 안으로 추격해 오면 0.65초마다 `MonsterNear` 가 들린다(파동 링과 같은 박자), 잠든 닭은 조용. 3마리 동시(`cl9.addmonster chicken 3`)에서도 소리가 뭉치지 않는다(Concurrency 4).
+- **C1(갱신)**: 닭이 `TriggerRadius`(780cm) 안으로 추격해 오면 **`RepeatInterval` 1.2초**마다 `MonsterNear` 가 들린다(파동 링과 같은 박자), 잠든 닭은 조용. 3마리 동시(`cl9.addmonster chicken 3`)에서도 소리가 뭉치지 않는다(Concurrency 4). (정정 2026-09-20 docs: 이 문서의 "330cm·0.65초" 는 `monster_prox` 의 **링 반경과 수명**(330 ÷ 510)이지 박자가 아니다 — 박자는 `docs/plan/data/wave.md` 표 4 의 `RepeatInterval` 1.2초, 발동 거리는 `TriggerRadius` 780cm.)
 - 자동(`scratchpad/pie_feel.py` 계열): `cl9.damage` 뒤 0.45초 카메라 피치 −25±3, `LastAttacker` 세팅, `GetHurtDirectionAngle` ≈ 닭 방향, `LookInput` 게이트 해제 시각, `au.DumpActiveSounds` 에 `S_MonsterCatch`·`S_MonsterNear`.
 - 표 bool 끄기: `bHurtDirectionIndicator=false` 면 호가 안 뜬다(빌드 없이). 롤백 = 표 4행 0/false + `SoundRow` 비움(빌드 없이 옛 동작).
 - **다마리**: `cl9.addmonster chicken 10` 으로 10마리 추격 — `MonsterNear` 가 Concurrency 4 로 잘리고 프레임이 안 떨어진다(`stat audio`), 두 마리에 연속으로 잡혀도(`Seq` 증가) 카메라가 덜컹 없이 요 목표만 바뀐다.
@@ -234,16 +242,16 @@ ACL9Monster::HostTickProxNoise ─▶ GameState::HostReportNoise ─Multicast_No
 "포함하되 구현 전에 고칠 것": `EnterState(Chase)` 가 예산을 리셋하니 헛침 복귀는 공용 재개 헬퍼로 · Pounce 의 탈출 조건을 덮치기 전에 평가, Dead/Stun 취소, Rage 는 보존, `SenseTick` 재타깃팅 잠금 · 지속 `bPounceMissed` 로는 연속 헛침·ABP 선택·늦은 접속을 못 다룬다 → 결과 시각+bool · "Visibility 선을 따라 스윕" 은 질의를 혼동 — 반경 있는 월드 블로킹 질의(WorldStatic+WorldDynamic), 무시 목록 명시, 죽음 발사의 4회 재시도 방식 금지, 수평화·`HeadingYaw` 동기·경로 무효화·수직 조건 · 회피 산수: 후퇴 소요 0.16초라 0.6초는 여유 있으나 가속·지연·재타깃팅이 깎는다, 헛친 뒤 258cm 라 "0.6초 뒤 재예고" 는 거짓, 예고 회전이 `TurnDrag` 를 우회 · 20Hz 는 복제 주기(AI 틱 아님) — 즉시 복제·네트워크 에뮬레이션 시험 · 쿨다운 감소 1회/틱·`KillCooldown` 보존·유한 검사. 6차원 NO(계약 미완) → 위 "A 의 구현 계약" 으로 전부 반영.
 
 ## 두 검토에서 겹친 주제
-**주제: 강제 카메라의 조작 비용** — CEO(Codex 5)·Eng(Codex 1·2, Claude 5)에서 독립적으로 나옴 → 고신뢰 신호, 카메라 전용(POV) 효과로 개정. **주제: 다마리 연타** — CEO(Codex 5)·CEO(Claude)·Eng(Claude 3)에서 → 넘어짐 중 무적은 TODO(사용자), 시험은 10마리로.
+**주제: 강제 카메라의 조작 비용** — CEO(Codex 5)·Eng(Codex 1·2, Claude 5)에서 독립적으로 나옴 → 고신뢰 신호, 카메라 전용(POV) 효과로 개정. **주제: 다마리 연타** — CEO(Codex 5)·CEO(Claude)·Eng(Claude 3)에서 → ~~넘어짐 중 무적은 TODO(사용자)~~(정정 2026-09-21 — 2026-09-20 사용자 결정으로 이번 실행에 포함·구현됐다, 위 "넘어짐 무적" 절), 시험은 10마리로.
 
 ## 이번에 하지 않는 것 (기술 검토 재확인)
-2단계 Pounce 예고 · 넘어짐 중 무적 · 3인칭 · 종별 예고 클립 · 소나의 층 검사(wave 미결) · 치트 RPC 검증 강화(Shipping 에서 치트 자체가 빠진다).
+3인칭 · 종별 예고 클립 · 소나의 층 검사(wave 미결) · 치트 RPC 검증 강화(Shipping 에서 치트 자체가 빠진다). (2단계 Pounce 는 게이트에서 이번 실행에 합쳐졌고, 넘어짐 무적은 2026-09-20 사용자 결정으로 포함됐다.)
 
 ## 테스트 계획 파일
 `C:\Users\user\.gstack\projects\Work\user-master-test-plan-20260919-112719.md` — 코드패스 21개 ↔ 검증 방법.
 
 ## 미룬 일
-1. **넘어짐 중 무적**(P2, S): `OnDamage` 에 `IsKnockedDown()` 게이트 — 닭 여러 마리 연타 방지. 기존 규칙 변경이라 사용자 결정. Depends: 없음.
+1. ~~**넘어짐 중 무적**(P2, S): `OnDamage` 에 `IsKnockedDown()` 게이트 — 닭 여러 마리 연타 방지. 기존 규칙 변경이라 사용자 결정. Depends: 없음.~~ → **이번 실행에 포함**(사용자 결정 2026-09-20, 치트도 게이트 — 위 "넘어짐 무적" 절).
 2. **2단계 Pounce 예고**(P2, M): 위 2단계 절 — 1단계 플레이테스트 뒤.
 3. **파동 소나 층 검사**(P3, S): 2D 거리라 위층 닭 소리·링 — wave 미결과 함께.
 4. **종별 예고 클립**(P3, M): 2단계가 열리면.

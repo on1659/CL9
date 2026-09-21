@@ -28,18 +28,32 @@
  │                                       │           지점당 SearchDwellTime
  │                                       │ 시야 확보 (SightIn)
  │                                       ↓
- └── 복귀 Return ←── 포기 Break ←── 추격 Chase ──→ 잡기 Catch (CatchRadius)
-     (집으로)      (ChaseBreakTime      │  ChaseBudget 소진 /
-                    두리번 →            │  ChaseLoseTime 시야 상실 /
-                    ChaseCooldown)      │  HomeRange 이탈 /
+ └── 복귀 Return ←── 포기 Break ←── 추격 Chase ──→ 예고 Pounce (PounceRadius) ──→ 잡기 Catch (덮친 뒤 재검사 통과)
+     (집으로)      (ChaseBreakTime      │  ChaseBudget 소진 /      │  PounceWindup 뒤 PounceLunge 덮침    │ CatchPause 뒤
+                    두리번 →            │  ChaseLoseTime 시야 상실 /  │  헛침 → Chase (PounceMissCooldown)  │ Chase 로 복귀
+                    ChaseCooldown)      │  HomeRange 이탈 /         │  (PounceWindup 0 이면 Chase → Catch 직행)
                                         │  DeaggroRadius (짐 전부 내려놓음)
                                         ↓
-                          경직 Stun (HitStunMs / PushStun) — 어느 상태에서든 진입
+                          경직 Stun (HitStunMs / PushStun) — 어느 상태에서든 진입 (예고 중이면 예고 취소; 처형 중은 예외)
                           복수 Revenge / 격노 Rage — 사살 소리·피격에 반응
                           죽음 Dead — HP 0, 죽는 모션 (연출은 종별 선택)
+
+ 스토커 (ExecuteRadius > 0 — 너구리):
+   발각 ──→ 스토킹 Stalk ──(응시 StalkStareAnger / 피격 Stun 뒤 / Rage / 무리 경보)──→ 추격 Chase (위와 같다)
+              │ 보이면 정지·후퇴 (StalkRetreatRadius) / 안 보이면 등 뒤로 접근 (StalkSpeed)
+              │ 놓침 규칙은 Chase 와 같다 → Break
+              │ 미발견 ExecuteUnseenTime ∧ ExecuteRadius ∧ 등 뒤 원뿔 ∧ 시야 ∧ 앵커 스윕 통과
+              ↓
+           처형 Execute ──(ExecuteDuration 뒤 HostKill, 피해자 관전 시작 또는 + SpectateDelay)──→ Break
+              (앵커로 텔레포트, 처형 카메라, 구조 없음 — 맞아도 경직·상태 변경 없음)
+
+ 잡히면 처형 (bExecuteOnCatch — 돼지): 위의 추격·예고·덮침 그대로, 잡기 Catch 자리에 처형 Execute
+   추격 Chase ──→ 예고 Pounce ──(덮친 뒤 재검사 통과)──→ 처형 Execute (위와 같다 — 텔레포트 없이 잡은 자리에서)
+                  (PounceWindup 0 이면 Chase → CatchRadius 에서 Execute 직행; CatchDamage·CatchPause 없음, KillCooldown 은 HostKill 때)
 ```
 
-- 상태는 enum 하나 (`ECL9MonsterState`) — Replicated, OnRep에서 애니메이션·소리 전환.
+- 상태는 enum 하나 (`ECL9MonsterState`) — Replicated, OnRep에서 애니메이션·소리 전환. `Pounce`·`Stalk`·
+  `Execute`는 enum **끝**에 그 순서로 있다(복제·에셋의 옛 값 보존).
 - `ChaseCooldown`은 **새로 경계 상태에 들어가는 것만** 막는다. 정전·복수·기절에서 깨어나는 건
   못 막는다.
 - **타격 플래시** (2026-09-15): `Stun`·`Dead`에 들어간 뒤 `HitFlashTime`(rules) 동안 메시가
@@ -90,6 +104,51 @@
   죽음·즉사 여부는 HP와 타격량 값이 정한다 — 원칙이 아니다.
 - 잡은 뒤 `KillCooldown` 재장전 — 연속 타격으로 3타를 순식간에 넣지 못하게 하는 장치.
   **`KillCooldown` = `RageTime` 등식은 로드 검사가 확인한다.**
+- **넘어진 사람은 무적이다** (2026-09-20 사용자): `ACL9Character::OnDamage`가 `IsKnockedDown()`이면 아무것도
+  하지 않는다(HP·넘어짐 시계·피격 사건 불변, 로그 한 줄) — 다른 닭의 덮침도 `cl9.damage` 치트도 같은 문이라
+  우회가 없다. 몬스터 쪽은 **진입 검사에서 건너뛴다**: Chase 틱의 잡기·예고 조건에 `!Target->IsKnockedDown()`이
+  들어 있어 넘어진 타깃엔 Pounce도 Catch도 시작하지 않고, 추격 자체(예산·놓침·경로)는 그대로 이어져 타깃이 서는
+  순간 다시 예고가 시작된다. 타깃 선택(`SenseTick`)에서 빼지 않은 이유: 빼면 시야를 잃은 것으로 처리돼 놓침 시계가
+  돌거나 동료에게 튀어 "덮치려던 닭이 옆에 서 있다"는 그림이 깨진다. 이미 예고 중이던 닭은 예고를 끝내고 덮치되
+  재검사에서 넘어진 타깃을 헛침으로 친다.
+
+### 잡기 예고 (Pounce, 2026-09-20)
+
+잡기 앞에 읽을 수 있는 예고가 온다 ([../goal/monster-pounce-hurt-readability.md](../goal/monster-pounce-hurt-readability.md) A).
+값은 `UCL9MonsterDef` 네 열 `PounceRadius`·`PounceWindup`·`PounceLunge`·`PounceMissCooldown`
+([../plan/data/monster/common.md](../plan/data/monster/common.md) 추격) — **`CatchRadius` 0 또는 `PounceWindup` 0이면
+예고 없이 옛 즉시 잡기**다.
+
+- **진입** (Chase 틱, `AlertWindup` 뒤): `Dist2D <= PounceRadius ∧ CatchCooldownRemaining <= 0 ∧ PounceMissRemaining <= 0
+  ∧ 타깃이 넘어져 있지 않음` → `EnterState(Pounce)`. 타깃을 `PounceTarget`(TWeakObjectPtr)에 잠근다 — 예고 동안
+  `SenseTick`은 돌지 않아 감각의 재타깃팅은 무시된다. 진입 시 `HostReportNoise(MonsterPounce)` 한 번(파동 링
+  `monster_pounce`, [wave.md](wave.md)) + `ForceNetUpdate()`(20Hz 주기를 기다리지 않는다).
+- **예고 틱**: 이동 0. 먼저 Chase의 탈출 조건을 같은 함수(`TickChaseGiveUp` — 타깃 소실·사망·`ChaseBudget`·
+  `ChaseLoseTime`·`HomeRange`·`DeaggroRadius`)로 평가해 걸리면 Break — Pounce는 Chase의 부분 상태라 예산·놓침
+  시계가 계속 흐른다. 아니면 타깃을 향해 `TurnRate`로만 돈다(`MoveAlongPath`의 회전 저항을 우회하므로 상한을 같이
+  둔다 — 홱 돌지 않는다). `PounceWindup`이 다 되면 덮친다.
+- **덮침** (`HostPounceLunge`): 타깃의 **지금** 위치 방향으로 `PounceLunge`만큼 **몸체 구 스윕**
+  (`SweepSingleByObjectType`, WorldStatic + WorldDynamic — 바닥·문 조각 프로필이 제각각이라 둘 다; 자신·타깃·캐릭터·
+  아이템·몬스터는 무시 목록) 으로 닿는 데까지 수평(Z 평탄) 이동. 도달 위치로 `HeadingYaw` 동기·경로 무효화.
+  **재검사는 도달 위치 기준**: `Dist2D <= CatchRadius ∧ |ΔZ| <= Radius + 캡슐 반높이(위층 배제) ∧ 몬스터→타깃
+  Visibility 선 트레이스 안 막힘 ∧ 타깃이 넘어져 있지 않음` → `HostCatch`(기존 그대로: `OnDamage`·`KillCooldown`·
+  Catch 휴지기). 아니면 **헛침** — `PounceMissRemaining = PounceMissCooldown`, `ResumeChase()`. 원격 잡기는 없다.
+- **결과 복제**: `PounceResultServerTime`(float)·`bPounceHit`(bool)을 찍고 `ForceNetUpdate()`. 게터 `IsPounceHit()`·
+  `GetPounceResultElapsed()`(= 서버 시각 − 결과 시각; **결과가 없으면 1000 이상** — 기본값 −1000)·`HasPounceResult()`.
+  ABP는 헛침이면 `State == Chase ∧ !IsPounceHit ∧ GetPounceResultElapsed < 0.3` 동안 `Catch` 클립 앞부분을 평가기로
+  튼다(농부 휘두르기와 같은 시계 방식 — 연속 헛침도 시각이 갱신돼 구분된다). 성공은 `Catch` 상태 그대로.
+- **`ResumeChase()`**: Catch 휴지기 끝과 헛침이 같이 쓰는 헬퍼 — `EnterState(Chase)`는 예산·놓침 시계를 리셋하고
+  경보를 다시 울리므로 쓰지 않는다. `State = Chase; StateStartServerTime = 지금; 경로 리셋; ChaseRepathRemaining = 0;
+  ApplyState()`.
+- **우선순위**: Stun(`OnDamage`/`OnShove`)·Dead는 예고를 취소한다(`EnterState`가 덮어쓴다; `KillCooldown` 재충전 시계
+  `CatchCooldownRemaining`은 그대로 →
+  경직 뒤 다시 예고 — 반격 창). Rage 진입은 진행 중인 Pounce/Stun과 두 쿨다운을 건드리지 않는다(`ReceiveKillAlarm`·
+  `ReceivePackAlarm`의 switch에 Pounce가 없다). `PounceMissRemaining`은 `HostTickAI` 머리에서 틱당 한 번만 줄고,
+  `KillCooldown`은 헛침·취소에 영향이 없다.
+- **로드 검사** (`UCL9MonsterDef::Validate`): 네 열 유한·비음수; 예고가 켜진 종은 `PounceRadius >= CatchRadius`.
+- **회피 산수의 정직한 서술**: 예고 진입은 `PounceRadius` 이하 어디서든 일어나므로 걷기로 물러나면 산다는 것은
+  값(`PounceWindup`·`PounceLunge`)이 정하는 사실이지 코드가 보장하는 것이 아니다. 헛친 뒤 간격은 같은 속도로 물러나는
+  사람에겐 다시 좁혀지지 않는다 — 재예고는 "간격이 다시 좁혀지면(멈추거나 돌면)"이다.
 - 플레이어의 대응: 도망(속도 부등식 A1·A4가 탈출을 보증), 든 아이템 휘두르기(좌클 —
   행의 `HitDamage`·`HitStun`이 `OnStrike`로 들어온다: 프라이팬 = `Push`(`PushStun` + `PushKnockback`),
   고기 = `Hit`(`HitStunMs`); 2026-09-12, [../plan/data/item/common.md](../plan/data/item/common.md) 사용).
@@ -98,6 +157,93 @@
   그 자리에 닿은 몬스터가 **한 번의 휘두르기에 각각 한 번씩** `OnStrike`를 받는다 — 나란히 선 둘은 한 번에 둘 다
   맞고, 빗나가면 아무도 맞지 않는다. 판정은 호스트 전용이고 `OnStrike`의 의미(피해 먼저, 죽으면 경직 없음,
   `Push`는 `OnShove`로 덮음)는 그대로다 ([inventory.md](inventory.md) 휘두르기 히트박스).
+
+### 스토킹과 처형 (Stalk·Execute, 2026-09-20)
+
+종 전용 즉사 ([../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) — 설계 결정 D1~D9 가 정본;
+2026-09-20 저녁 사용자 결정으로 **두 종**: 너구리 = 몰래 뒤에서 처형하는 **스토커**, 돼지 = **잡히면 무조건 처형**).
+열은 `UCL9MonsterDef` Category `Execute` 13개 + `bExecuteOnCatch` + `CL9Rules.ExecuteCameraBlend`
+([../plan/data/monster/common.md](../plan/data/monster/common.md) 스토킹과 처형). 갈래는 표 값으로만 갈린다 —
+**스토커** `ExecuteRadius > 0`(아래 Stalk 진입 ~ 앵커 스윕), **잡히면 처형** `bExecuteOnCatch`(아래 "잡히면 처형"
+항목), 둘 다 아니면 처형 없는 종이라 `GetHuntState()` 가 `Chase` 를 돌려주고 아래는 하나도 돌지 않는다(빌드 없는
+롤백). `UCL9MonsterDef::IsExecutioner()` = 둘 중 하나(치트가 쓴다).
+
+- **Stalk 진입** (스토커): 감각이 타깃을 잡아 `Chase` 로 가던 두 자리(Wander/Patrol/Return 의 게이지 만충, Investigate 의
+  시야 확보)가 `EnterState(GetHuntState())` 다. 진입은 추격과 같은 시계(`ChaseBudget`·`ChaseLoseTime`)를 채우고
+  `StalkTarget` 을 잠그며 두 계수기(`StalkUnseenTime`·`StalkStaredTime`)를 0 으로. **팩 경보는 울리지 않는다**
+  — 스토킹은 조용하고, 격분해 `Chase` 로 갈 때 그 진입이 (`bPackAlarmFired` 가 아직 false 라) 경보를 낸다.
+- **Stalk 틱** (호스트): 감각(`SenseTick`)은 계속 돈다 — 다른 산 사람(처형 중 아님)을 잡으면 타깃을 옮기고 계수기를
+  처음부터(D4). 놓침은 `TickChaseGiveUp` 그대로(타깃 소실·사망·예산·놓침 시계·HomeRange·Deaggro) + 타깃이
+  **다른 개체에게 처형 중**이면 소실로 침 → `Break`.
+  - `IsWatchedByAnyone()`: 살아 있고 처형 중 아닌 어느 플레이어든 `StalkGazeRadius` 안에서
+    `|NormalizeAxis(GetBaseAimRotation().Yaw − (몬스터−플레이어) 방향 요)| ≤ StalkGazeHalfAngle` ∧ `HasLineOfSight`.
+    **`IsHeldByGaze` 를 재사용하지 않는다** — 3D 내적 0.75 는 바닥을 보면 "안 봄"이고 41° 는 화면보다 좁다(D5).
+  - 보이면: 미발견 0, 응시 `+= dt`; `≥ StalkStareAnger` → `EnterState(Chase)`(격분 — 이후 닭과 같은 Chase·Pounce·Catch).
+    정지(경로 버림). 타깃이 `StalkRetreatRadius` 안이면 **타깃 반대쪽의 그 반경 지점**으로 `StartPathTo` 해
+    `RetreatSpeed` 로 물러난다 — 경로 없으면 정지. 후퇴↔접근이 바뀌는 순간 경로를 버린다(`bStalkRetreating`).
+  - 안 보이면: 응시는 같은 속도로 0 까지 감쇠, 미발견 `+= dt`. 넘어진 타깃이면 서서 기다린다(계수기는 흐른다 —
+    일어나는 순간 조건이 맞으면 바로 처형). 아니면 **처형 진입 검사** → 실패면 타깃 등 뒤 지점(`GetBehindPoint`
+    = 위치 − 전방(요) × `ExecuteAnchorDistance`)으로 추격과 같은 `ChaseRepathInterval` 재경로, 실패면 타깃 자체로,
+    `StalkSpeed` 로 `MoveAlongPath`.
+  - 경보: `ReceiveKillAlarm`(Rage)·`ReceivePackAlarm` 의 switch 에 `Stalk → Chase`. Stun(`OnDamage`)은 `EnterState` 가
+    덮어쓰고, 경직 끝은 기존대로 공격자 `Chase` 다(격분).
+- **처형 진입 검사** (`TryBeginExecute`, 전부 ∧): 안 보임 ∧ `StalkUnseenTime ≥ ExecuteUnseenTime` ∧ Dist2D ≤
+  `ExecuteRadius` ∧ 등 뒤(타깃 전방(요) · (타깃→몬스터 단위벡터) ≤ −cos(ExecuteBehindAngle)) ∧ `HasLineOfSight` ∧
+  `CatchCooldownRemaining ≤ 0` ∧ `!IsKnockedDown` ∧ `!IsExecuted` ∧ `!IsDead` ∧ **앵커 스윕**. 실패 사유는
+  **바뀔 때만** Verbose 한 줄(`execute check on … fails: unseen-time | radius | behind-cone | line-of-sight |
+  kill-cooldown | target-knocked-down | target-executed | target-dead | anchor-blocked`, 미발견·거리 수치 포함).
+- **앵커 스윕** (`SweepExecuteAnchor`, D1): 앵커 = 등 뒤 지점, 높이는 **이 몬스터의 지금 Z**(스포너가 바닥 + `Radius`
+  에 놓고 덮침도 Z 평탄 — 타깃 발 높이로 새로 재면 구가 바닥에 접해 시작부터 끼인 것으로 잡힌다). 몸체 구
+  (`Radius`)를 타깃 자리(같은 Z)에서 앵커까지 `SweepSingleByObjectType`(WorldStatic|WorldDynamic, 자신·타깃·
+  모든 캐릭터·아이템·몬스터·**타깃의 `PullingCart`** 무시). 막히면 그 틱은 처형하지 않고 스토킹을 계속한다.
+  타깃이 벽에 `Radius` 안으로 붙어 있으면 시작 겹침으로도 막힌다 — 보수적 거부.
+- **잡히면 처형** (`bExecuteOnCatch` — 돼지, 2026-09-20): `GetHuntState()` 는 `Chase`(`ExecuteRadius` 0) — 추격·예고·
+  덮침·즉시 잡기가 닭과 같고, `bCanCatch`·덮침 재검사가 넘어진·처형 중 타깃을 이미 거른다. `HostCatch` 맨 앞에서
+  `bExecuteOnCatch` 면 `OnDamage`·`CatchCooldownRemaining`·`EnterState(Catch)` 를 타지 않고
+  `HostBeginExecute(Target, GetActorLocation(), bTeleport = false)` — 텔레포트 없이 잡은 자리에서 타깃을 향해
+  `Execute` 로. `HostPounceLunge` 의 `bPounceHit`·`ForceNetUpdate` 는 그대로(덮침 결과 클립). 아래 Execute 틱부터는
+  스토커와 같다 — `KillCooldown` 은 `HostKill` 자리에서 재충전. 스토킹 열은 읽히지 않는다.
+- **Execute 진입** (`HostBeginExecute(Target, Anchor, bTeleport)`, 호스트): `bTeleport`(스토커) 면
+  `SetActorLocation(앵커, TeleportPhysics)`, 잡히면 처형인 종은 `Anchor = 지금 위치` 로 생략. 그 뒤는 같다 — 타깃을 향한
+  요, `SmoothedLocation/Rotation` 을 액터 값으로, `ExecuteTarget` 잠금, `EnterState(Execute)`(경로 리셋·`bExecuteKilled`
+  false·`ForceNetUpdate`), `Target->HostBeginExecuted(this)`, 로그(`teleported to (…)` / `executes on catch at (…)`).
+  피해자 캡슐·위치·콜리전은 건드리지 않는다(규칙 3) — **요만** 캐릭터 쪽 `HostBeginExecuted` 가 이 몬스터에 맞춘다(2026-09-21, 2인 클립 정렬:
+  `bExecuteOnCatch` 면 피해자가 이 몬스터를 정면으로, 앵커 텔레포트면 등진 채 — [character.md](character.md) 처형 "피해자 요 정렬").
+  진입 전이에 `MonsterCatch` 소리(`TickStateSounds` — 처형은 `Catch` 를 지나지 않으므로 같은 행을 여기서).
+- **Execute 틱**: 이동 0. `ExecuteTarget` 이 null(접속 끊김)이면 `Break`. `GetStateElapsed() ≥ ExecuteDuration`
+  이고 아직 안 죽였으면 `Target->HostKill(this)` 한 번 + `CatchCooldownRemaining = KillCooldown`. 그 뒤 **머문다**
+  (D6 — 피해자 시점은 죽는 순간 데스캠으로 넘어가고, 시체 옆에 선 이 몬스터가 거기 잡힌다): 피해자 PC 가 `IsSpectating()` 이
+  되거나 `≥ ExecuteDuration + Rules.SpectateDelay` 면 `Break`. 처형 중 감각은 돌지 않는다(`bSensesAwake` 제외).
+- **구조 없음** (D4): `OnDamage` 는 HP 를 깎고(죽으면 `Die`) `State == Execute` 면 경직·재타깃·상태 변경 없이
+  돌아간다; `OnShove` 는 머리에서 그대로 돌아간다(넉백·경직·밀치기 소음 없음). `Die` 는 처형 중이고 피해자가 살아
+  있으면 **먼저 `HostKill`** 한 뒤 `Dead` 로 — 피해자의 뷰 타깃은 캐릭터의 사망 흐름이 죽는 순간 데스캠(자기 폰)으로
+  블렌드한다(`HostApplyDamage`, 2026-09-20 밤). `Dead` 진입에 처형 카메라가 꺼져도 죽은 몬스터 액터 시점은 남지 않는다
+  (데스캠에 내 시체와 몬스터 시체가 같이 보인다).
+- **타깃 제외** (D3): `SenseTick` 후보·Chase 의 `bCanCatch`(= Pounce 진입)·`HostPounceLunge` 재검사 모두
+  `IsExecuted()` 면 제외/헛침 — 둘째 몬스터가 피해자를 넘어뜨려 넘어짐 무적으로 "구해" 주지 않는다.
+- **처형 카메라** (D6): `ACL9Monster::ExecuteCamera`(`UCameraComponent`, 생성자에서 `bAutoActivate` false). `ApplyState`
+  (호스트 `EnterState`·클라 `OnRep_State` 가 같이 온다)가 `State == Execute` 면 카메라를 붙여 켜고, 아니면 끈다.
+  부착 기준은 둘이다 — `ExecuteCameraSocket`(본 이름 허용)이 메시에 **있으면 메시의 그 소켓 공간**, **없으면
+  `GetRootComponent()`(구 콜리전)에 액터 공간**으로 붙고, 그때 `ExecuteCameraOffset` 은 "X = 전방(타깃 쪽)·Z = 위",
+  `ExecuteCameraRotation` 도 액터 공간으로 읽힌다. 메시 루트가 아닌 이유: 메시는 `MeshYawOffset` 만큼 돌아 있고
+  `Radius` 만큼 내려가 있어 메시 기준 오프셋은 종마다 축이 달라진다(2026-09-20 밤 돼지 "뒷다리 사이" 사고 —
+  decisions.md). 현재 셀은 돼지·너구리 모두 소켓 `None`·오프셋 (−130, 0, 165)·회전 (−30, 0, 0). 클라의 메시 스무딩은 처형 동안 멈추고 액터 값에 붙는다(텔레포트를 미끄러뜨리지 않는다).
+  뷰 타깃 전환은 캐릭터 쪽 `HostBeginExecuted`(서버 `SetViewTargetWithBlend(몬스터, ExecuteCameraBlend)`). 죽는 순간
+  **데스캠**(폰의 `DeathCamera`)으로 되돌리는 것도 캐릭터 쪽(`HostApplyDamage` → `SetViewTargetWithBlend(폰, DeathCameraBlend)`,
+  [character.md](character.md) 데스캠) — 옛 D6 문장 "뷰 타깃은 폰으로 돌아오지 않는다"는 2026-09-20 밤 번복됐다. 몬스터가
+  시체 옆에 머무는 것과 처형 중 카메라는 그대로.
+- **치트** `cl9.execute`: 가장 가까운 살아 있는 처형 종(`IsExecutioner()`)이 `HostCheatExecute` — 스토커는 계수기·
+  거리·등 뒤·미발견·시야·KillCooldown 을 우회하고 타깃 상태 검사와 앵커 스윕만 남긴다; 잡히면 처형인 종
+  (`bExecuteOnCatch ∧ ExecuteRadius 0`)은 타깃 상태 검사만 하고 앵커 스윕 없이 지금 자리에서 진입 ([cheats.md](cheats.md)).
+- **로드 검사** (`Validate`, Error): 열 전부 유한·비음수; `ExecuteRadius > 0 ⇒ ExecuteDuration > 0 ∧ StalkSpeed > 0 ∧
+  StalkGazeRadius > 0 ∧ ExecuteAnchorDistance ≥ Radius + 39`; `bExecuteOnCatch ⇒ ExecuteDuration > 0`;
+  `StalkRetreatRadius > 0 ⇒ RetreatSpeed > 0`; `ExecuteCameraBlend` 유한·비음수.
+- ABP(리드): `ABP_Raccoon_A` — `Stalk` 은 걷기 로코모션, `Execute` 가지는 `ABP_Pig_A` 와 같은 사양(평가기
+  `AN_Raccoon_Catch`). `ABP_Pig_A` — `Execute` 는 `GetStateElapsed()` 평가기 가지(Run 1 은 `AN_Pig_Catch` 마지막
+  프레임 유지, Run 2 에서 전용 클립); 돼지는 `Stalk` 에 들어가지 않으므로 그 가지는 쓰이지 않는다. **Run 2**(2026-09-21): `Execute`
+  평가기 클립을 전용 2인 클립 `AN_Pig_Execute`/`AN_Raccoon_Execute` 로(길이 = `ExecuteDuration` 2.0, 피해자 쪽 `AN_Farmer_Executed_Pig`/
+  `_Raccoon` 과 같은 앵커 표 — 돼지는 피해자 정면, 너구리는 피해자 등 뒤 `ExecuteAnchorDistance`; 피해자 요는 진입 때 캐릭터 쪽이 맞춘다).
+  캐릭터 쪽은 [character.md](character.md) 처형.
 
 ### 타격의 표현 (2026-09-18)
 
@@ -115,6 +261,9 @@
 | 팔 히트스톱 | `SwingHitServerTime`(COND_OwnerOnly) 뒤 `HitStopTime` 동안 | 때린 사람 화면 | `ACL9Character::GetSwingAnimElapsed` | ABP 의 `SwingElapsed` 소스가 이 게터 — 명중 프레임에 머물다 이어서 돈다. `GetSwingElapsed`(판정)는 그대로 |
 | `Swing` 소리 | `SwingStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리. 맞든 빗나가든 |
 | `Hurt` 소리 | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리 |
+| `MonsterPounce` 소리 | **상태 전이**: `State == Pounce ∧ (지난 틱 State != Pounce ∨ StateStartServerTime 변화)` | 모든 머신 | `TickStateSounds` | 메시 중심. 창(elapsed)이 아니라 전이라 늦게 온 복제도 놓치지 않는다. 첫 틱은 기준값만(`bStateSoundPrimed`) |
+| `MonsterCatch` 소리 | 같은 전이 감지, 상태가 Catch | 모든 머신 | `TickStateSounds` | 메시 중심. 잡힌 쪽 `Hurt`와 같은 순간에 겹친다(Concurrency는 에셋). 헛침엔 없다. `TickHitFeel`의 Stun·Dead 창과 별개라 Catch가 관측 전에 Stun·Dead로 덮이면(같은 틱 피격) 그 잡기 소리는 빠진다 — `Hurt`가 이미 나므로 허용 |
+| `MonsterNear` 소리 | 근접 소나 사건 `monster_prox` (`HostTickProxNoise` → 파동) | 모든 머신 | `UCL9WaveRenderer::PlayWave` | 파동 행의 `SoundRow` 열 — 링과 같은 박자, 시각 게이트 앞이라 링이 안 그려져도 난다 ([wave.md](wave.md)) |
 | `Place` 소리 | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown, 클라는 OnRep) | 아이템 자리. 수레 Pushed→Free·죽음 드랍은 아님 |
 | `Footstep` 소리 | 수평 이동 거리 누적 ≥ 보폭 (`FootstepStrideRun/Walk`) | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑, 피치 ±8 %. 폰은 속도 > `WalkSpeed`면 달리기 보폭, 몬스터는 Chase 면 달리기 보폭. 서 있으면·공중이면·시체면 안 난다. 클라의 몬스터는 보간된 메시 자리로 잰다 |
 | 죽음 발사 | `Die(Source)` | 호스트 (트랜스폼 복제) | `HostTickDeathLaunch` (`HostTickAI` 의 Dead 거름 앞) | 원점→몬스터 수평 `DeathLaunchSpeed` + 위 `DeathLaunchUp`, 월드 중력. 몸체 구 스윕·WorldStatic 오브젝트 질의는 바닥을 지나쳤다(2026-09-18 PIE — `Floor_0` 은 BlockAllDynamic = WorldDynamic) → **Visibility 채널** 선 트레이스로 검사한다(폰·아이템·몬스터에 맞으면 무시하고 뒤를 다시 긋는다) — 수평 선분이 막히면 그 자리에서 수평 속도 0, 발밑(중심 − Radius)까지 내려 그은 선이 닿으면 발을 바닥에 스냅하고 끝. 죽는 클립은 그대로 |
@@ -163,6 +312,11 @@
 | 위치 | 표준 액터 복제 20Hz + 클라 보간 |
 | WakeTelegraph·AlertWindup 예고 | Replicated 상태의 표현 — 전 플레이어에게 보인다 |
 | 타격 플래시(빨간 오버레이) | 복제 없음 — 각 머신이 `State`+`StateStartServerTime`에서 파생 |
+| 예고 Pounce·덮침 결과 | `State`(Pounce) + `PounceResultServerTime`·`bPounceHit` Replicated, 진입·결과 직후 `ForceNetUpdate` |
+| 예고·잡기 소리 | 복제 없음 — 각 머신이 상태 전이를 감지 (`Execute` 진입도 `MonsterCatch`) |
+| 스토킹 계수기·타깃·앵커 스윕 | 호스트 전용 — 복제 없음 |
+| 처형 Execute | `State`(Execute) + `StateStartServerTime`(기존) — 진입 직후 `ForceNetUpdate`; 스토커의 텔레포트는 표준 이동 복제, 클라 스무딩은 처형 동안 정지 |
+| 처형 카메라 | 복제 없음 — 각 머신이 `OnRep_State`/`EnterState` 에서 켜고 끈다. 피해자 뷰 타깃은 서버 `SetViewTarget`(관전 경로); 죽는 순간 폰(데스캠)으로 블렌드 |
 
 ## 구현 순서 (build-order ③과 맞물림)
 

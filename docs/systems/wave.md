@@ -35,7 +35,7 @@
               ↓ 각 머신 (리슨 호스트 포함)
 UCL9WaveRenderer (UWorldSubsystem — 로컬 표현 전용, 복제 없음)
   1. Instigator가 이 머신의 로컬 플레이어면 버린다 (이미 로컬에서 먼저 그렸다)
-  2. 표에서 행을 찾는다 → bEnabled · Visibility · CullDistance 검사
+  2. 표에서 행을 찾는다 → bEnabled · MinInterval → (SoundRow가 있으면 소리) → Visibility · CullDistance 검사
   3. 반경 = (RadiusFrom이 가리키는 표 컬럼 또는 FallbackRadius) × RadiusScale
        — RadiusFrom이 CL9Rules 소리 컬럼이면 CL9Rules에서, PackAlarm이면
          Instigator 몬스터의 행에서 읽는다
@@ -47,8 +47,8 @@ UCL9WaveRenderer (UWorldSubsystem — 로컬 표현 전용, 복제 없음)
 ```
 
 **반경을 네트워크에 싣지 않는 것이 이 설계의 핵심이다.** 모든 머신이 같은 `CL9Rules`·몬스터 표·
-파동 표를 갖고 있고 `CL9TuningHash`가 접속 때 그것을 대조하므로
-([../conventions.md](../conventions.md) § 5), 반경은 각 머신이 파생하면 된다. 호스트가 임의의
+파동 표를 갖고 있으므로(같은 빌드·같은 에셋 — 접속 때 표를 대조하는 `CL9TuningHash`는 **설계만 있고
+미구현**이다, [../conventions.md](../conventions.md) § 5 · plan/build-order.md), 반경은 각 머신이 파생하면 된다. 호스트가 임의의
 반경을 실어 보낼 수 없으니 "링 = 판정 반경"이 구조적으로 보장되고, 발걸음마다 도는 RPC의
 페이로드도 줄어든다.
 
@@ -67,11 +67,12 @@ enum class ECL9NoiseSource : uint8
     Push,          // 밀치기
     Decoy,         // 미끼가 놓임 (탄 요리 등)
     ThrowBreak,    // 던진 것이 깨짐
-    Cart,          // 수레 끌기
+    Cart,          // 수레 밀기
     Land,          // 점프 착지
     Walk,          // 걷는 발걸음 (표에서 기본 꺼짐)
     MonsterProx,   // 몬스터 근접 소나 — 몬스터 자리에서 핀다
     MonsterCall,   // 몬스터 울음 (기상 예고·경보)
+    MonsterPounce, // 잡기 예고 진입 — 몬스터 자리에서 한 번 (2026-09-20)
 };
 ```
 
@@ -127,7 +128,7 @@ public:
 
 | 열 | 타입 | 단위 | 뜻 | 값 |
 |---|---|---|---|---|
-| `Niagara` | `TSoftObjectPtr<UNiagaraSystem>` | — | 이 파동이 재생할 나이아가라 시스템. **소프트 참조** — 비어 있으면 그 행은 아무것도 그리지 않는다 | balance (에셋은 fx) |
+| `Niagara` | `TSoftObjectPtr<UNiagaraSystem>` | — | 이 파동이 재생할 나이아가라 시스템. **소프트 참조** — 비어 있으면 그 행은 아무것도 그리지 않는다. `UCL9GameInstance::Init` 이 미리 올려 붙들고, `UCL9WaveRenderer::OnWorldBeginPlay` 가 판 시작 때 한 번 켰다 끈다(2026-09-21 — 첫 링에서 동기 로드 + 첫 활성화 컴파일로 ≈500ms 스톨, [performance.md](performance.md)) | balance (에셋은 fx) |
 | `bEnabled` | `bool` | — | 이 소음원이 파동을 내는가. 구현은 전부 되어 있고 이 체크박스가 켜고 끈다 | balance |
 | `Visibility` | `ECL9WaveVisibility` | — | `Always` / `NightOnly` / `BlackoutOnly` — 기본 `Always` | balance |
 | `RadiusFrom` | `ECL9NoiseRadiusSource` | — | 반경을 어느 표의 어느 컬럼에서 가져오나. `None` / `RunNoise` / `PickupQuiet` / `PickupLoud` / `PushNoise` / `Decoy`(여기까지 `CL9Rules` 소리) / `PackAlarm`(**발신한 몬스터 행의 `PackAlarmRadius`**) | balance |
@@ -148,6 +149,7 @@ public:
 | `RepeatInterval` | `float` | s | 이 시간마다 반복 발동. **0 = 반복 없음**. 몬스터 근접 소나용 | balance |
 | `MinInterval` | `float` | s | 같은 발신자·같은 행이 이 간격 안에 두 번 나지 않는다(폭주 안전판) | balance |
 | `TriggerRadius` | `float` | cm | 이 안에 플레이어가 있을 때만 발동. **0 = 조건 없음**. `monster_prox` 전용 | balance |
+| `SoundRow` | `FName` | — | **이 소음이 나면 같이 낼 [sound.md](sound.md) 행 이름**(2026-09-20). 기본 `None` = 소리 없음. 링과 같은 사건·같은 박자로 `CL9Sound::PlayAt(발원지)` — 아래 "소나 = 소리" | balance |
 
 전역 열 둘:
 
@@ -156,11 +158,37 @@ public:
 | `MaxConcurrent` | `int32` | 개 | 한 머신에서 동시에 살아 있는 파동 수 상한. 넘으면 가장 오래된 것을 지운다 | balance |
 | `CullDistance` | `float` | cm | 로컬 카메라에서 이 거리보다 먼 발원지는 아예 만들지 않는다 | balance |
 
-### 행 목록 (1차 — 열한 개)
+### 행 목록 (열두 개 — 1차 열한 개 + `monster_pounce` 2026-09-20)
 
 `run` · `pickup_quiet` · `pickup_loud` · `push` · `decoy` · `throw_break` · `cart` · `land` ·
-`walk`(기본 꺼짐) · `monster_prox` · `monster_call`.
+`walk`(기본 꺼짐) · `monster_prox` · `monster_call` · `monster_pounce`.
 각 행이 무엇을 뜻하는지는 [../plan/wave.md](../plan/wave.md) 규칙 4.
+
+**`monster_pounce`는 잡기 예고의 링이다** — 몬스터가 `Pounce` 상태에 들어가는 순간 몬스터 자리에서 한 번 피어
+"뒤에서 온다"를 바닥에 그린다([monster.md](monster.md) 잡기 예고). 원샷 행이라 `StepDistance`·`RepeatInterval`·
+`TriggerRadius`는 0, `RadiusFrom`은 `None`(판정 반경이 없는 사건)이라 **`FallbackRadius > 0`이어야 로드 검사를
+통과한다**(0이면 행이 비활성 = 링도 사건도 없다). `SoundRow`는 **비운다** — 예고 소리 `MonsterPounce`는 파동이
+아니라 몬스터의 상태 전이가 낸다([sound.md](sound.md)). 반경·두께·색·광선·`MinInterval`은 balance 초안(값은
+[../plan/data/wave.md](../plan/data/wave.md)).
+
+### 소나 = 소리 — `SoundRow` (2026-09-20)
+
+파동 행은 "이 소음이 나면 낼 소리"를 한 열로 가리킨다. `monster_prox`의 `SoundRow = MonsterNear`가 첫 사용자다 —
+다가오는 몬스터의 근접 소나마다 링과 **같은 사건·같은 박자**(`RepeatInterval`)로 짧은 꼬꼬댁이 난다. 새 사건도 새
+복제도 없다(멀티캐스트 하나에 링과 소리가 같이 얹힌다). 규칙 셋:
+
+- **링이 안 그려져도 소리는 난다.** 재생은 `MinInterval` 뒤·시각 게이트(표시 시점·`CullDistance`·나이아가라 에셋) 앞이다
+  (아래 "각 머신의 재생" 3단계). 정전이 아니어서 링이 없거나, 카메라에서 멀어 링이 컬링돼도 소리는 난다 — 거리 감쇠는
+  사운드 에셋의 몫이다.
+- **행이 꺼지면 사건 자체가 없다.** `bEnabled` false·로드 검사 탈락이면 `HostReportNoise` 입구에서 끝나므로 링도 소리도
+  없다. `SoundRow`만 비우면 옛날처럼 링만 남는다.
+- **코드에 소음원 분기가 없다.** `if (Source == MonsterProx)` 같은 것은 없다 — 다른 소음원(달리기·깨짐)에 소리를 붙이고
+  싶으면 그 행의 `SoundRow`만 채운다(행 이름이 `SoundTable`에 없으면 조용히 통과).
+
+리슨 호스트의 이중 재생은 상위 가드가 막는다 — `HostReportNoise`가 호스트 화면을 그리고(소리도 거기서), 자기 멀티캐스트는
+`HasAuthority()`면 즉시 버리며, 소유 클라의 예측분은 `IsLocalInstigator`로 버린다 — 소리도 링과 같은 가드 안이다
+(아래 "소유 클라의 예측"). 잠든 계열은 소나가 없으니 소리도 없고([monster.md](monster.md)), 2D 거리 소나라 위층 몬스터도
+들린다 — 층 검사는 wave 미결이다.
 
 **`monster_call`은 `RadiusFrom = PackAlarm` · `FallbackRadius = 0`이다** (2026-09-16 사용자).
 몬스터의 울음 파동은 **무리 경보의 시각 표현**이라, 링 반경이 그 개체의 `PackAlarmRadius`와 같다 —
@@ -210,6 +238,7 @@ Unreliable RPC로 오가지 않게 하려는 것이다. 발신 쪽도 같은 기
 | `Land` | `ACL9Character::Landed` 오버라이드 | 착지 속도 문턱은 두지 않는다(원하면 `MinInterval`로 억제) |
 | `MonsterProx` | `ACL9Monster::HostTickProxNoise` — `TriggerRadius` 안에 산 플레이어가 있고 `RepeatInterval`이 지났을 때 | `Instigator`는 그 몬스터. **깨어 있는 상태만** 낸다 — `Asleep`·`WakeTelegraph`(잠든 계열)와 `Dead`는 내지 않는다(2026-09-16 사용자: 잠든 닭까지 자리를 알려 주면 기상 예고로 배우던 것이 값싸진다). `RepeatInterval`이 0이면 이 행은 울리지 않는다(반복으로만 나는 소음원이다) |
 | `MonsterCall` | `ACL9Monster::FirePackAlarm` — **무리 경보가 실제로 나가는 자리** | `Instigator`는 그 몬스터 — **반경은 그 개체 행의 `PackAlarmRadius`**. 거위는 `AlertWindup`이 끝나 우는 순간이 곧 이 자리이고, 기상 예고(`WakeTelegraph`)는 경보가 아니라 링도 없다 |
+| `MonsterPounce` | `ACL9Monster::EnterState(Pounce)` — 잡기 예고 진입 한 줄 (2026-09-20) | `Instigator`는 그 몬스터, 위치는 몬스터 자리, `Radius` 0(판정 없음). 덮침·헛침에는 사건이 없다. 별칭 `monster_pounce`(`CL9Wave::ToAlias`가 enum 이름의 소문자 스네이크라 자동). `ValidateRows`의 `PackAlarm` 허용 집합(몬스터 소음원)에 든다 |
 
 **소유 클라의 예측**: 자기가 낸 소음은 서버 왕복을 기다리지 않는다. 발걸음은 짧은 간격으로
 나므로 RTT만큼 늦으면 링이 걸음과 어긋나 보인다. 규칙은 둘뿐이다.
@@ -275,28 +304,37 @@ public:
 죽으므로 `UWorldSubsystem`이다. 레벨에 액터를 놓아야 하는 `ACL9NightLighting` 방식은 쓰지
 않는다 — 맵이 생성기로 만들어지는 이 게임에서 "레벨에 하나 놓아야 한다"는 전제가 취약하다.
 
-재생 한 번의 순서:
+재생 한 번의 순서 (2026-09-20 — `SoundRow`가 들어오며 2·3단계의 자리가 바뀌었다, 아래 주):
 
 1. **행 조회** — `GameInstance`가 물고 있는 `UCL9WaveTable`에서 `Source`로
    (`UCL9WaveTable::FindRow` — 로드 검사에 떨어진 행은 여기서 이미 없는 것이 된다).
    행이 없거나 `bEnabled`가 false면 조용히 끝낸다.
-2. **표시 시점** — 아래 "표시 시점 판정".
-3. **폭주 안전판** — 같은 발신자·같은 행이 `MinInterval` 안에 두 번 나지 않는다.
-4. **거리 컷** — 로컬 카메라에서 `CullDistance` 밖이면 끝낸다.
-5. **반경** — `RadiusFrom`에 따라 `CL9Rules`의 소리 컬럼, 또는 `PackAlarm`이면 `Instigator` 몬스터
+2. **폭주 안전판 + 시각 스탬프** — 같은 발신자·같은 행이 `MinInterval` 안에 두 번 나지 않는다.
+   통과하면 **여기서 시각을 찍는다** — 뒤 단계(표시 시점·거리 컷)에서 걸려 링이 안 생겨도 간격은 찍힌다.
+3. **소리** — `Row.SoundRow`가 있으면 `CL9Sound::PlayAt(발원지)`. 시각 게이트 **앞**이라 링이 안 그려져도
+   난다(위 "소나 = 소리"). 행이 `SoundTable`에 없으면 조용히 통과.
+4. **표시 시점** — 아래 "표시 시점 판정".
+5. **거리 컷** — 로컬 카메라에서 `CullDistance` 밖이면 끝낸다.
+6. **반경** — `RadiusFrom`에 따라 `CL9Rules`의 소리 컬럼, 또는 `PackAlarm`이면 `Instigator` 몬스터
    행의 `PackAlarmRadius`, 또는 `None`이면 `FallbackRadius`. 거기에 `RadiusScale`을 곱한다.
    몬스터 행의 값이 0이면 그릴 것이 없으므로 조용히 끝낸다.
-6. **색** — `bUseInstigatorColor`이고 `Instigator`가 플레이어면 그 사람의 슬롯 색, 아니면 `Color`.
+7. **색** — `bUseInstigatorColor`이고 `Instigator`가 플레이어면 그 사람의 슬롯 색, 아니면 `Color`.
    밝기는 `Power` × (자기 것이면 `OwnerPowerScale`)이고, "자기 것"은 `bPredicted`이거나
    `Instigator`가 이 머신의 로컬 플레이어인 경우다.
-7. **진단 트레이스** — `OcclusionRays`개 트레이스로 광선별 최대 거리 배열을 만든다. **지금은
+8. **진단 트레이스** — `OcclusionRays`개 트레이스로 광선별 최대 거리 배열을 만든다. **지금은
    나이아가라에 넘기지 않는다**(아래 "벽 차폐" — 차폐는 에셋 안의 Collision이 한다). `cl9.shownoise`
    로그의 광선 수가 이 배열이고, 배열 DI가 생기면 다시 잇는 자리다.
-8. **스폰** — `UNiagaraFunctionLibrary::SpawnSystemAtLocation`으로 행의 나이아가라 시스템을
+9. **스폰** — `UNiagaraFunctionLibrary::SpawnSystemAtLocation`으로 행의 나이아가라 시스템을
    발원지에 띄우고, 사용자 파라미터를 넣는다. 컴포넌트는 `bAutoDestroy`로 스스로 사라지고,
    `MaxConcurrent`를 넘으면 가장 오래된 것을 즉시 없앤다.
    **`Niagara`가 비어 있으면 여기서만 멈춘다** — 위의 판정·트레이스·로그는 그대로 돈다(에셋이
    들어오기 전에도 `cl9.shownoise`로 사건을 검증할 수 있게).
+
+**주 — `MinInterval` 스탬프가 시각 게이트 앞으로 왔다** (2026-09-20). 옛 순서는 행 → 표시 시점 → `MinInterval` →
+거리 컷 → 반경 → … → 스폰 직전 스탬프였다 — 링이 실제로 생길 때만 간격을 찍었다. 소리가 `MinInterval` 뒤·시각 게이트
+앞에 있어야 하므로 스탬프도 그 자리로 옮겼고, 그 결과 **표시 시점·거리 컷에 걸린 사건도 간격을 찍는다**. 폭주 안전판의
+뜻("같은 발신자·같은 행이 이 간격 안에 두 번 나지 않는다")에 더 맞고 링 그림에는 차이가 없다 — 정전 전용 행이 정전
+밖에서 사건을 내면 그 사건도 간격을 소비한다는 것만 달라졌다.
 
 나이아가라가 받는 사용자 파라미터 **여덟** (이름은 `NS_CL9_Wave`의 `User.` 변수와 1:1 —
 2026-09-16 리드가 만든 에셋 기준):
@@ -446,7 +484,8 @@ case ECL9WaveVisibility::BlackoutOnly: return GameState->IsBlackout();
 | **색을 바꾸고 싶다** | `WaveTable` 행의 `Color`. 플레이어 고유색이면 캐릭터 표의 `TintColor` | 불필요 |
 | **반경을 바꾸고 싶다** | `CL9Rules`의 소리 컬럼 — 판정과 링이 함께 움직인다. 링만 따로 움직이려면 `RadiusScale`(권장하지 않음, 경고가 뜬다) | 불필요 |
 | **몬스터 울음 링의 크기를 바꾸고 싶다** | 그 몬스터 행의 `PackAlarmRadius` — 무리 경보 반경과 링이 함께 움직인다 | 불필요 |
-| **어떤 소음원을 끄고 싶다** | 그 행의 `bEnabled` | 불필요 |
+| **어떤 소음원을 끄고 싶다** | 그 행의 `bEnabled` — 링도 소리도 사건째 사라진다 | 불필요 |
+| **어떤 소음에 소리를 붙이고 싶다 / 떼고 싶다** | 그 행의 `SoundRow`에 [sound.md](sound.md) 행 이름 / `None` (`monster_prox` = `MonsterNear`) | 불필요 |
 | **정전에만 보이게 하고 싶다** | 그 행의 `Visibility` = `BlackoutOnly` | 불필요 |
 | **리소스(모양)를 바꾸고 싶다** | 그 행의 `Niagara` | 불필요 |
 | **링이 더 빨리·두껍게·밝게** | `Speed` · `Thickness` · `Power` | 불필요 |
@@ -464,9 +503,10 @@ case ECL9WaveVisibility::BlackoutOnly: return GameState->IsBlackout();
 |---|---|
 | 소음 사건 | 호스트 판정 → `Multicast_Noise` (Unreliable) → 각 머신 표현 |
 | 내가 낸 소음 | 소유 클라 로컬 예측 재생 + 멀티캐스트 수신 시 본인 것 버림 |
-| 반경 | **복제 없음** — 각 머신이 `CL9Rules`·몬스터 표·파동 표에서 파생 (`CL9TuningHash`가 일치를 보장) |
+| 반경 | **복제 없음** — 각 머신이 `CL9Rules`·몬스터 표·파동 표에서 파생 (표 일치는 같은 빌드가 전제 — `CL9TuningHash` 대조는 미구현) |
 | 누가 냈나 | `Multicast_Noise`의 `AActor* Instigator` — 플레이어면 `ACL9PlayerState`, 몬스터면 `ACL9Monster` |
 | 링의 모양·색·밝기 | 복제 없음 — 로컬 표에서 |
+| 소음에 붙는 소리(`SoundRow`) | 복제 없음 — 같은 멀티캐스트를 받은 각 머신이 로컬 표를 읽어 튼다. 리슨 호스트·소유 클라의 이중 재생 가드는 링과 같다 |
 | 차폐 트레이스 | 각 머신 로컬 (같은 레벨이므로 같은 결과) |
 | 플레이어 색 | `ACL9PlayerState`의 슬롯에서 파생 |
 

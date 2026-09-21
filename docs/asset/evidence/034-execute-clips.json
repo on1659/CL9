@@ -1,0 +1,32 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-20T22:59:52.137077+00:00",
+  "creatures": [
+    {
+      "species": "Pig",
+      "skeleton": "/Game/Monsters/PigA/SK_Pig_A_Skeleton.SK_Pig_A_Skeleton",
+      "clips": [
+        {
+          "name": "Execute",
+          "path": "/Game/Monsters/PigA/AN_Pig_Execute.AN_Pig_Execute",
+          "duration_seconds": 2.0,
+          "sha256": "b5e6c4381dc3de383ef1c418d2588715204ae1934b0e4290e98aac38dc6c0188",
+          "replaced": false
+        }
+      ]
+    },
+    {
+      "species": "Raccoon",
+      "skeleton": "/Game/Monsters/RaccoonA/SK_Raccoon_A_Skeleton.SK_Raccoon_A_Skeleton",
+      "clips": [
+        {
+          "name": "Execute",
+          "path": "/Game/Monsters/RaccoonA/AN_Raccoon_Execute.AN_Raccoon_Execute",
+          "duration_seconds": 2.0,
+          "sha256": "32887264d02c3a771cea64bdb90c4c63551b4b30d0911b9af3f426e3bf286b4c",
+          "replaced": false
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 > **추가만 한다** — 과거 항목을 고쳐 쓰지 않고, 뒤집을 때는 새 항목으로 번복을 명기한다.
 > 규약 전문은 [conventions.md](conventions.md).
+>
+> 표기(2026-09-21 정리): `## 2026-09-11` 절부터는 여러 세션이 같은 날 동시에 덧붙여 날짜 절을 더 나누지 않고,
+> 항목 머리(제목 뒤 괄호 또는 불릿 첫머리의 굵은 날짜)에 날짜를 적는다. 그래서 그 절 안의 날짜 순서는 섞일 수 있다.
+> 이름 일괄 개명(`DA_` 접두 제거·`CL9Art` 폴더 폐지)이 과거 항목 본문의 경로·에셋 이름을 치환한 것은 이 규칙의 유일한 예외로 인정한다(2026-09-12·13 커밋).
 
 ## 2026-08-30
 
@@ -402,7 +406,7 @@
   활성화하고, `.mcp.json`(unreal-mcp — http://127.0.0.1:8000/mcp)을 프로젝트 루트에 생성.
   에디터가 떠 있어야 연결된다 — 세션 시작 시 .mcp.json이 읽히므로 파일은 미리 둔다.
 
-## 2026-09-02
+## 2026-09-02 (계속)
 
 - **수레 적재 규칙 확정** (② 2f — cart.md가 위임한 미결). 조작: **끌면서 R(교체 키)로 싣고
   내린다** — 끌고 있는 동안 R은 품 대신 수레와 교체하고, 같은 `SwapTime` 잠금을 탄다 (운반
@@ -1374,3 +1378,166 @@
   폰은 속도 > `WalkSpeed` 로, 몬스터는 Chase 로 가른다. 몬스터 보폭도 이번엔 사람과 같은 값(사용자 "이번엔 이대로 들어본다" — 종별 열은 다음에).
 - **2026-09-18 — 타격 연출 수치는 판정 시계와 표 물리에서 역산한다(balance, 초안).** `HitStopTime` 0.08 = `HitFlashTime` 0.15 안·히트박스 창 폭 0.20 의
   절반 아래. `DeathLaunchSpeed` 300 = 복도 한 칸 500cm 에서 가로로 맞아도 벽 앞에 눕는 수평 159cm. `HpPipsTime` 2.0(다음 실행).
+- **2026-09-20 — 잡기 예고(`Pounce`) 도입 — 2026-09-15 "몬스터 예비동작 반려(판정을 늦춰야 해 규칙 2 위반)" 의 번복이 아니다(사용자 게이트 결정, 실행 monster-pounce-hurt-readability).**
+  규칙 2(animation.md — 애님이 판정에 못 들어간다)는 그대로다. 판정 지연은 표 값 `PounceWindup` 이 정하고 클립 `AN_Chicken_PounceWindup`(0.6초)은 그 값에 따라갈 뿐이라,
+  클립이 없거나 길이가 달라도 판정은 같다(다른 종은 클립 없이 로코모션 유지). 값은 "걷기로 물러나도 피한다"(사용자 D2): `PounceRadius` 130 · `PounceWindup` 0.6 ·
+  `PounceLunge` 110 · `PounceMissCooldown` 0.6(초안) — 걷기 396 으로 0.6초에 238cm 물러나면 130+238 > 84+110 이라 헛침. 닭이 순해지는 것을 감수하고 긴장은 재예고·마릿수로.
+  `PounceWindup 0` 또는 `CatchRadius 0` 이면 옛 즉시 잡기(빌드 없이 롤백). 덮침은 몸체 구 스윕(WorldStatic|WorldDynamic, 캐릭터·아이템·몬스터 무시)으로 `PounceLunge` 만큼,
+  도달 위치에서 거리·높이·시야·넘어짐을 재검사. 헛침 복귀는 `ResumeChase()`(예산·놓침 시계 보존). 결과는 `PounceResultServerTime`+`bPounceHit` 복제 + `ForceNetUpdate`.
+  PIE(Lvl_Flat 1인): 예고 진입 105~129cm → 0.6초 → 110cm 덮침 → 잡힘; 물러나면 5회 연속 헛침·재예고, HP 불변.
+- **2026-09-20 — 넘어진 동안 무적(사용자 — 명세 "미룬 일" 에서 실행으로).** `ACL9Character::OnDamage` 머리의 `IsKnockedDown()` 게이트가 HP·넘어짐 시계·피격 사건을
+  전부 그대로 둔다(로그 한 줄). 다마리 연타 방지가 목적이고 **`cl9.damage` 치트도 같은 문을 지나 우회가 없다**(HP 0 까지 치려면 1.5초 간격). 몬스터 쪽은 타깃 선택이
+  아니라 Chase 틱의 잡기·예고 진입 검사에서 넘어진 타깃을 건너뛴다 — 옆에 서서 기다리다 일어서는 순간 예고(타깃 선택에서 빼면 시야 상실·동료로 튀어 그림이 깨진다).
+  예고 중이던 닭은 덮치되 재검사에서 헛침. 표 스위치는 없다(규칙). PIE: 넘어진 0.5초에 `cl9.damage 1` → HP 2 그대로.
+- **2026-09-20 — 잡히는 순간 카메라는 `UCameraModifier`(POV 오프셋)로만 본다 — 컨트롤 회전·시선 입력 불변.** `FCL9HurtEvent{ServerTime, From, Attacker, Seq}`(COND_OwnerOnly)
+  + `UCL9HurtLookModifier`(`NotifyControllerChanged` 에서 소유 클라만 등록). 피치는 넘어짐 시계만으로 EaseOut 진입(`HurtLookTime` 0.45 → `HurtLookPitch` −25), 요는 사건의
+  `From` 방향으로 `|Δ| − FOV/2` 만큼 `±HurtLookYawMax` 60 안에서 가장자리 걸치기, GetUp 0.6초에 0 복귀. 재피격(`Seq`)은 요 목표만. `Seq` 는 `uint16` 이라 BP 미노출.
+  `HasHurtDirection()` 은 `IsValid(Attacker)` 로 "공격자 있었음" 을 판단(시체는 밤 동안 안 사라진다). PIE 실측: 0.40초 −24.7°, 0.74초 −25.0°, 1.40초 −7.5°, 일어나면 0;
+  컨트롤 회전 (0,180) 불변; 요 오프셋 +20.7°(닭 상대 66° → 호 각도 45°). balance 관찰: 넘어짐 하강(30cm)과 겹치면 닭이 위 가장자리로 밀릴 수 있어 후보 −12 를 표에 적어 둠.
+- **2026-09-20 — 피격 방향 호는 표 bool `CL9Rules.bHurtDirectionIndicator`(기본 true)로 끈다.** 계획 초안의 "리썰 컴퍼니 포함 관례" 는 틀렸다 — 리썰에는 방향 표시가 없다
+  (비네트·킥·소리뿐). 호는 글자·아이콘이 아니라 비네트와 같은 가장자리 물듦(같은 `GetHurtFlash()` 페이드)이라 "글자도 아이콘도 없다" 안에 두되 톤이 어긋나면 빌드 없이
+  표에서 끈다. 런타임 숨김은 `Hidden`, `Collapsed` 는 디자이너가 끈 신호라 C++ 이 영영 켜지 않는다(WBP 기본도 Hidden). 각도는 `GetHurtDirectionAngle()` 을 변환 없이
+  `RenderTransform.Angle` 에. 텍스처 `T_CL9_HurtDirection` 은 리드 임시본(파이썬 생성, 12시 75° 호).
+- **2026-09-20 — 소리는 상태 전이 감지·`SoundRow` 열로 낸다.** `MonsterPounce`·`MonsterCatch` 는 `TickStateSounds`(모든 머신, `State`/`StateStartServerTime` 변화 = 전이, 첫 틱
+  무음) — `TickHitFeel` 의 Stun·Dead 창과 별개라 Catch 가 관측 전에 Stun/Dead 로 덮이면 그 잡기 소리는 빠진다(`Hurt` 는 난다). `MonsterNear` 는 `FCL9WaveInfo.SoundRow`
+  (`monster_prox` 행 = `MonsterNear`) — `PlayWave` 가 MinInterval 뒤·시각 게이트 앞에서 `PlayAt`, 코드 분기 없음. 그래서 **`MinInterval` 스탬프를 시각 게이트 앞으로**
+  옮겼다(컬링·표시 시점에 걸린 사건도 간격을 찍는다 — 링 그림 불변). `Init` 이 `SoundTable` 행을 전부 프리로드. 박자는 `monster_prox.RepeatInterval` 1.2초(명세의 0.65초는
+  링 수명이었다 — docs 정정). PIE: `au.DumpActiveSounds` 에 S_MonsterNear·S_MonsterPounce·S_MonsterCatch·S_Hurt 전부.
+- **2026-09-20 — 예고 동안 감각 정지.** `Pounce` 는 `bSensesAwake` 에서 빠진다 — 재타깃팅 금지를 가장 단순하게 지키는 방법. `bHadSight` 가 0.6초 얼어 놓침 시계가 그만큼
+  늦게 도는 것은 `ChaseLoseTime` 6초 앞에서 무시할 만하다. `cl9.damage` 의 Source 는 가장 가까운 **살아 있는** 몬스터(시체 제외).
+- **2026-09-20 — 잡기 예고 값의 종별 비율 규칙(balance 초안)·부등식 A5.** `PounceWindup`·`PounceMissCooldown` 은 사람 반응 상수라 종 공통 0.6, `PounceLunge` 는 추격 속도
+  0.28초 거리(닭 110/396 ∝ `ChaseSpeed`), `PounceRadius` = `CatchRadius + PounceLunge − 64`(이상적 후퇴 거리 64cm 를 모든 잡는 종에서 같게). 너구리 150/0.6/130/0.6, 돼지·양은
+  닭과 동일, 거위는 Pounce 없음. A5: `PounceRadius + WalkSpeed × PounceWindup > CatchRadius + PounceLunge` ∧ `PounceRadius ≥ CatchRadius`(`check_inequalities.py`, 전부 통과).
+  `monster_pounce` 링 반경 306 = `Speed 510 × PounceWindup 0.6`(링이 다 퍼지는 순간 = 덮치는 순간, `SoundRow None`) — `PounceWindup` 을 바꾸면 이 행도 같이.
+- **2026-09-20 — `AN_Chicken_PounceWindup`(0.6초, 닭만)은 끝 프레임이 Catch 첫 프레임이다.** 예고 끝을 Catch(덮침)·Catch 앞 0.3초(헛침)가 같은 프레임에서 잇기 위해.
+  반응 클립 재작업 도구는 클립을 골라 굽는다(`animate_creature_reacts.py --clips`, `reimport_creature_clips.py CL9_CLIPS`) — FBX 헤더 시각 때문에 전부 다시 구우면 바뀌지 않은
+  클립까지 바뀐다. 닭 리그 날개 뼈는 좌우 롤이 달라 기존 `wing` 은 비대칭(관찰 기록) — 새 클립만 `spread` 로 대칭, 리그 수정은 별건. 합성음 크기 차이는 합성 피크로
+  (예고 −5 < 잡기 −3, 근접 −10 dBFS). `ABP_Chicken_A` 는 기존 관례대로 float 알파(`AlphaPounce`·`AlphaPounceMiss`) + 양방향 블렌드로 넣었다(리드 MCP).
+- **2026-09-20 — 휘두르기 히트박스 전역 배율 `CL9Rules.SwingHitScale`(사용자 "히트박스가 너무 작아 플레이어가 몬스터를 못 때린다", 실행 swing-hit-scale).** "보이는 것이
+  맞는다"(메시 경계 구)는 유지하고 그 위에 배율 하나만 — 아이템 행별 배율·메시 수정 없음, 호스트 스윕 반경에만 곱하고 중심 불변(`HostTickSwingHit`). 헤더 기본값 1.0(옛 동작),
+  에셋 셀 **2.2 초안** — "닭 폭 하나 빗나가도 맞는다" 의 닭 폭 = 반폭 36cm(접촉 66 → 102cm). 전폭 기준 3.4 는 손 앞 팬 구 중심 ≤ 80cm + 30×3.4 + 36 = 218cm 로 2m 밖 닭(C4 ⑦)
+  까지 닿아 기각, 상한 S < 2.8. 고기 `Swing` 행도 같은 배율. 롤백 = 셀 1.0(빌드 없이). 검증은 C4 ⑬(옆으로 비껴 서서 휘두르기) — 육안, 사용자 몫.
+- **2026-09-20 — 처형 시퀀스(돼지 전용 즉사기) 도입, Run 1(실행 execute-sequence-pig).** 사용자: 종 = 돼지, 트리거 = 등 뒤 + 미발견(브레켄형, **스토킹 AI 포함**), 동료 구조 불가, 카메라 =
+  몬스터 소켓 카메라. `/autogoal` HEAVY — 패널 3관점 + 교차 심문, 명세 `docs/goal/execute-sequence-pig.md` D1~D9. 상태 `Stalk`·`Execute`(enum 끝). 스토킹: `IsWatchedByAnyone()`
+  = 살아 있는 어느 플레이어든 2D 요 콘(`StalkGazeHalfAngle` 55) + LOS + `StalkGazeRadius` — 보이면 정지·`StalkRetreatRadius` 안이면 후퇴, `StalkStareAnger` 응시면 격분(Chase), 안 보이면
+  등 뒤 지점으로 `StalkSpeed`. 처형 진입 = 미발견 `ExecuteUnseenTime` ∧ `ExecuteRadius` ∧ 등 뒤 원뿔 `ExecuteBehindAngle` ∧ LOS ∧ KillCooldown ∧ 타깃 상태 ∧ 앵커 스윕. PIE(1인):
+  433cm 에서 Stalk, 보는 동안 정지(거리 불변), 등 돌리고 3.3초 뒤 Execute — 돼지가 정확히 140cm 뒤로 텔레포트, 피해자 위치 불변, 뷰 타깃 = 돼지, 1.33초 뒤 HP 3→0, 4.43초 뒤 Break.
+- **2026-09-20 — 처형은 돼지를 옮긴다 — 피해자 캡슐 불변(D1).** 진입 시 호스트가 돼지를 `TeleportPhysics` 로 피해자 등 뒤 앵커(피해자 위치 − 전방 × `ExecuteAnchorDistance`)에 놓는다.
+  앵커는 구 스윕(돼지 `Radius`, WorldStatic|WorldDynamic, 캐릭터·아이템·몬스터·피해자의 `PullingCart` 무시)이 비어 있을 때만 — 막히면 그 틱은 처형하지 않고 스토킹 계속. 앵커 높이는
+  몬스터의 지금 Z. 피해자 캡슐·충돌·위치는 건드리지 않는다(규칙 3). 로드 검사 `ExecuteAnchorDistance ≥ Radius + 39`. 기각: 피해자 캡슐을 NoCollision 으로 스냅(규칙 3 위반·클라 예측 충돌·벽 뚫림).
+- **2026-09-20 — 처형은 구조 불가 — 처형 중 피격은 끊지 않는다(D4).** `Execute` 의 돼지는 `OnDamage`/`OnShove` 에서 HP 만 줄고 Stun·넉백·상태 변화가 없다. 처형 중 돼지가 죽어도 피해자는
+  `HostKill` 로 즉사. 기각: 돼지가 죽으면 풀어 주기("구조 없음"과 모순). 킬은 전용 `HostKill(Source)` — 넘어짐 무적 게이트 앞을 지나 기존 사망 흐름(`HostApplyDamage` 공통부)으로;
+  몬스터 타깃 선택·Catch·Pounce 진입·덮침 재검사는 `IsExecuted()` 타깃 제외(다른 닭이 넘어뜨려 "살리는" 구멍 봉쇄).
+- **2026-09-20 — 처형 카메라 = 1인칭 고정의 관전 범주 예외(D6).** 피해자 뷰 타깃은 `ACL9Monster` 의 `UCameraComponent`(기본 비활성, `ExecuteCameraSocket/Offset/Rotation` 표 열, `head` 본)로
+  — 관전과 같은 서버 `SetViewTarget` 경로(`SetViewTargetWithBlend`, `CL9Rules.ExecuteCameraBlend` 0.3). 죽은 뒤 뷰 타깃은 폰으로 **돌아오지 않고** 돼지가 `ExecuteDuration + SpectateDelay`
+  까지 머문 채 관전으로 직행(넘어짐 카메라가 이제 보이는 몸 안에 앉기 때문). 소유 클라는 몸 `OwnerNoSee` 해제·팔 숨김·입력 컨텍스트 내림(`ApplyExecuted`), 셰이크·포커스·피격 게터·
+  `UCL9HurtLookModifier` 는 `IsExecuted()` 게이트. 기각: `UCameraModifier` POV(뷰 타깃이 폰이라 겹침), 별도 카메라 액터(복제·수명).
+- **2026-09-20 — 처형 세부(gameplay).** 수레는 처형 **진입 순간** 놓인다(`HostCancelCarryActions`), 짐은 죽는 순간. `Execute` 진입 전이에 `MonsterCatch` 소리. Stalk 진입은 팩 경보를
+  울리지 않는다(격분해 Chase 로 갈 때). 서버 RPC 게이트를 `IsIncapacitated()`(넘어짐 ∥ 처형)로 통일 — **넘어진 동안 줍기·칸 전환·헤드램프도 새로 막힌다**(사용자 확인 2026-09-20).
+  `HostEndExecuted` 는 관전 중이 아니면 뷰 타깃을 폰으로. 치트 `cl9.execute` 는 LOS·KillCooldown 까지 우회(앵커 스윕·타깃 검사는 유지). 밤 종료·부활은 몬스터 파괴 전에 처형 상태 클리어(D9).
+- **2026-09-20 — 돼지 재정의(balance, 초안): "무겁고 느린 스토커".** 몸 `Radius` 45·HP 6/8, `WanderSpeed` 100·`StalkSpeed` 300(걷기 396 보다 느려 **멈춘 사람**을 잡는다 — 맵이 작아
+  브레켄과 반대), 격분 `ChaseSpeed` 480(A1 여유 +26.6)·`TurnRate` 220·`TurnDrag` 0.6, `PounceWindup` 0.8·`PounceLunge` 130·`PounceRadius` 166·`CatchRadius` 100. 처형 초안:
+  `ExecuteRadius` 160·`ExecuteBehindAngle` 60·`ExecuteUnseenTime` 3.0·`ExecuteDuration` 1.2(Run 1 = Catch 클립 0.8 + 유지)·`ExecuteAnchorDistance` 140·카메라 `head`+(−60,0,125)/(−38,0,0)·
+  `StalkGazeHalfAngle` 55·`StalkGazeRadius` 900·`StalkStareAnger` 2.5·`StalkRetreatRadius` 250·`RetreatSpeed` 200. 부등식 A6(앵커 ≥ Radius+39)·A7(후퇴 반경 ⇒ 후퇴 속도)·
+  회피 산수(180 − 55 > 60, 미발견 3 > 복제 0.1) 신설, 전부 통과.
+- **2026-09-20 — 처형 애니메이션은 Run 2 로.** Run 1 은 돼지 `AN_Pig_Catch` 평가기(마지막 프레임 유지) + 농부 `Locomotion` 캐시 포즈 정지(`ABP_Unarmed` Executed 가지 =
+  넘어짐 가지보다 출력에 가까운 자리, 조건 `IsExecuted ∧ InRange(ExecuteElapsed, 0, ExecuteDuration)`). Run 2 는 `AN_Pig_Execute`·`AN_Farmer_Executed` 를 **각 blend 따로**(UE 액터 공간
+  앵커 표 공유)로 굽고 조건을 `IsExecuted` 로 바꾼다. 기각: 한 씬 append(리그별 export 축·씬·저장이 달라 미리보기 정렬이 거짓).
+- **2026-09-20 — 몬스터 4종 정점색 머티리얼.** 거위·너구리·돼지·양의 `M_CL9_<종>_Vertex` 가 있었으나 `SK_<종>_A` 슬롯에 배정되지 않아 `WorldGridMaterial` 로 보였다 —
+  닭과 같은 구성(VertexColor → BaseColor, Roughness 0.86)으로 배정. `Tools/Unreal/create_creature_materials.py`(멱등).
+- **2026-09-20 저녁 — 처형 종 재배치: 스토커는 너구리, 돼지는 잡히면 무조건 처형(사용자 결정, 실행 execute-species-swap).** 사용자가 Lvl_Flat 배치 돼지로 시험했을 때 "하나씩 깎인다" —
+  잠든 돼지를 깨우려고 보는 것이 응시 격분(2.5초) 시계를 돌려 보통 잡기가 됐기 때문. 결정: Run 1 의 Bracken 식 스토킹·등 뒤 처형은 **너구리**(`MonsterTable.raccoon`)로 — 확정값
+  `StalkSpeed` 450(걸어도 따라붙고 달리기 654 로만 뗀다), `StalkStareAnger` 6(흘깃은 안전), `SleepTime` 0(안 잔다); 초안 `ExecuteRadius` 140·`ExecuteAnchorDistance` 120·`ExecuteUnseenTime` 3.0·
+  `ExecuteDuration` 1.2·카메라 `head`+(−75,0,110)/(−28,0,0)·`StalkRetreatRadius` 250. **돼지**는 스토킹 없이 닭처럼 추격·예고·덮치되 **잡히는 순간이 곧 처형** — 새 열 `bExecuteOnCatch`
+  (bool, 기본 false, 돼지 true): `HostCatch` 맨 앞에서 `HostBeginExecute(Target, 제자리, bTeleport=false)` — 순간 이동·앵커 스윕 없음(`OnDamage`·`Catch` 휴지기·`CatchDamage` 를 타지 않는다).
+  기제는 표 값으로만 갈리고 코드는 종 이름을 모른다(`IsExecutioner()` = `ExecuteRadius > 0 || bExecuteOnCatch`); 로드 검사 `bExecuteOnCatch ⇒ ExecuteDuration > 0`; 롤백은 돼지
+  `bExecuteOnCatch false`, 너구리 `ExecuteRadius 0`. 돼지 `ChaseSpeed` 480 → 396(= 걷기 — 즉사 종이 걷는 사람을 좁히면 안 된다, balance 판단·대안 440~480 은 economy.md 후보),
+  `PounceLunge` 110·`PounceRadius` 146. 치트 `cl9.execute` 는 `IsExecutioner()` 종을 고르고 잡히면-처형 종은 스윕 없이 즉시. 두 갈래가 동시에 켜진 종은 둘 다 유효(배타 아님 — 미결).
+  PIE(1인 Lvl_Flat): 돼지 CHASE → POUNCE → **EXECUTE**(Catch 없음, 덮침 110cm 만 이동) → 1.33초 뒤 HP 3→0 → 4.4초 뒤 Break; 너구리 143cm 에서 Stalk·보는 동안 287 까지 후퇴, 등 돌리자
+  1초 만에 123cm 로 접근(450)·3.33초 뒤 Execute(120cm 텔레포트)·즉사·Break. 정본 `docs/goal/execute-sequence-pig.md` 상단 절, PIE `C-처형-돼지`·`C-처형-너구리`.
+- **2026-09-20 밤 — 처형 카메라는 소켓이 없으면 액터 루트에 액터 공간으로 붙는다(리드 직접 수정, 사용자 "돼지 뒷다리 사이밖에 안 보임").** 메시는 `MeshYawOffset`(돼지 −90)만큼 돌아 있고
+  `Radius` 만큼 내려가 있어 `head` 본 소켓 공간 오프셋이 종마다 엉뚱한 축으로 갔다. `ApplyState` 가 소켓이 있으면 메시 소켓, **없으면 `GetRootComponent()`(구 콜리전)** 에 붙이고 표의
+  `ExecuteCameraOffset` 은 "X = 전방(타깃 쪽)·Z = 위" 액터 공간으로 읽힌다. 셀: 돼지·너구리 `ExecuteCameraSocket None`, `ExecuteCameraOffset` (−130, 0, 165), `ExecuteCameraRotation` (−30, 0, 0)
+  — PIE 스크린샷 `.claude/runs/execute-species-swap/pie_pig_execute_camera.png`(돼지 등 위에서 피해자 전신·파동 링이 보인다). 본 소켓(머리 흔들림)은 열이 남아 있어 나중에 되살릴 수 있다.
+  `docs/plan/data/monster/pig.md`·`raccoon.md` 의 카메라 3열 값은 이 셀로 갱신해야 한다(balance 문서 미반영 — 다음 세션).
+
+- **2026-09-20 밤 — 데스캠(죽음 카메라) 도입, execute-sequence-pig D6 일부 번복(실행 death-camera).** 사용자가 "죽은 뒤 카메라가 이상하다 — 내 캐릭터가 보이는 위치로"
+  라고 해서, 죽는 순간부터 관전 전까지(혼자면 계속) 폰의 `DeathCamera` 컴포넌트가 액터 공간 오프셋 `CL9Rules.DeathCameraOffset` 에서 `(0,0,DeathCameraLookAtZ)` 를 보게 했다.
+  게이트는 `ShouldUseDeathCamera()`(= `IsDead()` ∧ 오프셋 ≠ 0) — 롤백 `(0,0,0)` 이면 전부 옛 동작. 데스캠이 켜지면 처형과 같은 표현 게이트(피격 카메라·셰이크·비네트·호·프롬프트)가
+  닫힌다. HP 0 순간 `HostApplyDamage` 가 PlayerState `ForceNetUpdate` 뒤 `SetViewTargetWithBlend(폰, DeathCameraBlend)` — 처형 즉사는 몬스터 카메라 → 데스캠 0.5초 블렌드,
+  **보통 사망은 즉시 전환**(같은 폰 안 두 카메라 사이엔 엔진 블렌드가 없다 — 폰 안 블렌드는 `CalcCamera` 오버라이드로 후속 후보). 몬스터가 시체 옆에 `SpectateDelay` 까지 머무는 것·
+  처형 카메라·나머지 D6 은 그대로. 죽은 채 마우스 시선은 막지 않았다(캡슐 요를 따라 시체 중심 궤도) — 막을지는 미결.
+- **2026-09-21 새벽 — 3인칭(처형·데스캠) 동안 몸 메시는 `FirstPersonPrimitiveType` 도 `None` 으로 내린다(리드 직접 수정).** 첫 데스캠 PIE 에서 시체가 안 보이고 그림자만 남았다 —
+  `WorldSpaceRepresentation` 프록시는 `bOwnerNoSee` 를 강제로 true 로 덮어써서(엔진 `PrimitiveSceneProxy.cpp`) `SetOwnerNoSee(false)` 가 소용없고, 뷰 액터가 자기 폰인 데스캠에서만
+  드러났다(처형 카메라는 뷰 액터가 몬스터라 원래 보였다). `ApplyThirdPersonMeshes()` 가 타입을 `None ↔ WorldSpaceRepresentation` 으로 같이 토글한다. 셀·헤더 기본값
+  `DeathCameraOffset` (−320, 140, 260)·`DeathCameraLookAtZ` −60(초안 (−240,90,190)/40 은 돼지가 시체를 가리고 시체가 화면 아래로 밀렸다) — PIE 스크린샷
+  `.claude/runs/death-camera/pie_deathcam_kill+1s.png`(돼지 밑의 시체)·`pie_deathcam_kill+5s.png`(돼지가 떠난 뒤 누운 몸 전체).
+- **2026-09-21 — docs 전체 정합성 감사(159개 md)와 정정. 발견 136건(높음 37·중간 62·낮음 37), 보고서 `docs/review/doc-audit-2026-09-21.md`.** 뿌리는 하나 —
+  09-08~09-20 의 결정·구현이 decisions·systems 일부·코드에는 들어갔으나 기획 정본(plan)·진행 정본(build-order·overview·production-progress·catalog)·
+  에셋 README·규약(conventions)에는 되돌아오지 않았다. 원칙 "문서와 코드가 어긋나면 문서가 틀린 것" 대로 문서를 코드·셀에 맞췄고 값은 이 로그·헤더·
+  스크립트에서만 가져왔다. **정정한 것**: 처형 카메라 3열(pig.md·raccoon.md 셀 None/(−130,0,165)/(−30,0,0))·"메시 루트"→액터 루트(common.md·monster.md·
+  `CL9MonsterDef.h` 주석); 퀵슬롯 전환 잔존(overview 마찰·flashlight/headlamp 품·cooking 놓기(E)·light/warning/sound/README/wave 주석) 제거; 타격감
+  (asset/README `CS_HitShake` 사인파·`Scale` 열·drop.md `OnThrown` 호·actor-base 사운드 멤버 삭제→`CL9Sound::PlayAt`); 파동 "미구현" 꼬리표 5곳·
+  `monster_pounce` 12행·schema.md 표 2행/A5~A7; 맵 모듈(module.md 구현됨·`BaseModuleCount` 헤더 24/셀 40·`UpperFloorShare`·15열·`Grid`·`BaseZMode`
+  잔존·loop.md 격자 서술); build-order 상단·⑤ 표·"④~⑤ 이후 더해진 시스템" 절, overview "지금 어디까지 왔나" 절 삭제; production-progress 재개 지점·
+  catalog·카드 25장 상태 줄·`map/campfire.md` 신설·README 색인 3곳; goal 16편 상태 줄·`goal/README.md`·`review/README.md` 신설; cheats.md 를 코드 등록
+  21개와 1:1(`REGISTER_CL9_CHEAT` 없음 — `FAutoConsoleCommandWithWorldAndArgs` 블록 + `HandleCommand` 분기)로, `cl9.resetkeys`·`playseq`·`testwake`·
+  `testvoice`·`fxoff` 는 삭제(없는 명령); 스태미나 "바 없음"(warning·character)→바+흔들림; headlamp 값 1800/16000/26°·goose 표 `CatchRadius 0`
+  (`check_inequalities.py` 판정 불가 해소)·item/common 빛 3열·equipment `pot`; save.md `FCL9AcceptedOrder`; animation.md 보유 에셋 표(농부 A·몬스터 5종 자체
+  제작, `ABP_FP`/`Content/FirstPerson/Anims` 없음)·CLAUDE.md 같은 줄; `CL9TuningHash` 현재형 9곳→"설계만, 미구현". **규약 명문화**(conventions.md):
+  §4 Character Replicated 예외 = 이동 예측 + 표현 파생 서버 시각(넘어짐·처형·`FCL9HurtEvent`) + 소지 실물(`HeldItem`·`WornItem`·`PullingCart`, PlayerState 는
+  미러); §6·§9 리슨 호스트 표현은 OnRep 이 아니라 복제 시각 틱 비교(09-15·09-18 결정의 규약 반영); §2 RPC·호스트 함수 명명(`Server_*`·`Client_*`·
+  `Multicast_*`·`Host*`·`OnRep_*` — 코드 관행 그대로); §3 소스 트리 9폴더·Content `Sounds/`; `GetGameMode()`→`GetAuthGameMode`. 이 로그의 "추가만 한다"
+  는 09-12·13 개명 커밋이 과거 본문을 치환한 것을 유일한 예외로 머리말에 명기했고 `## 2026-09-02` 중복 헤더는 "(계속)" 으로 갈랐다. **코드 4곳**:
+  `CL9DefRegistry.cpp` `bSeenType[5]`→`[CL9ModuleTypeCount]`(09-13 리뷰 A-1, `ECL9ModuleType` 6개라 범위 밖 쓰기), `CL9MonsterDef.h` 카메라 3열 주석,
+  `cl9.execute`·`cl9.list` 도움말(돼지 `bExecuteOnCatch`·`monsters` 인자) — `compile_check.py` OK. **결정 필요(미결로 남김)**: ① GameState·PlayerController 가
+  `SetNetUpdateFrequency(20)` 을 부르지 않는다(규약은 "복제 액터 전부") ② `IA_Throw`·`IA_Swap` 에셋·`Content/FirstPerson/Anims/` 빈 폴더 삭제 ③
+  `ECL9CarrySlot::Pocketable`·문자열 `Hud.ItemPocketable`("품에 들어감")·`bLightLostInPocket` 이름이 퀵슬롯 모델과 어긋난 채 코드·시트에 남음 ④ goose
+  `PackAlarmRadius` 값(표 행만 "미결"로 신설) ⑤ game-feel §4 줍기 팔 클립·퀵슬롯 펄스와 §5 몬스터 HP 핍은 미제작인데 뺀다는 기록이 없음 ⑥ 09-13 리뷰
+  A-4·B-5·B-8 미반영 ⑦ 캠프파이어·밤하늘 제작(09-18~20)은 이 로그에 항목이 없고 module.md·light.md·site.md 에만 있다(제작 사실 기록은 `map/campfire.md`).
+  09-20 실행분(Pounce·처형·데스캠) C++·표·문서는 아직 전부 미커밋이다.
+- **2026-09-21 — 성능: 재고 나서 고친다. 첫 기준선·측정 도구·규칙 문서(`docs/systems/performance.md`), 렌더 기본값은 그대로.** 사용자
+  "작업할 때마다 PIE 가 느려진다 — 최적화해야 하나" → 먼저 잼(`Tools/Unreal/perf_probe.py` 신설: PIE 안 슬레이트 틱 콜백으로 CVar 조합마다
+  5초 표본 + `ProfileGPU`, `perf_parse.py` 가 로그 표를 읽는다). 이 머신(3070 Ti·5600·16GB) 에디터 PIE 1클라 1466×504: 밤 실내 13.0ms(77fps),
+  GPU 4.8+2.5ms, 화면 200% 에서도 13.5ms — **CPU 바닥 ≈12ms 에 붙어 있고 GPU 는 여유**. 루멘 끔 −1.0 · VSM 끔 0 · 루멘 SW −0.9 · 안개 끔 0 ·
+  화면 50% 0. 그래서 **렌더 기본값(루멘 HWRT·VSM·RT·Substrate·Nanite·TSR)은 바꾸지 않는다** — 절감 ≤1ms 이고 루멘 `SkyLeak` 은 밤 실내
+  앰비언트의 전부(light.md). 반려: 루멘/VSM 끄기·`sg` 낮추기(지금은 효과 없음, 출시 최소 사양은 Steam 게이트 §7 에서). **느림의 실제 원인**:
+  에디터 창이 최소화·백그라운드면 엔진이 정확히 333ms/프레임(3fps)으로 스로틀 — `bThrottleCPUWhenNotForeground` 기본 true. 첫 측정이 모든
+  조합 333.3ms 로 재현했고, 메모·문서의 "이 머신 PIE 3~8fps"(inventory.md 스윕 근거·`slomo 0.15` 자동화)는 전부 이것이었다.
+  `Config/DefaultEditorSettings.ini`(신설 — 클래스가 `config=EditorSettings` 라 PerProjectUserSettings 쪽은 안 읽힌다, 엔진 헤더 확인) 에 False 로
+  박음(최소화 창은 여전히 스로틀 — 창을 복원하고 잰다). 예산: 개발 머신 PIE 밤 실내
+  60fps 유지·p95 ≤25ms·기능 하나 +1ms 이상이면 이유 기록, 게임 스레드 CL9 코드 ≤4ms, GPU ≤10ms. 규칙(틱 이유·틱 안 전체 훑기 금지·시설
+  빛 그림자 없음·이펙트 바운드/상한/컬·위젯 틱 훑기 금지)은 conventions §6 체크리스트 한 줄로 걸었고 pie-scenarios U 절 추가. 지켜볼 것:
+  `IpNetDriver RecvFrom` 23ms 스파이크 1회, `ABP_Unarmed` 1.3ms. 명세 `docs/goal/performance-baseline-and-guidelines.md`.
+- **2026-09-21 (계속) — 성능 결론의 범위 정정.** 위 "최적화 대상이 아니다" 는 **정지 장면**(몬스터 잠든 채 거리 둠) 한정. 사용자 보고 "몬스터에게
+  다가갈 때 프레임이 팍 떨어진다" 는 미측정 — 파동(`MonsterProx`·`monster_call` 540광선·나이아가라 CPU Collision)·손전등 VSM 페이지 무효화·HWRT
+  스켈레탈 BLAS·첫 발동 히치·상태 전이 표현 순으로 끄며 잰다(performance.md "미결"). 밤샘 측정 예정.
+- **2026-09-21 (계속) — "몬스터 나올 때 렉" 의 원인 = 첫 사용 자리의 소프트 참조 동기 로드. 고침: `UCL9GameInstance::Init` 이 표의 소프트 참조를 전부
+  미리 올리고 `WarmAssets` 로 붙든다.** 밤샘 실측(`perf_scenario.py` S1~S5 + `stat dumphitches`): 밤 시작·종별 첫 스폰(35~41ms)·추격 5/10/20마리
+  (+0.7/+1.5/+3ms)·HWRT/VSM/스켈레탈 RT/손전등 토글(전부 <1ms) 은 원인이 아니고, **잡히는 첫 순간 694ms 히치** = 캐릭터 틱 → 셰이크 BP 클래스
+  `LoadSynchronous`(577ms, 에디터 컴파일 포함) + `AddCameraShake` 30ms, 첫 파동 링 ≈500ms(나이아가라 첫 로드, 프로세스당 1회), 첫 타격 400ms 급.
+  사운드 행만 09-20 에 미리 올리던 것을 셰이크 클래스·파동 나이아가라·rules 의 `HitFlashMaterial`·`HitPuffSystem`·몬스터 `SkeletalMesh`·`AnimBP`·
+  캐릭터 메시 4종으로 넓히고, 로드한 것을 `UPROPERTY TArray<TObjectPtr<UObject>> WarmAssets` 가 붙든다(붙들지 않으면 60초 GC 에 풀려 다시 콜드).
+  사용처의 `LoadSynchronous` 는 안전망으로 남긴다. 규칙은 performance.md "첫 사용 동기 로드 금지" — 새 표·새 소프트 참조 열은 같은 자리에 한 줄.
+  1차 빌드 검증(S6): 잡히는 첫 순간 최대 16ms·첫 타격 19ms 로 사라짐. 남은 첫 링 416ms 는 에셋이 아니라 **나이아가라 첫 활성화의 에디터 스크립트 컴파일**
+  (`Niagara - System - CompileScript`, 프로세스당 1회)이라 `UCL9WaveRenderer::OnWorldBeginPlay` 가 판 시작 때 행마다 한 번 켰다 끄게 했고, 종별 첫 스폰 37ms 를
+  위해 몬스터·아이템의 `ActorClass`·아이템 `Mesh`·`Icon` 도 Warm 목록에 넣었다(2차 빌드). 2차 검증(S7, 새 에디터·새 PIE): 첫 링 31 · 첫 스폰 25 · 첫 타격 17 ·
+  잡힘 17 · 죽음 드롭 16 · 거위/돼지 첫 스폰 43/17ms — 스톨 없음. 도구 `Tools/Unreal/perf_scenario.py`·`perf_scenario_summary.py` 를 저장소에 들였다.
+  반려: 렌더 기본값 변경(측정상 무관), 메시 감량(닭 8k·너구리 11k 정점, 1 LOD — 마리당 0.15ms 라 대상 아님).
+- **2026-09-21 새벽 — 공격 = 처형 클립, 제작 목록에 "공격" 행(실행 execute-clips, 사용자: "몬스터 만들 때 공격 모션도 목록에, 없는 애들은 다 만들자 — 처형과 공격은 같은 모션").**
+  종당 주 공격 하나: 보통 잡는 종은 Catch(0.8초), 처형 종(`IsExecutioner()` = 돼지·너구리)은 Execute(길이 = `ExecuteDuration`)가 곧 공격 모션. 너구리의 격분 뒤 보통 잡기 `AN_Raccoon_Catch` 는 남긴다.
+  2인 클립 4개 — `AN_Pig_Execute`(정면 박치기, 접촉 0.5, 앞 추력 +15cm 상한: 잡힌 거리 0~100 가변)·`AN_Raccoon_Execute`(등 뒤 −120 도약 +42/+38·피치 −0.45, 접촉 0.6)·
+  `AN_Farmer_Executed_Pig`(뒤로 넘어져 1.40 DOWN)·`AN_Farmer_Executed_Raccoon`(앞으로 엎드려 1.25 **PRONE** 신설), 전부 2.0초 = `ExecuteDuration` 1.2 → **2.0**(초안, balance —
+  블렌드 0.3 + 접촉 0.5~0.6 + 넘어짐 0.6 + 정지 0.6). 각 blend 에서 따로 저작하고 액터 공간 앵커 표 `Tools/Blender/execute_anchor.py` 하나로 정렬(길이 변경 = `DURATION` 한 곳 → 재굽기).
+  끝 자세: 몬스터 = Idle 첫 프레임(시체 옆에 선 채 `SpectateDelay` 까지), 농부 = DOWN/PRONE 을 부활까지(`ABP_Unarmed` Executed 가지 조건 `IsExecuted` 단독, 종별 클립은 `ExecutedByPig` ←
+  `GetExecutedByAlias() == "pig"`). 돼지 HP 6/8 유지 — "처형 중 못 죽인다" 근거는 2.0초에서 깨져 문구만 D4 근거로 정정.
+- **2026-09-21 새벽 — 처형 진입 때 피해자 요를 서버가 처형자에 맞춘다(사용자 결정, gameplay).** 잡히면 처형(`bExecuteOnCatch`, 돼지) = 처형자 정면, 앵커 텔레포트 처형(스토커, 너구리) = 처형자 등짐 —
+  갈림은 표 열이지 종 이름이 아니다. 적용은 서버 `SetActorRotation` + `SetControlRotation` + `ClientSetRotation`(자율 프록시는 CMC `ServerMove_HandleMoveData` 가 매 이동마다 컨트롤 요로 캡슐을
+  되돌리므로 컨트롤 회전 자체를 양쪽에서 바꾼다). 캡슐 위치·콜리전 불변(D1). 처형 중 요 잠금은 기존 `LookInput` 의 `IsExecuted()` 게이트로 충분. 게터 `GetExecutedByAlias()`(행 `Alias`, 죽은 뒤
+  부활까지 유지). PIE: 등을 보이고 잡혀도 진입 순간 돼지를 정면으로(요 180 → −31.3 = 돼지 방향), 너구리는 등 그대로, 죽음 진입 + 2.0초, Execute 5.0초 뒤 Break.
+- **2026-09-21 새벽 — 몬스터 반응 클립은 Interchange 로만 임포트한다(리드, PIE 측정으로 발견).** `Tools/Unreal/reimport_creature_clips.py` 가 Interchange 플래그를 끄고 레거시 FBX 경로로 넣은
+  클립(2026-09-15 Catch·HitReact·PushReact 5종, 09-20 닭 PounceWindup, 이번 Execute 2개)은 런타임에서 **요가 −90° 돌아** 있었다(로코모션은 머리 +X, 반응 클립은 −Y — 사용자가 본 "돼지 애니메이션이
+  이상하다"의 한 원인). Blender·FBX 는 정상, 원본 로코모션·메시가 Interchange 로 들어와 있어 레거시 경로와 축이 어긋난 것. 17개 클립을 임시 경로 Interchange 임포트 → `consolidate_assets`(ABP
+  참조 교체) → 리디렉터 삭제 → rename 으로 다시 넣었다(`.claude/runs/execute-clips/lead_reimport_interchange.py`; art 가 도구 스크립트에 반영). 검증: 닭 PounceWindup·돼지·너구리 Execute 모두 +X,
+  스크린샷 `pie_execute_pig_victim_0.8s.png`(돼지 정면·농부 HIT)·`pie_execute_raccoon_victim_0.6s.png`(너구리가 등에 올라탐)·`*_deathcam.png`.
+  art 가 `Tools/Unreal/reimport_creature_clips.py` 를 같은 방식(Interchange + consolidate + rename, `how = consolidated`)으로 다시 썼고 리드가 양 HitReact 한 번으로 검증했다. 농부 `import_farmer_clips.py` 는 레거시 경로지만 032·034 PIE 에서 방향이 맞아 그대로.

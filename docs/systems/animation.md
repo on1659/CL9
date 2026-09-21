@@ -15,17 +15,19 @@
 3. **캡슐이 기준이고 메시가 맞춘다** (39/90). 산 에셋이 커도 캡슐을 키우지 않는다 —
    통로 폭 255cm가 걸려 있다.
 
-## 보유 에셋 (2026-09-02 확인 — 프로젝트 Content에 이미 있음)
+## 보유 에셋 (2026-09-21 감사 기준 — 프로젝트 Content 실물)
 
 | 에셋 | 위치 | 용도 |
 |---|---|---|
-| UE5 마네킹 (Manny/Quinn) + 애님 (Walk/Jog/Jump/Attack/Death/HitReact) | `Content/Characters/Mannequins/` | 1c 임시 캐릭터 메시 — 계획 그대로 |
-| FPP 팔 (ABP_FP + 컨트롤릭) | `Content/FirstPerson/Anims/` | 1인칭 손 뷰모델의 출발점 |
+| **농부 A 자체 제작** — 전신 `SK_Farmer_A_Body`·1인칭 팔 `SK_Farmer_A_Arms` + 클립 `Anims/AN_Farmer_*`(전신 Hold 3·Swing·SwingWindup·Eat·Knockdown·Down·GetUp·Throw·ThrowWindup, 1인칭 `AN_Farmer_FP*` 12) + 팔 ABP `Anims/ABP_FP_View` | `Content/Characters/FarmerA/` | `CharacterTable.farmer_a` 행이 가리킴. 스켈레톤은 마네킹 `SK_Mannequin` 호환(레거시 FBX 임포트). 제작 기록 [docs/asset/character/farmer_a.md](../asset/character/farmer_a.md), 1인칭 팔 구조는 아래 "1인칭 팔" 절 |
+| 템플릿 마네킹 — 스켈레톤 `SK_Mannequin`·`SKM_Manny/Quinn_Simple` + 전신 ABP `Anims/Unarmed/ABP_Unarmed`(+ `BS_Idle_Walk_Run`·Jog/Walk/Jump/Attack 클립) | `Content/Characters/Mannequins/` | **스켈레톤·전신 ABP 호환용으로만** — 농부 A 몸이 이 스켈레톤을 쓰고 `ABP_Unarmed` 가 남이 보는 전신 애님이다. 마네킹 메시 자체는 화면에 안 나온다 |
 | 동물 5종 자체 제작 SK + 클립 (닭·거위·너구리·돼지·양) | `Content/Monsters/<종>A/` | 2026-09-11 연결 — `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제·종별 스켈레톤), `MonsterTable` 행이 가리킴. 제작 기록은 [docs/asset/monster/](../asset/monster/README.md), 결정은 decisions.md 2026-09-11 |
-| (구) Dreamscape 닭·돼지·양 SK | `Content/DreamscapeSeries/.../Chars/` | 09-10 팩 축소로 애님 시퀀스가 사라져 **더 이상 쓰지 않는다** — `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`은 빈 플레이어인 채 남아 있음 |
-| Farmlands 환경 (농장 건물·지형·폴리지) + Horror 조명 깜빡임 | `DreamscapeFarmlands/` · `Variant_Horror/` | 5a 맵·light.md 참고 |
+| (구) 템플릿 동물 ABP `ABP_Chicken`·`ABP_Fox`·`ABP_Pig`·`ABP_Sheep` | `Content/Monsters/` 바로 아래 | 참조 0·빈 플레이어인 채 남아 있음 — 삭제 보류 |
+| Dreamscape Farmlands — 환경(농장 건물·지형·폴리지) + `Meshes/Chars/Chicken/` SK 하나 | `Content/DreamscapeSeries/DreamscapeFarmlands/` | **환경 팩으로만** 쓴다(5a 맵·light.md). 동물은 09-10 팩 축소로 닭 SK 만 남았고 그것도 미사용 — 돼지·양 SK 는 디스크에 없다 |
+| Horror 조명 깜빡임 | `Variant_Horror/` | light.md 참고 |
 
-거위·너구리도 2026-09-11부터 전용 메시(`SK_Goose_A`·`SK_Raccoon_A`)를 쓴다 — 닭 빌려 쓰기·AVP 여우는 끝.
+옛 `Content/FirstPerson/Anims/`(빈 폴더만 남음)·`ABP_FP`·`ABP_FP_Copy`·`CtrlRig_FPWarp` 는 없다 — 1인칭 팔은 2026-09-13 `ABP_FP_View`(카메라 자식 뷰모델)로
+갈아탔다(아래 "1인칭 팔" 절). 거위·너구리도 2026-09-11부터 전용 메시(`SK_Goose_A`·`SK_Raccoon_A`)를 쓴다 — 닭 빌려 쓰기·AVP 여우는 끝.
 
 ## 스켈레톤 규칙
 
@@ -70,8 +72,141 @@
   0.8초 중 0.5초를 선 자세로 미끄러졌다.
 - **Catch 는 0.8초** = 코드의 `CatchPauseSeconds`. 판정(OnDamage)이 상태 진입 순간이라 예비동작은 없다 — 첫 0.1초에 덮치고 종별 2차 동작
   (닭 연속 쪼기·돼지/양 머리 흔들기·너구리 반대 앞발) 뒤 돌아온다. 거위는 잡지 않는 종이라 없다(Honk 그대로).
+- **PounceWindup 은 0.6초** = 표 `PounceWindup` 기본값(2026-09-20 monster-pounce-hurt-readability — 잡기 예고 상태 `Pounce`, monster.md).
+  **닭만** `AN_Chicken_PounceWindup`: 0~0.18초 몸을 뒤로 젖히며 날개를 옆·위로 벌리고 꽥(부리), 0.43초까지 잘게 떨며 버티다가 마지막 0.17초에
+  웅크리며 **Catch 첫 프레임(기본 자세 + Catch 발 자리)으로 돌아와 끝난다** — 예고 끝을 Catch(덮침)나 Catch 앞 0.3초(헛침)가 이어받으므로 끝 프레임이
+  같아야 튀지 않는다. 다른 종은 클립 없이 자기 Catch 첫 프레임을 유지한다(가지 없음). 표 값이 0.6 보다 길면 평가기가 마지막 프레임(=기본 자세)을
+  유지하고, 짧으면 잘린다 — 클립은 0.6 고정, 스케일하려면 표 값 게터가 필요하다(지금은 없다).
+- **Execute 는 2.0초** = 행 `ExecuteDuration`(2026-09-21 execute-clips — Run 2 2인 클립; 초안 2.0 은 balance 가 확정). **종당 주 공격 하나** — 잡는 종은
+  Catch, 처형 종(`IsExecutioner()` = 돼지·너구리)은 Execute 가 곧 공격 모션이다(사용자: 처형과 공격은 같은 모션). `AN_Pig_Execute`(정면 박치기, 접촉
+  0.5)·`AN_Raccoon_Execute`(등 뒤 도약, 접촉 0.6) 와 농부 짝 `AN_Farmer_Executed_Pig`(뒤로 넘어져 DOWN)·`AN_Farmer_Executed_Raccoon`(앞으로 엎어져
+  PRONE)이 액터 공간 앵커 표 `Tools/Blender/execute_anchor.py` 를 공유한다. 죽는 순간 = 클립 끝. 몬스터 끝 자세 = Idle 첫 프레임(시체 옆에 선 자세,
+  `SpectateDelay` 까지 평가기가 마지막 프레임 유지 → Break 로 로코모션에 튐 없이), 농부 끝 자세는 부활까지 유지(아래 `ABP_Unarmed` Run 2).
+  제작 카드 [../asset/monster/pig_a.md](../asset/monster/pig_a.md)·[raccoon_a.md](../asset/monster/raccoon_a.md)·[../asset/character/farmer_a.md](../asset/character/farmer_a.md) 034.
 - 클립 규격·제작은 [../asset/monster/README.md](../asset/monster/README.md) 표(`animate_creature_reacts.py`), 재임포트는
-  `Tools/Unreal/reimport_creature_clips.py`(reworked 표시 클립만 교체).
+  `Tools/Unreal/reimport_creature_clips.py`(reworked 표시 클립만 교체 — `CL9_CLIPS` 로 클립을, `CL9_EVIDENCE` 로 증거 JSON 을 고를 수 있다).
+
+#### `ABP_Chicken_A` Pounce 가지 사양 (리드가 MCP 로 만든다 — 2026-09-20)
+
+읽는 게터(`ACL9Monster`, BlueprintPure — gameplay): `GetState()`(`ECL9MonsterState::Pounce` 추가), `GetStateElapsed()`, `bool IsPounceHit()`,
+`float GetPounceResultElapsed()`(= 서버 시각 − `PounceResultServerTime`, 헛침·덮침 결과가 찍힌 뒤 흐른 시간). EventGraph 는 기존
+`StateElapsed`·`IsPushStun` 세터 뒤에 변수 셋을 더 채운다:
+
+| 변수 | 값 | 뜻 |
+|---|---|---|
+| `IsPounce` (bool) | `GetState() == Pounce` | 예고 중 |
+| `IsPounceMiss` (bool) | `GetState() == Chase ∧ !IsPounceHit() ∧ GetPounceResultElapsed() < 0.3` | 헛친 직후 0.3초 창(Chase 로 복귀한 채) |
+| `PounceResultElapsed` (float) | `GetPounceResultElapsed()` | 헛침 클립의 ExplicitTime |
+
+AnimGraph — 기존 상태→알파 부울 블렌드 체인에 **가지 둘**을 끼운다. 체인은 출력에 가까운 블렌드가 이기므로 자리는 **로코모션(Idle/Walk/Run)
+바로 뒤, Catch 블렌드 바로 앞**(로코모션 → ① 헛침 → ② 예고 → Catch → HitReact/PushReact → Death 순). Pounce·Catch·Stun·Dead 는 상태라
+서로 배타적이지만, 헛침 창은 Chase 상태 안의 시간 창이라 로코모션은 이겨야 하고 그 뒤에 오는 Catch·Stun·Dead 에는 져야 한다 — 그래서
+둘 다 Catch 앞이다.
+
+1. **① 헛침**: `부울로 포즈 블렌딩`, `bActiveValue = IsPounceMiss`, true 포즈 = **시퀀스 평가기 `AN_Chicken_Catch`**(`ExplicitTime =
+   PounceResultElapsed` — 클립 앞 0.3초, 0.8초 클립을 끝까지 틀지 않는다: 창이 닫히면 로코모션으로 돌아간다), false 포즈 = 로코모션 출력.
+   BlendTime 0.05/0.1(들어갈 때 짧게, 나올 때 달리기로 부드럽게).
+2. **② 예고**: `부울로 포즈 블렌딩`, `bActiveValue = IsPounce`, true 포즈 = **시퀀스 평가기 `AN_Chicken_PounceWindup`**(`ExplicitTime =
+   StateElapsed` — 평가기가 클립 끝(0.6)에서 마지막 프레임을 유지하므로 따로 클램프 노드는 없어도 된다; 표 `PounceWindup` 이 0.6 을 넘으면
+   기본 자세로 서서 기다린다), false 포즈 = ①의 출력. BlendTime 0.1/0.0(예고 끝은 Catch 가 같은 프레임에서 잇는다 — 끝 프레임 = Catch 첫 프레임).
+3. 기존 Catch 블렌드의 false 입력을 ②의 출력으로 옮긴다. Catch(덮침) 가지는 그대로(`AN_Chicken_Catch` 평가기, `ExplicitTime = StateElapsed`).
+4. 다른 4종 ABP 는 건드리지 않는다 — Pounce 상태에서는 어느 알파도 켜지지 않아 로코모션(속도 0 → Idle)이 나온다. "Catch 첫 프레임 유지"가
+   필요하면 같은 ① 없이 ② 만 `AN_<종>_Catch` 평가기(`ExplicitTime = 0`)로 넣는다 — 지금은 요청 없음.
+
+**실제 적용(리드, 2026-09-20 MCP)** — 위 사양을 `ABP_Chicken_A` 의 **기존 관례**(상태별 float 알파 변수 + `양방향 블렌드`, `AlphaAttack`·`AlphaStun` 과
+같은 방식)로 옮겨 넣었다. 변수는 `AlphaPounce`(float)·`AlphaPounceMiss`(float)·`PounceResultElapsed`(float): EventGraph 는 `SetIsPushStun` 뒤에
+`SetPounceResultElapsed(= CL9.GetPounceResultElapsed)` → `AlphaPounce 0` → `AlphaPounceMiss 0` 을 잇고, `Switch on ECL9MonsterState` 의 `Pounce` 핀이
+`AlphaPounce 1`, `Chase` 핀이 `Branch(NOT IsPounceHit() AND InRange(PounceResultElapsed, 0, 0.3))` → `AlphaPounceMiss 1`. AnimGraph 는 Wake 블렌드
+출력 → ① `양방향 블렌드`(B = `AN_Chicken_Catch` 평가기, ExplicitTime = `PounceResultElapsed`, Alpha = `AlphaPounceMiss`) → ② `양방향 블렌드`(B =
+`AN_Chicken_PounceWindup` 평가기, ExplicitTime = `StateElapsed`, Alpha = `AlphaPounce`) → 기존 Catch 블렌드 A 입력. 블렌드 시간은 양방향 블렌드라
+없다(알파 즉시 전환 — 기존 Catch·Stun 가지와 같음).
+
+확인(PIE C3-예고): 닭이 130cm 안에서 0.6초 동안 몸을 세우고 날개를 벌리는 게 보이고, 뒤로 걸어 헛치게 하면 Catch 앞 0.3초(덮치는 첫 동작)만
+보인 뒤 다시 달린다. 늦게 들어온 클라도 `StateElapsed` 기준이라 같은 프레임을 본다.
+
+#### `ABP_Pig_A` Execute 가지 사양 (리드가 MCP 로 만든다 — 2026-09-20, execute-sequence-pig Run 1)
+
+돼지만의 처형(`Execute`)·스토킹(`Stalk`) 상태의 표현 — 설계는 [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) D6·D7, 상태·판정은
+[monster.md](monster.md) "스토킹과 처형". 읽는 게터는 기존 그대로: `GetState()`(`ECL9MonsterState::Stalk`·`Execute` 추가 — enum 은 뒤에 붙였고
+순서를 바꾸지 않았다), `GetStateElapsed()`. **Run 1 은 전용 클립이 없다** — 기존 `AN_Pig_Catch`(0.8초)를 마지막 프레임 유지로 튼다. Run 2 에서
+`AN_Pig_Execute`(길이 = `ExecuteDuration`)로 평가기의 클립만 바꾼다.
+
+`ABP_Chicken_A` Pounce 가지의 **실제 적용 관례**(상태별 float 알파 + `양방향 블렌드`)를 따른다:
+
+| 변수 | 값 | 뜻 |
+|---|---|---|
+| `AlphaExecute` (float) | EventGraph 매 틱 0 으로 지운 뒤 `Switch on ECL9MonsterState` 의 `Execute` 핀 → 1 | 처형 중 |
+| (없음) | `Stalk` 핀은 **어느 알파도 켜지 않는다** | 스토킹 = 로코모션 그대로(속도에 따라 Idle/Walk — `StalkSpeed` 로 걷고, 멈추면 Idle, 물러나면 `RetreatSpeed` 로 뒷걸음) |
+
+AnimGraph — Wake 블렌드 출력 → **`양방향 블렌드`**(A = Wake 블렌드 출력, B = **시퀀스 평가기 `AN_Pig_Catch`**, `ExplicitTime = StateElapsed`,
+Alpha = `AlphaExecute`) → 기존 Catch 블렌드의 A 입력. 평가기는 `StateElapsed` 가 클립 끝(0.8)을 넘으면 **마지막 프레임을 유지**하므로 따로
+클램프 노드는 없다 — `ExecuteDuration` 이 0.8 보다 길면 덮친 자세로 얼어 있고, 짧으면 클립이 잘린다(둘 다 Run 1 허용). 처형이 끝나
+`Break` 로 가면 알파가 0 이 되어 로코모션으로 돌아온다(블렌드 시간 없음 — 기존 Catch·Stun 가지와 같음). 자리가 Catch 블렌드 **앞**인
+이유: Execute·Catch·Stun·Dead 는 상태라 배타적이고, 처형 중엔 Stun 에 들어가지 않으므로(구조 불가 — `OnDamage`/`OnShove` 면제) 순서가
+실제로 겹치는 일은 없다 — Pounce 가지와 같은 자리에 두는 것이 가장 단순하다. 처형 중 돼지가 죽으면 상태가 `Dead` 라 Death 가지가 이긴다.
+돼지 메시 스무딩(`SmoothedLocation/Rotation`)은 처형 동안 코드가 고정하므로(D1) ABP 는 관여하지 않는다.
+
+**2026-09-20 종 재배치(실행 execute-species-swap — 사용자 결정: 스토커 = 너구리, 돼지 = 잡히면 처형)**: `ABP_Raccoon_A` 에 **같은 사양의
+Execute 가지**를 만든다 — `AlphaExecute` 변수·`Switch on ECL9MonsterState` 의 `Execute` 핀·`양방향 블렌드` 자리(Catch 블렌드 앞)까지 위와 동일하고,
+평가기의 클립만 **`AN_Raccoon_Catch`**(`ExplicitTime = StateElapsed`, 클립 끝을 넘으면 마지막 프레임 유지). `Stalk` 핀은 역시 어느 알파도 켜지
+않는다(`StalkSpeed` 450 이면 Walk/Run 문턱에 따라 로코모션이 뛰는 자세일 수 있다 — 표 값의 결과, ABP 는 손대지 않는다). `ABP_Pig_A` 는 **위 사양
+그대로 둔다** — 돼지는 이제 잡히는 순간이 처형이라(`bExecuteOnCatch`, `HostCatch` 가 `Catch` 대신 `Execute` 로 들어간다) `Catch` 가지가 아니라
+Execute 가지에서 같은 클립 `AN_Pig_Catch` 가 뛴다(덮친 자리에서 순간 이동 없이 — 스무딩 고정은 같다). 종 재배치의 정본은
+[../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) 상단 절.
+
+**Run 2(2026-09-21 execute-clips — 리드가 MCP 로 적용)**: 두 ABP 모두 **Execute 가지의 평가기 클립만 바꾼다** — `ABP_Pig_A` 는 `AN_Pig_Catch` →
+**`AN_Pig_Execute`**, `ABP_Raccoon_A` 는 `AN_Raccoon_Catch` → **`AN_Raccoon_Execute`**(둘 다 `/Game/Monsters/<종>A/`, 2.0초, `ExplicitTime = StateElapsed`
+그대로). 변수·알파·자리는 Run 1 그대로. 클립 길이 = `ExecuteDuration` 이라 죽는 순간이 클립 끝이고, 그 뒤 `SpectateDelay` 까지 평가기가 마지막
+프레임(= Idle 첫 프레임, 시체 옆에 선 자세)을 유지하다가 `Break` 로 알파 0 → 로코모션 Idle 과 같은 자세라 튀지 않는다. 표 `ExecuteDuration` 1.2 → 2.0
+은 balance(짧으면 클립이 잘리고, 길면 선 자세로 기다린다 — 둘 다 허용).
+
+#### `ABP_Unarmed` Executed 가지 사양 (리드가 MCP 로 만든다 — 2026-09-20, execute-sequence-pig Run 1)
+
+처형당하는 농부(남이 보는 전신)의 표현. 읽는 게터(`ACL9Character`, BlueprintPure — gameplay): `bool IsExecuted()`(`ExecuteStartServerTime ≥ 0`),
+`float GetExecuteElapsed()`(= 서버 시각 − `ExecuteStartServerTime`), `float GetExecuteDuration()`(= 범인 `ExecutedBy` 의 표 `ExecuteDuration`).
+EventGraph 는 기존 `HoldPose`·`SwingElapsed`·`KnockdownElapsed` 세터 뒤에 변수 셋을 더 채운다:
+
+| 변수 | 값 | 뜻 |
+|---|---|---|
+| `IsExecuted` (bool) | `IsExecuted()` | 처형 중(죽은 뒤에도 true 로 남는다 — 밤 종료 `HostEndExecuted`·부활 `ReviveDead` 에서 지워진다, D9. Run 2 가 이 잔류에 기댄다) |
+| `ExecuteElapsed` (float) | `GetExecuteElapsed()` | 처형 시작 뒤 흐른 초 |
+| `ExecuteDuration` (float) | `GetExecuteDuration()` | 죽는 시각(표 값 — 애님은 값에 맞춘다) |
+
+AnimGraph — **넘어짐 가지보다 출력에 가까운 자리**(`ControlRig → [부울 블렌드 KnockdownElapsed≥0] → [부울 블렌드 Executed] → 출력`):
+`부울로 포즈 블렌딩`, `bActiveValue = IsExecuted ∧ InRange(ExecuteElapsed, 0, ExecuteDuration)`, true 포즈 = **시퀀스 평가기 Idle**
+(템플릿 로코모션의 Idle 클립, `ExplicitTime = 0` — 선 자세 정지), false 포즈 = 넘어짐 블렌드 출력. 블렌드 시간 0.1/0.0(진입은 짧게, 죽는
+순간은 넘어짐 가지가 같은 틱에 이어받는다). 1인칭 `ABP_FP_View` 는 건드리지 않는다 — 피해자는 돼지 카메라를 보고 있어 자기 팔이
+보이지 않는다.
+
+- **우선순위는 Run 1 에서 고정한다(D7)**: Executed 가지가 넘어짐 가지 **위**(출력 쪽)에 있어야 한다. Run 1 에선 조건에 `InRange(…, 0,
+  ExecuteDuration)` 이 들어 있어 `ExecuteDuration` 이 지나 `HostKill` 로 죽는 순간 조건이 꺼지고 **기존 넘어짐 사슬**(`AN_Farmer_Knockdown` →
+  `Down` 정지)이 보인다 — "선 채로 얼어 있다가 쓰러진다".
+- **Run 2 에서 바뀌는 것**: 조건이 `IsExecuted` 만으로(구간 검사 삭제), 포즈가 종별 `AN_Farmer_Executed_<종>` 평가기(`ExplicitTime = ExecuteElapsed`,
+  길이 = `ExecuteDuration`, 끝 자세(DOWN/PRONE)를 골반 XY 0 으로 마지막 프레임 유지 — 부활까지)로 바뀐다. 그때 넘어짐 사슬은 처형
+  사망에서 더 이상 보이지 않는다(Executed 가지가 이긴다). 가지 자리·변수 이름은 Run 1 그대로라 Run 2 는 조건 한 핀과 평가기 클립만 바꾼다.
+- 왜 넘어짐보다 위인가: 처형 사망도 `HostKill` → 죽음 경로라 `KnockdownStartServerTime` 이 찍혀 넘어짐 가지가 켜진다. Run 2 의 전용 클립이
+  그 위를 덮어야 하므로 Run 1 부터 같은 자리에 둔다(자리를 나중에 옮기면 두 번 배선한다).
+
+**Run 2 사양(2026-09-21 execute-clips — 리드가 MCP 로 만든다)**. 클립은 종별 둘: `/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_Pig`(정면 박치기 →
+0.5 접촉 → 뒤로 넘어져 1.40 부터 DOWN = `AN_Farmer_Down` 첫 프레임과 같은 자세)·`AN_Farmer_Executed_Raccoon`(등 뒤 덮침 → 0.6 접촉 → 앞으로 엎어져 1.25 부터
+PRONE), 둘 다 2.0초 = `ExecuteDuration`, 골반 위치 키 포함(넘어짐 클립과 같은 층 — 로코모션·발 IK 를 통째로 대체). 읽는 게터 추가(gameplay):
+`FName GetExecutedByAlias()`(`pig`/`raccoon`/`None` — 범인 `ExecutedBy` 의 행 Alias, 죽은 뒤에도 `ExecutedBy` 가 남아 있는 동안 유효).
+
+| 변수 | 값 | 뜻 |
+|---|---|---|
+| `ExecutedByPig` (bool) | EventGraph `SetExecuteDuration` 뒤 `CL9.GetExecutedByAlias() == "pig"` | 어느 종의 처형인가 — true 돼지, false 너구리(다른 처형 종이 생기면 종 수만큼 늘린다) |
+
+AnimGraph 변경 세 가지(자리는 Run 1 그대로 — 넘어짐 블렌드 뒤·출력 앞):
+1. 기존 `부울로 포즈 블렌딩`(Executed)의 `bActiveValue` 를 **`IsExecuted` 단독**으로 — `AND`·`InRange(ExecuteElapsed, 0, ExecuteDuration)` 노드 삭제.
+   `IsExecuted` 는 죽은 뒤에도 부활(`ReviveDead`)·밤 종료(`HostEndExecuted`)까지 true 라(D9) 마지막 프레임이 그때까지 유지된다.
+2. true 포즈를 새 **`부울로 포즈 블렌딩`**(`bActiveValue = ExecutedByPig`)으로 — true 포즈 = **시퀀스 평가기 `AN_Farmer_Executed_Pig`**, false 포즈 =
+   **시퀀스 평가기 `AN_Farmer_Executed_Raccoon`**, 둘 다 `ExplicitTime = ExecuteElapsed`(클립 끝 2.0 을 넘으면 평가기가 마지막 프레임을 유지 — 클램프 노드
+   없음). 이 안쪽 블렌드 시간 0/0(처형 중 종이 바뀌는 일은 없다).
+3. Run 1 의 **Idle 평가기(`ExplicitTime 0`) 삭제**. 바깥 블렌드 시간은 Run 1 그대로 0.1/0.0.
+
+죽는 순간(`ExecuteDuration`) 넘어짐 가지도 켜지지만 Executed 가지가 위라 보이지 않는다. 표 `ExecuteDuration` 이 2.0 과 다르면 짧을 땐 클립 중간에서
+얼고 길 땐 끝 자세로 기다린다 — 길이가 확정되면 `execute_anchor.DURATION` 을 맞춰 네 클립을 다시 굽는다. 1인칭 `ABP_FP_View` 는 그대로(피해자는
+몬스터 카메라 → 데스캠을 본다).
 
 ### 로코모션 재생 배율 — 풋 슬라이딩 방지 (기본 규칙)
 
@@ -192,6 +327,8 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
 | 잡힘·넘어짐 | CatchRadius 판정 · 캐릭터 `KnockdownTime` 1.5초 | 짐은 흘리지 않는다(죽을 때만, character.md). 몬스터 `Catch` 0.8초, 캐릭터 `Knockdown` 0.5 → `Down` 루프 → `GetUp` 0.6 (2026-09-15) |
 | 던지기 | 놓는 순간 판정 | `ThrowWindup` 루프(차징) → `Throw` 0.333초, 끝 = 기준 자세 (2026-09-15) |
 | 기상 예고 | `WakeTelegraph` 0.8s | 퍼덕임 + 울음 |
+| 잡기 예고 | 행 `PounceWindup` 0.6s | 닭만 `AN_Chicken_PounceWindup`(몸 젖히고 날개 벌림, 끝 = Catch 첫 프레임) — 헛침은 `Catch` 앞 0.3초. 다른 종은 클립 없음 (2026-09-20) |
+| 처형 | 처형 종(`IsExecutioner()` — 돼지·너구리)만 · 길이 `ExecuteDuration` 2.0 | **전용 2인 클립**(2026-09-21 Run 2, execute-clips) — 몬스터 `AN_Pig_Execute`(정면 박치기, 접촉 0.5)·`AN_Raccoon_Execute`(등 뒤 도약, 접촉 0.6) 평가기 `ExplicitTime = StateElapsed`, 끝 = Idle 첫 프레임(시체 옆에 서서 `SpectateDelay` 까지); 농부 `AN_Farmer_Executed_Pig`(뒤로 넘어져 DOWN)·`AN_Farmer_Executed_Raccoon`(앞으로 엎어져 PRONE) 평가기 `ExplicitTime = ExecuteElapsed`, 마지막 프레임을 부활까지 유지. 앵커 표 `Tools/Blender/execute_anchor.py`. 이력: Run 1(2026-09-20)은 Catch 클립 재사용 + 농부 Idle 정지 → 죽는 순간 넘어짐 사슬이었다 |
 | 거위 울음 예비 | `AlertWindup` 0.55s | |
 
 ## 구현 시점

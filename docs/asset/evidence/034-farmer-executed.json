@@ -1,0 +1,50 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+  "folder": "/Game/Characters/FarmerA/Anims",
+  "clips": [
+    {
+      "name": "AN_Farmer_Executed_Pig",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_Pig.AN_Farmer_Executed_Pig",
+      "seconds": 2.0,
+      "frames": 60,
+      "sha256": "1312e42077d3a481cfa2481b868f0ec08d3b119cea0ceb7e4265c929a8e15f0f",
+      "manifest_seconds": 2.0,
+      "loop": false
+    },
+    {
+      "name": "AN_Farmer_Executed_Raccoon",
+      "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_Raccoon.AN_Farmer_Executed_Raccoon",
+      "seconds": 2.0,
+      "frames": 60,
+      "sha256": "c1eb29548153dd981368b5a7b476e27f9172ea807e8476438a613b2f7e1ae84c",
+      "manifest_seconds": 2.0,
+      "loop": false
+    }
+  ],
+  "ue_import": {
+    "engine": "5.8.1-56057345+++UE5+Release-5.8",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "folder": "/Game/Characters/FarmerA/Anims",
+    "clips": [
+      {
+        "name": "AN_Farmer_Executed_Pig",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_Pig.AN_Farmer_Executed_Pig",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "1312e42077d3a481cfa2481b868f0ec08d3b119cea0ceb7e4265c929a8e15f0f",
+        "manifest_seconds": 2.0,
+        "loop": false
+      },
+      {
+        "name": "AN_Farmer_Executed_Raccoon",
+        "path": "/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_Raccoon.AN_Farmer_Executed_Raccoon",
+        "seconds": 2.0,
+        "frames": 60,
+        "sha256": "c1eb29548153dd981368b5a7b476e27f9172ea807e8476438a613b2f7e1ae84c",
+        "manifest_seconds": 2.0,
+        "loop": false
+      }
+    ]
+  }
+}

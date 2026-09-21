@@ -13,21 +13,30 @@
    - `Content/Maps/Lvl_Henhouse` — 생성 맵 레벨(L절). 게임모드 `BP_CL9GameMode` → 목적지 `henhouse`. 이 레벨만
      바닥 Floor_0가 z −500(지하 구덩이용)이고 지면은 생성기가 깐다. (2026-09-06 사용자 결정 — 레벨 분리)
 3. **콘솔**: 백틱(`` ` ``) 키로 연다. 게임 입력이 살아 있어야 하니, PIE 창을 클릭해 포커스를 준 뒤 조작한다.
-4. **치트 목록** (docs/systems/cheats.md · 셸이 아니라 게임 콘솔):
+4. **치트** (docs/systems/cheats.md · 셸이 아니라 게임 콘솔) — 아래는 이 문서가 쓰는 것만 **발췌**한 것이다. 전체 21개(여기 없는
+   `cl9.save`·`cl9.load`·`cl9.lang` 포함)와 인자 규칙은 cheats.md, 등록은 `Source/CL9/GameMode/CL9Cheats.cpp` 가 정본:
    - `cl9.list items` / `cl9.list monsters` / `cl9.list characters` — 번호 매긴 행 목록
    - `cl9.additem <별칭|번호> [수량]` — 앞에 아이템 스폰
    - `cl9.addmonster <별칭|번호> [수량]` — 앞에 몬스터 스폰 (AI 즉시 활성)
    - `cl9.hitmonster [데미지]` — 가장 가까운 몬스터에 데미지
+   - `cl9.execute` — 가장 가까운 살아 있는 처형 종(`ExecuteRadius > 0` 또는 `bExecuteOnCatch`)이 나를 처형 — 스토커는 카운터 생략·앵커 스윕 유지,
+     잡기 처형 종은 제자리
+   - `cl9.damage [양] [플레이어 번호]` — 자기(또는 N번 플레이어) 캐릭터에 데미지 (죽음·관전·패드 검증)
    - `cl9.night` — 로비면 밤 시작, 밤이면 종료
    - `cl9.blackout` — 밤 중 정전을 지금으로 앞당김
-   - `cl9.damage [양] [플레이어 번호]` — 자기(또는 N번 플레이어) 캐릭터에 데미지 (죽음·관전·패드 검증)
+   - `cl9.day <N>` — 로비의 일자를 N으로 — 다음 `cl9.night` 가 그 날의 곡선을 굴린다
+   - `cl9.seed <N>` — 시드 N으로 부지를 지금 다시 짓고 다음 밤을 그 시드에 고정 (0 = 껍데기만; PIE 밖 에디터에서는 레벨에 임시 액터로 깐다)
+   - `cl9.orders` / `cl9.pick <n> [m] …` — 로비의 제시 목록·수락 주문 출력 / 번호로 주문 확정(필요 수만큼)
+   - `cl9.money [양]` / `cl9.buy [별칭|번호]` / `cl9.settle [force]` — 이더 출력·가감 / 장비 구매(인자 없으면 상점 목록) / 정산 상태 출력·판정(`force` 면 지금 원정 종료)
+   - `cl9.eat` — 활성 퀵슬롯의 요리를 먹는다 (좌클릭 길게의 대역)
+   - `cl9.wave <별칭|enum>` / `cl9.shownoise` — 그 소음원의 파동을 발밑에 한 번 / 소음 반경 디버그 원·파동 로그 토글
 5. **키 배치** (리바인딩 가능 — 마우스 휠만 고정): WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 ·
    **E 상호작용/줍기** · **G 놓기** · **달리기 키(Shift)+G 던지기 차징** · **마우스 휠 / 숫자키 1~4 퀵슬롯 칸 전환** ·
    **마우스좌 사용**(탭 = 즉시 휘두르기·손전등 토글 / 누르고 있으면 타격 대기, 떼면 휘두르기 — C4) ·
    **마우스우**(탭 = 스캔 / 0.4초 길게 = 먹기 — I4·Q1) ·
    **F 헤드램프** · **M 메뉴 열기·닫기** (Esc는 쓰지 않는다 — PIE 정지 키).
    운반은 **4칸 퀵슬롯**이다(docs/systems/inventory.md) — 활성 칸의 실물만 손에 들리고 나머지 칸은 데이터로만 있다.
-   옛 키 배치(R 품 교체·마우스좌/G 던지기)가 남아 있으면 콘솔 `cl9.resetkeys`.
+   옛 키 배치(R 품 교체·마우스좌/G 던지기)가 남아 있으면 M → [설정] 키 섹션의 **[키 초기화]**(docs/systems/settings.md — `cl9.resetkeys` 콘솔 명령은 없다).
 
 ---
 
@@ -244,20 +253,80 @@
 
 ## C. 몬스터 (③)
 
-### C1. 순찰·추격·시야 끊기
-- **절차**: `cl9.addmonster chicken` → 멀리서 지켜보다 가까이 다가간다 → 회색 벽 뒤로 숨는다.
+### C1. 순찰·추격·시야 끊기 (다가오는 소리 2026-09-20)
+- **절차**: `cl9.addmonster chicken` → 멀리서 지켜보다 가까이 다가간다 → 회색 벽 뒤로 숨는다. 이어서(2026-09-20) 닭이
+  쫓아오는 동안 **귀로 듣는다** — `au.DumpActiveSounds`를 켜 둔다. `cl9.addmonster goose`로 잠든 거위 옆에도 서 본다.
+  `cl9.addmonster chicken 3`으로 셋이 같이 쫓아오게 한다.
 - **기대**: 닭이 돌아다니다(순찰), 다가가면 쫓아온다(추격). 벽 뒤로 시야가 끊기면 놓치고 복귀한다.
   닭이 **이동 방향을 정면으로 보며** 걷는다(옆으로 미끄러지지 않는다 — MeshYawOffset).
+  **다가오는 소리(2026-09-20)**: 깨어 있는 닭이 `WaveTable.monster_prox`의 `TriggerRadius`(780cm) 안에 있으면 근접 소나 링과
+  **같은 박자**(`RepeatInterval` 1.2초 — T5의 링 간격과 같다)로 닭 자리에서 `MonsterNear`(짧은 꼬꼬댁, 다른 소리보다 작다)가
+  난다. 링과 소리는 한 사건이다 — 링이 `CullDistance` 밖이라 안 그려져도 소리는 나고(거리 감쇠는 에셋 몫), `monster_prox`
+  행을 끄면 링도 소리도 함께 없다. **잠든 거위(`Asleep`·`WakeTelegraph`)는 조용하다** — 소나 자체가 없다. 3마리가 같이
+  쫓아와도 소리가 뭉치지 않는다(Concurrency `SCC_Effects4`). 2인 PIE — 상대 화면에서도 같은 자리에서 같은 박자로 들린다.
+  ※ 링은 뜨는데 소리가 없으면 `WaveTable.monster_prox.SoundRow`가 비었거나 `SoundTable.MonsterNear` 행이 없는 것이다
+  (둘 다 조용히 통과한다). 소리가 링보다 자주 나면 버그다(같은 `RepeatInterval`·`MinInterval`을 지난다).
+- **값 반영**: 박자는 `WaveTable.monster_prox.RepeatInterval`, 발동 거리는 `TriggerRadius`, 소리는 `SoundRow`가 가리키는
+  `SoundTable` 행 — 전부 표라 **빌드 없이** 바뀐다. `SoundRow`를 비우면 옛날처럼 링만 남는다.
 
 ### C2. 발걸음 속도 (풋 슬라이딩)
 - **절차**: 닭이 배회할 때와 추격할 때 다리 움직임을 본다.
 - **기대**: 느리게 걸을 땐 발걸음도 느리고, 빠르게 쫓을 땐 빨라진다(PlayRate=속도/기준속도).
   발이 심하게 미끄러지면 ABP의 기준 속도(닭 Walk 250·Run 550) 조정 대상.
 
-### C3. 잡힘 → 넘어짐 카메라·넘어짐 애니메이션·피격감 (애님·피격감 2026-09-15, 소리 2026-09-18)
+### C3-예고. 잡기 예고 — 덮치기 전에 몸을 세운다, 걸어서 벗어나면 헛침 (2026-09-20)
+값은 `MonsterTable.chicken`의 `PounceRadius`·`PounceWindup`·`PounceLunge`·`PounceMissCooldown` 네 열이다(초안 130cm ·
+0.6초 · 110cm · 0.6초 — balance 확정 전이면 표 셀을 먼저 본다). 상태·게터는 docs/systems/monster.md "잡기 예고".
+- **절차**: `Lvl_Flat`에서 `cl9.addmonster chicken 1` → 닭이 쫓아오면 ① **가만히 서 있는다** ② 닭이 예고에 들어가는 순간
+  (몸을 뒤로 젖히고 날개를 벌린다) **S로 뒤로 걷는다**(달리지 않는다) — 헛친 뒤에도 계속 물러나다가, 멈춰 선다 ③ 예고
+  순간 **A/D로 옆걸음** ④ `cl9.additem frying_pan`을 들고 예고에 들어간 닭을 **예고 중에** 친다 ⑤ `Lvl_Henhouse`에서
+  닫힌 문·벽을 사이에 두고 문틈으로 닭이 보이는 자리에 선다. 2인 PIE면 상대가 옆에서 닭을 본다. 이어서
+  `cl9.addmonster chicken 3`으로 셋을 한꺼번에 오게 한다.
+- **기대**: 닭이 `PounceRadius` 안에 오면 **그 자리에 멈춰** `PounceWindup` 동안 몸을 뒤로 젖히고 날개를 옆·위로 벌린 채
+  잘게 떨다가(마지막 0.17초에 웅크림 — `AN_Chicken_PounceWindup`) 덮친다. 예고에 들어가는 순간 닭 자리에서 `MonsterPounce`
+  (꽥+퍼덕임)가 나고 바닥에 `monster_pounce` 링이 한 번 핀다(2인 PIE 상대 화면에도 — 링·소리 모두). 예고 중 닭은 **제자리에서
+  나를 향해 돈다** — `TurnRate`(280°/s) 이하로 부드럽게, 홱 돌지 않는다. 예고 중에는 다른 사람 쪽으로 타깃을 바꾸지
+  않는다(동료가 더 가까이 지나가도 나를 덮친다).
+  ① 서 있으면 `PounceLunge`만큼 한 번에 덮쳐 와 **잡힌다**(C3로 이어진다) — 예고 → 덮침 사이에 닭 자세가 튀지 않는다
+  (예고 끝 프레임 = `Catch` 첫 프레임).
+  ② 예고 순간 뒤로 걸으면 닭이 덮쳐 오지만 닿지 않고 **헛친다** — `Catch` 클립의 앞 0.3초(덮치는 첫 동작)만 보인 뒤
+  다시 달려온다. 헛침에는 **소리가 없다**(`MonsterCatch`는 잡았을 때만). **계속 물러나면 다시 예고하지 않는다** — 헛친
+  뒤 간격이 걷기 속도로는 다시 좁혀지지 않는다(닭 396 = 걷기 396). **멈추면** 간격이 좁혀져 곧 다시 예고한다
+  (`PounceMissCooldown` 뒤). 잡히지 않았으니 HP·`KillCooldown` 변화 없음.
+  ③ 옆걸음도 헛침이다 — "예고 뒤 어느 쪽이든 걸어서 벗어나면 산다, 멈춰 있으면 잡힌다".
+  ④ 예고 중 팬으로 치면 **경직이 예고를 끊는다**(C8 `PushReact`로 밀려난다) — 덮침이 없고, 경직이 풀리면 다시 쫓아와
+  다시 예고한다(반격 창). 예고가 끝나는 순간에 맞아도 경직이 이긴다(덮침 없음).
+  ⑤ 벽 너머·문틈 너머의 닭은 예고까지는 하되 **덮치지 못한다** — 덮침이 벽·닫힌 문에서 멈추고 시야 검사에 걸려 헛침.
+  닭이 벽을 뚫고 오거나 벽 너머에서 잡히면 버그다. 위층·상자 위의 나도 마찬가지(높이 차 → 헛침).
+  **3마리**: 각자 예고하고 각자 덮치거나 헛친다 — 셋이 한 몸처럼 동시에 뛰지 않고, 한 마리의 헛침이 다른 마리의 예고를
+  끊지 않는다. `stat game`에서 덮침이 몰리는 순간 프레임이 떨어지지 않는다. 헛침이 연달아 나면 헛침 클립도 **매번**
+  다시 뜬다(결과 시각이 갱신된다).
+  **`net.PktLag 100`(2인 PIE)**: 클라 화면에서 예고 자세가 **0.5초 이상** 보인다(`ForceNetUpdate`) — 예고가 안 보이고
+  바로 덮치면 진입 시각이 늦게 복제된 것. 헛침 클립도 클라에서 뜬다.
+  **타깃이 사라져도 크래시 없음**: 예고 중 `cl9.damage 3`으로 내가 죽거나(2인이면 클라가 나가면) 닭은 예고를 끝내지 않고
+  추격을 접는다(`Break`).
+  ※ 예고 없이 바로 잡히면 표의 `PounceWindup`이 0 이거나 `CatchRadius`가 0 인 것이다(둘 중 하나가 0 = 예고 없는 옛 즉시
+  잡기 — 의도된 롤백 스위치). 예고는 하는데 자세가 안 바뀌면 `ABP_Chicken_A`에 Pounce 가지(`IsPounce`·`IsPounceMiss`)가
+  없거나 `AN_Chicken_PounceWindup`이 임포트되지 않은 것이다. 소리가 없으면 `SoundTable.MonsterPounce` 행, 링이 없으면
+  `WaveTable.monster_pounce` 행(`FallbackRadius` 0 이면 로드 검사에서 비활성 — 링도 사건도 없다).
+  걷기로 물러났는데 잡히면 `PounceWindup`이 짧거나 `PounceLunge`가 긴 것이다 — 값의 문제(회피 산수는 monster.md).
+- **자동 확인**(로그·게터): `GetState()`가 Chase → Pounce → Catch(①) 또는 Chase → Pounce → Chase(②③⑤). Pounce 길이
+  = `PounceWindup` ±0.05초(`GetStateElapsed()`). 헛침이면 `IsPounceHit()==false`이고 `GetPounceResultElapsed()`가 0 부근에서
+  시작해 0.3 안에 헛침 클립. 스폰 직후·늦게 접속한 클라에서는 `GetPounceResultElapsed()`가 1000 이상이라 헛침 창이 열리지
+  않는다(`HasPounceResult()==false`).
+- **값 반영**: 네 열 전부 `MonsterTable`이라 **빌드 없이** 바뀐다. `PounceWindup 0`이면 옛 즉시 잡기로 돌아간다.
+  `PounceRadius < CatchRadius`로 두면 로드 검사 Error("PounceRadius must be >= CatchRadius")로 그 종이 비활성이 된다.
+
+### C3. 잡힘 → 넘어짐 카메라·넘어짐 애니메이션·피격감 (애님·피격감 2026-09-15, 소리 2026-09-18, 범인 보기·무적 2026-09-20)
 - **절차**: 계란을 손에 들고(퀵슬롯 다른 칸에도 하나 더 채운 채) 닭에게 일부러 잡힌다(도망치지 않고 붙어 있는다).
   2인 PIE면 상대가 지켜본다. 혼자면 `cl9.damage 1`로도 같은 경로다. **누워 있는 1.5초 동안 G와 달리기+G를 눌러 보고**,
-  일어난 뒤 손과 퀵슬롯을 확인한 다음, 이어서 `cl9.damage`로 **HP 0까지** 때려 본다.
+  일어난 뒤 손과 퀵슬롯을 확인한 다음, 이어서 `cl9.damage`로 **HP 0까지** 때려 본다 — **넘어진 동안은 무적이라 한 번
+  치고 일어날 때까지(1.5초) 기다렸다 다시 친다**(2026-09-20; 연타하면 첫 타만 들어간다).
+  이어서(2026-09-20) 범인 보기: ⓐ 닭을 **등지고** 서서 잡힌다 ⓑ 닭이 **오른쪽**에서 오게 서서 잡힌다 ⓒ 닭이 하나도 없는
+  자리에서 `cl9.damage 1` ⓓ 닭 하나를 옆에 둔 채 `cl9.damage 1` ⓔ `cl9.addmonster chicken 2`로 둘에게 쫓기다 첫 닭에
+  잡혀 **누워 있는 1.5초 안에 둘째 닭이 오게** 한다(둘째가 오는 동안 `cl9.damage 1`도 한 번) ⓕ 잡히기 직전에 마우스를
+  한쪽으로 크게 돌려 두고 잡힌 뒤 `GetControlRotation` 로그(또는 일어난 직후의 시선)를 본다. 2인 PIE면 ⓐ~ⓔ를 상대가
+  지켜보고, 이어서 `cl9.damage 3`으로 죽어 관전으로 넘어간다.
 - **기대**: HP가 준다. 1인칭 시점이 바닥으로 주저앉아 닭을 올려다보는 각도가 된다(1.5초 넘어짐).
   **짐은 흘리지 않는다** (2026-09-15 사용자 — 옛 "잡히면 손+품 전부 흘림" 폐기): 넘어졌다 일어나면 **손에 계란이
   그대로** 있고(활성 칸도 그 칸 그대로), **퀵슬롯 칸 수도 그대로**이며 **바닥에 흘린 것이 없다**. 수레를 밀던 중이었다면
@@ -271,7 +340,8 @@
   `ABP_Unarmed` 넘어짐 가지(ControlRig 뒤)가 잘못된 것. 닭 쪽은 잡는 순간 앞으로 덮쳐 쪼고(0.8초 `Catch`) 물러선다.
   죽으면(HP 0) 누운 자세 그대로 멈춘다(`IsDead` → Down 정지).
   **피격감(2026-09-15)**: 잡히는 **그 순간** 내 화면 가장자리부터 **빨간 비네트**가 확 덮였다가 `CL9Rules.HurtVignetteTime` 동안
-  옅어져 **완전히 사라진다**(HUD 의 `HurtVignette` 이미지 — 글자도 아이콘도 없다). 동시에 카메라가 **묵직하게 한 번** 흔들린다
+  옅어져 **완전히 사라진다**(HUD 의 `HurtVignette` 이미지). 그 위에 **가장자리 빨간 호(`HurtDirection`)가 닭 방향을
+  가리키고 비네트와 함께 사라진다 — 글자·아이콘은 여전히 없다**(2026-09-20, 아래 "범인 보기" ③). 동시에 카메라가 **묵직하게 한 번** 흔들린다
   (셰이크 표 `Hurt` 행 — 스태미나 흔들림보다 크고 굵게 한 번 왔다가 잦아든다). **상대 화면(3인칭)**: 내 몸이
   `CL9Rules.HurtFlashTime` 동안 **빨갛게 물든다**(몬스터가 맞을 때와 같은 오버레이 재질). 내 화면의 **1인칭 팔도 같이 빨갛다** —
   일어날 때(마지막 0.6초) 손이 보이는 구간에서 확인한다. 넘어짐이 끝나면 비네트도 플래시도 남지 않는다(잔상 금지).
@@ -280,13 +350,257 @@
   C4 ⑩과 같은 원인(`CL9Rules.HitFlashMaterial` 미연결)이고, 카메라가 안 흔들리면 `ShakeTable`에 `Hurt` 행이 없는 것이다.
   **소리(2026-09-18)**: 잡혀 넘어지는 **그 순간** `Hurt` 소리(둔한 몸 소리)가 내 폰 자리에서 한 번 난다 — 비네트·셰이크와 같은
   순간이다. 일어날 때는 나지 않는다. **2인 PIE 상대 화면에서도** 잡힌 폰 자리에서 같은 소리가 들린다(내 화면에만 나면
-  버그 — 소유자 전용 셰이크와 달리 소리는 모든 머신이 튼다). `cl9.damage 1`로 넘어져도 같은 경로라 난다. 닭이 덮치는
-  소리(`SFX_Catch`)는 아직 없다 — 이 시점에 나는 것은 `Hurt` 하나다.
+  버그 — 소유자 전용 셰이크와 달리 소리는 모든 머신이 튼다). `cl9.damage 1`로 넘어져도 같은 경로라 난다.
+  **범인 보기(2026-09-20 — docs/systems/character.md "잡히는 순간 카메라가 범인을 본다")**:
+  ① 잡히는 **그 순간** 닭 자리에서 `MonsterCatch`(낮고 큰 꽥+쿵)가 `Hurt`와 **겹쳐** 난다 — `au.DumpActiveSounds`에 둘이
+  같은 순간 잡힌다(Concurrency 4 안이라 둘 다 난다). 헛침(C3-예고 ②)에는 `MonsterCatch`가 없다.
+  ② 잡힌 뒤 `CL9Rules.HurtLookTime`(초안 0.45초) 안에 화면이 `HurtLookPitch`(초안 −25°, ±3°)까지 **부드럽게 내려가**
+  덮치는 닭의 `Catch` 클립이 화면 중앙 아래쪽에 보인다 — 홱 꺾이지 않고(EaseOut) 끝값에 반드시 닿는다. ⓐ 등지고 잡히면
+  시선이 닭 쪽으로 **`HurtLookYawMax`(초안 60°)까지만** 돌아 닭이 화면 가장자리에 걸치거나(105° 안), 그 밖이면 안 보인다 —
+  그때는 ③의 호가 뒤를 가리킨다. ⓑ 오른쪽 닭이면 오른쪽으로 돈다. 마우스를 돌려도 오프셋은 상수라 시선이 밀리거나
+  되감기지 않는다. 1인칭 팔(넘어짐 0~0.5초의 얼굴 앞 손)이 25° 위에 떠 보이는 것이 어색한지 **육안으로 판단**해 적는다.
+  ③ 화면 가장자리의 **빨간 호**(`WBP_HUD.HurtDirection`)가 닭 방향을 가리킨다 — 0° = 화면 위(앞), 시계 방향 양수라 ⓐ면
+  아래, ⓑ면 오른쪽. 비네트와 **같은 페이드**로 사라진다(`GetHurtFlash()`, `HurtVignetteTime`에 같이 끝난다). 누운 채 마우스로
+  시선을 돌리면 호가 화면상 닭 방향을 **계속 따라간다**(카메라 요는 매 프레임 — 모디파이어의 요 오프셋까지 반영된 POV 기준).
+  ⓒ 닭이 없는 `cl9.damage`는 호가 **안 뜨고**
+  카메라 피치만 내려간다(`HasHurtDirection()==false`). ⓓ 닭이 옆에 있으면 치트로 넘어져도 **가장 가까운 산 닭**을
+  범인으로 잡힌 것과 같은 그림(호·요 모두)이다 — 시체(Dead)는 범인이 되지 않는다.
+  ④ 일어나는 구간(넘어짐 0.9~1.5초, `GetUp`)에 피치·요가 0으로 돌아오고 일어선 뒤 시선은 **넘어지기 전 그대로**다 —
+  ⓕ `GetControlRotation()`이 넘어지는 동안 변하지 않는다(카메라 POV만 움직였다). 죽으면(HP 0) 내려간 채 유지되고,
+  관전으로 넘어가면 동료 시점에 오프셋이 없다. 로비에서 부활하면 0.
+  **2인 PIE 상대 화면**: 잡힌 사람 자리에서 `MonsterCatch`·`Hurt` **소리만** 들린다 — 호·카메라 오프셋은 본인만(`HurtEvent`는
+  소유자 전용 복제라 상대 폰의 `GetHurtEvent()`는 비어 있다).
+  **넘어진 동안 무적(2026-09-20 사용자 결정)**: ⓔ 첫 닭에 잡혀 누운 1.5초 안에 둘째 닭이 와도 **HP가 더 줄지 않고**
+  넘어짐 시계도 다시 시작하지 않는다(로그 `hit by … while knocked down — ignored`, `KnockdownStartServerTime`·`HurtEvent.Seq`
+  불변, 호·카메라도 첫 닭 방향 그대로). 둘째 닭은 **덮치지 않고 옆에 서서 기다리다** 내가 일어서는 순간 예고에 들어간다
+  (이미 예고 중이던 닭은 덮치되 헛친다). 누운 동안의 `cl9.damage 1`도 **무시된다** — 치트도 같은 문을 지난다.
+  일어난 뒤의 타격은 정상으로 들어간다. 그래서 위 절차의 "HP 0까지"는 1.5초 간격으로 친다.
+  ※ 카메라가 안 내려가면 `CL9Rules.HurtLookTime`이 0 이다(0 = 끔). 호가 아예 안 뜨면 `WBP_HUD`에 `HurtDirection` 이미지가
+  없거나(옵션 바인딩 — 없으면 조용히 통과) `CL9Rules.bHurtDirectionIndicator`가 false 이거나 디자이너가 Collapsed로 둔 것이다
+  (아래 값 반영). 호는 뜨는데 방향이 반대면 `GetHurtDirectionAngle()`의 부호(시계 방향 양수)와 위젯 회전 방향이 어긋난 것.
+  `MonsterCatch`가 없고 `Hurt`만 나면 `SoundTable.MonsterCatch` 행이 없는 것이고, 잡히는 순간 팬에도 맞은 닭이면(같은 틱
+  Stun) 그 잡기 소리 하나가 빠지는 것은 허용이다(`Hurt`가 난다). 폰 스폰 때 Warning `HurtLookTime … exceeds …`가 뜨면
+  `HurtLookTime + 0.6 > KnockdownTime`이라 진입·복귀 보간이 겹친다 — 값을 줄인다.
 - **값 반영**: `CL9Rules`의 `HurtVignetteTime`(비네트 소멸)과 `HurtFlashTime`(몸 빨간 시간)은 표 값이라 **빌드 없이** 따라온다.
   흔들림의 세기·길이는 `CS_HurtShake` 에셋 쪽이고, 세기만은 `ShakeTable.Hurt.Scale`(기본 1.0)로 빌드·에셋 교체 없이 배율을
-  준다(2026-09-18). 소리는 `SoundTable.Hurt` 행 — 음원을 바꾸면 그대로 따라온다.
+  준다(2026-09-18). 소리는 `SoundTable.Hurt` 행 — 음원을 바꾸면 그대로 따라온다. 범인 보기(2026-09-20)도 전부 표다:
+  `CL9Rules.HurtLookTime`(0 = 카메라 효과 끔)·`HurtLookPitch`·`HurtLookYawMax`·`bHurtDirectionIndicator`(false = 호 끔),
+  `SoundTable.MonsterCatch`. **디자이너 Collapsed와 런타임 Hidden은 다르다**: 호의 런타임 숨김은 `Hidden`이고 `WBP_HUD`의
+  기본 Visibility도 `Hidden`이어야 한다 — C++가 `Flash > 0`이면 `HitTestInvisible`로 켜고 아니면 `Hidden`으로 되돌린다.
+  `Collapsed`는 **디자이너가 끈 신호**라 `NativeConstruct`에서 Collapsed면 그 뒤로 C++가 절대 켜지 않는다(HP 점과 같은
+  규칙 — 비네트의 `RefreshHurtVignette`가 Collapsed를 덮어쓰는 것과 다르다). 확인: WBP에서 `HurtDirection`을 `Collapsed`로
+  저장하면 잡혀도 호가 없고, `Hidden`으로 되돌리면 뜬다. 위젯을 WBP에서 지워도 HUD 나머지는 정상이다(`BindWidgetOptional`).
+  **롤백(빌드 없이)**: `CL9Rules`의
+  `HurtLookTime 0`·`bHurtDirectionIndicator false` + `MonsterTable.chicken.PounceWindup 0` + `WaveTable.monster_prox.SoundRow`
+  비움 = 옛 즉시 잡기·카메라 Z만·호 없음·다가오는 소리 없음. 무적은 표 스위치가 없다(규칙).
 
-### C4. 타격 — 누르면 대기, 떼면 히트박스 (히트박스·타격감 2026-09-15, 소리·히트스톱·퍼프 2026-09-18)
+### C3-다마리. 열 마리 — 소리 상한·연속 잡힘·콜드 로드 (2026-09-20)
+- **절차**: PIE를 **새로 시작한** 직후(에셋이 아직 한 번도 안 울린 상태) `cl9.addmonster chicken 1`로 첫 잡힘을 당한다 →
+  이어서 `cl9.addmonster chicken 10`으로 열 마리에게 쫓기며 `stat audio`·`stat game`을 켜 둔다 → 두세 마리에 연달아
+  잡힌다(누웠다 일어나는 순간 다음 닭이 덮치게).
+- **기대**: **콜드 로드** — 첫 잡힘·첫 예고·첫 근접 소나에서 프레임이 끊기지 않는다(`UCL9GameInstance::Init`이 `SoundTable`
+  행을 전부 미리 로드한다). 열 마리의 `MonsterNear`가 **Concurrency 4로 잘려** 뭉치지 않고(`stat audio` 활성 음원 수가 4를
+  넘어 쌓이지 않는다), 열 마리의 예고·덮침이 겹쳐도 프레임이 떨어지지 않는다. **연속 잡힘**: 누운 1.5초 동안은 무적이라
+  연타가 없고(C3 ⓔ), 일어서는 순간 다음 닭이 예고 → 덮침으로 이어진다 — 두 번째 넘어짐에서 `HurtEvent.Seq`가 오르고
+  카메라는 **요 목표만** 새 닭 방향으로 바뀐다(피치 진입을 다시 시작하지 않아 덜컹이 없다), 호도 새 닭을 가리킨다.
+  열 마리가 한 사람에게 몰려도 예고는 각자이고, 무적 동안 아홉 마리가 **옆에 서서 기다리는** 그림이 된다.
+  ※ 첫 잡힘에서만 끊기면 프리로드가 빠진 것이다. 소리가 4개 넘게 쌓이면 새 에셋 3개(`S_MonsterPounce/Catch/Near`)에
+  `SCC_Effects4`가 안 걸린 것이다(`import_sfx.py`가 건다).
+
+### C-처형-돼지. 잡히면 무조건 처형 — 닭처럼 쫓아와 예고·덮치고, 잡히는 순간 그 자리에서 구조 없이 죽는다 (2026-09-20, 종 재배치)
+2026-09-20 저녁 사용자 결정으로 **스토커는 너구리**(C-처형-너구리)가 됐고 돼지는 **잡히면 처형**이다 — 스위치는 `MonsterTable.pig.bExecuteOnCatch`
+(bool, true; 잡는 순간 = 즉시 잡기·덮침 성공 = 처형 진입, 스토킹 없음). 남는 처형 열은 `ExecuteDuration`(s, 2.0(초안, Run 2)) · `ExecuteCameraSocket`(`head`) ·
+`ExecuteCameraOffset`(cm, (−60, 0, 125)) · `ExecuteCameraRotation`(도, (−38, 0, 0)) 과 `CL9Rules.ExecuteCameraBlend`(s, 0.3); 스토킹 열 9개
+(`ExecuteRadius`·`ExecuteBehindAngle`·`ExecuteUnseenTime`·`ExecuteAnchorDistance`·`StalkSpeed`·`StalkGazeHalfAngle`·`StalkGazeRadius`·`StalkStareAnger`·
+`StalkRetreatRadius`)는 **전부 0** 이라 `GetHuntState()`가 `Chase`다. 추격 열은 "잡히면 즉사" 기준으로 balance 가 다시 정했다(pig.md 초안 —
+`ChaseSpeed` 396 = 걷기 · `PounceWindup` 0.8 · `PounceRadius` 146 · `PounceLunge` 110 · `CatchRadius` 100; PIE 관찰 전이니 표 셀을 먼저 본다.
+`CatchDamage`는 이 종에서 읽히지 않는다). 걷는 사람과 나란히 가므로 **걸어서 물러나면 재예고가 없다**(닭과 같은 396) — 코너에서는 뒤처진다.
+**시간표(정지한 혼자, balance 확정)**: 잡힘(≈1.6초 — 추격·예고·덮침) = Execute 진입, 죽음 ≈3.6초(진입 + `ExecuteDuration` 2.0), 돼지
+카메라 유지 최대 5.0초(진입 뒤 `ExecuteDuration` 2.0 + `SpectateDelay` 3.0). 상태 `Execute`, 캐릭터 게터 `IsExecuted()`·`GetExecuteElapsed()`·
+`GetExecuteDuration()`·`IsIncapacitated()`는 docs/systems/monster.md "스토킹과 처형"·character.md 죽음 절. 설계 정본은
+docs/goal/execute-sequence-pig.md 상단 "종 재배치" + D2·D3·D6(D1 의 순간 이동·앵커 스윕은 돼지에 **없다** — `HostBeginExecute(…, bTeleport=false)`).
+**(이력) Run 1(2026-09-20)은 클립을 재사용했다**(돼지 `AN_Pig_Catch` 마지막 프레임 유지 + 농부 Idle 정지 자세) — **Run 2(2026-09-21)부터
+전용 2인 클립**(`AN_Pig_Execute`·`AN_Farmer_Executed_Pig`, 각 2.0초 — 아래 기대 참조).
+- **절차**: `Lvl_Flat`, 계란을 손에 들고 퀵슬롯 다른 칸도 하나 채운 채 `cl9.addmonster pig 1`.
+  ① **잡힘 = 처형**: 도망치지 않고 서서 돼지가 쫓아와 예고·덮치게 둔다(`PounceWindup 0`이면 즉시 잡기). 처형 중 W/A/S/D·마우스·좌클·
+  Shift+G·E·1~4·우클 길게를 **전부** 눌러 본다. 2인 PIE면 상대가 옆에서 지켜본다 — **호스트 피해자 1회, 클라 피해자 1회**.
+  ② **벽 옆**: `Lvl_Henhouse` 벽에 등을 붙이고(또는 모서리 안쪽에서) 잡힌다.
+  ③ **치트**: 돼지가 멀리서 배회할 때 `cl9.execute`.
+  ④ **무구조**: 처형 중 동료(2인)가 팬으로 돼지를 친다 → 다른 회차에서 처형 중 **돼지 HP 를 0 까지** 때려 돼지를 죽인다(`HpMax` 만큼
+  연타 — 처형 중엔 경직이 없어 연타가 들어간다).
+  ⑤ **둘째 몬스터**: `cl9.addmonster chicken 1`을 더해 닭이 쫓아오는 중에 돼지에게 잡히거나 `cl9.execute` — 닭이 **예고(Pounce) 중이거나
+  덮치는 중**에 처형이 시작되게 타이밍을 맞춘다(안 되면 두세 번).
+  ⑥ **수레**: `cl9.additem cart`로 수레를 끌다가 잡힌다.
+  ⑦ **롤백·로드·잔존**: `MonsterTable.pig.bExecuteOnCatch false`로 저장 → PIE 재시작 → `cl9.addmonster pig 1`; 이어서 `true`로 돌리고
+  `ExecuteDuration 0`으로 저장 → PIE 시작 → Output Log. 원복 뒤 처형당한 채 `cl9.night`로 밤을 끝낸다(2인이면 한쪽만 처형된 채) →
+  로비 부활 → 다음 밤 `cl9.addmonster pig 1`. 2인 PIE `net.PktLag 100`으로 ①을 다시 한다.
+- **기대**:
+  ① 돼지는 **닭과 똑같이** 감지 → `Chase` → 예고 → 덮침(C3-예고 그대로 — 뒤로 걸으면 헛침, 헛침엔 소리 없음)이다. 스토킹은 없다
+  (감지하자마자 쫓아온다 — 등을 보여도 멈추거나 물러서지 않는다). 다른 점은 **잡히는 순간**이다: `Catch`(C3 — 넘어짐·HP−1·넘어짐 카메라)
+  대신 **그 자리에서 곧장 `Execute`** 에 들어간다 — 돼지는 **순간 이동하지 않고** 덮쳐 닿은 자리에서 나를 향해 서고(요만 맞춘다),
+  `MonsterCatch` 소리는 Execute 진입 전이에서 **한 번** 난다. **입력이 전부 죽는다** — 이동·회전·휘두르기·던지기·줍기·칸 전환·먹기·사용
+  모두 무시(`IsIncapacitated()`; 클라 피해자는 서버도 거부해 로컬에서 눌러도 아무 일도 없다). 내 카메라가 `ExecuteCameraBlend` 동안
+  **돼지 카메라**(`ExecuteCameraSocket` + `ExecuteCameraOffset`/`ExecuteCameraRotation` — 등 위·뒤에서 나를 내려다보는 자리)로 부드럽게 옮겨 가
+  **내 몸을 3인칭으로** 본다 — 1인칭 고정의 관전 범주 예외. HUD 의 비네트·호·셰이크·프롬프트·포커스 아웃라인은 처형 중 **뜨지 않는다**
+  (C3 의 넘어짐 카메라·범인 보기·호도 없다 — 넘어지지 않으므로). `ExecuteDuration` 뒤 **HP 와 무관하게**(만HP여도) 죽고 손·퀵슬롯 짐이
+  발밑에 흩어진다(C5 죽음 드랍과 같은 경로 — 짐 흘림은 죽을 때만이라는 규칙 그대로). **즉사 순간 돼지 카메라에서 데스캠으로**
+  `DeathCameraBlend` 블렌드(2026-09-20 밤, H2 — 폰의 `DeathCamera`가 `DeathCameraOffset`에서 내 시체를 본다; 보통 사망과 같은 경로) →
+  `SpectateDelay` 뒤 **관전(동료 1인칭)**. 내 폰의 넘어짐 카메라(1인칭)로 **돌아오지 않는다**(1인이면 관전 대상이 없어 데스캠이 유지되다
+  전멸 → 밤 종료). 돼지는 시체 옆에 `SpectateDelay` 까지(늦어도 `ExecuteDuration + SpectateDelay`) 머물러 데스캠에 같이 잡힌 뒤 `Break` → `Return`.
+  **목격자(2인 상대) 화면(Run 2, 2026-09-21 — 전용 클립)**: 진입 순간 피해자 요가 서버에 의해 돼지 쪽(정면)으로 돌아간다(**등을 보이고
+  잡힌 경우도 포함** — 그 자리에서 제자리 회전해 돼지를 정면으로 본다). 돼지가 덮쳐 닿은 자리에서 `AN_Pig_Execute`(2.0초, 정면 박치기)를
+  재생하고, 피해자는 `AN_Farmer_Executed_Pig`(정면에서 박혀 뒤로 넘어짐)를 같이 재생해 **`ExecuteDuration` 끝에 `DOWN`**(`AN_Farmer_Down`
+  첫 프레임과 같은 자세)으로 멈춘다 — **넘어짐 사슬(HIT→LAND→DOWN)은 화면에 보이지 않는다**(클립 끝 프레임이 곧 시체 자세이고 부활까지
+  유지된다). 돼지는 클립 끝(시체 옆에 선 자세, Idle 첫 프레임에 가깝게)에서 `SpectateDelay` 까지 그대로 머문다(Break 전환에 블렌드 없음).
+  **(이력) Run 1(2026-09-20)** 에선 돼지가 `AN_Pig_Catch` 마지막 프레임에 멈추고 피해자는 얼어붙었다가(Idle 정지) 넘어져 눕는 재사용
+  클립이었다 — 두 리그가 맞물리는 자세가 아니었다. **정렬 확인**: 몬스터 카메라·목격자 화면 스크린샷을 각 1장씩 `.claude/runs/execute-clips/`에
+  남긴다. 죽는 순간 `Hurt`가 한 번 난다(`HurtEvent` — 죽음 경로 그대로). `KillCooldown`은 죽는 순간 재충전된다(잡기 경로의
+  `CatchCooldownRemaining`은 타지 않는다) — 2인에서 한쪽이 처형된 직후 돼지가 곧바로 다른 사람을 잡으면 버그.
+  **호스트 피해자·클라 피해자** 모두 같다 — 클라 피해자는 `OnRep`으로 카메라·입력이 바뀌므로 진입 뒤 한 틱쯤 늦을 수 있다(허용).
+  ※ 잡혔는데 넘어지고 HP 가 줄면 `bExecuteOnCatch`가 false 이거나 로드 검사에서 종이 비활성인 것이다(⑦). 진입은 됐는데 카메라가 안
+  바뀌면 `ExecuteCameraBlend`가 아니라 뷰 타깃 문제다(`SetViewTarget` 서버 경로, 관전과 같은 길). 카메라가 돼지 몸속에 박히면
+  `ExecuteCameraOffset`을 키운다(값). 죽은 뒤 카메라가 내 폰 1인칭(넘어짐 카메라)으로 돌아오면 버그 — 데스캠(시체를 밖에서 보는 3인칭)은
+  맞다(2026-09-20 밤, D6 번복). 돼지가 덮친 자리에서 미끄러져 내 등 뒤로
+  자리를 옮기면 버그(텔레포트·앵커 없음 — 메시 스무딩도 고정).
+  ② 벽 옆·모서리에서도 **그대로 처형된다** — 앵커 스윕이 없으므로 너구리와 달리 "벽 옆에서는 안 된다"가 없다. 돼지가 벽에 파묻히거나
+  카메라가 벽 안으로 들어가면 관찰해 적는다(값 — `ExecuteCameraOffset`).
+  ③ `cl9.execute`는 돼지가 어디 있든 **즉시** 진입한다(가장 가까운 처형 종 = `IsExecutioner()` 종; 돼지는 앵커 스윕 없이 **제자리에서**
+  처형 — 순간 이동하지 않으므로 멀리 있던 돼지는 화면 밖에서 카메라만 바뀐다. 허용 — 치트). 내가 넘어져 있거나 이미 처형 중·죽었으면
+  로그 한 줄로 거부.
+  ④ **구조 불가**: 처형 중 돼지를 팬으로 쳐도 **HP 만 줄고** 경직·넉백·상태 변화가 없다 — 카메라·타이머·입력 잠금 그대로, 피해자는
+  `ExecuteDuration`에 죽는다. 처형 중 돼지가 죽으면 피해자는 **그 즉시** 죽고(HP 무관, 짐 흘림) 카메라는 돼지 시체가 아니라
+  **데스캠**(내 시체, 옆에 돼지 시체)으로 블렌드 → `SpectateDelay` 뒤 동료 시점(1인이면 전멸). 돼지 쪽은 보통 `Death` 클립.
+  (Run 2) 두 리그의 처형 클립은 죽는 순간의 프레임에서 멈춘다(`DOWN` 끝 자세가 아니어도 된다 — 중간 자세로 얼어붙는 것이 정상) — 카메라는
+  그 자세를 기다리지 않고 그대로 데스캠으로 컷된다.
+  ⑤ 처형 중인 나를 닭은 **잡지도 예고하지도 않는다**(타깃에서 제외 — 옆에 서서 기다리거나 다른 사람에게 간다). 처형 시작 순간 이미
+  **덮치는 중이던** 닭은 닿아도 **헛친다**(`IsPounceHit()==false`, HP 불변, 넘어짐 없음 — 넘어짐이 끼면 무적 문이 처형을 "살려" 버리므로
+  버그다). 예고 중이던 닭은 예고를 끝내고 헛친 뒤 물러난다. 반대로 **닭에게 먼저 잡혀 넘어져 있는 동안** 돼지는 나를 잡지 못한다
+  (`bCanCatch` — 넘어진 사람 제외) — 일어선 뒤에야 잡히고, 그때 처형이다.
+  ⑥ 수레를 끌던 중에도 잡히면 처형된다(스윕이 없으니 수레 위치는 무관). 수레가 언제 손에서 놓이는지(진입 순간인지, 죽는 순간
+  `HostDropEverything`인지) 관찰해 적는다 — 어느 쪽이든 죽은 뒤에 끌려 있으면 버그다.
+  ⑦ **롤백**: `bExecuteOnCatch false`면 돼지는 **보통 잡기**(C3 — 넘어짐·HP−1·`Catch` 상태, `cl9.execute`는 로그 한 줄 "처형 종 없음"류)
+  — 빌드 없이. **로드 검사**: `bExecuteOnCatch true`인데 `ExecuteDuration 0`이면 PIE 시작 때 Output Log 에 **Error 한 줄**(문구에
+  `bExecuteOnCatch`·`ExecuteDuration` 열 이름)이 찍히고 그 종이 비활성(C3-예고의 `PounceRadius < CatchRadius`와 같은 꼴). **잔존**: 처형된 채
+  밤이 끝나면 로비에서 만HP로 패드 위에 서고(H3) 카메라는 **내 1인칭**이며 `ExecutedBy`가 비어 있다(다음 밤 돼지가 나를 다시 쫓아와
+  잡는다 — 처형된 사람 취급이 남아 닭·돼지가 나를 무시하면 버그). `cl9.night`로 끝낼 때 몬스터가 먼저 사라져도 크래시·뷰 타깃 미아가
+  없다(`ClearNightPopulation` 전에 `HostEndExecuted`). **`net.PktLag 100`**: 클라 피해자의 카메라 전환·얼어붙음이 0.1~0.2초 늦다(허용).
+- **자동 확인**(로그·게터): 돼지 `GetState()`가 Patrol/Wander → Chase → Pounce → **Execute**(`Catch`를 **지나지 않는다**) → Break → Return;
+  로그 `executes on catch at (…)`. Execute 길이 = `ExecuteDuration + (관전 시작까지)` ≤ `ExecuteDuration + SpectateDelay + 0.1`(`GetStateElapsed()`).
+  피해자 `IsExecuted()==true`인 동안 `GetMaxSpeed()==0`, `GetExecuteElapsed()`가 0 부터 오르고 `GetExecuteDuration()==ExecuteDuration`; 죽는 시각 =
+  진입 + `ExecuteDuration` ±0.05초, 그때 `IsDead()`·`HostDropEverything` 로그. 진입 순간 HP 불변(`OnDamage`를 타지 않는다), `IsKnockedDown()==false`.
+  로비 부활 뒤 `IsExecuted()==false`·`ExecutedBy==null`·뷰 타깃 = 내 폰. ⑤는 닭 `IsPounceHit()==false`. 2인 PIE 클라에서
+  `ExecuteStartServerTime`·`ExecutedBy`가 복제돼 상대 화면의 얼어붙음이 호스트와 같은 시각에 시작.
+- **값 반영**: `bExecuteOnCatch`·`ExecuteDuration`·카메라 셋·`ExecuteCameraBlend` 전부 표라 **빌드 없이** 바뀐다. `bExecuteOnCatch false` = 종 롤백
+  스위치(위 ⑦). `ExecuteDuration`은 Run 1(2026-09-20)에선 `AN_Pig_Catch`(0.8초)보다 길면 마지막 프레임 유지, 짧으면 잘렸다 —
+  Run 2(2026-09-21)부터 전용 클립 길이 2.0에 맞춘다. 스토킹 열 9개를 0 이 아니게 두면 돼지는 **스토커로도** 동작한다(`GetHuntState()`가 `Stalk`) — 두 방식이 한 종에 겹치는 것은
+  의도가 아니니 0 을 유지한다. 잡힘 자체의 회피는 C3-예고의 산수 그대로(추격 열은 balance).
+
+### C-처형-너구리. 스토킹 → 등 뒤 처형 — 등지면 다가오고, 돌아보면 멈추고, 등 뒤에 닿으면 구조 없이 죽는다 (2026-09-20, Run 1 → 종 재배치)
+값은 `MonsterTable.raccoon`의 Execute/Stalk 13열 — `ExecuteRadius`(cm, 0 = 처형 없음) · `ExecuteBehindAngle`(도, 반각) · `ExecuteUnseenTime`(s) ·
+`ExecuteDuration`(s, 2.0(초안, Run 2)) · `ExecuteAnchorDistance`(cm, ≥ `Radius` 40 + 39 = 79) · `ExecuteCameraSocket`(`head`) ·
+`ExecuteCameraOffset`(cm) · `ExecuteCameraRotation`(도 — 너구리 `head` 본은 수평이라 돼지의 8° 보정 없음) · **`StalkSpeed`(cm/s, 사용자 확정 450)** ·
+`StalkGazeHalfAngle`(도) · `StalkGazeRadius`(cm) · **`StalkStareAnger`(s, 사용자 확정 6)** · `StalkRetreatRadius`(cm; 후퇴 속도는 기존
+`RetreatSpeed` 220) — 와 `CL9Rules.ExecuteCameraBlend`(s, 0.3)이다. `bExecuteOnCatch`는 false, **`SleepTime` 0(사용자 확정 — 안 잔다)**. 격분 뒤 추격은
+기존 `ChaseSpeed`(462)·`PounceWindup`(0.6)으로 간다. 확정 3개 외의 값은 balance(report-balance.md·raccoon.md)가 정한다 — PIE 관찰 전이니 표 셀을
+먼저 본다. **시간표(정지한 혼자, balance 확정 — 절대 시각)**: Execute 진입 3.0초, 죽음 5.0초(진입 + `ExecuteDuration` 2.0), 너구리
+`Break` 8.0초(죽음 + `SpectateDelay` 3.0). 상태 `Stalk`·`Execute`, 캐릭터 게터 `IsExecuted()`·`GetExecuteElapsed()`·`GetExecuteDuration()`·`IsIncapacitated()`는
+docs/systems/monster.md "스토킹과 처형"·character.md 죽음 절. 설계 정본은 docs/goal/execute-sequence-pig.md D1~D9(종만 너구리로 — 상단 "종 재배치").
+**(이력) Run 1(2026-09-20)은 클립을 재사용했다**(너구리 `AN_Raccoon_Catch` 마지막 프레임 유지 — `ABP_Raccoon_A` Execute 가지, animation.md —
++ 농부 Idle 정지 자세) — **Run 2(2026-09-21)부터 전용 2인 클립**(`AN_Raccoon_Execute`·`AN_Farmer_Executed_Raccoon`, 각 2.0초 — 아래 기대 참조).
+- **절차**: `Lvl_Flat`, 계란을 손에 들고 퀵슬롯 다른 칸도 하나 채운 채 `cl9.addmonster raccoon 1`.
+  ① **스토킹**: 너구리가 나를 감지한 뒤 **등을 돌리고 가만히 선다** → 몇 초 뒤 **돌아본다** → 너구리가 `StalkRetreatRadius` 안에 올 때까지
+  기다렸다 돌아본다 → 다시 등진다. 이어서 등진 채 **W 로 걷는다**(달리지 않는다) → 그다음 **Shift 달리기**. 2인 PIE면 내가 등진 채
+  **동료가 너구리를 지켜본다**(동료는 `StalkGazeRadius` 안).
+  ② **격분**: 너구리를 정면으로 `StalkStareAnger`(6)초 이상 계속 노려본다 — 그 전에 **흘깃**(2~3초 보고 다시 등짐)도 한 번.
+  ③ **스토킹 중 타격**: `cl9.additem frying_pan`을 들고 다가오는(또는 멈춰 선) 너구리를 친다.
+  ④ **처형 진입**: `cl9.execute`(가장 가까운 처형 종이 나를 처형 — Stalk 계수기·거리·등 뒤·미발견 검사는 우회, 앵커 스윕은 그대로;
+  돼지도 같이 있으면 더 가까운 쪽이 처형한다) 또는 **자연 진입**(등진 채 `ExecuteUnseenTime` 이상 서 있어 너구리가 등 뒤 `ExecuteRadius`
+  안에 오게). 처형 중 W/A/S/D·마우스·좌클·Shift+G·E·1~4·우클 길게를 **전부** 눌러 본다. 2인 PIE면 상대가 옆에서 지켜본다 —
+  **호스트 피해자 1회, 클라 피해자 1회**.
+  ⑤ **무구조**: 처형 중 동료(2인)가 팬으로 너구리를 친다 → 다른 회차에서 처형 중 `cl9.damage`류가 아니라 **너구리 HP 를 0 까지** 때려
+  너구리를 죽인다(`HpMax` 만큼 연타 — 처형 중엔 경직이 없어 연타가 들어간다).
+  ⑥ **둘째 몬스터**: `cl9.addmonster chicken 1`을 더해 닭이 쫓아오는 중에 `cl9.execute` — 닭이 **예고(Pounce) 중이거나 덮치는 중**에
+  처형이 시작되게 타이밍을 맞춘다(안 되면 두세 번).
+  ⑦ **수레**: `cl9.additem cart`로 수레를 끌며 등진 채 `cl9.execute`(또는 자연 진입).
+  ⑧ **롤백·로드·잔존**: `MonsterTable.raccoon.ExecuteRadius 0`으로 저장 → PIE 재시작 → `cl9.addmonster raccoon 1`; 이어서 `ExecuteRadius`를
+  원래대로 하고 `ExecuteDuration 0`(또는 `StalkSpeed 0`·`StalkGazeRadius 0`·`ExecuteAnchorDistance < Radius + 39`·`RetreatSpeed 0` 인 채
+  `StalkRetreatRadius > 0`) 으로 저장 → PIE 시작 → Output Log. 원복 뒤 처형당한 채 `cl9.night`로 밤을 끝낸다(2인이면 한쪽만
+  처형된 채) → 로비 부활 → 다음 밤 `cl9.addmonster raccoon 1`. 2인 PIE `net.PktLag 100`으로 ①을 다시 한다.
+- **기대**:
+  ① 너구리는 감지해도 **쫓아오지 않고**(`Chase`가 아니라 `Stalk`) 내가 등지면 `StalkSpeed`(450)로 **내 등 쪽으로** 걸어온다. 돌아보는
+  **순간** 제자리에 멈추고(`StalkGazeHalfAngle` 안 + 시야 + `StalkGazeRadius` 안 = "본다"), `StalkRetreatRadius` 안이면 `RetreatSpeed`로
+  **뒷걸음쳐 물러난다**. 다시 등지면 다시 온다. 로코모션 그대로다(전용 자세 없음 — Stalk 은 알파 전부 0; 450 이면 `ABP_Raccoon_A`의
+  Walk/Run 문턱에 따라 뛰는 자세일 수 있다 — 관찰해 적는다). **등진 채 걸으면 따라붙는다**(450 > 걷기 396 — 간격이 초당 54cm 씩 좁혀져
+  등 뒤 `ExecuteRadius` 까지 온다; 걷기로는 못 뗀다), **달리면 뗀다**(달리기 654 > 450 — 간격이 벌어지다 `ChaseLoseTime`·`DeaggroRadius`로
+  `Break`). 2인: **동료가 보고 있어도** 멈춘다(산 사람 누구든 하나라도 보면 "본다"). 내가 넘어져 누워 있으면 너구리는 서서 기다린다.
+  어두워서 안 보이는 것은 구분하지 않는다(어둠 속을 보고 있어도 "본다" — 알려진 미결, goal 문서 Out-of-scope).
+  ※ 감지하자마자 쫓아오면 `ExecuteRadius`가 0 이거나 로드 검사에서 종이 비활성인 것이다(⑧). 돌아봐도 계속 오면 `StalkGazeRadius` 밖이거나
+  `StalkGazeHalfAngle`이 좁은 것 — 바닥을 내려다봐도 요(yaw)만 보므로 멈춰야 한다(피치 무관, D5). 걸어서 떼어지면 `StalkSpeed`가 396 아래로
+  내려간 것(값).
+  ② **흘깃**(6초 미만)은 안전 — 멈춰 서 있다가 등지면 다시 온다(응시 계수기는 눈을 떼면 같은 속도로 0 까지 **감쇠** — 3초 보고 1초 등졌다
+  다시 보면 2초부터 쌓인다, 리셋이 아니다). `StalkStareAnger`(6)초 **연속으로** 노려보면
+  **격분** → 보통 추격(`Chase`)으로 바뀌어 닭처럼 예고(`PounceWindup`이 0 이 아니면)·덮침·잡기(C3-예고·C3 — 너구리는 `bExecuteOnCatch`
+  false 라 잡히면 **보통 잡기**, 넘어짐·HP−1)를 한다. 추격 중 시야를 끊으면 보통처럼 `Break` → `Return`이고, 다시 감지하면 다시
+  `Stalk`부터다. 동료의 죽음 경보(`ReceiveKillAlarm`)·무리 경보도 스토킹을 추격으로 바꾼다.
+  ③ 스토킹 중 팬에 맞으면 **경직**(C8 `PushReact`, 밀려남) 뒤 **격분** → 보통 추격. 경직 중엔 스토킹이 끊긴다.
+  ④ 처형 진입 순간 너구리가 **내 등 뒤 `ExecuteAnchorDistance`에 순간 이동**해(미끄러져 오지 않는다 — 메시 스무딩도 고정) 나를 향해 선다.
+  **입력이 전부 죽는다** — 이동·회전·휘두르기·던지기·줍기·칸 전환·먹기·사용 모두 무시(`IsIncapacitated()`; 클라 피해자는 서버도 거부해
+  로컬에서 눌러도 아무 일도 없다). 내 카메라가 `ExecuteCameraBlend` 동안 **너구리 카메라**(`ExecuteCameraSocket` + `ExecuteCameraOffset`/
+  `ExecuteCameraRotation` — 등 위·뒤에서 나를 내려다보는 자리)로 부드럽게 옮겨 가 **내 몸을 3인칭으로** 본다 — 1인칭 고정의 관전 범주
+  예외. HUD 의 비네트·호·셰이크·프롬프트·포커스 아웃라인은 처형 중 **뜨지 않는다**. `ExecuteDuration` 뒤 **HP 와 무관하게**(만HP여도) 죽고
+  손·퀵슬롯 짐이 발밑에 흩어진다(C5 죽음 드랍과 같은 경로 — 짐 흘림은 죽을 때만이라는 규칙 그대로). **즉사 순간 너구리 카메라에서
+  데스캠으로** `DeathCameraBlend` 블렌드(2026-09-20 밤, H2 — 폰의 `DeathCamera`가 `DeathCameraOffset`에서 내 시체를 본다; 보통 사망과 같은
+  경로) → `SpectateDelay` 뒤 **관전(동료 1인칭)**. 내 폰의 넘어짐 카메라(1인칭)로 **돌아오지 않는다**(1인이면 관전 대상이 없어 데스캠이
+  유지되다 전멸 → 밤 종료). 너구리는 시체 옆에 `SpectateDelay` 까지(늦어도 `ExecuteDuration + SpectateDelay`) 머물러 데스캠에 같이 잡힌 뒤
+  `Break` → `Return`. **목격자(2인 상대) 화면(Run 2, 2026-09-21 — 전용 클립)**: 진입 순간(순간 이동과 동시에) 피해자 요가 서버에 의해
+  너구리 쪽(등 뒤)으로 돌아간다. 너구리가 순간 이동한 등 뒤 자리에서 `AN_Raccoon_Execute`(2.0초, 등 뒤 도약 → 앞발)를 재생하고, 피해자는
+  `AN_Farmer_Executed_Raccoon`(등 뒤에서 덮쳐 앞으로 엎드림)을 같이 재생해 **`ExecuteDuration` 끝에 `PRONE`**(신설 — 골반 피치 −π/2, 얼굴
+  옆으로)으로 멈춘다 — **넘어짐 사슬은 화면에 보이지 않는다**(클립 끝 프레임이 곧 시체 자세이고 부활까지 유지된다). 너구리는 클립 끝(시체
+  발치에 선 자세, Idle 첫 프레임에 가깝게)에서 `SpectateDelay` 까지 그대로 머문다. **(이력) Run 1(2026-09-20)** 에선 너구리가
+  `AN_Raccoon_Catch` 마지막 프레임에 멈추고 피해자는 얼어붙었다가(Idle 정지) 넘어져 눕는 재사용 클립이었다 — 두 리그가 맞물리는 자세가
+  아니었다. **정렬 확인**: 몬스터 카메라·목격자 화면 스크린샷을 각 1장씩 `.claude/runs/execute-clips/`에 남긴다. 소리: 진입 순간
+  `MonsterCatch`(Execute 전이에서도 낸다)가 한 번, 전용 소리는 없다(Run 2 도 동일). 죽는 순간 `Hurt`가 한 번 난다(`HurtEvent` — 죽음
+  경로 그대로).
+  **호스트 피해자·클라 피해자** 모두 같다 — 클라 피해자는 `OnRep`으로 카메라·입력이 바뀌므로 진입 뒤 한 틱쯤 늦을 수 있다(허용).
+  ※ 진입은 됐는데 카메라가 안 바뀌면 `ExecuteCameraBlend`가 아니라 뷰 타깃 문제다(`SetViewTarget` 서버 경로, 관전과 같은 길). 너구리가 순간
+  이동을 안 하고 그 자리에서 처형하면 앵커 스윕이 막힌 것 — `cl9.execute`도 스윕은 지나므로 벽 옆에서는 **처형이 안 된다**(그 틱엔
+  계속 스토킹; 돼지와 다른 점). 카메라가 너구리 몸속에 박히면 `ExecuteCameraOffset`을 키운다(값 — 너구리는 몸이 낮아 돼지 값이 그대로
+  맞지 않는다). 죽은 뒤 카메라가 내 폰 1인칭(넘어짐 카메라)으로 돌아오면 버그 — 데스캠(시체를 밖에서 보는 3인칭)은 맞다(2026-09-20 밤,
+  D6 번복).
+  ⑤ **구조 불가**: 처형 중 너구리를 팬으로 쳐도 **HP 만 줄고** 경직·넉백·상태 변화가 없다 — 카메라·타이머·입력 잠금 그대로, 피해자는
+  `ExecuteDuration`에 죽는다. 처형 중 너구리가 죽으면 피해자는 **그 즉시** 죽고(HP 무관, 짐 흘림) 카메라는 너구리 시체가 아니라
+  **데스캠**(내 시체, 옆에 너구리 시체)으로 블렌드 → `SpectateDelay` 뒤 동료 시점(1인이면 전멸). 너구리 쪽은 보통 `Death` 클립.
+  (Run 2) 두 리그의 처형 클립은 죽는 순간의 프레임에서 멈춘다(`PRONE` 끝 자세가 아니어도 된다 — 중간 자세로 얼어붙는 것이 정상) — 카메라는
+  그 자세를 기다리지 않고 그대로 데스캠으로 컷된다.
+  ⑥ 처형 중인 나를 닭은 **잡지도 예고하지도 않는다**(타깃에서 제외 — 옆에 서서 기다리거나 다른 사람에게 간다). 처형 시작 순간 이미
+  **덮치는 중이던** 닭은 닿아도 **헛친다**(`IsPounceHit()==false`, HP 불변, 넘어짐 없음 — 넘어짐이 끼면 무적 문이 처형을 "살려" 버리므로
+  버그다). 예고 중이던 닭은 예고를 끝내고 헛친 뒤 물러난다.
+  ⑦ 수레를 끌던 중에도 처형된다 — 뒤에 끌리는 수레가 앵커 자리에 있어도 **스윕에서 제외**돼 너구리가 수레 자리로 순간 이동해 문다
+  (수레가 밀려나거나 겹쳐도 허용). 수레가 언제 손에서 놓이는지(진입 순간인지, 죽는 순간 `HostDropEverything`인지) 관찰해 적는다 —
+  어느 쪽이든 죽은 뒤에 끌려 있으면 버그다.
+  ⑧ **롤백**: `ExecuteRadius 0`이면 너구리는 **옛 동작 그대로**(감지 → `Chase` → 예고·덮침·잡기; `Stalk`·`Execute` 진입 없음, `cl9.execute`는
+  로그 한 줄 "처형 종 없음"류 — 돼지가 없을 때) — 빌드 없이. **로드 검사**: `ExecuteRadius > 0`인데 `ExecuteDuration 0`·`StalkSpeed 0`·
+  `StalkGazeRadius 0`·`ExecuteAnchorDistance < Radius + 39`, 또는 `StalkRetreatRadius > 0`인데 `RetreatSpeed 0`이면 PIE 시작 때 Output Log 에
+  **Error 한 줄**이 찍히고 그 종이 비활성(C3-예고의 `PounceRadius < CatchRadius`와 같은 꼴). **잔존**: 처형된 채 밤이 끝나면 로비에서 만HP로
+  패드 위에 서고(H3) 카메라는 **내 1인칭**이며 `ExecutedBy`가 비어 있다(다음 밤 너구리가 나를 다시 스토킹한다 — 처형된 사람 취급이 남아
+  닭·너구리가 나를 무시하면 버그). `cl9.night`로 끝낼 때 몬스터가 먼저 사라져도 크래시·뷰 타깃 미아가 없다(`ClearNightPopulation` 전에
+  `HostEndExecuted`). **`net.PktLag 100`**: 돌아본 뒤 너구리가 멈추기까지 **0.1~0.2초 늦다**(호스트가 클라의 `GetBaseAimRotation`을 복제로
+  받는다 — 허용, D5) — 그 사이 한 걸음쯤(450 이면 최대 90cm) 더 온다. 클라 피해자의 카메라 전환도 그만큼 늦다.
+- **자동 확인**(로그·게터): 너구리 `GetState()`가 Patrol/Wander → **Stalk**(①) → Chase(②③) 또는 Stalk → **Execute**(④) → Break → Return.
+  Execute 길이 = `ExecuteDuration + (관전 시작까지)` ≤ `ExecuteDuration + SpectateDelay + 0.1`(`GetStateElapsed()`). 피해자 `IsExecuted()==true`인
+  동안 `GetMaxSpeed()==0`, `GetExecuteElapsed()`가 0 부터 오르고 `GetExecuteDuration()==ExecuteDuration`; 죽는 시각 = 진입 + `ExecuteDuration`
+  ±0.05초, 그때 `IsDead()`·`HostDropEverything` 로그. 로비 부활 뒤 `IsExecuted()==false`·`ExecutedBy==null`·뷰 타깃 = 내 폰. ⑥은 닭
+  `IsPounceHit()==false`. 2인 PIE 클라에서 `ExecuteStartServerTime`·`ExecutedBy`가 복제돼 상대 화면의 얼어붙음이 호스트와 같은 시각에 시작.
+  ①의 걷기·달리기: 등진 채 걷는 동안 `GetState()==Stalk` 유지·거리 단조 감소, 달리는 동안 거리 단조 증가.
+- **값 반영**: 13열·`ExecuteCameraBlend` 전부 표라 **빌드 없이** 바뀐다. `ExecuteRadius 0` = 종 롤백 스위치(위 ⑧). `ExecuteDuration`은
+  Run 1(2026-09-20)에선 `AN_Raccoon_Catch` 길이보다 길면 마지막 프레임 유지, 짧으면 잘렸다 — Run 2(2026-09-21)부터 전용 클립 길이 2.0에
+  맞춘다. 카메라 자리 셋
+  (`ExecuteCameraSocket/Offset/Rotation`)은 종별 표 값 — 별도 카메라 BP 없음. `StalkGazeHalfAngle`·`ExecuteBehindAngle`은
+  `180 − StalkGazeHalfAngle > ExecuteBehindAngle`이어야 "보면서 등 뒤"가 겹치지 않는다(economy.md 부등식). `StalkSpeed`는 걷기 396 과
+  달리기 654 사이여야 "걸어도 따라붙고 달리면 뗀다"가 성립한다(450 — 사용자 확정; economy.md 회피 산수). `StalkStareAnger` 6 은 "흘깃은
+  안전"의 값이다(사용자 확정). "본다" 판정의 어둠 무시·복제 지연은 값이 아니라 규칙이다(관찰만 적는다).
+
+### C4. 타격 — 누르면 대기, 떼면 히트박스 (히트박스·타격감 2026-09-15, 소리·히트스톱·퍼프 2026-09-18, 히트박스 배율 2026-09-20)
 - **절차**: `cl9.additem frying_pan`을 주워 활성 칸에 든 채 닭 **바로 앞**(팬이 닿는 거리)에서 ① **마우스좌를 누르고
   있는다**(3초쯤, 2인이면 상대가 지켜본다) → 뗀다 ② 이번엔 **탭**(누르자마자 뗌) ③ 다시 누른 채 **휠로 다른 칸**으로
   옮기거나 **G**로 놓은 뒤 뗀다 ④ `cl9.additem flashlight`를 들고 좌클을 누른 채 기다렸다 뗀다. 빈 칸을 활성으로 두고도
@@ -298,7 +612,10 @@
   (허공·등지고·2m 밖)을 다시 하고, ⑥처럼 나란한 둘을 한 번에 치고, 쓰러진 **시체**도 한 번 더 친다. PIE 를 새로 시작해
   **레벨에 처음부터 서 있던 닭**도 한 번 본다(치지 않고). ⑪ 2인 PIE — 클라가 자기 정면의 닭을 칠 때 **호스트 화면**에서 그 닭을 본다.
   ⑩에서 **귀와 프레임도 같이 본다**(2026-09-18): 맞는 순간의 소리, 닭 메시와 1인칭 팔이 멈추는지(`slomo 0.15`로 잰다), 닭 몸통의 퍼프.
-  ⑪에서 호스트 화면·클라 화면 양쪽의 소리·퍼프·정지도 본다.
+  ⑪에서 호스트 화면·클라 화면 양쪽의 소리·퍼프·정지도 본다. ⑫(2026-09-20) 팬을 든 채 닭이 다가와 **예고(몸을 젖히고 날개를
+  벌림)에 들어간 순간** 친다 — 예고 초반 한 번, 예고가 끝나 덮치기 직전에 한 번. ⑬(2026-09-20) **닭 폭 하나 빗나간
+  자리에서 휘두르기** — 닭 정면이 아니라 **옆으로 한 걸음(닭 반폭 36cm 안팎) 비껴 서서**, 팬 궤적이 닭 몸을 스치지 않게
+  휘두른다. 이어서 ⑦의 2m 밖 헛스윙을 한 번 더 한다.
 - **기대**: ① 누르는 순간 팔이 프라이팬을 **치켜든 자세로 멈추고** 떼기 전까지 그대로다(**대기에 상한이 없다** — 10초를
   잡고 있어도 풀리지 않는다). 치켜든 팔·프라이팬은 **화면 안(우상단)에 보인다** — 프레임 밖으로 나가 팔이 사라지지
   않는다(2026-09-13 뷰모델). 2인이면 **상대 화면의 3인칭 몸도** 치켜든 채 멈춰 있다. 떼는 순간 휘두르고 닭이 경직 + 넉백으로
@@ -342,6 +659,14 @@
   **소리·퍼프·닭 정지는 양쪽 화면에서 같다**(2026-09-18) — 클라가 때려도, 호스트가 때리는 것을 클라가 봐도 `Swing`·`Hit`·
   퍼프·메시 정지가 그 자리에서 난다(`Swing`은 남의 폰에서도 들린다). 팔 정지만 때린 본인 화면이다. PIE를 새로 시작하거나
   늦게 접속한 클라는 **접속 순간 이미 휘두른 폰·이미 죽은 닭에서 소리·퍼프가 나지 않는다**(첫 틱은 기준값만 받는다).
+  ⑫ **예고 중에 맞은 닭은 경직이 예고를 끊는다**(2026-09-20) — 덮치지 않고 `PushReact`로 밀려나며(`Hit` 소리·플래시·퍼프는
+  ⑩과 같다), 경직이 풀리면 다시 쫓아와 **다시 예고**한다(잡기 쿨다운은 건드리지 않았으니 바로). 덮치기 직전에 맞아도 같다 —
+  경직과 덮침이 같은 틱이면 경직이 이긴다. 경직 중에 잡히면(밀려나며 덮침) 버그다. 상세는 C3-예고 ④.
+  ⑬ **맞는다**(2026-09-20 히트박스 배율) — 닭이 빨개지고 `Push`로 밀린다. 히트박스 반경 = 메시 경계 구(팬 30cm) ×
+  `CL9Rules.SwingHitScale`(2.2 초안 — `docs/plan/data/rules.md` 휘두르기 절)이라 팬 구 중심과 닭 중심의 접촉 거리가
+  30 × 2.2 + 36 = 102cm(배율 전 66cm)로 늘어난 것이다. 중심은 그대로고 반경만 커지므로 ⑦의 **2m 밖은 여전히 안 맞는다**
+  (맞으면 배율이 상한 2.8을 넘은 것 — rules.md 근거). ⑥의 나란한 둘 다 맞음·같은 닭 한 번만·시체 제외는 배율과 무관하게
+  그대로다. 맞는 **순간**도 ⑤처럼 팬이 내려오는 동작 중이어야 한다 — 뗀 직후(팬이 아직 머리 위)에 맞으면 배율이 너무 크다.
   ※ 소리가 아예 없으면 `BP_CL9GameInstance.SoundTableAsset`이 비었거나(로그 Warning 한 줄) 그 행이 없는 것이다 — 행이
   없으면 조용히 통과한다. 퍼프가 없으면 `CL9Rules.HitPuffSystem`이 비었거나 `/Game/Effects/NS_CL9_HitPuff`가 없는 것이다.
   팔이 안 멈추면 `ABP_FP_View`의 `SwingElapsed` 변수 소스가 아직 `GetSwingElapsed`인 것이다(`GetSwingAnimElapsed`여야 한다).
@@ -365,6 +690,8 @@
   그대로 따라오고, 킥의 세기·길이는 `CS_HitShake` 에셋 쪽이다 — 세기만은 `ShakeTable.Hit.Scale`(기본 1.0)로 에셋 교체 없이
   배율을 준다(2026-09-18). `CL9Rules.HitStopTime`(정지 길이)도 표 값이고, 소리는 `SoundTable`의 `Swing`·`Hit` 행, 퍼프는
   `CL9Rules.HitPuffSystem`이 가리키는 나이아가라(`User.Scale` 1.0) — 전부 빌드 없이 바뀐다.
+  `CL9Rules.SwingHitScale`(2026-09-20)도 표 값이다 — **1.0으로 되돌리면 빌드 없이** 옛 메시 경계 구 그대로(⑬이 다시
+  빗나간다). 셀을 0·음수로 두면 로드 시 Validate 오류 한 줄(`SwingHitScale must be a finite positive number`)이다.
 
 ### C5. 죽음 애니메이션 (죽음 발사·드랍 호·소리 2026-09-18)
 - **절차**: `cl9.hitmonster 999`로 가까운 닭을 죽인다. 이어서(2026-09-18) 프라이팬으로 닭을 **두 대에** 죽이되 서 있던 자리를
@@ -508,7 +835,7 @@
   줍기→그 칸에 아이템 **아이콘**(표 `Icon`)이 뜨고, 아이콘이 없는 행만 아이콘 자리에 **이름**(표 `DisplayName`)이 뜬다.
   놓기·던지기·먹기→그 칸이 **빈 칸**(바탕만)이 되며, 전환→흰 테두리와 100%/40% 밝기가 그 칸으로 **즉시**옮겨간다.
   잡혀서 짐을 흘리면 네 칸이 다 비워진다. 2인이면 **상대 화면에서 그 사람 손의 모델이 전환한 칸의 아이템으로 바뀐다**
-  (복제). 칸 수는 `CL9Rules.QuickSlots`(4)를 따르고, 테두리·바탕·밝기는 WBP_HotbarSlot/WBP_HUD 프로퍼티다.
+  (복제). 칸 수는 `CL9Rules.QuickSlots`(4)를 따르고, 테두리·바탕·밝기는 WBP_QuickSlot/WBP_HUD 프로퍼티다.
 
 ### G3. 밤 시계
 - **절차**: `cl9.night`.
@@ -529,13 +856,28 @@
 - **절차**: 2인 PIE, 밤 시작(`cl9.night`). 호스트 콘솔에서 `cl9.damage 3`(호스트가 죽음) 또는
   `cl9.damage 3 1`(1번 = 클라가 죽음), 또는 닭 3회.
 - **기대**:
-  - 죽은 쪽: 카메라가 바닥으로 가라앉고 짐을 흘린다 → `SpectateDelay`(3초) 뒤 **동료의 1인칭
-    시점**으로 바뀌고 관전 화면(UI 표 `Spectate` 행)이 열린다. 로그 `'…' now spectates '…'`.
+  - 죽은 쪽: 짐을 흘리고, **죽는 순간 데스캠**으로 넘어간다(2026-09-20 밤 — 카메라가 바닥으로 가라앉지 않는다) — 폰의 `DeathCamera`
+    컴포넌트가 액터 공간 오프셋 `CL9Rules.DeathCameraOffset`(−320, 140, 260 cm — 뒤·오른쪽·위)에서 **내 시체(누운 초록 몸 전체)를 바라보고**, 옆에 선 몬스터(닭·돼지·너구리)가
+    같이 보인다. 시체가 안 보이고 그림자만 있으면 버그(2026-09-21 — 몸 메시의 `FirstPersonPrimitiveType` 이 `WorldSpaceRepresentation` 인 채라 프록시가 OwnerNoSee 를 강제한 것). → `SpectateDelay`(3초) 뒤 **동료의 1인칭
+    시점**으로 바뀌고 관전 화면(UI 표 `Spectate` 행)이 열린다. 로그 `'…' now spectates '…'`. **혼자면**(관전 대상이 없으면) 데스캠이
+    그대로 유지되다 전멸 → 밤 종료(H3).
   - 관전 대상 전환 키(**Tab**, IMC_Spectate)나 화면의 [다음 동료 (Tab)] 버튼 → 다른 생존자가 있으면
     그쪽으로 (2인이면 무변화). 화면에는 「관전 중 · <동료 이름>」과 복귀 안내가 뜨고, 시야는 어둡게
     덮이지 않는다.
   - 몬스터는 죽은 폰을 무시한다(추격 안 함).
-- **값 반영**: `CL9Rules.SpectateDelay`를 바꾸면 전환까지의 시간이 따라온다.
+  - **처형으로 죽었으면(C-처형-돼지 ①·C-처형-너구리 ④, 2026-09-20; 전용 클립 Run 2 — 2026-09-21)**: `ExecuteDuration` 뒤 즉사하는 **그 순간**
+    몬스터 카메라에서 데스캠으로 `DeathCameraBlend` 블렌드(처형 즉사·보통 사망 공통 경로) — 몬스터는 시체 옆에 `SpectateDelay` 까지 머물러
+    데스캠에 같이 잡힌다. **시체 자세 = 클립 끝 프레임**(`AN_Farmer_Executed_Pig` → `DOWN`, `AN_Farmer_Executed_Raccoon` → `PRONE`)이며
+    **부활까지 유지된다 — 넘어짐 사슬은 보이지 않는다**(처형 중 죽었으면 그 순간 프레임에서 멈춘다). 그 사이에 내 폰 1인칭(넘어짐 카메라)으로
+    돌아오면 버그. 관전 이후는 위와 같다.
+  - **보통 사망(닭 3번·`cl9.damage 3`)도 데스캠**: 넘어짐 카메라(C3)로 바닥에 누운 채 3번째 잡힘 → HP 0 이 되는 순간 넘어짐 카메라에서
+    데스캠으로 **즉시 전환**(같은 폰 안의 두 카메라 사이엔 엔진 블렌드가 없다 — `DeathCameraBlend` 는 처형 즉사의 몬스터 카메라 → 데스캠에만). 시체·옆의 닭이 보이고 HUD 의 비네트·호·프롬프트는 뜨지 않는다.
+  - **부활 복구**: 밤 종료 → 로비 부활(H3) 때 데스캠이 꺼지고 **내 1인칭**으로 돌아온다. 로비에서 카메라가 시체 자리나 오프셋
+    위치에 남아 있으면 버그.
+  - **롤백**: `CL9Rules.DeathCameraOffset (0,0,0)`이면 데스캠 없음 — 옛 동작(카메라가 바닥으로 가라앉음, 처형이면 몬스터 카메라에 머묾) 그대로.
+    빌드 없이.
+- **값 반영**: `CL9Rules.SpectateDelay`를 바꾸면 전환까지의 시간이 따라온다. `DeathCameraOffset`을 바꾸면(빌드 없이) 다음 죽음부터 데스캠
+  자리가 따라온다(X 음수 = 시체 뒤, Y 양수 = 오른쪽, Z 양수 = 위). `DeathCameraBlend 0`이면 즉시 전환.
 - **자동 검증(2026-09-05, UI)**: 호스트 사망 3초 뒤 UI 표 `Spectate` 행이 열려 「관전 중 · <클라 이름>」 표시,
   뷰 타깃=클라 폰, 클라 쪽은 열리지 않음. 밤 종료 → 로비 2일차 복귀에서 화면 닫힘·`bSpectating` 해제.
   Tab·버튼은 2인이라 무변화(3인 이상에서 전환 확인 필요).
@@ -632,7 +974,7 @@
 - **절차**: ① `cl9.additem frying_pan` → E로 줍고 4초 넘게 지켜본다 → G로 놓고 다시 E ② `cl9.additem egg`(생) → E
   ③ `cl9.additem egg+cooked` → E ④ `cl9.additem flashlight` → E ⑤ PIE를 끝내고 다시 시작해 프라이팬을 줍는다
   ⑥ M → [설정]에서 사용 행(`Input.Use.Name`, 기본 LMB)의 키를 **V**로 바꾸고, 설정 파일의 `SeenItemHints`를
-  다시 비운 뒤 프라이팬을 줍는다 → 검증 뒤 [키 초기화](또는 `cl9.resetkeys`).
+  다시 비운 뒤 프라이팬을 줍는다 → 검증 뒤 [키 초기화].
 - **기대**: ① 줍는 순간 하단 중앙 **프롬프트 위**에 두 줄이 뜬다 — "[LMB] 살짝 누르기 — 바로 휘두르기" / "[LMB] 꾹 누르기 —
   들고 있다가 떼는 순간 휘두르기". **4초**(`WBP_HUD.HintDuration`) 뒤 사라진다. 놓았다 다시 주우면 **안 뜬다**(종류별
   한 번 — 저장 키는 행 `Alias`). ② 생계란은 **안 뜬다**(`UseAction None`이고 `Dish`가 아니다 — 설명할 조작이 없다).
@@ -893,7 +1235,7 @@
   (칸 전환 휠은 `IA_SlotScroll` 행 `IgnoreSettings` — 설정에서 바꿀 수 없다). "던지기"·"교체" 행도 없다(IA_Throw·IA_Swap
   삭제). 놓기를 H로 바꾸면 H로 놓이고 **Shift+H가 던지기**가 된다(던지기는 "달리기 키 + 놓기 키" 조합이라 따로 행이 없다).
   휠은 그대로 칸 전환. 프롬프트 `[E] 줍기`는 안 바뀐다. [키 초기화]로 G로 돌아온다. 리바인딩은
-  `Saved/SaveGames/EnhancedInputUserSettings.sav`에 남으니 검증 뒤 되돌리거나 `cl9.resetkeys`.
+  `Saved/SaveGames/EnhancedInputUserSettings.sav`에 남으니 검증 뒤 되돌리거나 [키 초기화]로 기본값으로 돌린다.
 - **값 반영**: 행 이름은 String Table `Input.Drop.Name`·`Input.Slot1.Name`~`Input.Slot4.Name`(ko 열) — 문구를 바꾸면 그대로 따라온다.
 
 
@@ -905,7 +1247,9 @@
 
 치트는 `cl9.wave <별칭>`(내 발밑에서 그 행의 파동을 한 번 낸다) · `cl9.shownoise`(소음 판정 반경 디버그 원 토글) ·
 `cl9.blackout` · `cl9.addmonster` · `cl9.additem egg`를 쓴다. 행 별칭은 `run`·`pickup_quiet`·`pickup_loud`·`push`·
-`decoy`·`throw_break`·`cart`·`land`·`walk`·`monster_prox`·`monster_call` 열한 개다.
+`decoy`·`throw_break`·`cart`·`land`·`walk`·`monster_prox`·`monster_call`·`monster_pounce`(2026-09-20 — 잡기 예고, C3-예고)
+열두 개다. 내 발밑에서 부른 `cl9.wave monster_pounce`는 `FallbackRadius`의 링만 그리고 소리는 없다(소리는 파동 행이 아니라
+몬스터 상태 전이가 낸다). `monster_prox`는 `SoundRow`가 있어 링과 함께 `MonsterNear`가 난다(C1).
 벽이 필요한 항목(T2·T5)은 `Lvl_Henhouse`, 나머지는 `Lvl_Flat`에서 본다.
 
 ### T1. 달리면 발밑에 링이 핀다 — 링이 멈춘 자리 = 판정 반경
@@ -977,6 +1321,21 @@
 - **값 반영**: 거위의 `PackAlarmRadius`가 docs/plan/data/monster/goose.md에 아직 없어 **기대 반경을 숫자로 적지
   못했다**(docs/plan/data/wave.md 미결 3). 값이 정해지면 이 항목의 기대에 그 수치를 적는다.
 - **자동 검증**: 미실측
+
+---
+
+## U. 성능 기준선 (2026-09-21)
+
+- **목적**: 기능을 더한 뒤 프레임이 기준선 안인지 본다. 정본·예산·도구는 [../systems/performance.md](../systems/performance.md).
+- **절차**: ① 에디터 창을 **복원**(최소화·가려짐이면 3fps 스로틀 — 그 수치는 버린다) ② 다른 세션이 빌드 중이 아닌지 `/cl9 status` ③ `Lvl_Henhouse`,
+  PIE 클라 수 1 로 Play ④ 콘솔 `cl9.night` → 트럭 앞에 선 채 `stat unit` ⑤ 축사 안 작업등 아래로 걸어 들어가(또는 `perf_probe.py` cfg `teleport`
+  `[2900, -1455, 92]`) 다시 `stat unit` ⑥ 기록을 남기려면 [../systems/performance.md](../systems/performance.md) "측정" 의 도구 절차.
+- **기대(이 머신, 뷰포트 1466×504)**: 밤 트럭 앞 Frame ≈ 12.6ms · 밤 실내 ≈ 13.0ms(77fps) · GPU ≤ 6.5ms. 로비(낮)는 16.4ms 가 정상(구름·햇빛).
+  실내 avg 가 **14ms 를 넘으면** 회귀 — 무엇이 더해졌는지 `stat dumpframe -ms=0.3`·`ProfileGPU` 로 나눠 본다.
+- **첫 만남 스톨(2026-09-21 원인)**: 콘솔에서 `t.HitchFrameTimeThreshold 30` · `stat dumphitches` 를 켠 뒤 `cl9.addmonster chicken 1` 로 코앞에 닭을 두고
+  가만히 서서 잡히기 → 로그(`LogStats: Thread Hitch`)에 **30ms 넘는 히치가 GC 말고는 없어야** 한다(고치기 전: 잡히는 첫 순간 694ms — 캐릭터 틱의 셰이크
+  클래스 동기 로드). `cl9.wave run` 첫 링·`cl9.hitmonster` 첫 타격도 같다.
+- **자동 검증**: `Tools/Unreal/perf_probe.py` C0~C9 — 2026-09-21 실측 표는 performance.md 기준선 절. 출현·접근 시나리오는 performance.md "몬스터 출현·접근 실측".
 
 ---
 

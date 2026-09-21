@@ -5,14 +5,15 @@
 어떻게 보일지**만 갖는다. 왜 만드는지는 [../wave.md](../wave.md), 열의 타입·뜻의 정본은
 [../../systems/wave.md](../../systems/wave.md) "행 스키마"다.
 
-> **이 문서의 수치는 전부 초안이다 (2026-09-16).** 표 에셋(`WaveTable`)도 C++도 아직 없고
-> ([../../systems/wave.md](../../systems/wave.md) 구현 상태), 파동은 판정에 닿지 않는 표현
+> **이 문서의 수치는 전부 초안이다 (2026-09-16).** 구현은 끝났다 — C++ `Source/CL9/Data/CL9WaveTable.*`·
+> `Source/CL9/FX/CL9WaveRenderer.*`, 표 에셋 `Content/Data/WaveTable`, 나이아가라 `Content/Effects/NS_CL9_Wave`
+> (2026-09-16, [../../systems/wave.md](../../systems/wave.md) 구현 상태). 파동은 판정에 닿지 않는 표현
 > 값이라 확정은 **PIE에서 눈으로 보고** 한다. 행마다 "무엇을 보고 확정하나"를 아래
 > [PIE 관찰](#pie-관찰--무엇을-보고-값을-확정하나) 절에 한 줄씩 적어 두었다.
 
-**행은 열한 개, 열은 행 22개 + 전역 2개다.** 아래 네 표는 그 22열을 주제별로 나눠 실은
-것이고 **열을 더하거나 이름을 바꾸지 않았다** — 네 표의 열을 합치면 스키마의 22열과 정확히
-같다.
+**행은 열두 개, 열은 행 23개 + 전역 2개다.** 아래 네 표는 그 23열을 주제별로 나눠 실은
+것이고 **열을 더하거나 이름을 바꾸지 않았다** — 네 표의 열을 합치면 스키마의 23열과 정확히
+같다. (2026-09-20: `SoundRow` 열과 `monster_pounce` 행이 늘었다 — 아래 4 절.)
 
 ---
 
@@ -51,6 +52,7 @@
 | `RepeatInterval` | `float` | s | 이 시간마다 발동 (0 = 반복 없음) |
 | `MinInterval` | `float` | s | 폭주 안전판 |
 | `TriggerRadius` | `float` | cm | 이 안에 플레이어가 있을 때만 (0 = 조건 없음) |
+| `SoundRow` | `FName` | — | 이 소음이 나면 같이 낼 `SoundTable` 행 이름(`CL9SoundNames` — [../../systems/sound.md](../../systems/sound.md); None = 소리 없음). 링과 같은 사건·같은 박자로, 링이 안 그려져도(정전 아님·컬링 밖) 난다. 행이 꺼지면 사건 자체가 없어 소리도 없다 |
 
 ---
 
@@ -73,6 +75,7 @@
 | `walk` | **false** | `Always` | `None` | 228 | 1.0 | (228) | (0.45s) |
 | `monster_prox` | true | `Always` | `None` | 330 | 1.0 | 330 | 0.65s |
 | `monster_call` | true | `Always` | **`PackAlarm`** | 0 | 1.0 | 600 (닭·너구리) | 1.18s |
+| `monster_pounce` | true | `Always` | `None` | 306 | 1.0 | 306 | 0.60s |
 
 `RadiusFrom`이 가리키는 곳: `RunNoise`·`PickupQuiet`·`PickupLoud`·`PushNoise`·`Decoy`는
 [rules.md](rules.md) 소리 표의 같은 이름 컬럼, **`PackAlarm`은 그 몬스터 행의
@@ -97,12 +100,13 @@
 | `walk` | `NS_CL9_Wave` | 510 | 12 | 0.42, 0.62, 0.78 | true | 0.6 | 1.7 |
 | `monster_prox` | `NS_CL9_Wave` | 510 | 18 | 0.85, 0.25, 0.38 | false | 1.0 | 1.0 |
 | `monster_call` | `NS_CL9_Wave` | 510 | 18 | 1.00, 0.65, 0.35 | false | 1.0 | 1.0 |
+| `monster_pounce` | `NS_CL9_Wave` | 510 | 18 | 1.00, 0.15, 0.15 | false | 1.5 | 1.0 |
 
-**`Niagara`는 전부 같은 에셋 `/Game/Effects/NS_CL9_Wave` 하나를 가리키는 자리표시다 — 그
-에셋은 아직 없다.** 링과 벽 자국이 한 시스템 안의 두 이미터이고 행마다 다른 것은 사용자
-파라미터뿐이므로 시스템을 열한 개 만들 이유가 없다. 경로를 `/Game/Effects/` 아래로 잡은 것은
-같은 성격의 자리표시가 이미 거기 있기 때문이다([rules.md](rules.md) `HitFlashMaterial` =
-`/Game/Effects/M_CL9_HitFlash`). **에셋이 생기기 전까지 이 열은 비어 있고, 비면 그 행은 조용히
+**`Niagara`는 전부 같은 에셋 `/Game/Effects/NS_CL9_Wave` 하나를 가리킨다** (2026-09-16 생성 —
+이미터 하나 `Ring`, 벽 자국은 같은 이미터의 파티클 변형: [../../systems/wave.md](../../systems/wave.md)
+"나이아가라 에셋의 실제 모양"). 행마다 다른 것은 사용자 파라미터뿐이므로 시스템을 행마다 만들
+이유가 없다. 경로를 `/Game/Effects/` 아래로 잡은 것은 같은 성격의 에셋이 거기 있기 때문이다
+([rules.md](rules.md) `HitFlashMaterial` = `/Game/Effects/M_CL9_HitFlash`). **이 열이 빈 행은 조용히
 아무것도 그리지 않는다** ([../../systems/wave.md](../../systems/wave.md) 재생 1단계).
 
 ---
@@ -122,27 +126,35 @@
 | `walk` | 120 | 11.9 | 30 | **false** | 0 | 0 |
 | `monster_prox` | 120 | 17.3 | 30 | **false** | 0 | 0 |
 | `monster_call` | 540 | 7.0 | 30 | **false** | 0 | 0 |
+| `monster_pounce` | 120 | 16.0 | 30 | **false** | 0 | 0 |
 
 (광선 간격)은 열이 아니라 파생값이다 — `2π × 최종 반경 ÷ OcclusionRays` (cm). 이 값이 링의
 성김을 정한다.
 
 ---
 
-## 4. 언제 발동하나 — 값은 전부 초안
+## 4. 언제 발동하나, 무슨 소리를 내나 — 값은 전부 초안
 
-| 행 | `StepDistance` | `RepeatInterval` | `MinInterval` | `TriggerRadius` |
-|---|---|---|---|---|
-| `run` | 156 | 0 | 0.15 | 0 |
-| `pickup_quiet` | 0 | 0 | 0.20 | 0 |
-| `pickup_loud` | 0 | 0 | 0.20 | 0 |
-| `push` | 0 | 0 | 0.30 | 0 |
-| `decoy` | 0 | 0 | 0.50 | 0 |
-| `throw_break` | 0 | 0 | 0.20 | 0 |
-| `cart` | 156 | 0 | 0.15 | 0 |
-| `land` | 0 | 0 | 0.30 | 0 |
-| `walk` | 126 | 0 | 0.15 | 0 |
-| `monster_prox` | 0 | 1.2 | 0.50 | 780 |
-| `monster_call` | 0 | 0 | 0.50 | 0 |
+| 행 | `StepDistance` | `RepeatInterval` | `MinInterval` | `TriggerRadius` | `SoundRow` |
+|---|---|---|---|---|---|
+| `run` | 156 | 0 | 0.15 | 0 | None |
+| `pickup_quiet` | 0 | 0 | 0.20 | 0 | None |
+| `pickup_loud` | 0 | 0 | 0.20 | 0 | None |
+| `push` | 0 | 0 | 0.30 | 0 | None |
+| `decoy` | 0 | 0 | 0.50 | 0 | None |
+| `throw_break` | 0 | 0 | 0.20 | 0 | None |
+| `cart` | 156 | 0 | 0.15 | 0 | None |
+| `land` | 0 | 0 | 0.30 | 0 | None |
+| `walk` | 126 | 0 | 0.15 | 0 | None |
+| `monster_prox` | 0 | 1.2 | 0.50 | 780 | **`MonsterNear`** |
+| `monster_call` | 0 | 0 | 0.50 | 0 | None |
+| `monster_pounce` | 0 | 0 | 0.50 | 0 | None — 소리는 파동 행이 아니라 몬스터 상태 전이(`MonsterPounce`)가 낸다 |
+
+`SoundRow`(2026-09-20)는 "이 소음이 나면 낼 소리"다 — `monster_prox`가 `MonsterNear`(짧은 꼬꼬댁)를
+가리켜 근접 소나마다 링과 같은 박자로 다가오는 소리가 난다. 다른 행에 소리를 붙이고 싶으면 행만
+채운다(코드 분기 없음). `monster_pounce`(`ECL9NoiseSource::MonsterPounce`)는 잡기 예고 진입에 몬스터
+자리에서 한 번 나는 원샷 행이라 `RepeatInterval`·`TriggerRadius`는 0이고, 반경은 판정이 없으니
+`FallbackRadius`다 — 네 표의 `monster_pounce` 값은 **초안(balance 2026-09-20)**이다.
 
 ---
 
@@ -217,6 +229,7 @@
 | `walk` | **기본 꺼짐.** 걷기의 어그로는 0이라 그릴 반경이 없다([rules.md](rules.md) 소리). 켜는 경우를 위해 CCL8 `VIS_WALK` 76u → 228cm를 적어 두었지만, **이 값은 어떤 판정도 가리키지 않는 순수한 장식이다** — 켜려면 거위 `WakeRadius` 450 같은 판정 근거가 먼저 필요하다. `Power` 0.6과 벽 자국 false는 "켜더라도 달리기보다 확실히 약하고 지형을 알려 주지 않는다"를 지키려는 값이다. `StepDistance` 126은 CCL8 걷기 42u |
 | `monster_prox` | `FallbackRadius` 330을 **닭의 시야 반경 330cm와 같게** 잡았다 — 링이 플레이어에게 닿는 거리면 어차피 이미 눈에 띄는 거리라, 링이 새로 알려 주는 것이 없다. `TriggerRadius` 780은 CCL8 `PROX_R` 260u의 환산이고 존 이격 1050cm보다 작다(CCL8이 같은 검사를 갖고 있었다). 780은 너구리 시야 390cm의 두 배라 **발각되기 한참 전에 "뭔가 가까이 있다"만** 온다. `RepeatInterval` 1.2는 CCL8의 거리별 케이던스 0.7~2.5초의 가운데 값이다(미결 2) |
 | `monster_call` | **2026-09-16 사용자 결정으로 반경을 시각 전용 값에서 떼어 무리 경보 반경에 묶었다** — 울음 파동은 경보의 시각 표현이므로 `RadiusFrom` = `PackAlarm`, `FallbackRadius` 0이다. 닭·너구리 기준 600cm가 되고([monster/chicken.md](monster/chicken.md)), 종마다 그 종의 값을 따른다. 광선 540은 CCL8이 경보 파동(`VIS_ALARM` 210u)에 쓰던 계급 그대로다 — 드물게 나는 행이라 광선을 아낄 이유가 없고, 경보는 가장 중요한 정보다. `MinInterval` 0.50은 거위 `AlertCooldown` 2.5초([monster/goose.md](monster/goose.md))의 5분의 1이라 정상 울음을 먹지 않는다 |
+| `monster_pounce` | 초안(balance 2026-09-20). 306 = `Speed` 510 × `PounceWindup` 0.6 — 링이 다 퍼지는 순간이 덮치는 순간. 최대 `PounceRadius` 150(너구리) 이상이라 피해자에게 닿는다. `MinInterval` 0.50은 같은 몬스터 재예고 최소 주기 1.2초(예고 0.6 + 휴지 0.6)의 절반 아래 |
 
 ---
 
@@ -228,11 +241,11 @@
 |---|---|
 | `Speed > 0` · `RadiusScale > 0` | 통과 — 전 행 510 · 1.0 |
 | `RadiusFrom != None`인 행은 `FallbackRadius == 0` | 통과 — `run`·`pickup_quiet`·`pickup_loud`·`push`·`decoy`·`monster_call` 여섯 행 전부 0 |
-| `RadiusFrom == None`인 행은 `FallbackRadius > 0` | 통과 — `throw_break` 480 · `cart` 390 · `land` 378 · `walk` 228 · `monster_prox` 330 |
+| `RadiusFrom == None`인 행은 `FallbackRadius > 0` | 통과 — `throw_break` 480 · `cart` 390 · `land` 378 · `walk` 228 · `monster_prox` 330 · `monster_pounce` 306 |
 | `monster_prox`: 최종 반경 < `TriggerRadius` | 통과 — 330 < 780 (여유 450cm) |
 | `MaxConcurrent > 0` · `CullDistance > 0` | 통과 — 32 · 4000 |
 | (경고) `RadiusScale != 1.0` | 경고 없음 — 전 행 1.0 |
-| (경고) `bEnabled`인데 `Niagara`가 비었다 | **열 개 행에서 경고가 난다** — 에셋이 아직 없어 `Niagara` 열이 비어 있기 때문이고, 나이아가라 시스템이 들어오는 순간 사라진다. 그때까지는 예상된 경고다 |
+| (경고) `bEnabled`인데 `Niagara`가 비었다 | 경고 없음이 정상 — `NS_CL9_Wave`가 2026-09-16에 생겨 전 행이 가리킨다. 이 경고가 남아 있으면 그 행의 `Niagara` 셀이 비어 있는 것이다 |
 
 ---
 
@@ -254,6 +267,7 @@
 | `walk` | 임시로 켜 봤을 때 달리기 링과 확실히 구별되는가. 구별이 안 되면 **켜지 않는 쪽이 옳다** |
 | `monster_prox` | 링이 내 발밑까지 오지 않는가. 1.2초 고정 간격이 "다가온다"로 읽히는가, 아니면 CCL8의 심박 케이던스가 필요한가(미결 2) |
 | `monster_call` | 경보 반경 600cm와 링이 멈추는 자리가 눈으로 같은가(치트 `cl9.shownoise`의 디버그 원과 대조). 광선 540이 프레임을 먹지 않는가 |
+| `monster_pounce` | 링이 멎는 순간과 덮치는 순간이 같아 보이는가 — 어긋나면 `FallbackRadius`를 510 × `PounceWindup`으로 다시 맞춘다 |
 | 전역 | 넷이 동시에 달리는 구간에서 프레임이 떨어지지 않는가(`MaxConcurrent` 32). 맵 반대편 링이 안 보이는 것이 답답하지 않은가(`CullDistance` 4000) |
 
 ---
@@ -267,8 +281,8 @@
 2. **`monster_prox`의 케이던스.** CCL8은 거리에 따라 0.7~2.5초로 빨라지는 심박이었는데
    `RepeatInterval` 열이 하나뿐이라 고정 1.2초로만 적을 수 있다. 심박을 되살리려면 열이 둘
    (가까울 때·멀 때) 또는 곡선이 필요하다 — **스키마 변경이라 docs·gameplay의 몫이다.**
-3. **거위의 `PackAlarmRadius` 값이 [monster/goose.md](monster/goose.md)에 없다.**
-   `monster_call`의 반경이 이제 그 컬럼에서 오는데, 값이 문서에 없는 종은 링 크기를 알 수 없다.
+3. **거위의 `PackAlarmRadius` 값이 미결이다** ([monster/goose.md](monster/goose.md) 표에 행은 있으나 값이
+   "미결", 2026-09-21). `monster_call`의 반경이 이제 그 컬럼에서 오는데, 값이 없는 종은 링 크기를 알 수 없다.
    경보를 내는 유일한 종(`bAlertsOthers` true)이 거위라 이 값이 사실상 이 행의 주된 값이다.
 4. **밀치기 쿨다운**이 표 문서에 없어 `push`의 `MinInterval` 0.30이 안전한지 확인하지 못했다.
    쿨다운이 0.3초보다 짧으면 이 값이 정상 밀치기를 먹는다.

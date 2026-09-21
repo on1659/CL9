@@ -45,6 +45,9 @@ Epic의 FBX 파이프라인은 FBX 2020.2 기반이다. Blender의 FBX 출력이
 2. 원본 바운드, 실제 액터에 적용된 크기, 충돌을 각각 확인. 특히 아이템은 자동 배율 적용 후 확인.
 3. 머티리얼 슬롯 순서, UV, 노멀 방향, 텍스처 채널, LOD 전환을 확인.
 4. 스켈레탈은 뼈 이름/부모/기준 포즈와 기존 Skeleton 호환 확인. 1배속 이동, 경직, 죽음 클립 확인.
+   애니메이션 임포트는 **Interchange 로만** — 레거시 FBX 경로(`Interchange.FeatureFlags.Import.FBX 0` + `force_front_x_axis`)로 넣은 클립은
+   런타임에서 요가 −90° 돌아 있었다(2026-09-21, 동물 반응 클립 17개 — `docs/asset/evidence/032-creature-react-clips.json`·`034-execute-clips.json`
+   의 옛 판이 그 경로였다; `docs/asset/monster/README.md`). 같은 에셋을 덮을 땐 임시 폴더 임포트 → consolidate → rename(참조 유지).
 5. 데이터 행/BP에 연결. 몬스터 Yaw, 플레이어 기존 메시 회전, 아이템 부착 위치를 확인.
 6. 1인칭/동료 화면, 걷기/추격, 운반/던지기/요리, 조각 연결 등 분류별 게임 검수를 수행.
 7. 2인 PIE에서 호스트·클라이언트의 표현이 상태와 맞는지 확인. 제작 카드는 날짜·환경·실패/미실행을 기록.
