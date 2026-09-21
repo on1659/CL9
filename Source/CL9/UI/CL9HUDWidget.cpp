@@ -104,6 +104,9 @@ void UCL9HUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	// 디자이너가 방향 호를 Collapsed로 두었으면 "끈 것"으로 읽고 이후 손대지 않는다 — 비네트와 달리 덮어쓰지 않는다
+	bHurtDirectionDesignerHidden = (HurtDirection != nullptr) && (HurtDirection->GetVisibility() == ESlateVisibility::Collapsed);
+
 	GetWorld()->GetTimerManager().SetTimer(WireTimer, this, &UCL9HUDWidget::TryWire, 0.2f, true, 0.f);
 }
 
@@ -146,6 +149,8 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshNightWarn(InDeltaTime);
 	// 비네트도 시간 함수다 — 잡힌 서버 시각에서 파생되므로 변경 이벤트가 없고 매 프레임 읽는다
 	RefreshHurtVignette();
+	// 방향 호도 같은 시계에서 파생된다 — 카메라 요가 매 프레임 바뀌므로 각도도 매 프레임 읽는다
+	RefreshHurtDirection();
 	// 양보했던 선택 화면을 다시 열 때가 됐는지 본다 — 화면이 닫혔다는 이벤트가 없어서 틱에서 본다
 	DeriveOrderScreen();
 }
@@ -1182,5 +1187,42 @@ void UCL9HUDWidget::RefreshHurtVignette()
 	if (HurtVignette->GetVisibility() != Wanted)
 	{
 		HurtVignette->SetVisibility(Wanted);
+	}
+}
+
+void UCL9HUDWidget::RefreshHurtDirection()
+{
+	if (HurtDirection == nullptr || bHurtDirectionDesignerHidden)
+	{
+		return;   // WBP_HUD에 호가 없거나 디자이너가 Collapsed로 꺼 둔 판 — 아무것도 하지 않는다
+	}
+
+	// 표에서 끌 수 있다(CL9Rules.bHurtDirectionIndicator) — 규칙은 판 중에 바뀌지 않지만 값은 한 줄이라 매 틱 읽는다
+	const UWorld* World = GetWorld();
+	const UCL9GameInstance* GameInstance = (World != nullptr) ? World->GetGameInstance<UCL9GameInstance>() : nullptr;
+	const UCL9DefRegistry* Registry = (GameInstance != nullptr) ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = (Registry != nullptr) ? Registry->GetRules() : nullptr;
+	const bool bEnabled = (Rules != nullptr) && Rules->bHurtDirectionIndicator;
+
+	// 폰이 없는 동안(스폰 전·관전)은 게터를 부를 캐릭터가 없으니 숨긴다. 치트 null·관전은 HasHurtDirection()이 거짓을 준다
+	const ACL9Character* Character = WiredCharacter.Get();
+	const float Flash = (bEnabled && Character != nullptr && Character->HasHurtDirection()) ? Character->GetHurtFlash() : 0.f;
+
+	if (Flash <= 0.f)
+	{
+		// Collapsed가 아니라 Hidden — Collapsed는 디자이너의 신호로 남겨 둔다
+		if (HurtDirection->GetVisibility() != ESlateVisibility::Hidden)
+		{
+			HurtDirection->SetVisibility(ESlateVisibility::Hidden);
+		}
+		return;
+	}
+
+	// 0 = 화면 위(12시), 시계 방향 양수 — 위젯 각도도 시계 방향 양수라 그대로 넣는다. 피벗은 WBP에서 화면 중심(0.5, 0.5)
+	HurtDirection->SetRenderTransformAngle(Character->GetHurtDirectionAngle());
+	HurtDirection->SetRenderOpacity(Flash);
+	if (HurtDirection->GetVisibility() != ESlateVisibility::HitTestInvisible)
+	{
+		HurtDirection->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 }

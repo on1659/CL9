@@ -84,6 +84,16 @@ protected:
 	TObjectPtr<UImage> HurtVignette;
 
 	/**
+	 * 잡혔을 때 공격자 쪽을 가리키는 화면 가장자리의 빨간 호(docs/systems/ui.md 피격 방향 호) — 화면 중심을
+	 * 피벗으로 도는 이미지 하나다(12시 = 0°). 각도는 캐릭터의 `GetHurtDirectionAngle()`, 불투명도는 비네트와
+	 * 같은 `GetHurtFlash()`라 둘이 함께 사그라든다. `CL9Rules.bHurtDirectionIndicator`가 거짓이거나 이번 넘어짐에
+	 * 공격자가 없으면(치트 null·관전) 숨긴다. 디자이너가 WBP에서 `Collapsed`로 둔 것은 "끈 것"이라 C++이 절대
+	 * 켜지 않는다 — 그래서 WBP 기본값은 `Hidden`이어야 한다. 이미지가 없으면 그리지 않는다.
+	 */
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<UImage> HurtDirection;
+
+	/**
 	 * 화면 하단 중앙(프롬프트 위)의 퀵슬롯 — 칸 위젯(WBP_QuickSlot)이 나란히 담기는 상자. HUD가
 	 * `CL9Rules.QuickSlots`개를 `QuickSlotClass`로 만들어 붙이고, PlayerState의 `Slots`·`ActiveSlot`을
 	 * 그대로 반영한다(docs/systems/ui.md 퀵슬롯). 상자가 없으면 퀵슬롯을 그리지 않는다.
@@ -293,6 +303,12 @@ private:
 	/** 잡힌 뒤의 빨간 비네트 — 캐릭터의 GetHurtFlash()를 그대로 이미지 불투명도로 옮긴다(0이면 접는다) */
 	void RefreshHurtVignette();
 
+	/**
+	 * 피격 방향 호 — 표 bool·공격자 유무·플래시가 다 맞을 때만 각도와 불투명도를 넣고 보인다, 아니면 `Hidden`.
+	 * `bHurtDirectionDesignerHidden`이면 아무것도 하지 않는다.
+	 */
+	void RefreshHurtDirection();
+
 	/** 이번 기간 수입 · 목표 · 정산까지 남은 날 */
 	void RefreshPeriod();
 
@@ -342,6 +358,12 @@ private:
 
 	/** 번쩍임의 위상 — 경고가 꺼져 있는 동안 0으로 돌아가 항상 밝은 지점에서 시작한다 */
 	float NightWarnPhase = 0.f;
+
+	/**
+	 * 디자이너가 WBP_HUD에서 `HurtDirection`을 `Collapsed`로 두었나 — NativeConstruct에서 한 번 읽어 두고, 참이면
+	 * 이후 호를 절대 켜지 않는다. 비네트(`RefreshHurtVignette`)는 Collapsed를 덮어쓰지만 호는 그 규칙을 따르지 않는다.
+	 */
+	bool bHurtDirectionDesignerHidden = false;
 
 	/** 마지막으로 힌트를 판단한 활성 칸의 아이템(별칭·하위 별칭) — 같은 것이 그대로면 OnCarryChanged가 와도 다시 판단하지 않는다 */
 	FCL9ItemRef HintedItem;
