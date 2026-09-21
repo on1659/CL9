@@ -14,6 +14,10 @@
 | 체력·이동·감각·추격·경보 전 컬럼 | 닭과 동일 (chicken.md 표 그대로) |
 | `MeshYawOffset` | -90 (같은 팩, 같은 축) |
 | `SleepTime` | 0 — 잠들지 않는다 |
+| `PounceRadius` | 130 (초안) — 닭과 동일 (`ChaseSpeed` 396 · `CatchRadius` 84가 닭과 같으니 회피 산수도 같다, 2026-09-20) |
+| `PounceWindup` | 0.6 (초안) — 닭과 동일 |
+| `PounceLunge` | 110 (초안) — 닭과 동일 |
+| `PounceMissCooldown` | 0.6 (초안) — 닭과 동일 |
 
 ## 에셋 (보유 — 2026-09-05 확인)
 

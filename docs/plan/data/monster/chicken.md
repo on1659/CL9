@@ -62,10 +62,31 @@
 | `DeaggroRadius` | 510 | `DeaggroRadiusU 170` |
 | `CatchRadius` | 84 | |
 | `CatchDamage` | 1 (초안) | |
+| `PounceRadius` | 130 (초안) | 신규 |
+| `PounceWindup` | 0.6 (초안) | 신규 |
+| `PounceLunge` | 110 (초안) | 신규 |
+| `PounceMissCooldown` | 0.6 (초안) | 신규 |
 | `SearchHops` | 3 | `InvestChainN` |
 | `SearchDwellTime` | 2.0 | `InvestDwellT` |
 
 **짐을 다 놓으면 510cm에서 풀려난다.**
+
+### 잡기 예고 값의 근거 (2026-09-20, 전부 초안 — PIE C3-예고 관찰 전)
+
+사용자 결정 D2 "걷기로 물러나도 피한다"([../../../goal/monster-pounce-hurt-readability.md](../../../goal/monster-pounce-hurt-readability.md)
+A 절)를 숫자로 옮긴 값이다. 닭이 **기준 종**이고 다른 잡는 종은 이 값의 비율로 잡는다.
+
+| 값 | 근거 |
+|---|---|
+| `PounceWindup` 0.6 | 사람 반응 0.25초 + 방향 전환 0.15초 + 여유 0.2초. 이상적 후퇴 소요는 `(CatchRadius + PounceLunge − PounceRadius) / WalkSpeed` = 64/396 = **0.16초**라 반응을 더해도 0.41초 < 0.6 — 여유 0.19초는 가속·복제 지연·장애물 몫이다. 종에 붙는 값이 아니라 **사람 쪽 상수**라 다른 종도 0.6을 쓴다 |
+| `PounceRadius` 130 | `CatchRadius` 84 + 46 — 잡히는 거리보다 닭 한 걸음(≈ 추격 속도 396 × 0.12초) 먼저 멈춰 선다. 로드 검사 `PounceRadius >= CatchRadius` 여유 46 |
+| `PounceLunge` 110 | 추격 속도 396 × 0.28초 — 예고 없이 추격했다면 0.28초에 갔을 거리를 한 번에 덮친다. `WalkSpeed × PounceWindup` = 396 × 0.6 = 238 > `CatchRadius + PounceLunge` = 194 이므로 **어느 거리에서 예고가 시작되든**(재장전 중에 붙어 있다 0cm에서 예고해도) 걸어서 물러나면 헛침 — 여유 44cm |
+| `PounceMissCooldown` 0.6 | 예고 길이와 같게 — 헛친 뒤 최소 1.2초(예고 0.6 + 휴지 0.6) 주기로 다시 예고한다. 걸어서 물러나는 사람에겐 헛친 뒤 간격이 ≈ 258cm(368 − 110)라 닭(396 = 걷기 396)은 다시 못 좁힌다 — 재예고는 사람이 멈추거나 돌 때만 |
+
+회피 산수(A5, [../../economy.md](../../economy.md)): 예고 진입 130cm에서 —
+뒤로 걷기 130 + 238 = **368 > 194** 헛침(여유 174) · 옆걸음 √(130² + 238²) = **271 > 194** 헛침 ·
+제자리 130 ≤ 194 잡힘. 캐릭터 가속은 표에 없어 산수는 즉시 가속 가정이다 — 실측은 PIE
+C3-예고 ②③([../../../testing/pie-scenarios.md](../../../testing/pie-scenarios.md)).
 
 ## 각성과 경보
 
