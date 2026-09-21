@@ -66,6 +66,32 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
 	float ThreatActMinRadius = 420.f;
 
+	/**
+	 * 처형 진입 때 피해자 시점이 몬스터의 처형 카메라로 넘어가는 블렌드 시간, 초 단위 — 0 이면 즉시. 관전과 같은
+	 * `SetViewTarget` 경로에 `SetViewTargetWithBlend` 로 얹는다 (docs/systems/character.md 처형). 값은 balance
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
+	float ExecuteCameraBlend = 0.f;
+
+	/**
+	 * 데스캠 자리 — 죽은 순간부터 관전 전까지(혼자면 밤이 끝날 때까지) 자기 시체를 3인칭으로 보는 카메라의 **액터 공간** 오프셋,
+	 * cm 단위(X = 캐릭터 전방, Y = 오른쪽, Z = 위 — 처형 카메라와 같은 규약). **(0,0,0) 이면 데스캠 없음** = 옛 동작(넘어짐 1인칭
+	 * 카메라가 바닥으로, 처형이면 몬스터 카메라에 머묾). (−320, 140, 260) = 뒤·옆·위 — PIE 에서 누운 몸 전체·옆의 돼지가 잡히는 값(2026-09-21), 아트 튜닝 (docs/systems/character.md 죽음)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
+	FVector DeathCameraOffset = FVector(-320.f, 140.f, 260.f);
+
+	/** 데스캠이 바라보는 점 — 캡슐 중심(액터 위치) 기준 높이, cm 단위(음수 = 중심 아래). −60 = 누운 몸 높이(캡슐 반높이 −90 근처)라 시체가 화면 중앙에 온다 — 아트 튜닝 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
+	float DeathCameraLookAtZ = -60.f;
+
+	/**
+	 * 죽는 순간 몬스터의 처형 카메라에서 데스캠으로 넘어가는 블렌드 시간, 초 단위 — 0 이면 즉시(`SetViewTargetWithBlend(폰)`,
+	 * `HostBeginExecuted` 의 짝). 보통 사망은 뷰 타깃이 이미 자기 폰이라 엔진이 블렌드하지 않는다 — 넘어짐 카메라에서 데스캠으로 즉시 전환
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Death")
+	float DeathCameraBlend = 0.5f;
+
 	// -- 밤 시계 --
 
 	/** 밤 길이, 초 단위 — 시간이 다 되면 새벽 실패가 된다 */
@@ -143,6 +169,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
 	float SwingHitEnd = 0.25f;
 
+	/**
+	 * 휘두르기 히트박스 반경 배율, 무단위 — 1 = 손에 든 메시의 경계 구 그대로(`ACL9Item::GetSwingHitSphere`). 호스트 스윕의
+	 * 반경에만 곱하고 중심은 그대로다. 모든 `Swing` 행 공통이라 팬·고기가 같이 커진다. 0·음수·NaN 은 로드 오류(`Validate`).
+	 * 값은 balance(docs/plan/data/rules.md)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingHitScale = 1.f;
+
 	// -- 타격감·피격감 (docs/systems/monster.md 플래시, docs/systems/character.md 피격) --
 
 	/**
@@ -173,6 +207,31 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
 	TSoftObjectPtr<UMaterialInterface> HitFlashMaterial;
+
+	// -- 피격 카메라 (docs/systems/character.md 피격 — 잡는 순간 카메라가 범인을 본다) --
+
+	/**
+	 * 잡힌 사람의 카메라가 `HurtLookPitch` 까지 내려가는 데 걸리는 시간, 초 단위 — 넘어진 순간부터 EaseOut 으로 도달을
+	 * 보장한다(`UCL9HurtLookModifier`, POV 오프셋만 — 컨트롤 회전은 그대로). **0 이면 이 효과 전체가 꺼진다.**
+	 * 로드 검사: `HurtLookTime + 일어나기 0.6초 <= CharacterDef.KnockdownTime` 이어야 진입·복귀 보간이 겹치지 않는다(어기면 Warning). 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HurtLookTime = 0.45f;
+
+	/** 넘어진 동안 POV 에 더하는 피치 오프셋, 도 단위 — 음수가 아래. 발밑의 닭이 화면 중앙 아래에 오는 값. 초안값 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HurtLookPitch = -25.f;
+
+	/**
+	 * 공격자 방향으로 POV 요를 돌리는 상한, 도 단위 — 공격자가 화면 가장자리에 걸칠 때까지만 돌고 이 값을 넘지 않는다.
+	 * 가로 FOV 90° + 60° = 시선에서 105° 안의 공격자만 화면에 걸친다(그 밖은 방향 호가 답한다). 0 이면 요는 돌지 않는다. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	float HurtLookYawMax = 60.f;
+
+	/** HUD 가장자리의 피격 방향 호를 그리나 — 장르 톤이 맞지 않으면 빌드 없이 끈다 (docs/systems/ui.md) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeedback")
+	bool bHurtDirectionIndicator = true;
 
 	// -- 타격의 표현 (2026-09-18, docs/goal/game-feel.md §2·§3, docs/systems/monster.md 타격의 표현) --
 

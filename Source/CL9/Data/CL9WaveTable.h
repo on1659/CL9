@@ -137,6 +137,14 @@ struct FCL9WaveInfo
 	/** 이 안(cm)에 플레이어가 있을 때만 발동. 0 = 조건 없음 (monster_prox 전용) */
 	UPROPERTY(EditAnywhere, Category="Wave")
 	float TriggerRadius = 0.f;
+
+	/**
+	 * 이 소음이 나면 같이 낼 `SoundTable` 행 이름 — 비어 있으면(None) 소리 없음. 각 머신의 `PlayWave` 가 행 활성·MinInterval 검사 뒤,
+	 * 시각 게이트(표시 시점·CullDistance·나이아가라) **앞**에서 발원지에서 튼다 — 링이 안 그려져도 소리는 나고, 행이 꺼지면 사건 자체가
+	 * 없어 소리도 없다. 코드 분기 없이 행마다 소리를 붙이는 열이다 (docs/systems/wave.md 행 스키마)
+	 */
+	UPROPERTY(EditAnywhere, Category="Wave")
+	FName SoundRow;
 };
 
 /**

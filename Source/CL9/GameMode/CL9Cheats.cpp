@@ -134,6 +134,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatHitMonster(
 		RouteCL9Cheat(TEXT("hitmonster"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatExecute(
+	TEXT("cl9.execute"),
+	TEXT("cl9.execute — the nearest living executioner monster (ExecuteRadius > 0 or bExecuteOnCatch) executes you; stalkers: counters bypassed, anchor sweep kept; catch-executioners: in place, no sweep (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("execute"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatNight(
 	TEXT("cl9.night"),
 	TEXT("cl9.night — starts the night from the lobby, ends it during the night (host ruling)."),
@@ -268,7 +276,7 @@ static FAutoConsoleCommand GCL9CheatShowNoise(
 
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatList(
 	TEXT("cl9.list"),
-	TEXT("cl9.list <items|characters> — numbered rows with broken ones marked (local, read-only)."),
+	TEXT("cl9.list <items|monsters|characters> — numbered rows with broken ones marked (local, read-only)."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
 		RouteCL9Cheat(TEXT("list"), Args, World, true);

@@ -95,7 +95,8 @@ void UCL9WaveTable::ValidateRows()
 		}
 
 		// PackAlarm은 발신한 몬스터의 행에서 읽는다 — 플레이어에게는 읽을 몬스터 행이 없다
-		const bool bMonsterSource = Key == ECL9NoiseSource::MonsterProx || Key == ECL9NoiseSource::MonsterCall;
+		const bool bMonsterSource = Key == ECL9NoiseSource::MonsterProx || Key == ECL9NoiseSource::MonsterCall
+			|| Key == ECL9NoiseSource::MonsterPounce;
 		if (Row.RadiusFrom == ECL9NoiseRadiusSource::PackAlarm && !bMonsterSource)
 		{
 			UE_LOG(LogCL9, Error, TEXT("wave row '%s': RadiusFrom is PackAlarm but this noise comes from a player — there is no monster row to read."), *Alias);

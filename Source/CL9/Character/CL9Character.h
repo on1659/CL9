@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Core/CL9Damageable.h"
 #include "Data/CL9Types.h"
+#include "Engine/NetSerialization.h"
 #include "GameFramework/Character.h"
 #include "CL9Character.generated.h"
 
@@ -17,6 +18,7 @@ class ACL9PlayerState;
 class UCameraComponent;
 class UCL9CharacterDef;
 class UCL9CharacterMovement;
+class UCL9HurtLookModifier;
 class UCL9ItemDef;
 class UCL9RulesDef;
 class UCameraShakeBase;
@@ -28,6 +30,34 @@ struct FInputActionValue;
 
 /** "[E] …" 프롬프트 텍스트가 바뀔 때 소유 클라이언트에서 발동 — HUD가 폴링 대신 이걸 구독한다 (docs/systems/ui_system.md) */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9FocusPromptChanged);
+
+/**
+ * 피격 사건 (docs/systems/character.md 피격) — `OnDamage` 가 채우고 소유자에게만 복제된다(`COND_OwnerOnly`). 잡힌 순간 카메라가
+ * 범인을 보고(`UCL9HurtLookModifier`) HUD 가 방향 호를 그리는 원천이다. 방향의 원천은 **위치**(`From`)라 공격자가 파괴·이동해도
+ * 그 순간의 방향이 남고, `ServerTime == KnockdownStartServerTime` 이 "이번 넘어짐의 사건" 을 보증한다(옛 사건 잔존 금지).
+ * `Attacker` 는 `IsValid()` 로만 읽는다(파괴 직후 pending-kill).
+ */
+USTRUCT(BlueprintType)
+struct FCL9HurtEvent
+{
+	GENERATED_BODY()
+
+	/** 이 사건이 만든 넘어짐의 시작 서버 시각 — `KnockdownStartServerTime` 과 같으면 이번 넘어짐의 사건이다. 음수 큰 값 = 아직 없음 */
+	UPROPERTY(BlueprintReadOnly)
+	float ServerTime = -1000.f;
+
+	/** 공격자가 그 순간 있던 자리(월드) — 공격자가 없으면(치트) 맞은 사람 자기 자리 */
+	UPROPERTY(BlueprintReadOnly)
+	FVector_NetQuantize From = FVector::ZeroVector;
+
+	/** 공격자 — 파괴되면 null 이 온다. 방향은 이 포인터가 아니라 `From` 으로 잰다 */
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AActor> Attacker;
+
+	/** 사건마다 1 씩 — 같은 넘어짐 안의 재피격(다른 닭)을 가른다. 재피격은 요 목표만 갱신하고 피치 진입은 다시 시작하지 않는다. uint16 은 블루프린트에 못 내놓는다(C++ 전용) */
+	UPROPERTY()
+	uint16 Seq = 0;
+};
 
 /**
  * 1인칭 협동 캐릭터: 캡슐, 무브먼트, 카메라, 입력이 모두 여기에 있다.
@@ -111,6 +141,62 @@ public:
 	/** 호스트 전용: 다음 로비에서 죽은 캐릭터를 풀 HP로 다시 세운다 — 부활은 없다, 밤이 끝나야 돌아온다 */
 	void HostRevive();
 
+	/**
+	 * 호스트 전용: 즉사 — 넘어짐 무적 게이트를 **거치지 않고** HP 를 0 으로 만들고 기존 죽음 경로(짐 흘림·넘어짐 ∞·피격 사건·
+	 * `HandlePlayerDeath`)를 그대로 탄다. 처형(`ACL9Monster` Execute)이 부른다 — 결과는 진입에서 정해졌으므로 HP 는 무관하다
+	 * (docs/systems/character.md 처형, D3). 이미 죽었으면 아무 일도 없다
+	 */
+	void HostKill(AActor* Source);
+
+	/**
+	 * 호스트 전용, 처형 진입: `ExecutedBy`·`ExecuteStartServerTime` 을 채우고(`ApplyExecuted`), 수레·차징·대기를 놓고
+	 * (`HostCancelCarryActions` — 무력화된 사람은 수레를 끌 수 없다), **피해자 요를 처형자에 맞추고**(잡히면 처형인 종 `bExecuteOnCatch` 는
+	 * 처형자를 정면으로, 앵커 텔레포트 처형은 처형자를 등지게 — 액터 요 + 컨트롤 회전을 `SetControlRotation`·`ClientSetRotation` 으로, 2인 클립 정렬),
+	 * 소유 PC 의 뷰 타깃을 처형자로 넘긴다(`SetViewTargetWithBlend(Executioner, CL9Rules.ExecuteCameraBlend)` — 관전과 같은 서버 `SetViewTarget` 경로)
+	 */
+	void HostBeginExecuted(ACL9Monster* Executioner);
+
+	/**
+	 * 호스트 전용: 처형 표시를 걷는다 — 두 필드를 비우고(`ApplyExecuted`), 관전 중이 아니면 뷰 타깃을 자기 폰으로. 관전 중이면
+	 * 관전 흐름이 뷰 타깃을 갖고 있으니 건드리지 않는다. 로비 정리(`ClearNightPopulation` 전)·부활(`ReviveDead`)이 부른다 (D9).
+	 * 처형 중이 아니면 아무 일도 없다
+	 */
+	void HostEndExecuted();
+
+	/** 처형 중이거나 처형으로 죽은 뒤(`ExecutedBy` 는 로비 정리·부활까지 남는다 — ABP·카메라 게이트) true (D2) */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool IsExecuted() const
+	{
+		return ExecuteStartServerTime >= 0.f;
+	}
+
+	/** 처형 진입 뒤 지난 서버 초 — ABP 의 Executed 가지 시계. 처형 중이 아니면 −1 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetExecuteElapsed() const;
+
+	/** 처형자 행의 `ExecuteDuration` — ABP 가 `GetExecuteElapsed() < 이 값` 동안 굳은 자세를 튼다. 처형자가 없으면 0 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetExecuteDuration() const;
+
+	/**
+	 * 처형자 행의 `Alias`(`pig`/`raccoon`) — ABP 의 Executed 가지가 종별 2인 클립을 고른다. `ExecutedBy` 가 남는 동안(죽은 뒤 로비 정리·부활까지, D9)
+	 * 같은 값이고, 처형자가 없으면 `None`
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	FName GetExecutedByAlias() const;
+
+	/** 넘어졌거나 처형 중 — 손이 말을 듣지 않는 상태. 서버 RPC 게이트(휘두르기·던지기·줍기·놓기·칸·먹기·손전등·사용)가 읽는다 (D2) */
+	bool IsIncapacitated() const
+	{
+		return IsKnockedDown() || IsExecuted();
+	}
+
+	/** 지금 처형 중이거나 처형으로 죽인 몬스터, 없으면 null — 죽은 뒤에도 로비 정리까지 남는다 */
+	ACL9Monster* GetExecutedBy() const
+	{
+		return ExecutedBy;
+	}
+
 	/** 붙잡혀 넘어진 상태로 이동이 막혀 있는 동안 true — CMC가 이 값을 읽어 속도 0을 적용한다 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	bool IsKnockedDown() const;
@@ -152,6 +238,13 @@ public:
 	/** PlayerState의 HP가 0이다 — 몬스터는 죽은 대상을 건너뛴다 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	bool IsDead() const;
+
+	/**
+	 * 죽어서 데스캠을 써야 하는가 — 복제된 HP(`IsDead()`)에서 파생하고, `CL9Rules.DeathCameraOffset` 이 (0,0,0) 이면 언제나 false
+	 * (롤백 = 옛 넘어짐 카메라). 피격 카메라 모디파이어·셰이크·HUD 게터가 데스캠 위에 1인칭 표현을 얹지 않게 읽는다
+	 * (docs/systems/character.md 죽음 — 데스캠)
+	 */
+	bool ShouldUseDeathCamera() const;
 
 	/**
 	 * 손에 든 아이템 행의 자세 범주, 빈손이면 None — 전신 ABP(ABP_Unarmed)가 상체 Hold 레이어를
@@ -208,6 +301,32 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetHurtFlash() const;
+
+	/** 마지막 피격 사건 — 소유자에게만 복제되므로 남의 폰에서는 비어 있다(`ServerTime` 음수) */
+	const FCL9HurtEvent& GetHurtEvent() const
+	{
+		return HurtEvent;
+	}
+
+	/** 피격 사건이 이번 넘어짐의 것인가 — `HurtEvent.ServerTime == KnockdownStartServerTime`(넘어진 적이 없으면 거짓). 카메라 모디파이어가 요 목표를 잴 때 읽는다 */
+	bool IsHurtEventCurrent() const
+	{
+		return KnockdownStartServerTime >= 0.f && HurtEvent.ServerTime == KnockdownStartServerTime;
+	}
+
+	/**
+	 * 이번 넘어짐에 방향이 있는 피격 사건이 있는가 — `HurtEvent.ServerTime == KnockdownStartServerTime` 이고 공격자가 있었고
+	 * (`IsValid(Attacker)`; 치트의 null 은 없음) 관전 중이 아닐 때. HUD 가 방향 호를 그릴지 읽는다 (docs/systems/ui.md).
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	bool HasHurtDirection() const;
+
+	/**
+	 * 공격자 방향의 화면 각도, 도 단위 — `FRotator::NormalizeAxis(공격자 방향 요 − 카메라 요)`. 0 = 화면 위(앞), 시계 방향 양수,
+	 * `HasHurtDirection()` 이 거짓이면 0. 카메라 요는 소유자 카메라 매니저의 실제 시점(POV — 피격 요 오프셋 포함)이다.
+	 */
+	UFUNCTION(BlueprintPure, Category="CL9")
+	float GetHurtDirectionAngle() const;
 
 	/** 던지기 차징을 시작한 뒤 지난 초 — 대기 루프(AN_Farmer_ThrowWindup)를 켜는 데 읽는다. 소유자는 로컬 시각으로 즉시. 차징 중이 아니면 −1 */
 	UFUNCTION(BlueprintPure, Category="CL9")
@@ -305,8 +424,18 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	/**
+	 * 컨트롤러가 붙거나 떨어질 때(PossessedBy·UnPossessed·클라의 OnRep_Controller) — 소유 클라(리슨 호스트 포함)에서만 피격 카메라
+	 * 모디파이어를 카메라 매니저에 등록하고, 소유가 풀리거나 폰이 바뀌면 뗀다 (docs/systems/character.md 피격)
+	 */
+	virtual void NotifyControllerChanged() override;
+
+	/** 지금의 컨트롤러 상태에 맞춰 피격 카메라 모디파이어를 등록/해제한다 — NotifyControllerChanged·EndPlay 가 부른다 */
+	void UpdateHurtLookModifier();
 
 	/** IA_Move를 처리한다 (docs/systems/input.md) */
 	void MoveInput(const FInputActionValue& Value);
@@ -427,6 +556,36 @@ protected:
 
 	/** 로컬 레지스트리에서 행을 읽어와 판정용 수치와 표시를 적용한다 */
 	void ApplyCharacterDef();
+
+	UFUNCTION()
+	void OnRep_ExecuteStartServerTime();
+
+	/**
+	 * 모든 머신(OnRep 과 호스트 경로 양쪽 — `HostSetSpectating` 과 같은 패턴): 처형의 표현·입력 부수 효과. 소유 클라면 게임플레이
+	 * IMC 를 `!IsExecuted()` 로, 몸 `SetOwnerNoSee(!IsExecuted())`(처형 카메라에서 자기 몸이 보인다), 팔 `SetVisibility(!IsExecuted())`
+	 * (팔과 손의 아이템이 사라진다 — `ApplyThirdPersonMeshes`). 죽은 뒤 관전 전환 때 몸이 보이는 채로 남아도 관전은 남의 시점이라 무방하다
+	 */
+	void ApplyExecuted();
+
+	/**
+	 * 모든 머신(호스트 경로와 소유 클라의 틱 비교 양쪽 — `ApplyExecuted` 패턴): `ShouldUseDeathCamera()` 면 1인칭 카메라를 끄고
+	 * `DeathCamera` 를 `CL9Rules.DeathCameraOffset`(액터 공간)에 놓아 `(0,0,DeathCameraLookAtZ)` 를 보게 켠다, 아니면 반대(1인칭 복구).
+	 * 몸·팔은 `ApplyThirdPersonMeshes`. 죽음(`HostApplyDamage`)·부활(`HostRevive`)이 호스트에서 바로 부르고, 소유 클라는 `Tick` 이
+	 * `bDeathCameraOn` 과 비교해 따라잡는다 (docs/systems/character.md 죽음 — 데스캠)
+	 */
+	void ApplyDeathCamera();
+
+	/**
+	 * 모든 머신: 처형 카메라(몬스터)나 데스캠에서 자기 몸이 보이고(`SetOwnerNoSee(false)`) 팔과 손의 아이템은 사라진다
+	 * (`FirstPersonMesh` 숨김) — `ApplyExecuted`·`ApplyDeathCamera` 의 공통부. 둘 다 아니면 1인칭으로 되돌린다
+	 */
+	void ApplyThirdPersonMeshes();
+
+	/**
+	 * 호스트 전용, `OnDamage`·`HostKill` 의 공통부: HP 차감 → (HP 0 이면 짐 전부 흘림, 아니면 수레·차징·대기만 취소) → 넘어짐 시계
+	 * (HP 0 이면 ∞) → 피격 사건 → 로그(`Verb`) → HP 0 이면 `HandlePlayerDeath`. 넘어짐 무적 게이트는 여기 없다 — `OnDamage` 만 본다
+	 */
+	void HostApplyDamage(int32 Amount, AActor* Source, const TCHAR* Verb);
 
 	/** 소유 클라이언트 전용: 스태미나가 규칙 임계값 아래로 떨어지면 카메라가 흔들리고, 비워질수록 더 심해진다 (docs/systems/character.md) */
 	void UpdateStaminaShake();
@@ -725,6 +884,28 @@ private:
 	UPROPERTY(Replicated)
 	float KnockdownStartServerTime = -1000.f;
 
+	/** 마지막 피격 사건 — 잡힌 본인만 쓰므로 COND_OwnerOnly. `OnDamage` 가 넘어짐 시각과 함께 채운다 */
+	UPROPERTY(Replicated)
+	FCL9HurtEvent HurtEvent;
+
+	/**
+	 * 처형 진입 서버 시각 — `IsExecuted()`·`GetExecuteElapsed()` 의 원천, 모두에게 복제(남의 화면의 ABP 도 읽는다). 음수 큰 값 = 처형 아님.
+	 * CMC 가 속도 0 을 이 값에서 도출하므로 넘어짐 종료 시각과 같은 이유로 소유자에게도 간다 (D2)
+	 */
+	UPROPERTY(ReplicatedUsing=OnRep_ExecuteStartServerTime)
+	float ExecuteStartServerTime = -1000.f;
+
+	/** 처형자 — `GetExecuteDuration()` 이 행을 읽고, 몬스터 쪽 타깃 선택·잡기·덮침이 `IsExecuted()` 로 이 사람을 제외한다. 죽은 뒤에도 남는다 */
+	UPROPERTY(Replicated)
+	TObjectPtr<ACL9Monster> ExecutedBy;
+
+	/** 소유 클라의 카메라 매니저에 등록한 피격 카메라 모디파이어 — 소유가 풀리면 떼고 null 로 돌린다 */
+	UPROPERTY(Transient)
+	TObjectPtr<UCL9HurtLookModifier> HurtLookModifier;
+
+	/** 데스캠이 켜져 있는가 — 마지막 `ApplyDeathCamera` 가 적용한 값. `Tick` 이 `ShouldUseDeathCamera()` 와 비교해 달라지면 다시 적용한다 */
+	bool bDeathCameraOn = false;
+
 	/**
 	 * 지금 걸려 있는 먹기 효과들 — 복제된다. CMC가 이동 공식에서 읽으므로 서버와 자율
 	 * 프록시가 같은 값을 봐야 한다(넘어짐의 종료 시각과 같은 이유).
@@ -791,6 +972,15 @@ private:
 	/** 눈높이에서 캡슐에 붙어 있는 1인칭 카메라 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<UCameraComponent> FirstPersonCameraComponent;
+
+	/**
+	 * 데스캠 — 죽은 순간부터 관전 전까지(혼자면 밤이 끝날 때까지) 자기 시체를 3인칭으로 보는 카메라. 캡슐에 붙어 있고 평소엔 꺼져 있다;
+	 * 자리·회전은 `ApplyDeathCamera` 가 규칙 표에서 읽어 놓는다. 1인칭 카메라와 별개 컴포넌트라 넘어짐 카메라(바닥까지 내려간 1인칭)가
+	 * 보이는 몸 속에 앉는 문제가 없다 — 이것이 D6 "죽은 뒤 뷰 타깃을 폰으로 되돌리지 않는다"를 번복한 근거다 (docs/systems/character.md 죽음).
+	 * 둘 중 하나만 활성이어야 한다 — 둘 다 켜져 있으면 `CalcCamera` 가 첫 것(1인칭)을 고른다
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UCameraComponent> DeathCamera;
 
 	/**
 	 * 1인칭 팔 메시(뷰모델). 소유자 화면에서는 손에 든 아이템의 메시가 여기의 손 소켓 `HandGrip_R`에

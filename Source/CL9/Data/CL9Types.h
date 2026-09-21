@@ -129,7 +129,9 @@ enum class ECL9NoiseSource : uint8
 	/** 몬스터 근접 소나 — 몬스터 자리에서 핀다 */
 	MonsterProx,
 	/** 몬스터 울음 (무리 경보가 실제로 나가는 순간) */
-	MonsterCall
+	MonsterCall,
+	/** 몬스터 잡기 예고(Pounce) 진입 — 몬스터 자리에서 "뒤에서 온다"를 바닥에 그린다 */
+	MonsterPounce
 };
 
 /**

@@ -435,6 +435,11 @@ void ACL9GameMode::ReviveDead()
 	for (APlayerState* PlayerState : GameState->PlayerArray)
 	{
 		ACL9Character* Character = PlayerState ? Cast<ACL9Character>(PlayerState->GetPawn()) : nullptr;
+		// 처형 표시(ExecutedBy·처형 시각)는 죽은 뒤에도 남아 있다 — 부활에서 걷는다 (D9). 처형 중이 아니면 아무 일도 없다
+		if (Character != nullptr)
+		{
+			Character->HostEndExecuted();
+		}
 		if (Character != nullptr && Character->IsDead())
 		{
 			Character->HostRevive();
@@ -629,6 +634,13 @@ void ACL9GameMode::ClearNightPopulation()
 	if (!HasAuthority())
 	{
 		return;
+	}
+
+	// 처형 중·처형된 캐릭터를 몬스터가 사라지기 **전에** 풀어 준다 — 뷰 타깃이 곧 파괴될 몬스터를 가리키거나 ExecutedBy 가 죽은
+	// 참조로 남지 않게 (D9). 처형과 무관한 캐릭터에는 아무 일도 없다
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		It->HostEndExecuted();
 	}
 
 	// 사이트는 밤과 함께 사라진다 — 스포너가 배치했지만 아무도

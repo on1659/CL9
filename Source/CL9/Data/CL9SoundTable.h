@@ -56,6 +56,21 @@ namespace CL9SoundNames
 	 * 행은 하나다: 변형 여러 개는 SoundCue 의 Random 노드로 묶는다. 피치만 코드가 ±8 % 흔든다
 	 */
 	inline const FName Footstep(TEXT("Footstep"));
+
+	/**
+	 * 몬스터가 잡기 예고(Pounce)에 들어오는 순간 — 몬스터 자리에서, 모든 머신. 상태 전이 감지(`ACL9Monster::TickStateSounds`:
+	 * State == Pounce ∧ (지난 틱 State != Pounce ∨ StateStartServerTime 변화))라 늦게 온 복제도 놓치지 않는다
+	 */
+	inline const FName MonsterPounce(TEXT("MonsterPounce"));
+
+	/** 몬스터가 Catch 에 들어오는 순간(잡기 성공) — 같은 전이 감지, 몬스터 자리, 모든 머신. 잡힌 쪽 `Hurt` 와 같은 순간에 겹친다. 헛침엔 없다 */
+	inline const FName MonsterCatch(TEXT("MonsterCatch"));
+
+	/**
+	 * 다가오는 소리 — 파동 표 행의 `SoundRow` 가 이 이름을 가리키면(`monster_prox`) 그 소음 사건마다 `UCL9WaveRenderer::PlayWave` 가
+	 * 링과 같은 박자로 튼다(시각 게이트 앞이라 링이 안 그려져도 난다). C++ 에는 재생 지점이 따로 없다 — 이름만 여기 둔다
+	 */
+	inline const FName MonsterNear(TEXT("MonsterNear"));
 }
 
 namespace CL9Sound

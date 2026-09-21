@@ -40,9 +40,32 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(FString::Printf(TEXT("Swing hit window needs 0 <= SwingHitStart < SwingHitEnd < %.3f (the ABP plays the swing clip only in that range)."), SwingClipWindow));
 	}
+	// 0이면 반경 0 스윕이라 아무것도 못 맞히고, 음수·NaN 은 구를 만들 수 없다 — 값의 문제가 아니라 오류다
+	if (!(FMath::IsFinite(SwingHitScale) && SwingHitScale > 0.f))
+	{
+		OutErrors.Add(TEXT("SwingHitScale must be a finite positive number — it scales the swing hit sphere radius (1 = mesh bounds)."));
+	}
 	// 0이면 플래시·비네트가 한 프레임도 보이지 않는다 — "맞았다"를 알리는 표현이 통째로 사라지므로 값의 문제가 아니라 오류다
 	if (HitFlashTime <= 0.f || HurtFlashTime <= 0.f || HurtVignetteTime <= 0.f)
 	{
 		OutErrors.Add(TEXT("HitFlashTime, HurtFlashTime and HurtVignetteTime must be positive — a zero makes the hit feedback invisible."));
+	}
+	// 피격 카메라: 시간·요 상한은 음수가 될 수 없다(0 은 끔). `HurtLookTime + 0.6 <= KnockdownTime` 은 캐릭터 행이 보이는
+	// ACL9Character::ApplyCharacterDef 가 Warning 으로 검사한다
+	if (!FMath::IsFinite(HurtLookTime) || HurtLookTime < 0.f || !FMath::IsFinite(HurtLookPitch)
+		|| !FMath::IsFinite(HurtLookYawMax) || HurtLookYawMax < 0.f)
+	{
+		OutErrors.Add(TEXT("HurtLookTime and HurtLookYawMax must be finite and non-negative, HurtLookPitch finite (0 time = hurt look off)."));
+	}
+	// 처형 카메라 블렌드: 음수·NaN 은 블렌드가 아니다(0 = 즉시)
+	if (!FMath::IsFinite(ExecuteCameraBlend) || ExecuteCameraBlend < 0.f)
+	{
+		OutErrors.Add(TEXT("ExecuteCameraBlend must be finite and non-negative (0 = instant cut to the execution camera)."));
+	}
+	// 데스캠: 자리·높이는 유한이면 된다(오프셋 (0,0,0) = 데스캠 없음), 블렌드는 음수·NaN 이 아니어야(0 = 즉시)
+	if (DeathCameraOffset.ContainsNaN() || !FMath::IsFinite(DeathCameraLookAtZ)
+		|| !FMath::IsFinite(DeathCameraBlend) || DeathCameraBlend < 0.f)
+	{
+		OutErrors.Add(TEXT("DeathCameraOffset and DeathCameraLookAtZ must be finite, DeathCameraBlend finite and non-negative (offset (0,0,0) = no death camera)."));
 	}
 }

@@ -2,6 +2,8 @@
 
 #include "Monsters/CL9Monster.h"
 #include "Animation/AnimInstance.h"
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Engine/SkeletalMesh.h"
@@ -24,10 +26,12 @@
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9SoundTable.h"
 #include "Data/CL9WaveTable.h"
+#include "Items/CL9Cart.h"
 #include "Items/CL9Item.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
+#include "GameMode/CL9PlayerController.h"
 
 namespace
 {
@@ -79,6 +83,12 @@ ACL9Monster::ACL9Monster()
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(SphereComponent);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 처형 카메라 — 잠들어 있다가 Execute 에서만 켜진다(ApplyState). 소켓·오프셋은 행 값이라 여기서는 자리만 만든다
+	ExecuteCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ExecuteCamera"));
+	ExecuteCamera->SetupAttachment(MeshComponent);
+	ExecuteCamera->bAutoActivate = false;
+	ExecuteCamera->SetActive(false);
 }
 
 void ACL9Monster::BeginPlay()
@@ -101,6 +111,8 @@ void ACL9Monster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ACL9Monster, DetectGauge);
 	DOREPLIFETIME(ACL9Monster, StateStartServerTime);
 	DOREPLIFETIME(ACL9Monster, bPushStun);
+	DOREPLIFETIME(ACL9Monster, PounceResultServerTime);
+	DOREPLIFETIME(ACL9Monster, bPounceHit);
 }
 
 void ACL9Monster::LoadData()
@@ -161,10 +173,11 @@ void ACL9Monster::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// 타격 플래시·소리·퍼프·히트스톱은 호스트와 클라 모두에서 같은 복제 시계로 굴러간다 — 아래 호스트 분기가 먼저 돌아가
-	// 버리기 전에 부른다
+	// 타격 플래시·소리·퍼프·히트스톱·전이 소리는 호스트와 클라 모두에서 같은 복제 시계로 굴러간다 — 아래 호스트 분기가 먼저
+	// 돌아가 버리기 전에 부른다
 	TickHitFlash();
 	TickHitFeel();
+	TickStateSounds();
 
 	if (HasAuthority())
 	{
@@ -186,8 +199,18 @@ void ACL9Monster::Tick(float DeltaSeconds)
 		bSmoothingInitialized = true;
 	}
 	const FVector PreviousSmoothed = SmoothedLocation;
-	SmoothedLocation = FMath::VInterpTo(SmoothedLocation, GetActorLocation(), DeltaSeconds, SmoothingInterpSpeed);
-	SmoothedRotation = FMath::RInterpTo(SmoothedRotation, GetActorRotation(), DeltaSeconds, SmoothingInterpSpeed);
+	if (State == ECL9MonsterState::Execute)
+	{
+		// 처형은 텔레포트로 시작한다 — 보간하면 메시가 앵커까지 미끄러져 가는 동안 카메라가 흔들리고 피해자 옆이 빈다. 처형 동안은
+		// 스무딩을 멈추고 액터 값에 붙인다 (D1)
+		SmoothedLocation = GetActorLocation();
+		SmoothedRotation = GetActorRotation();
+	}
+	else
+	{
+		SmoothedLocation = FMath::VInterpTo(SmoothedLocation, GetActorLocation(), DeltaSeconds, SmoothingInterpSpeed);
+		SmoothedRotation = FMath::RInterpTo(SmoothedRotation, GetActorRotation(), DeltaSeconds, SmoothingInterpSpeed);
+	}
 	DisplaySpeed = (SmoothedLocation - PreviousSmoothed).Size2D() / FMath::Max(DeltaSeconds, UE_KINDA_SMALL_NUMBER);
 
 	const float MeshZ = MonsterDef ? -MonsterDef->Radius : 0.f;
@@ -310,6 +333,41 @@ void ACL9Monster::TickHitFeel()
 	}
 }
 
+void ACL9Monster::TickStateSounds()
+{
+	// 전이 = 상태가 바뀌었거나 같은 상태의 시작 시각이 바뀜(연속 예고처럼 같은 상태로 다시 들어옴). 창(elapsed)이 아니라 전이라
+	// 20Hz 복제가 늦게 와도 한 번은 반드시 잡힌다
+	const bool bPrimed = bStateSoundPrimed;
+	const bool bTransition = State != LastSoundState || StateStartServerTime != LastSoundStateStartTime;
+	bStateSoundPrimed = true;
+	LastSoundState = State;
+	LastSoundStateStartTime = StateStartServerTime;
+
+	// 접속·스폰 직후의 첫 틱은 기준값만 — 이미 지나간 예고·잡기를 되풀이하지 않는다
+	if (!bPrimed || !bTransition || MeshComponent == nullptr)
+	{
+		return;
+	}
+
+	const FVector Center = MeshComponent->Bounds.Origin;
+	switch (State)
+	{
+	case ECL9MonsterState::Pounce:
+		CL9Sound::PlayAt(this, CL9SoundNames::MonsterPounce, Center);
+		break;
+	case ECL9MonsterState::Catch:
+		// 성공 소리는 Catch 전이에서만 — 헛침엔 MonsterPounce 뒤에 아무 소리도 없다
+		CL9Sound::PlayAt(this, CL9SoundNames::MonsterCatch, Center);
+		break;
+	case ECL9MonsterState::Execute:
+		// 처형은 Catch 를 지나지 않는다 — 잡히는 순간의 소리는 있어야 하므로 같은 행을 진입 전이에서 낸다 (2026-09-20 리드 확인 ②)
+		CL9Sound::PlayAt(this, CL9SoundNames::MonsterCatch, Center);
+		break;
+	default:
+		break;
+	}
+}
+
 void ACL9Monster::SpawnHitPuff(bool bDeath)
 {
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
@@ -395,6 +453,8 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	ChaseCooldownRemaining = FMath::Max(ChaseCooldownRemaining - DeltaSeconds, 0.f);
 	CatchCooldownRemaining = FMath::Max(CatchCooldownRemaining - DeltaSeconds, 0.f);
 	AlertCooldownRemaining = FMath::Max(AlertCooldownRemaining - DeltaSeconds, 0.f);
+	// 헛침 쿨다운은 여기서만, 틱당 한 번 줄어든다 — 상태 분기 안에서 다시 빼지 않는다
+	PounceMissRemaining = FMath::Max(PounceMissRemaining - DeltaSeconds, 0.f);
 
 	HostTickProxNoise(DeltaSeconds);
 
@@ -406,10 +466,13 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		DetectGauge = 1.f;
 	}
 
-	// 수면, 기상 예고, 스턴 상태에서는 감각이 작동하지 않는다
+	// 수면, 기상 예고, 스턴 상태에서는 감각이 작동하지 않는다. 잡기 예고 동안도 멈춘다 — 타깃은 진입 때 잠근 PounceTarget 이고
+	// 감각의 재타깃팅은 예고 동안 무시한다(덮침은 그 타깃의 지금 위치로). 처형 중도 같다 — 타깃은 ExecuteTarget 이다
 	const bool bSensesAwake = State != ECL9MonsterState::Asleep
 		&& State != ECL9MonsterState::WakeTelegraph
-		&& State != ECL9MonsterState::Stun;
+		&& State != ECL9MonsterState::Stun
+		&& State != ECL9MonsterState::Pounce
+		&& State != ECL9MonsterState::Execute;
 	if (bSensesAwake)
 	{
 		SenseTick(DeltaSeconds);
@@ -487,10 +550,10 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		}
 
 		// 게이지가 가득 차면 경계 태세로 들어간다 — 대상이 시야 안에 있으면
-		// 곧장 추격, 아니면 마지막 감지 지점으로 향한다 (docs/systems/monster.md).
+		// 곧장 사냥(추격, 처형 종은 스토킹), 아니면 마지막 감지 지점으로 향한다 (docs/systems/monster.md).
 		if (DetectGauge >= 1.f && bAlertGateOpen)
 		{
-			EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
+			EnterState(bHadSight && SensedCharacter.IsValid() ? GetHuntState() : ECL9MonsterState::Investigate);
 			break;
 		}
 
@@ -526,7 +589,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	{
 		if (bHadSight && SensedCharacter.IsValid() && bAlertGateOpen)
 		{
-			EnterState(ECL9MonsterState::Chase);
+			EnterState(GetHuntState());
 			break;
 		}
 
@@ -567,20 +630,7 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 	case ECL9MonsterState::Chase:
 	{
 		ACL9Character* Target = SensedCharacter.Get();
-		ChaseBudgetRemaining -= DeltaSeconds;
-
-		const bool bSeesTarget = Target != nullptr && bHadSight;
-		ChaseLoseRemaining = bSeesTarget ? MonsterDef->ChaseLoseTime : ChaseLoseRemaining - DeltaSeconds;
-
-		// 뭐든 다 내려놓으면 DeaggroRadius를 넘어가는 순간 추격에서 풀려난다
-		const float TargetDistance = Target ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
-		const bool bDeaggro = Target != nullptr
-			&& MonsterDef->DeaggroRadius > 0.f
-			&& TargetDistance > MonsterDef->DeaggroRadius
-			&& !Target->IsCarryingAnything();
-
-		const bool bOutOfHome = FVector::Dist2D(GetActorLocation(), HomeLocation) > MonsterDef->HomeRange;
-		if (Target == nullptr || Target->IsDead() || ChaseBudgetRemaining <= 0.f || ChaseLoseRemaining <= 0.f || bOutOfHome || bDeaggro)
+		if (TickChaseGiveUp(Target, DeltaSeconds))
 		{
 			EnterState(ECL9MonsterState::Break);
 			break;
@@ -599,11 +649,29 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			break;
 		}
 
-		// 잡기: CatchRadius 안에 있고 KillCooldown이 다 재충전됐을 때
-		if (MonsterDef->CatchRadius > 0.f && TargetDistance <= MonsterDef->CatchRadius && CatchCooldownRemaining <= 0.f)
+		// 잡기: 잡는 종(CatchRadius > 0)이고 KillCooldown이 다 재충전됐을 때. 넘어져 있는 타깃은 잡지도 예고하지도 않는다 —
+		// 넘어진 동안은 무적(2026-09-20 사용자)이라 진입 검사에서 건너뛰고, 추격 자체(예산·놓침·경로)는 그대로 이어져 일어나는
+		// 순간 다시 예고가 시작된다(타깃 선택에서 빼면 동료에게 튀거나 시야를 잃어 추격이 끊긴다). 처형 중인 타깃도 같다 (D3)
+		const float TargetDistance = FVector::Dist2D(GetActorLocation(), Target->GetActorLocation());
+		const bool bCanCatch = MonsterDef->CatchRadius > 0.f && CatchCooldownRemaining <= 0.f && !Target->IsKnockedDown() && !Target->IsExecuted();
+		if (bCanCatch)
 		{
-			HostCatch(*Target);
-			break;
+			// 예고가 켜진 종(PounceWindup > 0)은 PounceRadius 에서 멈춰 예고한다(헛친 뒤 PounceMissCooldown 동안은 다시 예고하지 않음);
+			// 꺼진 종은 옛 규칙 그대로 CatchRadius 에서 즉시 잡는다
+			if (MonsterDef->PounceWindup > 0.f)
+			{
+				if (TargetDistance <= MonsterDef->PounceRadius && PounceMissRemaining <= 0.f)
+				{
+					PounceTarget = Target;
+					EnterState(ECL9MonsterState::Pounce);
+					break;
+				}
+			}
+			else if (TargetDistance <= MonsterDef->CatchRadius)
+			{
+				HostCatch(*Target);
+				break;
+			}
 		}
 
 		ChaseRepathRemaining -= DeltaSeconds;
@@ -616,17 +684,40 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		break;
 	}
 
+	case ECL9MonsterState::Pounce:
+	{
+		// Chase 의 부분 상태 — 탈출 조건(타깃 소실·사망·예산·놓침·HomeRange·Deaggro)을 덮치기 전에 먼저 평가한다.
+		// 타깃은 진입 때 잠근 PounceTarget 이다(접속 끊김이면 null → 놓침 규칙으로 Break)
+		ACL9Character* Target = PounceTarget.Get();
+		if (TickChaseGiveUp(Target, DeltaSeconds))
+		{
+			EnterState(ECL9MonsterState::Break);
+			break;
+		}
+
+		// 제자리에서 타깃을 향해 돈다 — MoveAlongPath 의 회전 저항을 우회하므로 TurnRate 로만 제한한다(홱 돌지 않게)
+		FVector ToTarget = Target->GetActorLocation() - GetActorLocation();
+		ToTarget.Z = 0.f;
+		if (!ToTarget.IsNearlyZero())
+		{
+			HeadingYaw = FMath::FixedTurn(HeadingYaw, ToTarget.Rotation().Yaw, MonsterDef->TurnRate * DeltaSeconds);
+			SetActorRotation(FRotator(0.f, HeadingYaw, 0.f));
+		}
+
+		PounceWindupRemaining -= DeltaSeconds;
+		if (PounceWindupRemaining <= 0.f)
+		{
+			HostPounceLunge(*Target);
+		}
+		break;
+	}
+
 	case ECL9MonsterState::Catch:
 	{
 		CatchPauseRemaining -= DeltaSeconds;
 		if (CatchPauseRemaining <= 0.f)
 		{
-			// EnterState를 거치지 않고 곧장 추격으로 돌아간다 — 예산과 놓침
-			// 타이머는 계속 흘러가며, 잡기는 이 값들을 다시 채워 주지 않는다.
-			State = ECL9MonsterState::Chase;
-			StateStartServerTime = GetServerTime();
-			ChaseRepathRemaining = 0.f;
-			ApplyState();
+			ResumeChase();
 		}
 		break;
 	}
@@ -667,6 +758,161 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		break;
 	}
 
+	case ECL9MonsterState::Stalk:
+	{
+		// 타깃 잠금·교체: 감각이 다른 산 사람(처형 중 아님)을 잡으면 그쪽으로 옮기고 두 계수기를 처음부터 센다 (D4)
+		ACL9Character* Sensed = SensedCharacter.Get();
+		if (Sensed != nullptr && Sensed != StalkTarget.Get() && !Sensed->IsDead() && !Sensed->IsExecuted())
+		{
+			StalkTarget = Sensed;
+			StalkUnseenTime = 0.f;
+			StalkStaredTime = 0.f;
+			PathPoints.Reset();
+			ChaseRepathRemaining = 0.f;
+			UE_LOG(LogCL9, Log, TEXT("'%s' stalks '%s'."), *GetNameSafe(this), *GetNameSafe(Sensed));
+		}
+
+		// 다른 개체에게 처형 중인 타깃은 놓친 것과 같다 — TickChaseGiveUp 은 IsDead 만 보므로 여기서 null 로 만든다
+		ACL9Character* Target = StalkTarget.Get();
+		if (Target != nullptr && Target->IsExecuted())
+		{
+			Target = nullptr;
+		}
+		// 놓침 규칙은 추격과 같다(예산·놓침 시계·HomeRange·Deaggro·타깃 소실)
+		if (TickChaseGiveUp(Target, DeltaSeconds))
+		{
+			EnterState(ECL9MonsterState::Break);
+			break;
+		}
+
+		const float TargetDistance = FVector::Dist2D(GetActorLocation(), Target->GetActorLocation());
+		if (IsWatchedByAnyone())
+		{
+			// 보인다 — 미발견 줄은 끊기고 응시가 쌓인다. 다 쌓이면 격분: 이후는 닭과 같은 Chase·Pounce·Catch
+			StalkUnseenTime = 0.f;
+			StalkStaredTime += DeltaSeconds;
+			if (StalkStaredTime >= MonsterDef->StalkStareAnger)
+			{
+				UE_LOG(LogCL9, Log, TEXT("'%s' stared at for %.2fs — angered, chases '%s'."), *GetNameSafe(this), StalkStaredTime, *GetNameSafe(Target));
+				EnterState(ECL9MonsterState::Chase);
+				break;
+			}
+
+			// 보이는 동안은 서 있는다. 타깃이 StalkRetreatRadius 안이면 타깃 반대쪽의 그 반경 지점으로 RetreatSpeed 로 물러난다 —
+			// 경로가 없으면 그냥 선다. 후퇴로 바뀌는 순간 접근 경로는 버린다
+			const bool bRetreat = MonsterDef->StalkRetreatRadius > 0.f && TargetDistance < MonsterDef->StalkRetreatRadius;
+			if (!bRetreat)
+			{
+				PathPoints.Reset();
+				bStalkRetreating = false;
+				break;
+			}
+			if (!bStalkRetreating)
+			{
+				bStalkRetreating = true;
+				PathPoints.Reset();
+				ChaseRepathRemaining = 0.f;
+				UE_LOG(LogCL9, Verbose, TEXT("'%s' watched at %.0fcm — retreats."), *GetNameSafe(this), TargetDistance);
+			}
+			ChaseRepathRemaining -= DeltaSeconds;
+			if (ChaseRepathRemaining <= 0.f || PathPoints.Num() == 0)
+			{
+				ChaseRepathRemaining = ChaseRepathInterval;
+				FVector Away = GetActorLocation() - Target->GetActorLocation();
+				Away.Z = 0.f;
+				Away = Away.GetSafeNormal();
+				if (Away.IsNearlyZero())
+				{
+					Away = -GetActorForwardVector().GetSafeNormal2D();
+				}
+				if (!StartPathTo(Target->GetActorLocation() + Away * MonsterDef->StalkRetreatRadius))
+				{
+					PathPoints.Reset();
+					break;
+				}
+			}
+			MoveAlongPath(DeltaSeconds, MonsterDef->RetreatSpeed);
+			break;
+		}
+
+		// 안 보인다 — 응시는 같은 속도로 0 까지 감쇠, 미발견이 쌓인다. 후퇴 중이었으면 접근 경로를 다시 잡는다
+		StalkStaredTime = FMath::Max(StalkStaredTime - DeltaSeconds, 0.f);
+		StalkUnseenTime += DeltaSeconds;
+		if (bStalkRetreating)
+		{
+			bStalkRetreating = false;
+			PathPoints.Reset();
+			ChaseRepathRemaining = 0.f;
+		}
+
+		// 넘어진 타깃은 기다린다 — 계수기는 그대로 흐르므로 일어나는 순간 조건이 맞으면 바로 처형이다
+		if (Target->IsKnockedDown())
+		{
+			PathPoints.Reset();
+			break;
+		}
+
+		// 처형 진입 검사 — 전부 참이고 앵커가 비어 있으면 텔레포트하고 Execute 로
+		if (TryBeginExecute(*Target, /*bCheat*/ false))
+		{
+			break;
+		}
+
+		// 접근: 타깃 등 뒤 지점으로 — 추격과 같은 재경로 주기. 등 뒤 지점이 경로 실패면 타깃 자체로
+		ChaseRepathRemaining -= DeltaSeconds;
+		if (ChaseRepathRemaining <= 0.f || PathPoints.Num() == 0)
+		{
+			ChaseRepathRemaining = ChaseRepathInterval;
+			if (!StartPathTo(GetBehindPoint(*Target)))
+			{
+				StartPathTo(Target->GetActorLocation());
+			}
+		}
+		MoveAlongPath(DeltaSeconds, MonsterDef->StalkSpeed);
+		break;
+	}
+
+	case ECL9MonsterState::Execute:
+	{
+		// 이동 0. 타깃 소실(접속 끊김)이면 그만둔다
+		ACL9Character* Target = ExecuteTarget.Get();
+		if (Target == nullptr)
+		{
+			UE_LOG(LogCL9, Log, TEXT("'%s' lost its execution target — break."), *GetNameSafe(this));
+			EnterState(ECL9MonsterState::Break);
+			break;
+		}
+
+		const float Elapsed = GetStateElapsed();
+		if (!bExecuteKilled && Elapsed >= MonsterDef->ExecuteDuration)
+		{
+			// 결과는 진입에서 정해졌다 — HP 와 무관하게, 넘어짐 무적을 거치지 않고 죽인다 (D3)
+			bExecuteKilled = true;
+			Target->HostKill(this);
+			CatchCooldownRemaining = MonsterDef->KillCooldown;
+			UE_LOG(LogCL9, Log, TEXT("'%s' executed '%s' at %.2fs."), *GetNameSafe(this), *GetNameSafe(Target), Elapsed);
+		}
+
+		// 죽인 뒤에도 시체 위에 머문다(D6 — 피해자 시점은 죽는 순간 데스캠으로 넘어가고, 시체 옆에 선 이 몬스터가 거기 잡힌다) —
+		// 피해자의 관전이 시작되거나 SpectateDelay 가 다 지나면 Break
+		if (bExecuteKilled)
+		{
+			const ACL9PlayerController* VictimPC = Cast<ACL9PlayerController>(Target->GetController());
+			const bool bVictimSpectating = VictimPC != nullptr && VictimPC->IsSpectating();
+			const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+			const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+			const UCL9RulesDef* Rules = Registry ? Registry->GetRules() : nullptr;
+			const float SpectateDelay = Rules != nullptr ? Rules->SpectateDelay : 0.f;
+			if (bVictimSpectating || Elapsed >= MonsterDef->ExecuteDuration + SpectateDelay)
+			{
+				UE_LOG(LogCL9, Log, TEXT("'%s' leaves the execution at %.2fs (%s)."), *GetNameSafe(this), Elapsed,
+					bVictimSpectating ? TEXT("victim spectating") : TEXT("spectate delay over"));
+				EnterState(ECL9MonsterState::Break);
+			}
+		}
+		break;
+	}
+
 	default:
 		// Dead는 함수 맨 위에서 걸러지므로, 남는 경우가 없다
 		break;
@@ -684,7 +930,8 @@ void ACL9Monster::SenseTick(float DeltaSeconds)
 	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
 	{
 		ACL9Character* Candidate = *It;
-		if (Candidate->IsDead())
+		// 죽은 사람과 처형 중인 사람은 타깃이 아니다 — 둘째 몬스터가 처형 중인 피해자를 넘어뜨려 넘어짐 무적으로 "구해" 주면 안 된다 (D3)
+		if (Candidate->IsDead() || Candidate->IsExecuted())
 		{
 			continue;
 		}
@@ -800,6 +1047,34 @@ void ACL9Monster::EnterState(ECL9MonsterState NewState)
 	case ECL9MonsterState::Catch:
 		CatchPauseRemaining = CatchPauseSeconds;
 		break;
+	case ECL9MonsterState::Pounce:
+		PounceWindupRemaining = MonsterDef->PounceWindup;
+		// 예고 파동 — 링이 "뒤에서 온다"를 바닥에 그린다. 소리는 파동 행이 아니라 상태 전이(TickStateSounds)가 낸다
+		if (ACL9GameState* GameState = GetWorld()->GetGameState<ACL9GameState>())
+		{
+			GameState->HostReportNoise(ECL9NoiseSource::MonsterPounce, GetActorLocation(), 0.f, this);
+		}
+		// 20Hz 는 복제 주기지 AI 틱이 아니다 — 진입 시각을 찍자마자 보내야 클라가 보는 예고 길이가 깎이지 않는다
+		ForceNetUpdate();
+		break;
+	case ECL9MonsterState::Stalk:
+		// 추격과 같은 놓침 규칙을 쓰므로 같은 시계를 채운다. 팩 경보는 울리지 않는다 — 스토킹은 조용하고, 격분해 Chase 로 갈 때
+		// 그 진입이 (bPackAlarmFired 가 아직 false 라) 경보를 낸다
+		ChaseBudgetRemaining = MonsterDef->ChaseBudget * GetDangerScale();
+		ChaseLoseRemaining = MonsterDef->ChaseLoseTime;
+		ChaseRepathRemaining = 0.f;
+		StalkTarget = SensedCharacter;
+		StalkUnseenTime = 0.f;
+		StalkStaredTime = 0.f;
+		bStalkRetreating = false;
+		LastExecuteBlock = NAME_None;
+		UE_LOG(LogCL9, Log, TEXT("'%s' stalks '%s'."), *GetNameSafe(this), *GetNameSafe(StalkTarget.Get()));
+		break;
+	case ECL9MonsterState::Execute:
+		// 타깃·텔레포트는 HostBeginExecute 가 이미 끝냈다 — 여기서는 킬 플래그와 즉시 복제만
+		bExecuteKilled = false;
+		ForceNetUpdate();
+		break;
 	default:
 		break;
 	}
@@ -903,11 +1178,125 @@ bool ACL9Monster::MoveAlongPath(float DeltaSeconds, float Speed)
 
 void ACL9Monster::HostCatch(ACL9Character& Target)
 {
+	// 잡히면 처형인 종(bExecuteOnCatch — 돼지)은 잡는 순간이 처형이다: 피해·Catch 휴지기 없이 잡은 자리에서 Execute 로.
+	// KillCooldown 은 Execute 틱의 HostKill 자리에서 재충전된다. 넘어짐·처형 중 타깃은 호출자(bCanCatch·덮침 재검사)가 이미 걸렀다
+	if (MonsterDef->bExecuteOnCatch)
+	{
+		HostBeginExecute(Target, GetActorLocation(), /*bTeleport*/ false);
+		return;
+	}
+
 	// 한 번 잡으면 KillCooldown이 재충전돼야 한다 — 연속 세 번 타격은
 	// 불가능해야 한다 (docs/systems/monster.md 잡기 = 공격).
 	Target.OnDamage(MonsterDef->CatchDamage, this);
 	CatchCooldownRemaining = MonsterDef->KillCooldown;
 	EnterState(ECL9MonsterState::Catch);
+}
+
+bool ACL9Monster::TickChaseGiveUp(ACL9Character* Target, float DeltaSeconds)
+{
+	ChaseBudgetRemaining -= DeltaSeconds;
+
+	const bool bSeesTarget = Target != nullptr && bHadSight;
+	ChaseLoseRemaining = bSeesTarget ? MonsterDef->ChaseLoseTime : ChaseLoseRemaining - DeltaSeconds;
+
+	// 뭐든 다 내려놓으면 DeaggroRadius를 넘어가는 순간 추격에서 풀려난다
+	const float TargetDistance = Target ? FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()) : 0.f;
+	const bool bDeaggro = Target != nullptr
+		&& MonsterDef->DeaggroRadius > 0.f
+		&& TargetDistance > MonsterDef->DeaggroRadius
+		&& !Target->IsCarryingAnything();
+
+	const bool bOutOfHome = FVector::Dist2D(GetActorLocation(), HomeLocation) > MonsterDef->HomeRange;
+	return Target == nullptr || Target->IsDead() || ChaseBudgetRemaining <= 0.f || ChaseLoseRemaining <= 0.f || bOutOfHome || bDeaggro;
+}
+
+void ACL9Monster::ResumeChase()
+{
+	// EnterState(Chase) 는 예산·놓침 시계를 다시 채우고 경보를 다시 울린다 — 잡기 휴지기·헛침에서 돌아올 때는 그러면 안 된다
+	State = ECL9MonsterState::Chase;
+	StateStartServerTime = GetServerTime();
+	PathPoints.Reset();
+	ChaseRepathRemaining = 0.f;
+	ApplyState();
+}
+
+void ACL9Monster::HostPounceLunge(ACL9Character& Target)
+{
+	const float Radius = MonsterDef->Radius;
+	const FVector Start = GetActorLocation();
+	const FVector TargetLocation = Target.GetActorLocation();
+
+	FVector Direction = TargetLocation - Start;
+	Direction.Z = 0.f;
+	Direction = Direction.GetSafeNormal();
+	if (Direction.IsNearlyZero())
+	{
+		Direction = GetActorForwardVector().GetSafeNormal2D();
+	}
+
+	// 덮침 이동: 몸체 구를 WorldStatic + WorldDynamic 로 스윕한다(바닥·문 조각의 프로필이 제각각이라 둘 다) — 벽이면 거기까지.
+	// 자신·타깃·캐릭터·아이템·몬스터는 무시 목록에 넣는다(닭 무리가 벽을 가리거나 사람 몸에서 멈추지 않게). 죽음 발사의
+	// "맞은 것을 하나씩 빼며 4회 재시도" 방식은 쓰지 않는다
+	FVector Reached = Start + Direction * MonsterDef->PounceLunge;
+	if (MonsterDef->PounceLunge > 0.f)
+	{
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9Pounce), false, this);
+		Params.AddIgnoredActor(&Target);
+		for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+		{
+			Params.AddIgnoredActor(*It);
+		}
+		for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+		{
+			Params.AddIgnoredActor(*It);
+		}
+		for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+		{
+			Params.AddIgnoredActor(*It);
+		}
+		const FCollisionObjectQueryParams ObjectParams(ECC_TO_BITFIELD(ECC_WorldStatic) | ECC_TO_BITFIELD(ECC_WorldDynamic));
+
+		FHitResult Hit;
+		if (GetWorld()->SweepSingleByObjectType(Hit, Start, Reached, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Radius), Params))
+		{
+			// 스윕이 시작부터 끼어 있으면(bStartPenetrating) Location 이 Start 라 제자리 — 그것도 "벽이면 거기까지"다
+			Reached = Hit.Location;
+		}
+	}
+	Reached.Z = Start.Z;
+	SetActorLocation(Reached, false, nullptr, ETeleportType::TeleportPhysics);
+	HeadingYaw = Direction.Rotation().Yaw;
+	SetActorRotation(FRotator(0.f, HeadingYaw, 0.f));
+	PathPoints.Reset();
+
+	// 재검사 — 도달 위치 기준. 원격 잡기 금지: 거리·높이 차(위층 타깃 배제)·시야 셋 다 맞아야 잡는다. 넘어져 있는 타깃은
+	// 무적(OnDamage 게이트)이라 여기서도 헛침으로 친다. 예고 중에 다른 개체에게 처형당하기 시작한 타깃도 헛침이다 (D3)
+	const float HalfHeight = Target.GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const bool bInReach = FVector::Dist2D(Reached, TargetLocation) <= MonsterDef->CatchRadius;
+	const bool bLevel = FMath::Abs(Reached.Z - TargetLocation.Z) <= Radius + HalfHeight;
+	const bool bHit = bInReach && bLevel && !Target.IsKnockedDown() && !Target.IsExecuted() && HasLineOfSight(Target);
+
+	PounceResultServerTime = GetServerTime();
+	bPounceHit = bHit;
+	if (bHit)
+	{
+		HostCatch(Target);
+	}
+	else
+	{
+		// 헛침 — KillCooldown 은 건드리지 않는다. 간격이 다시 좁혀지면(멈추거나 돌면) PounceMissCooldown 뒤 재예고
+		PounceMissRemaining = MonsterDef->PounceMissCooldown;
+		ResumeChase();
+	}
+	// 결과 시각·성패는 ABP 의 헛침 클립 시계다 — 다음 20Hz 주기를 기다리지 않고 바로 보낸다
+	ForceNetUpdate();
+}
+
+float ACL9Monster::GetPounceResultElapsed() const
+{
+	// 결과가 없으면 PounceResultServerTime 이 −1000 이라 서버 시각(0 이상) + 1000 ≥ 1000 — ABP 의 헛침 창(< 0.3)이 스폰 직후 열리지 않는다
+	return GetServerTime() - PounceResultServerTime;
 }
 
 void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
@@ -921,6 +1310,13 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 	if (Hp <= 0)
 	{
 		Die(Source);
+		return;
+	}
+
+	// 구조는 없다 (D4): 처형 중에는 피해만 받고 경직·상태 변경이 없다 — 죽이면 Die 가 피해자를 먼저 죽인다
+	if (State == ECL9MonsterState::Execute)
+	{
+		UE_LOG(LogCL9, Log, TEXT("'%s' hit for %d while executing — no stun (HP %d)."), *GetNameSafe(this), Amount, Hp);
 		return;
 	}
 
@@ -942,6 +1338,12 @@ void ACL9Monster::OnShove(AActor* Shover)
 {
 	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead || Shover == nullptr)
 	{
+		return;
+	}
+	// 구조는 없다 (D4): 처형 중에는 밀쳐도 넉백·경직·상태 변경이 없다
+	if (State == ECL9MonsterState::Execute)
+	{
+		UE_LOG(LogCL9, Log, TEXT("'%s' shoved by '%s' while executing — ignored."), *GetNameSafe(this), *GetNameSafe(Shover));
 		return;
 	}
 
@@ -1011,6 +1413,17 @@ void ACL9Monster::OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source)
 
 void ACL9Monster::Die(AActor* Source)
 {
+	// 처형 중에 죽어도 피해자는 죽는다 (D4 — 구조 없음). 피해자의 뷰 타깃은 캐릭터의 사망 흐름(HandlePlayerDeath → 관전)이 넘긴다
+	if (State == ECL9MonsterState::Execute && !bExecuteKilled)
+	{
+		if (ACL9Character* Victim = ExecuteTarget.Get(); Victim != nullptr && !Victim->IsDead())
+		{
+			bExecuteKilled = true;
+			Victim->HostKill(this);
+			UE_LOG(LogCL9, Log, TEXT("'%s' died mid-execution — '%s' is killed anyway."), *GetNameSafe(this), *GetNameSafe(Victim));
+		}
+	}
+
 	EnterState(ECL9MonsterState::Dead);
 	DetectGauge = 0.f;
 	KnockbackRemaining = 0.f;
@@ -1200,6 +1613,10 @@ void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
 			EnterState(ECL9MonsterState::Investigate);
 		}
 		break;
+	case ECL9MonsterState::Stalk:
+		// 무리가 울면 몰래 다가갈 이유가 없다 — 격분해 그대로 추격 (D4)
+		EnterState(ECL9MonsterState::Chase);
+		break;
 	default:
 		break;
 	}
@@ -1228,6 +1645,10 @@ void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSecon
 	case ECL9MonsterState::Investigate:
 		// 분노는 설계상 ChaseCooldown을 무시한다 (경보 문서: 쿨다운은 만능 방패가 아니다)
 		EnterState(bHadSight && SensedCharacter.IsValid() ? ECL9MonsterState::Chase : ECL9MonsterState::Investigate);
+		break;
+	case ECL9MonsterState::Stalk:
+		// 죽음의 비명에 스토킹은 격분으로 바뀐다 — 타깃은 이미 있으니 곧장 Chase (D4)
+		EnterState(ECL9MonsterState::Chase);
 		break;
 	default:
 		break;
@@ -1295,12 +1716,259 @@ void ACL9Monster::ApplyState()
 {
 	// 이제 AnimBP가 복제된 상태에 따라 이동/피격/공격/사망 애니메이션을 전환한다
 	// (docs/systems/animation.md); 여기서의 표현 처리는 행 값에 따른 메시 방향
-	// 보정만 담당한다.
+	// 보정과 처형 카메라의 켜고 끔이다.
 	if (MeshComponent != nullptr)
 	{
 		const float YawOffset = MonsterDef ? MonsterDef->MeshYawOffset : 0.f;
 		MeshComponent->SetRelativeRotation(FRotator(0.f, YawOffset, 0.f));
 	}
+
+	// 처형 카메라: Execute 에서만 켠다 — 호스트는 EnterState, 클라는 OnRep_State 로 같은 자리에 온다 (D6). 소켓은 행 값
+	// (본 이름 허용) — 있으면 그 본의 소켓 공간, **없으면 액터 루트(구 콜리전)에 액터 공간**으로 붙는다: 메시는 `MeshYawOffset`
+	// 만큼 돌아 있고 `Radius` 만큼 내려가 있어 메시 루트 기준 오프셋은 종마다 축이 달라진다(2026-09-20 돼지 "뒷다리 사이" 사고).
+	// 액터 공간이면 표의 `ExecuteCameraOffset` 이 "X = 전방(타깃 쪽)·Z = 위" 그대로 읽힌다. 처형 밖에서는 꺼져 있다
+	if (ExecuteCamera != nullptr && MeshComponent != nullptr)
+	{
+		const bool bExecute = State == ECL9MonsterState::Execute;
+		if (bExecute && MonsterDef != nullptr)
+		{
+			const bool bSocket = MeshComponent->DoesSocketExist(MonsterDef->ExecuteCameraSocket);
+			USceneComponent* Parent = bSocket ? static_cast<USceneComponent*>(MeshComponent) : GetRootComponent();
+			ExecuteCamera->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform, bSocket ? MonsterDef->ExecuteCameraSocket : NAME_None);
+			ExecuteCamera->SetRelativeLocationAndRotation(MonsterDef->ExecuteCameraOffset, MonsterDef->ExecuteCameraRotation);
+		}
+		if (ExecuteCamera->IsActive() != bExecute)
+		{
+			ExecuteCamera->SetActive(bExecute);
+		}
+	}
+}
+
+ECL9MonsterState ACL9Monster::GetHuntState() const
+{
+	// 스토커 종은 발각해도 달려들지 않는다 — 스토킹이 사냥이다. 잡히면 처형인 종(bExecuteOnCatch)은 닭처럼 추격한다 — 잡기가 처형이다.
+	// 롤백은 표의 ExecuteRadius 0 (빌드 없이 옛 추격으로)
+	return MonsterDef != nullptr && MonsterDef->ExecuteRadius > 0.f ? ECL9MonsterState::Stalk : ECL9MonsterState::Chase;
+}
+
+bool ACL9Monster::IsWatchedByAnyone() const
+{
+	if (MonsterDef->StalkGazeRadius <= 0.f)
+	{
+		return false;
+	}
+
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		const ACL9Character* Candidate = *It;
+		// 시체와 처형 중인 사람은 보지 못한다 — 시체가 돼지를 붙들어 두면 안 된다 (D5)
+		if (Candidate->IsDead() || Candidate->IsExecuted())
+		{
+			continue;
+		}
+		if (FVector::Dist2D(GetActorLocation(), Candidate->GetActorLocation()) > MonsterDef->StalkGazeRadius)
+		{
+			continue;
+		}
+		// 2D 요만 비교한다 — 바닥을 보든 천장을 보든 화면 가로 안에 있으면 본 것이다. 조준 요는 호스트가 아는 값
+		// (원격 폰은 복제된 컨트롤 회전, ~100ms 지연 허용)
+		FVector ToMonster = GetActorLocation() - Candidate->GetActorLocation();
+		ToMonster.Z = 0.f;
+		const float YawDelta = ToMonster.IsNearlyZero()
+			? 0.f
+			: FRotator::NormalizeAxis(Candidate->GetBaseAimRotation().Yaw - ToMonster.Rotation().Yaw);
+		if (FMath::Abs(YawDelta) <= MonsterDef->StalkGazeHalfAngle && HasLineOfSight(*Candidate))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+FVector ACL9Monster::GetBehindPoint(const ACL9Character& Target) const
+{
+	const FVector Forward = FRotator(0.f, Target.GetActorRotation().Yaw, 0.f).Vector();
+	return Target.GetActorLocation() - Forward * MonsterDef->ExecuteAnchorDistance;
+}
+
+bool ACL9Monster::SweepExecuteAnchor(const ACL9Character& Target, FVector& OutAnchor) const
+{
+	const float Radius = MonsterDef->Radius;
+	const FVector TargetLocation = Target.GetActorLocation();
+
+	// 앵커 높이는 이 몬스터의 지금 Z — 스포너가 바닥 + Radius 에 놓고 덮침도 Z 평탄이라 같은 층이면 바닥에 딱 맞는다.
+	// 타깃 발 높이로 새로 재면 구가 바닥에 접해 시작부터 끼인 것(bStartPenetrating)으로 잡힐 수 있다
+	OutAnchor = GetBehindPoint(Target);
+	OutAnchor.Z = GetActorLocation().Z;
+	const FVector Start(TargetLocation.X, TargetLocation.Y, OutAnchor.Z);
+
+	// 덮침과 같은 스윕 — 자신·타깃·캐릭터·아이템·몬스터는 무시. 타깃이 끌던 수레도 무시한다(수레가 등 뒤에 붙어 있어 앵커를 막는다, D1)
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9ExecuteAnchor), false, this);
+	Params.AddIgnoredActor(&Target);
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		Params.AddIgnoredActor(*It);
+	}
+	for (TActorIterator<ACL9Item> It(GetWorld()); It; ++It)
+	{
+		Params.AddIgnoredActor(*It);
+	}
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		Params.AddIgnoredActor(*It);
+	}
+	if (const AActor* Cart = Target.GetPullingCart())
+	{
+		Params.AddIgnoredActor(Cart);
+	}
+	const FCollisionObjectQueryParams ObjectParams(ECC_TO_BITFIELD(ECC_WorldStatic) | ECC_TO_BITFIELD(ECC_WorldDynamic));
+
+	FHitResult Hit;
+	return !GetWorld()->SweepSingleByObjectType(Hit, Start, OutAnchor, FQuat::Identity, ObjectParams, FCollisionShape::MakeSphere(Radius), Params);
+}
+
+bool ACL9Monster::TryBeginExecute(ACL9Character& Target, bool bCheat)
+{
+	FName Block;
+	FVector Anchor = FVector::ZeroVector;
+	const float TargetDistance = FVector::Dist2D(GetActorLocation(), Target.GetActorLocation());
+
+	if (!bCheat)
+	{
+		// 등 뒤 = 타깃 전방 · (타깃→몬스터 단위벡터) <= −cos(ExecuteBehindAngle) — 몬스터가 타깃 뒤쪽 원뿔 안
+		const FVector Forward = FRotator(0.f, Target.GetActorRotation().Yaw, 0.f).Vector();
+		FVector ToMonster = GetActorLocation() - Target.GetActorLocation();
+		ToMonster.Z = 0.f;
+		const float BehindDot = FVector::DotProduct(Forward, ToMonster.GetSafeNormal());
+		const bool bBehind = !ToMonster.IsNearlyZero() && BehindDot <= -FMath::Cos(FMath::DegreesToRadians(MonsterDef->ExecuteBehindAngle));
+
+		if (StalkUnseenTime < MonsterDef->ExecuteUnseenTime)
+		{
+			Block = TEXT("unseen-time");
+		}
+		else if (TargetDistance > MonsterDef->ExecuteRadius)
+		{
+			Block = TEXT("radius");
+		}
+		else if (!bBehind)
+		{
+			Block = TEXT("behind-cone");
+		}
+		else if (!HasLineOfSight(Target))
+		{
+			Block = TEXT("line-of-sight");
+		}
+		else if (CatchCooldownRemaining > 0.f)
+		{
+			Block = TEXT("kill-cooldown");
+		}
+	}
+	if (Block.IsNone())
+	{
+		// 치트도 건너뛰지 않는 검사: 타깃 상태와 앵커
+		if (Target.IsKnockedDown())
+		{
+			Block = TEXT("target-knocked-down");
+		}
+		else if (Target.IsExecuted())
+		{
+			Block = TEXT("target-executed");
+		}
+		else if (Target.IsDead())
+		{
+			Block = TEXT("target-dead");
+		}
+		else if (!SweepExecuteAnchor(Target, Anchor))
+		{
+			Block = TEXT("anchor-blocked");
+		}
+	}
+
+	if (!Block.IsNone())
+	{
+		// 같은 사유가 틱마다 반복되면 소음이다 — 바뀔 때만. 치트는 한 번뿐이라 Log
+		if (bCheat)
+		{
+			UE_LOG(LogCL9, Log, TEXT("'%s' cannot execute '%s': %s."), *GetNameSafe(this), *GetNameSafe(&Target), *Block.ToString());
+		}
+		else if (Block != LastExecuteBlock)
+		{
+			LastExecuteBlock = Block;
+			UE_LOG(LogCL9, Verbose, TEXT("'%s' execute check on '%s' fails: %s (unseen %.2f/%.2f s, dist %.0f/%.0f cm)."),
+				*GetNameSafe(this), *GetNameSafe(&Target), *Block.ToString(),
+				StalkUnseenTime, MonsterDef->ExecuteUnseenTime, TargetDistance, MonsterDef->ExecuteRadius);
+		}
+		return false;
+	}
+
+	LastExecuteBlock = NAME_None;
+	HostBeginExecute(Target, Anchor, /*bTeleport*/ true);
+	return true;
+}
+
+void ACL9Monster::HostBeginExecute(ACL9Character& Target, const FVector& Anchor, bool bTeleport)
+{
+	// 몬스터가 움직이지 피해자가 움직이지 않는다 (D1): 스토커는 앵커로 텔레포트하고, 잡히면 처형인 종은 잡은 자리(Anchor = 지금 위치)에
+	// 그대로 선다. 어느 쪽이든 타깃을 향하고, 피해자 캡슐·위치는 그대로
+	if (bTeleport)
+	{
+		SetActorLocation(Anchor, false, nullptr, ETeleportType::TeleportPhysics);
+	}
+	FVector ToTarget = Target.GetActorLocation() - Anchor;
+	ToTarget.Z = 0.f;
+	if (!ToTarget.IsNearlyZero())
+	{
+		HeadingYaw = ToTarget.Rotation().Yaw;
+	}
+	SetActorRotation(FRotator(0.f, HeadingYaw, 0.f));
+	SmoothedLocation = GetActorLocation();
+	SmoothedRotation = GetActorRotation();
+
+	ExecuteTarget = &Target;
+	EnterState(ECL9MonsterState::Execute);
+	Target.HostBeginExecuted(this);
+
+	UE_LOG(LogCL9, Log, TEXT("'%s' begins executing '%s' — %s (%s), yaw %.0f."),
+		*GetNameSafe(this), *GetNameSafe(&Target), bTeleport ? TEXT("teleported to") : TEXT("executes on catch at"),
+		*Anchor.ToCompactString(), HeadingYaw);
+}
+
+bool ACL9Monster::HostCheatExecute(ACL9Character& Target)
+{
+	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead || State == ECL9MonsterState::Execute)
+	{
+		return false;
+	}
+	if (!MonsterDef->IsExecutioner())
+	{
+		UE_LOG(LogCL9, Log, TEXT("'%s' is not an executioner species (ExecuteRadius 0, bExecuteOnCatch false)."), *GetNameSafe(this));
+		return false;
+	}
+	if (MonsterDef->bExecuteOnCatch && MonsterDef->ExecuteRadius <= 0.f)
+	{
+		// 잡히면 처형인 종은 앵커가 없다 — 잡기와 같은 타깃 상태 검사만 하고 지금 자리에서 시작한다(스윕·텔레포트 없음)
+		FName Block;
+		if (Target.IsKnockedDown())
+		{
+			Block = TEXT("target-knocked-down");
+		}
+		else if (Target.IsExecuted())
+		{
+			Block = TEXT("target-executed");
+		}
+		else if (Target.IsDead())
+		{
+			Block = TEXT("target-dead");
+		}
+		if (!Block.IsNone())
+		{
+			UE_LOG(LogCL9, Log, TEXT("'%s' cannot execute '%s': %s."), *GetNameSafe(this), *GetNameSafe(&Target), *Block.ToString());
+			return false;
+		}
+		HostBeginExecute(Target, GetActorLocation(), /*bTeleport*/ false);
+		return true;
+	}
+	return TryBeginExecute(Target, /*bCheat*/ true);
 }
 
 void ACL9Monster::TickHitFlash()

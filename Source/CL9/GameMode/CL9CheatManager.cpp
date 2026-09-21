@@ -105,6 +105,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		Wave(Tokens);
 	}
+	else if (Command == TEXT("execute"))
+	{
+		Execute(Tokens);
+	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("cl9.%s: unknown cheat."), *Command);
@@ -365,6 +369,49 @@ void UCL9CheatManager::Wave(const TArray<FString>& Args)
 	UE_LOG(LogCL9, Log, TEXT("cl9.wave: '%s' reported at your feet."), *CL9Wave::ToAlias(Source));
 }
 
+void UCL9CheatManager::Execute(const TArray<FString>& Args)
+{
+	const APlayerController* Controller = GetOuterAPlayerController();
+	ACL9Character* Character = Controller ? Cast<ACL9Character>(Controller->GetPawn()) : nullptr;
+	if (Character == nullptr || !Character->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.execute: needs a pawn on the host."));
+		return;
+	}
+	if (Character->IsDead() || Character->IsExecuted())
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.execute: you are already dead or being executed."));
+		return;
+	}
+
+	// 가장 가까운 살아 있는 처형 종 — 스토커(ExecuteRadius > 0) 또는 잡히면 처형(bExecuteOnCatch). 둘 다 아니면 그 종은 처형이 없다
+	ACL9Monster* Nearest = nullptr;
+	float NearestDistance = TNumericLimits<float>::Max();
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		const UCL9MonsterDef* Def = It->GetMonsterDef();
+		const float Distance = FVector::Dist2D(Character->GetActorLocation(), It->GetActorLocation());
+		if (Def != nullptr && Def->IsExecutioner() && It->GetState() != ECL9MonsterState::Dead
+			&& It->GetState() != ECL9MonsterState::Execute && Distance < NearestDistance)
+		{
+			Nearest = *It;
+			NearestDistance = Distance;
+		}
+	}
+	if (Nearest == nullptr)
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.execute: no living executioner monster (ExecuteRadius > 0 or bExecuteOnCatch) — cl9.addmonster pig or raccoon first."));
+		return;
+	}
+
+	// 스토커는 계수기·거리·등 뒤·미발견을 우회하고 앵커 스윕과 HostBeginExecuted 는 그대로; 잡히면 처형인 종은 그 자리에서 —
+	// 실패 사유는 몬스터가 로그에 남긴다
+	if (Nearest->HostCheatExecute(*Character))
+	{
+		UE_LOG(LogCL9, Log, TEXT("cl9.execute: '%s' (%.0fcm away) executes you."), *GetNameSafe(Nearest), NearestDistance);
+	}
+}
+
 void UCL9CheatManager::Blackout(const TArray<FString>& Args)
 {
 	UWorld* World = GetWorld();
@@ -404,10 +451,26 @@ void UCL9CheatManager::Damage(const TArray<FString>& Args)
 		return;
 	}
 
-	// 캐치가 사용하는 것과 동일한 호스트 진입점이다 — 쓰러짐, 흘림, 사망이 모두 뒤따른다 (docs/systems/character.md)
+	// 캐치가 사용하는 것과 동일한 호스트 진입점이다 — 쓰러짐, 흘림, 사망이 모두 뒤따른다 (docs/systems/character.md).
+	// 넘어져 있는 동안은 OnDamage 가 무시한다(무적 — 치트도 우회 없음)
 	const int32 Amount = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
-	Character->OnDamage(Amount, nullptr);
-	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s'."), Amount, *GetNameSafe(Character));
+
+	// 가장 가까운 살아 있는 몬스터를 범인으로 — 피격 사건(카메라·방향 호)이 진짜 잡힘과 같은 그림이 되게. 없으면 null 그대로
+	ACL9Monster* Nearest = nullptr;
+	float NearestDistance = TNumericLimits<float>::Max();
+	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
+	{
+		ACL9Monster* Candidate = *It;
+		const float Distance = FVector::Dist2D(Character->GetActorLocation(), Candidate->GetActorLocation());
+		if (Candidate->GetState() != ECL9MonsterState::Dead && Distance < NearestDistance)
+		{
+			Nearest = Candidate;
+			NearestDistance = Distance;
+		}
+	}
+
+	Character->OnDamage(Amount, Nearest);
+	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s' (source '%s')."), Amount, *GetNameSafe(Character), *GetNameSafe(Nearest));
 }
 
 void UCL9CheatManager::Day(const TArray<FString>& Args)

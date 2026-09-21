@@ -164,11 +164,94 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
 	int32 CatchDamage = 1;
 
+	// -- 잡기 예고 Pounce (docs/systems/monster.md 잡기 예고). CatchRadius 0 또는 PounceWindup 0 이면 예고 없이 옛 즉시 잡기다 --
+
+	/** 예고가 시작되는 거리, cm 단위 — CatchRadius 이상이어야 한다(로드 검사). 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
+	float PounceRadius = 0.f;
+
+	/** 예고 길이, 초 단위 — 이동 0 으로 타깃을 향해 돌며 기다린다. 0 이면 Pounce 없음. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
+	float PounceWindup = 0.f;
+
+	/** 예고 끝에 타깃 방향으로 한 번에 덮치는 거리, cm 단위 — 벽이면 거기까지. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
+	float PounceLunge = 0.f;
+
+	/** 헛친 뒤 다시 예고할 수 있기까지, 초 단위 — KillCooldown 과 무관하다. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
+	float PounceMissCooldown = 0.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
 	int32 SearchHops = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chase")
 	float SearchDwellTime = 0.f;
+
+	// -- 스토킹·처형 Execute (docs/plan/data/monster/common.md 스토킹과 처형). 두 갈래: ExecuteRadius > 0 = 스토커(너구리 — 몰래 뒤에서),
+	// bExecuteOnCatch = 잡히면 처형(돼지 — 추격·예고·잡기 그대로, 잡는 순간이 처형). 둘 다 아니면 처형 없는 종 — 옛 추격·예고·잡기 그대로 --
+
+	/** 스토킹 처형 진입 거리, cm 단위 — **0 이면 스토킹 없는 종**(Stalk 도 없다; bExecuteOnCatch 도 아니면 처형 없음). 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float ExecuteRadius = 0.f;
+
+	/** 타깃 등 뒤 원뿔의 반각, 도 단위 — 타깃 전방 · (타깃→몬스터) <= −cos(이 값) 이면 등 뒤다. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float ExecuteBehindAngle = 0.f;
+
+	/** 아무도 보지 않은 채 이만큼 이어져야 처형에 들어간다, 초 단위. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float ExecuteUnseenTime = 0.f;
+
+	/** 처형 진입부터 HostKill 까지, 초 단위 — 클립이 이 값을 따른다(규칙 2). 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float ExecuteDuration = 0.f;
+
+	/** 앵커 = 타깃 위치 − 타깃 전방(요) × 이 값, cm 단위 — 로드 검사 `>= Radius + 39`(캡슐 반경). 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float ExecuteAnchorDistance = 0.f;
+
+	/** 처형 카메라를 붙일 메시 소켓(본 이름 허용) — 없으면 액터 루트(구 콜리전)에 붙는다(2026-09-20 밤 — 메시는 `MeshYawOffset`·`Radius` 만큼 돌고 내려가 있어 메시 루트 기준은 종마다 축이 어긋난다) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	FName ExecuteCameraSocket;
+
+	/** 처형 카메라의 상대 위치, cm 단위 — 소켓이 있으면 소켓 공간, 없으면 액터 공간(X = 전방·타깃 쪽, Z = 위) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	FVector ExecuteCameraOffset = FVector::ZeroVector;
+
+	/** 처형 카메라의 상대 회전, 도 단위 — 위치와 같은 공간 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	FRotator ExecuteCameraRotation = FRotator::ZeroRotator;
+
+	/** 스토킹 접근 속도, cm/s 단위 — 안 보일 때 타깃 등 뒤 지점으로. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float StalkSpeed = 0.f;
+
+	/** "본다" 판정의 시선 반각, 도 단위 — 플레이어 조준 요와 몬스터 방향 요의 차가 이 안이면 본다. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float StalkGazeHalfAngle = 0.f;
+
+	/** "본다" 판정이 유효한 거리, cm 단위. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float StalkGazeRadius = 0.f;
+
+	/** 이만큼 응시당하면 격분해 Chase 로, 초 단위 — 안 보이면 같은 속도로 0 까지 감쇠. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float StalkStareAnger = 0.f;
+
+	/** 보이는 동안 타깃과 이 거리 안이면 `RetreatSpeed` 로 물러난다, cm 단위 — 0 이면 후퇴 없이 정지만. 자리표시 0 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	float StalkRetreatRadius = 0.f;
+
+	/**
+	 * 잡는 순간(즉시 잡기·덮침 성공)이 처형이다 — 스토킹 없이. 피해·Catch 휴지기 대신 잡은 자리에서(텔레포트 없음) Execute 로 들어가
+	 * ExecuteDuration 뒤 즉사(로드 검사: ExecuteDuration > 0). 자리표시 false
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Execute")
+	bool bExecuteOnCatch = false;
+
+	/** 처형이 있는 종인가 — 스토커(ExecuteRadius > 0) 또는 잡히면 처형(bExecuteOnCatch). 치트 `cl9.execute` 의 후보·게이트가 쓴다 */
+	bool IsExecutioner() const { return ExecuteRadius > 0.f || bExecuteOnCatch; }
 
 	// -- 각성과 경보 --
 

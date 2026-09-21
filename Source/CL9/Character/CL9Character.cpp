@@ -33,6 +33,7 @@
 #include "Data/CL9Constants.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ItemDef.h"
+#include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
 #include "Data/CL9ShakeTable.h"
 #include "Data/CL9SoundTable.h"
@@ -42,6 +43,7 @@
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
 #include "GameMode/CL9GameUserSettings.h"
+#include "GameMode/CL9HurtLookModifier.h"
 #include "GameMode/CL9PlayerController.h"
 #include "GameMode/CL9PlayerState.h"
 #include "Items/CL9Cart.h"
@@ -113,6 +115,13 @@ ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
 
+	// 데스캠: 죽으면 1인칭 대신 이것이 시체를 본다 — 자리·회전은 죽는 순간 규칙 표에서(ApplyDeathCamera). 평소엔 꺼져 있어
+	// CalcCamera 가 첫 활성 카메라인 1인칭을 고른다 (docs/systems/character.md 죽음 — 데스캠)
+	DeathCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DeathCamera"));
+	DeathCamera->SetupAttachment(GetCapsuleComponent());
+	DeathCamera->bAutoActivate = false;
+	DeathCamera->SetActive(false);
+
 	SetNetUpdateFrequency(20.f);
 }
 
@@ -127,6 +136,52 @@ void ACL9Character::BeginPlay()
 	if (HasAuthority())
 	{
 		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	}
+}
+
+void ACL9Character::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 폰이 사라지면 카메라 매니저에 남은 모디파이어를 뗀다 — 다음 폰이 죽은 폰의 사건을 읽지 않게
+	if (HurtLookModifier != nullptr)
+	{
+		if (APlayerCameraManager* CameraManager = HurtLookModifier->GetCameraOwner())
+		{
+			CameraManager->RemoveCameraModifier(HurtLookModifier);
+		}
+		HurtLookModifier = nullptr;
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
+void ACL9Character::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+	UpdateHurtLookModifier();
+}
+
+void ACL9Character::UpdateHurtLookModifier()
+{
+	// 소유 클라(리슨 호스트의 자기 폰 포함)에서만 — 남의 폰·서버의 원격 폰에는 카메라가 없다
+	const APlayerController* PC = IsLocallyControlled() ? Cast<APlayerController>(GetController()) : nullptr;
+	APlayerCameraManager* CameraManager = PC != nullptr ? PC->PlayerCameraManager : nullptr;
+
+	// 소유가 풀렸거나 다른 카메라 매니저로 옮겨 갔으면 옛 등록을 뗀다
+	if (HurtLookModifier != nullptr && HurtLookModifier->GetCameraOwner() != CameraManager)
+	{
+		if (APlayerCameraManager* OldManager = HurtLookModifier->GetCameraOwner())
+		{
+			OldManager->RemoveCameraModifier(HurtLookModifier);
+		}
+		HurtLookModifier = nullptr;
+	}
+
+	if (CameraManager != nullptr && HurtLookModifier == nullptr)
+	{
+		HurtLookModifier = Cast<UCL9HurtLookModifier>(CameraManager->AddNewCameraModifier(UCL9HurtLookModifier::StaticClass()));
+		if (HurtLookModifier != nullptr)
+		{
+			HurtLookModifier->SetCharacter(this);
+		}
 	}
 }
 
@@ -172,9 +227,13 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, ThrowServerTime);
 	DOREPLIFETIME(ACL9Character, WornItem);
 	DOREPLIFETIME(ACL9Character, ActiveEffects);
+	// 처형은 남의 화면(ABP)도 봐야 하고 CMC 가 속도 0 을 도출하므로 모두에게
+	DOREPLIFETIME(ACL9Character, ExecuteStartServerTime);
+	DOREPLIFETIME(ACL9Character, ExecutedBy);
 
-	// 카메라 킥은 때린 본인만 느낀다 — 남의 폰에 보낼 이유가 없는 유일한 값이라 조건부다
+	// 카메라 킥·피격 사건은 때린/맞은 본인만 쓴다 — 남의 폰에 보낼 이유가 없는 값이라 조건부다
 	DOREPLIFETIME_CONDITION(ACL9Character, SwingHitServerTime, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ACL9Character, HurtEvent, COND_OwnerOnly);
 }
 
 void ACL9Character::OnRep_CharacterAlias()
@@ -195,6 +254,14 @@ void ACL9Character::ApplyCharacterDef()
 		return;
 	}
 	CharacterDef = Def;
+
+	// 피격 카메라의 진입(HurtLookTime)과 복귀(일어나기 0.6초)가 겹치면 카메라가 떤다 — 규칙 표와 캐릭터 행이 둘 다 보이는 자리라 여기서 검사한다
+	if (const UCL9RulesDef* Rules = Registry->GetRules();
+		Rules != nullptr && Rules->HurtLookTime > 0.f && Rules->HurtLookTime + CL9HurtLook::GetUpSeconds > Def->KnockdownTime)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("CL9Rules.HurtLookTime %.2f + get-up %.2f exceeds character '%s' KnockdownTime %.2f — the hurt-look enter and exit blends overlap (docs/systems/character.md 피격)."),
+			Rules->HurtLookTime, CL9HurtLook::GetUpSeconds, *CharacterAlias.ToString(), Def->KnockdownTime);
+	}
 
 	// 판정용 수치 — 모든 머신이 동일한 로컬 테이블 행을 적용하므로
 	// 자율 프록시는 호스트가 판정할 때 쓰는 것과 같은 수치로 예측한다
@@ -294,6 +361,12 @@ void ACL9Character::MoveInput(const FInputActionValue& Value)
 void ACL9Character::LookInput(const FInputActionValue& Value)
 {
 	const FVector2D Axis = Value.Get<FVector2D>();
+
+	// 처형 중에는 시선도 잠긴다 — 게임플레이 IMC 가 내려가 보통은 여기까지 오지 않지만, 내려가기 전 프레임의 입력을 막는다 (D2)
+	if (IsExecuted())
+	{
+		return;
+	}
 
 	if (GetController())
 	{
@@ -461,7 +534,11 @@ void ACL9Character::FlashlightInput()
 void ACL9Character::Server_Flashlight_Implementation()
 {
 	// F는 쓴 헤드램프만 — 든 손전등은 좌클(Server_UseStart)이 켠다 (2026-09-12). 정전 이후에는
-	// 손전등 자체가 켜지길 거부한다 (docs/systems/light.md).
+	// 손전등 자체가 켜지길 거부한다 (docs/systems/light.md). 넘어졌거나 처형 중이면 손이 말을 듣지 않는다 (D2)
+	if (IsIncapacitated())
+	{
+		return;
+	}
 	if (ACL9FlashItem* Lamp = Cast<ACL9FlashItem>(WornItem.Get()))
 	{
 		Lamp->ToggleLight();
@@ -519,7 +596,7 @@ void ACL9Character::Server_UseStart_Implementation()
 {
 	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
 	UE_LOG(LogCL9, Verbose, TEXT("UseStart: item=%s action=%d"), *GetNameSafe(HeldItem.Get()), Def ? static_cast<int32>(Def->UseAction) : -1);
-	if (Def == nullptr || IsKnockedDown())
+	if (Def == nullptr || IsIncapacitated())
 	{
 		return;
 	}
@@ -552,7 +629,7 @@ void ACL9Character::Server_UseRelease_Implementation()
 	HostCancelSwingWindup();
 
 	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
-	if (Def == nullptr || Def->UseAction != ECL9UseAction::Swing || IsKnockedDown())
+	if (Def == nullptr || Def->UseAction != ECL9UseAction::Swing || IsIncapacitated())
 	{
 		return;
 	}
@@ -666,18 +743,30 @@ void ACL9Character::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// 데스캠은 복제된 HP 에서 파생한다 — 호스트 자기 폰은 죽음·부활 자리에서 바로 적용했고, 클라(와 늦게 도착한 PlayerState)는
+	// 여기서 따라잡는다. 넘어짐 카메라·처형과 같은 "복제된 상태에서 파생" 틀 (docs/systems/character.md 죽음 — 데스캠)
+	if (bDeathCameraOn != ShouldUseDeathCamera())
+	{
+		ApplyDeathCamera();
+	}
+
 	// 1인칭이므로 붙잡힘은 시점이 바닥으로 가라앉는 것으로 표현해야 한다 —
 	// 소유자는 자기 몸을 볼 수 없으므로, 넘어짐·죽음은 바디 애니메이션 대신
-	// 카메라를 가라앉힌다 (docs/systems/character.md 피격·넘어짐).
-	const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	const float EyeZ = CharacterDef ? CharacterDef->EyeHeight - HalfHeight : FirstPersonCameraComponent->GetRelativeLocation().Z;
-	const float DownedZ = -HalfHeight + 30.f;
-	const bool bDowned = IsKnockedDown() || IsDead();
-	FVector CameraRel = FirstPersonCameraComponent->GetRelativeLocation();
-	CameraRel.Z = FMath::FInterpTo(CameraRel.Z, bDowned ? DownedZ : EyeZ, DeltaSeconds, 6.f);
-	FirstPersonCameraComponent->SetRelativeLocation(CameraRel);
+	// 카메라를 가라앉힌다 (docs/systems/character.md 피격·넘어짐). 데스캠이 켜져 있으면 1인칭은 꺼져 있으니 건너뛴다
+	// (죽음은 데스캠이 보여 준다; 오프셋 0 롤백이면 옛대로 죽음도 여기서 가라앉는다)
+	if (!bDeathCameraOn)
+	{
+		const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const float EyeZ = CharacterDef ? CharacterDef->EyeHeight - HalfHeight : FirstPersonCameraComponent->GetRelativeLocation().Z;
+		const float DownedZ = -HalfHeight + 30.f;
+		const bool bDowned = IsKnockedDown() || IsDead();
+		FVector CameraRel = FirstPersonCameraComponent->GetRelativeLocation();
+		CameraRel.Z = FMath::FInterpTo(CameraRel.Z, bDowned ? DownedZ : EyeZ, DeltaSeconds, 6.f);
+		FirstPersonCameraComponent->SetRelativeLocation(CameraRel);
+	}
 
-	AActor* NewFocus = ResolveFocus();
+	// 처형 중·데스캠에는 조준 대상도 프롬프트도 없다 — 처형 카메라나 시체 위에 "[E] 줍기"가 뜨면 안 된다 (D6)
+	AActor* NewFocus = IsExecuted() || bDeathCameraOn ? nullptr : ResolveFocus();
 	if (NewFocus != FocusedActor.Get())
 	{
 		if (AActor* OldFocus = FocusedActor.Get())
@@ -719,8 +808,9 @@ void ACL9Character::UpdateStaminaShake()
 		return;
 	}
 
+	// 처형 중·데스캠에는 흔들지 않는다 — 처형 카메라는 몬스터 것이고 데스캠은 시체를 보는 자리다; 세기 0 이 아래에서 돌던 흔들림도 멈춘다 (D6)
 	const float Stamina = GetCL9CharacterMovement()->GetStamina();
-	const float Intensity = Stamina < Info->StartAt
+	const float Intensity = !IsExecuted() && !ShouldUseDeathCamera() && Stamina < Info->StartAt
 		? (Info->StartAt - Stamina) / Info->StartAt
 		: 0.f;
 
@@ -807,7 +897,12 @@ void ACL9Character::UpdateHitShakes()
 void ACL9Character::PlayShakeOnce(FName RowName)
 {
 	// 스태미나 흔들림과 같은 경로다 — 흔들림을 늘리는 일은 표에 행을 추가하는 일이지 규칙에 컬럼을 늘리는 일이 아니다
-	// (2026-09-05 결정, docs/plan/data/rules.md).
+	// (2026-09-05 결정, docs/plan/data/rules.md). 처형 중(처형의 HostKill 이 찍는 넘어짐 시각 포함)과 데스캠(죽는 타격의 넘어짐 시각)에는
+	// 흔들지 않는다 (D6) — 데스캠은 HP 복제에서 파생하므로 같은 틱에 온 넘어짐 시각의 셰이크도 막힌다
+	if (IsExecuted() || ShouldUseDeathCamera())
+	{
+		return;
+	}
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	APlayerCameraManager* CameraManager = PC ? PC->PlayerCameraManager : nullptr;
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
@@ -906,6 +1001,12 @@ void ACL9Character::SetFocusHighlight(AActor* Target, bool bOn) const
 
 void ACL9Character::Server_PickPlace_Implementation()
 {
+	// 넘어졌거나 처형 중이면 손이 말을 듣지 않는다 — 사용·먹기·던지기와 같은 규칙 (D2)
+	if (IsIncapacitated())
+	{
+		return;
+	}
+
 	// 키 하나에 대상 하나: 조준이 가리키는 게 무엇이든 — 호스트는 같은
 	// resolver를 다시 실행할 뿐 클라이언트를 신뢰하지 않는다 (docs/systems/input.md).
 	AActor* Focus = ResolveFocus();
@@ -942,8 +1043,8 @@ void ACL9Character::Server_PickPlace_Implementation()
 
 void ACL9Character::Server_ThrowChargeStart_Implementation()
 {
-	// 누워 있는 동안은 손이 말을 듣지 않는다 — 사용·먹기와 같은 규칙 (2026-09-15 사용자, character.md 넘어짐)
-	if (HeldItem == nullptr || IsKnockedDown())
+	// 누워 있는 동안은 손이 말을 듣지 않는다 — 사용·먹기와 같은 규칙 (2026-09-15 사용자, character.md 넘어짐). 처형 중도 같다 (D2)
+	if (HeldItem == nullptr || IsIncapacitated())
 	{
 		return;
 	}
@@ -954,7 +1055,7 @@ void ACL9Character::Server_ThrowRelease_Implementation()
 {
 	const UCL9RulesDef* Rules = GetRules();
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
-	if (Rules == nullptr || CL9PlayerState == nullptr || HeldItem == nullptr || ThrowChargeStartTime < 0.f || IsKnockedDown())
+	if (Rules == nullptr || CL9PlayerState == nullptr || HeldItem == nullptr || ThrowChargeStartTime < 0.f || IsIncapacitated())
 	{
 		return;
 	}
@@ -984,8 +1085,9 @@ void ACL9Character::Server_SelectSlot_Implementation(uint8 Slot)
 {
 	const UCL9RulesDef* Rules = GetRules();
 	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	// 넘어졌거나 처형 중이면 칸도 못 바꾼다 (D2)
 	if (Rules == nullptr || CL9PlayerState == nullptr || !CL9PlayerState->Slots.IsValidIndex(Slot)
-		|| Slot == CL9PlayerState->ActiveSlot || !CanSwitchSlot())
+		|| Slot == CL9PlayerState->ActiveSlot || !CanSwitchSlot() || IsIncapacitated())
 	{
 		return;
 	}
@@ -997,7 +1099,7 @@ void ACL9Character::Server_ScrollSlot_Implementation(int32 Direction)
 	const UCL9RulesDef* Rules = GetRules();
 	const ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
 	const int32 SlotCount = CL9PlayerState ? CL9PlayerState->Slots.Num() : 0;
-	if (Rules == nullptr || SlotCount <= 1 || Direction == 0 || !CanSwitchSlot())
+	if (Rules == nullptr || SlotCount <= 1 || Direction == 0 || !CanSwitchSlot() || IsIncapacitated())
 	{
 		return;
 	}
@@ -1009,8 +1111,8 @@ void ACL9Character::Server_ScrollSlot_Implementation(int32 Direction)
 void ACL9Character::Server_Drop_Implementation()
 {
 	// 누워 있는 동안은 놓지도 던지지도 못한다 — 사용·먹기와 같은 규칙 (2026-09-15 사용자, character.md 넘어짐).
-	// 넘어질 때 짐을 그대로 들고 있게 된 뒤로는 이 검사가 없으면 누운 채로 물건을 내려놓을 수 있다.
-	if (HeldItem == nullptr || IsKnockedDown())
+	// 넘어질 때 짐을 그대로 들고 있게 된 뒤로는 이 검사가 없으면 누운 채로 물건을 내려놓을 수 있다. 처형 중도 같다 (D2)
+	if (HeldItem == nullptr || IsIncapacitated())
 	{
 		return;
 	}
@@ -1224,6 +1326,8 @@ void ACL9Character::HostTickSwingHit()
 		SwingHitItem = nullptr;
 		return;
 	}
+	// 메시 경계 구 위의 관용치 — 반경만 키우고 중심은 그대로다 (2026-09-20 "히트박스가 너무 작다")
+	Radius *= Rules->SwingHitScale;
 
 	const float Elapsed = GetSwingElapsed();
 	const float PrevElapsed = SwingHitPrevElapsed;
@@ -1353,7 +1457,7 @@ float ACL9Character::GetBuffRemaining(FName BuffAlias) const
 
 void ACL9Character::HostEat()
 {
-	if (!HasAuthority() || HeldItem == nullptr || IsKnockedDown())
+	if (!HasAuthority() || HeldItem == nullptr || IsIncapacitated())
 	{
 		return;
 	}
@@ -1531,6 +1635,24 @@ float ACL9Character::GetKnockdownRemaining() const
 	return IsKnockedDown() ? KnockdownEndServerTime - GetServerTime() : -1.f;
 }
 
+float ACL9Character::GetExecuteElapsed() const
+{
+	// 클라의 서버 시각 추정이 조금 앞설 수 있어 0 아래로 내려가지 않게
+	return IsExecuted() ? FMath::Max(0.f, GetServerTime() - ExecuteStartServerTime) : -1.f;
+}
+
+float ACL9Character::GetExecuteDuration() const
+{
+	const UCL9MonsterDef* Def = ExecutedBy != nullptr ? ExecutedBy->GetMonsterDef() : nullptr;
+	return Def != nullptr ? Def->ExecuteDuration : 0.f;
+}
+
+FName ACL9Character::GetExecutedByAlias() const
+{
+	const UCL9MonsterDef* Def = ExecutedBy != nullptr ? ExecutedBy->GetMonsterDef() : nullptr;
+	return Def != nullptr ? Def->Alias : NAME_None;
+}
+
 float ACL9Character::GetHurtElapsed() const
 {
 	// 애님용 GetKnockdownElapsed는 일어나는 순간 −1로 돌아간다(그쪽은 "지금 넘어져 있나"가 필요하다). 표현 시계는
@@ -1541,12 +1663,47 @@ float ACL9Character::GetHurtElapsed() const
 
 float ACL9Character::GetHurtFlash() const
 {
+	// 처형 중·데스캠에는 비네트가 없다 — 처형 카메라나 시체 위에 빨간 화면을 얹지 않는다 (D6). HUD 는 이 게터로만 게이트한다
 	const UCL9RulesDef* Rules = GetRules();
-	if (Rules == nullptr || Rules->HurtVignetteTime <= 0.f)
+	if (Rules == nullptr || Rules->HurtVignetteTime <= 0.f || IsExecuted() || ShouldUseDeathCamera())
 	{
 		return 0.f;
 	}
 	return FMath::Clamp(1.f - GetHurtElapsed() / Rules->HurtVignetteTime, 0.f, 1.f);
+}
+
+bool ACL9Character::HasHurtDirection() const
+{
+	// 관전 중엔 내 폰의 사건이 남의 화면에 뜬다 — 호를 숨긴다. 처형 중·데스캠도 같다(처형 카메라나 시체 위에 방향 호가 뜨면 안 된다, D6)
+	const ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController());
+	if ((PC != nullptr && PC->IsSpectating()) || IsExecuted() || ShouldUseDeathCamera())
+	{
+		return false;
+	}
+	// 치트(`cl9.damage`, 몬스터 없음)는 공격자가 null 이라 방향이 없다. 파괴된 공격자는 IsValid 로 걸러진다
+	return IsHurtEventCurrent() && IsValid(HurtEvent.Attacker);
+}
+
+float ACL9Character::GetHurtDirectionAngle() const
+{
+	if (!HasHurtDirection())
+	{
+		return 0.f;
+	}
+	FVector ToAttacker = FVector(HurtEvent.From) - GetActorLocation();
+	ToAttacker.Z = 0.f;
+	if (ToAttacker.IsNearlyZero())
+	{
+		return 0.f;
+	}
+
+	// 카메라 요는 실제로 보고 있는 시점(POV — 피격 요 오프셋·셰이크 포함)이다. 카메라 매니저가 없으면 컨트롤 회전
+	const APlayerController* PC = Cast<APlayerController>(GetController());
+	const float CameraYaw = (PC != nullptr && PC->PlayerCameraManager != nullptr)
+		? PC->PlayerCameraManager->GetCameraRotation().Yaw
+		: GetControlRotation().Yaw;
+	// 0 = 화면 위(앞), 시계 방향 양수 — UE 요는 위에서 볼 때 시계 방향으로 는다
+	return FRotator::NormalizeAxis(ToAttacker.Rotation().Yaw - CameraYaw);
 }
 
 float ACL9Character::GetThrowWindupElapsed() const
@@ -1810,6 +1967,38 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 		return;
 	}
 
+	// 넘어진 동안은 무적이다 (2026-09-20 사용자) — 다른 닭의 덮침도, `cl9.damage` 치트도 같은 문이라 우회가 없다.
+	// HP·넘어짐 시계·피격 사건 전부 그대로다(몬스터 쪽은 넘어진 타깃에 애초에 예고·잡기를 하지 않는다).
+	// 유일한 예외는 이 문을 아예 거치지 않는 처형의 HostKill 이다
+	if (IsKnockedDown())
+	{
+		UE_LOG(LogCL9, Log, TEXT("'%s' hit by '%s' while knocked down — ignored (invulnerable until getting up)."),
+			*GetNameSafe(this), *GetNameSafe(Source));
+		return;
+	}
+
+	HostApplyDamage(Amount, Source, TEXT("caught by"));
+}
+
+void ACL9Character::HostKill(AActor* Source)
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (!HasAuthority() || CL9PlayerState == nullptr || CL9PlayerState->Hp <= 0)
+	{
+		return;
+	}
+	// 넘어짐 무적을 거치지 않는다 — 처형의 결과는 진입에서 정해졌다 (D3). 남은 HP 전부가 타격량이라 같은 경로로 0 이 된다
+	HostApplyDamage(CL9PlayerState->Hp, Source, TEXT("executed by"));
+}
+
+void ACL9Character::HostApplyDamage(int32 Amount, AActor* Source, const TCHAR* Verb)
+{
+	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
+	if (CL9PlayerState == nullptr)
+	{
+		return;
+	}
+
 	CL9PlayerState->Hp = FMath::Max(CL9PlayerState->Hp - Amount, 0);
 	CL9PlayerState->NotifyHpChanged();
 
@@ -1833,13 +2022,36 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source)
 	KnockdownStartServerTime = GetServerTime();
 	KnockdownEndServerTime = KnockdownStartServerTime + Duration;
 
-	UE_LOG(LogCL9, Log, TEXT("'%s' caught by '%s': -%d HP → %d%s"),
-		*GetNameSafe(this), *GetNameSafe(Source), Amount, CL9PlayerState->Hp,
+	// 피격 사건 — 이번 넘어짐의 시각·공격자의 자리·번호. 공격자가 없으면(치트) 자기 자리라 방향이 없다
+	HurtEvent.ServerTime = KnockdownStartServerTime;
+	HurtEvent.From = Source != nullptr ? Source->GetActorLocation() : GetActorLocation();
+	HurtEvent.Attacker = Source;
+	++HurtEvent.Seq;
+
+	UE_LOG(LogCL9, Log, TEXT("'%s' %s '%s': -%d HP → %d%s"),
+		*GetNameSafe(this), Verb, *GetNameSafe(Source), Amount, CL9PlayerState->Hp,
 		CL9PlayerState->Hp <= 0 ? TEXT(" (dead — down for the night)") : TEXT(""));
 
-	// 흐름 판정(전멸, 관전)은 게임 모드의 몫이다 — 호스트에서만 존재하므로 여기서 호출한다
 	if (CL9PlayerState->Hp <= 0)
 	{
+		// 데스캠 — 죽은 순간부터(처형 즉사·보통 사망 공통) 자기 시체를 본다. 호스트 자기 폰은 바로 적용하고, 클라는 HP 복제로
+		// 따라온다(PlayerState 를 지금 보내 뷰 타깃 RPC 와 같은 틱에 가게). 처형 중이었으면 몬스터 카메라에서 데스캠으로 블렌드
+		// (HostBeginExecuted 의 SetViewTargetWithBlend(Executioner) 짝 — D6 의 "죽은 폰으로 되돌리지 않는다" 번복, 2026-09-20 밤).
+		// 보통 사망은 뷰 타깃이 이미 자기 폰이라 엔진이 아무것도 하지 않는다 = 1인칭에서 데스캠으로 즉시 전환.
+		// 오프셋 0 롤백이면 옛대로 — 뷰 타깃도 건드리지 않는다(처형이면 몬스터 카메라에 머문다)
+		CL9PlayerState->ForceNetUpdate();
+		ApplyDeathCamera();
+		if (bDeathCameraOn)
+		{
+			if (ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController()))
+			{
+				const UCL9RulesDef* Rules = GetRules();
+				PC->SetViewTargetWithBlend(this, Rules != nullptr ? Rules->DeathCameraBlend : 0.f);
+			}
+		}
+
+		// 흐름 판정(전멸, 관전)은 게임 모드의 몫이다 — 호스트에서만 존재하므로 여기서 호출한다. 전멸이면 이 안에서 로비 부활까지
+		// 이어질 수 있다(DawnLength 0) — 그때는 HostRevive 가 데스캠을 도로 끈다
 		if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
 		{
 			GameMode->HandlePlayerDeath(this);
@@ -1868,7 +2080,151 @@ void ACL9Character::HostRevive()
 
 	HostHealFull();
 	KnockdownEndServerTime = 0.f;
+	// 데스캠을 끄고 1인칭·팔을 되돌린다 — 뷰 타깃은 이미 자기 폰(관전 중이었으면 ReviveDead 가 되돌린다)
+	ApplyDeathCamera();
 	UE_LOG(LogCL9, Log, TEXT("'%s' revived at the truck."), *GetNameSafe(this));
+}
+
+void ACL9Character::HostBeginExecuted(ACL9Monster* Executioner)
+{
+	if (!HasAuthority() || Executioner == nullptr)
+	{
+		return;
+	}
+
+	ExecutedBy = Executioner;
+	ExecuteStartServerTime = GetServerTime();
+	// 무력화된 사람은 수레를 끌 수 없다 — 진입 순간 놓는다(던지기 차징·휘두르기 대기도 함께 취소). 짐은 죽는 순간 흘린다
+	// (2026-09-20 리드 확인 ①: 수레는 진입 순간, 짐은 HostKill 의 HostDropEverything)
+	HostCancelCarryActions();
+	ApplyExecuted();
+
+	ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController());
+
+	// 두 리그(처형자 클립·피해자 클립)가 정렬되도록 피해자 요를 처형자에 맞춘다(2026-09-21 사용자 결정, Run 2 2인 클립의 가정):
+	// 잡히면 처형인 종(bExecuteOnCatch — 돼지 클립은 "정면에서 박힘")은 처형자를 정면으로, 앵커 텔레포트 처형(스토커 — 너구리 클립은
+	// "등 뒤")은 처형자를 등지게. 갈림은 표 열이지 종 이름이 아니다. 스토커 쪽은 앵커가 피해자 전방 기준이라 서버 요는 이미 정확히 등이고,
+	// 클라 요(마지막 ServerMove 뒤의 마우스)와의 차이만 없앤다. 피치·롤은 0(캡슐 요만). 처형자가 같은 XY 위에 있으면 요는 그대로
+	FVector ToExecutioner = Executioner->GetActorLocation() - GetActorLocation();
+	ToExecutioner.Z = 0.f;
+	if (!ToExecutioner.IsNearlyZero())
+	{
+		const UCL9MonsterDef* Def = Executioner->GetMonsterDef();
+		const bool bFaceExecutioner = Def != nullptr && Def->bExecuteOnCatch;
+		const float Yaw = (bFaceExecutioner ? ToExecutioner : -ToExecutioner).Rotation().Yaw;
+
+		// 피해자는 자율 프록시라 서버의 SetActorRotation 만으로는 되돌아간다 — CMC ServerMove_HandleMoveData 가 매 이동마다
+		// SetControlRotation(클라 컨트롤 회전) → UpdateRotation → FaceRotation 으로 캡슐 요를 컨트롤 요(bUseControllerRotationYaw)에 다시 맞춘다.
+		// 그래서 컨트롤 회전을 양쪽에 맞춘다: 서버 SetControlRotation(즉시 — 조준·GetBaseAimRotation 이 읽는 값) + ClientSetRotation(엔진 Client RPC —
+		// 클라의 SetControlRotation + Pawn->FaceRotation; 리슨 호스트 자기 폰은 로컬 호출이라 곧바로 실행된다). 이후 마우스는 LookInput 의
+		// IsExecuted 게이트(D2)와 내려간 게임플레이 IMC 가 막는다. 클라의 RPC 도착 전에 이미 보낸 ServerMove 한두 개가 서버 요를 잠깐 옛 값으로
+		// 되돌릴 수 있으나 RPC 가 닿으면 다시 맞는다. 피치는 지금 값 유지(처형 카메라를 보는 동안은 어차피 보이지 않는다)
+		SetActorRotation(FRotator(0.f, Yaw, 0.f));
+		if (PC != nullptr)
+		{
+			const FRotator ControlRotation(PC->GetControlRotation().Pitch, Yaw, 0.f);
+			PC->SetControlRotation(ControlRotation);
+			PC->ClientSetRotation(ControlRotation);
+		}
+	}
+
+	// 피해자 시점을 처형자의 카메라로 — 관전과 같은 서버 SetViewTarget 경로(엔진이 소유 클라에 ClientSetViewTarget 전달, 리슨 호스트
+	// 자기 폰도 같은 호출). 블렌드 길이는 규칙 표
+	if (PC != nullptr)
+	{
+		const UCL9RulesDef* Rules = GetRules();
+		PC->SetViewTargetWithBlend(Executioner, Rules != nullptr ? Rules->ExecuteCameraBlend : 0.f);
+	}
+	ForceNetUpdate();
+	UE_LOG(LogCL9, Log, TEXT("'%s' is being executed by '%s'."), *GetNameSafe(this), *GetNameSafe(Executioner));
+}
+
+void ACL9Character::HostEndExecuted()
+{
+	if (!HasAuthority() || (!IsExecuted() && ExecutedBy == nullptr))
+	{
+		return;
+	}
+
+	ExecuteStartServerTime = -1000.f;
+	ExecutedBy = nullptr;
+	ApplyExecuted();
+
+	// 관전 중이면 뷰 타깃은 관전 흐름의 것이다(로비 부활이 자기 폰으로 되돌린다). 아니면 — 살아 있든, 전멸로 관전 대상이 없었든 —
+	// 곧 사라질 몬스터를 보고 있을 수 없으니 자기 폰으로 (D9). 죽어서 데스캠이 켜져 있으면 뷰 타깃은 이미 자기 폰(HostApplyDamage)이라
+	// 이 호출은 아무것도 바꾸지 않고, 몸·팔 토글도 ApplyThirdPersonMeshes 가 데스캠을 보고 유지한다
+	ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController());
+	if (PC != nullptr && !PC->IsSpectating())
+	{
+		PC->SetViewTarget(this);
+	}
+	ForceNetUpdate();
+	UE_LOG(LogCL9, Log, TEXT("'%s' execution state cleared."), *GetNameSafe(this));
+}
+
+void ACL9Character::OnRep_ExecuteStartServerTime()
+{
+	ApplyExecuted();
+}
+
+void ACL9Character::ApplyExecuted()
+{
+	const bool bExecuted = IsExecuted();
+
+	// 소유 클라(리슨 호스트의 자기 폰 포함): 게임플레이 IMC 를 내리고 올린다 — 화면이 열릴 때와 같은 스위치. 관전 IMC 는 건드리지 않는다
+	if (IsLocallyControlled())
+	{
+		if (ACL9PlayerController* PC = Cast<ACL9PlayerController>(GetController()))
+		{
+			PC->SetGameplayInputEnabled(!bExecuted);
+		}
+	}
+
+	// 처형 카메라(몬스터)에서 자기 몸이 보이고 팔(과 팔에 붙은 손의 아이템)은 사라진다 — 데스캠과 같은 토글
+	ApplyThirdPersonMeshes();
+}
+
+void ACL9Character::ApplyThirdPersonMeshes()
+{
+	// 죽은 뒤 관전 전환 때 몸이 보이는 채로 남아도 관전은 남의 시점이라 무방하다. 처형 표시가 걷혀도(HostEndExecuted) 데스캠이
+	// 켜져 있으면 3인칭 그대로 — 부활이 데스캠을 끄면서 1인칭으로 돌아온다
+	const bool bThirdPerson = IsExecuted() || bDeathCameraOn;
+	if (USkeletalMeshComponent* BodyMesh = GetMesh())
+	{
+		// WorldSpaceRepresentation 이면 프록시가 bOwnerNoSee 를 강제로 true 로 덮어써서(PrimitiveSceneProxy.cpp) OwnerNoSee 토글만으로는
+		// 몸이 안 보인다(그림자만 남는다) — 3인칭 동안은 타입을 None 으로 내려야 한다
+		BodyMesh->SetFirstPersonPrimitiveType(bThirdPerson ? EFirstPersonPrimitiveType::None : EFirstPersonPrimitiveType::WorldSpaceRepresentation);
+		BodyMesh->SetOwnerNoSee(!bThirdPerson);
+	}
+	if (FirstPersonMesh != nullptr)
+	{
+		FirstPersonMesh->SetVisibility(!bThirdPerson, /*bPropagateToChildren*/ true);
+	}
+}
+
+bool ACL9Character::ShouldUseDeathCamera() const
+{
+	// 롤백: 오프셋 (0,0,0) 이면 데스캠 없음 — 옛 동작(넘어짐 카메라가 바닥으로, 처형이면 몬스터 카메라에 머묾) 그대로
+	const UCL9RulesDef* Rules = GetRules();
+	return IsDead() && Rules != nullptr && !Rules->DeathCameraOffset.IsZero();
+}
+
+void ACL9Character::ApplyDeathCamera()
+{
+	bDeathCameraOn = ShouldUseDeathCamera();
+	if (bDeathCameraOn)
+	{
+		// 자리·회전 모두 액터 공간에서 한 번 — 카메라 자리에서 캡슐 중심 위 DeathCameraLookAtZ 를 보는 회전. 캡슐에 붙어 있으니
+		// 액터가 돌아도 시체는 화면의 같은 자리에 잡힌다
+		const UCL9RulesDef* Rules = GetRules();
+		const FVector Offset = Rules->DeathCameraOffset;
+		const FVector LookAt(0.f, 0.f, Rules->DeathCameraLookAtZ);
+		DeathCamera->SetRelativeLocationAndRotation(Offset, FRotationMatrix::MakeFromX(LookAt - Offset).Rotator());
+	}
+	// 반드시 하나만 활성 — 둘 다 켜져 있으면 CalcCamera 가 첫 것(1인칭)을 고른다
+	FirstPersonCameraComponent->SetActive(!bDeathCameraOn);
+	DeathCamera->SetActive(bDeathCameraOn);
+	ApplyThirdPersonMeshes();
 }
 
 bool ACL9Character::IsKnockedDown() const

@@ -37,7 +37,8 @@ float UCL9CharacterMovement::GetMaxSpeed() const
 
 	// 넘어짐은 캐릭터를 붙들어둔다 — 리플리케이트되는 종료 시각 덕분에 서버와
 	// 자율 프록시가 속도 0에 대해 서로 합의한다 (docs/systems/character.md 넘어짐).
-	if (CL9Owner != nullptr && CL9Owner->IsKnockedDown())
+	// 처형도 같다 — 복제된 처형 시작 시각(ExecuteStartServerTime)에서 양쪽이 같은 0 을 도출한다 (D2)
+	if (CL9Owner != nullptr && (CL9Owner->IsKnockedDown() || CL9Owner->IsExecuted()))
 	{
 		MaxSpeed = 0.f;
 	}

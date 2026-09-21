@@ -78,6 +78,13 @@ public:
 	/** cl9.wave <alias|enum> — 내 발밑에서 그 소음원의 파동을 한 번 낸다 (호스트 판정, docs/systems/wave.md) */
 	void Wave(const TArray<FString>& Args);
 
+	/**
+	 * cl9.execute — 가장 가까운 살아 있는 처형 종(`IsExecutioner()` = `ExecuteRadius > 0` 또는 `bExecuteOnCatch`) 몬스터가 나를 처형한다.
+	 * 스토커 종은 스토킹 계수기·거리·등 뒤·미발견·시야·KillCooldown 검사를 우회하고 앵커 스윕·`HostBeginExecuted` 는 그대로,
+	 * 잡히면-처형 종(돼지)은 스윕 없이 제자리에서 즉시 (docs/systems/cheats.md). 없으면 로그 한 줄
+	 */
+	void Execute(const TArray<FString>& Args);
+
 private:
 	/** "egg", "egg+cooked", 또는 cl9.list 번호를 실제 사용 가능한 아이템 행으로 변환한다 */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;
