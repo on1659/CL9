@@ -30,11 +30,20 @@ public:
 	static UCL9WaveRenderer* Get(const UObject* WorldContextObject);
 
 	/**
+	 * 판이 시작할 때 행마다 나이아가라 시스템을 한 번 켰다 끈다 — 첫 활성화는 에디터에서 스크립트 컴파일·GPU 준비로 ≈400ms 를
+	 * 세우는데(2026-09-21 실측, 프로세스당 1회) 그 비용을 첫 만남의 링이 아니라 여기서 치른다
+	 * (docs/systems/performance.md 첫 사용 동기 로드 금지). 에셋 자체는 `UCL9GameInstance::Init` 이 이미 올려 두었다
+	 */
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+
+	/**
 	 * 이 머신에 파동 하나를 그린다. 호스트는 `ACL9GameState::HostReportNoise`에서, 클라이언트는
 	 * 방송 수신에서, 소유 클라이언트는 자기 소음을 예측해 직접 부른다.
 	 *
 	 * `bPredicted`는 "내가 방금 낸 소리를 서버 왕복 없이 먼저 그린다"는 뜻이다 — 자기 파동의
 	 * 밝기(`OwnerPowerScale`)는 그 플래그와 `Instigator == 내 PlayerState` 중 하나만 맞아도 붙는다.
+	 *
+	 * 행에 `SoundRow` 가 있으면 링보다 먼저(시각 게이트 앞) 그 `SoundTable` 행을 발원지에서 튼다 — 링과 소리는 같은 사건·같은 박자다.
 	 */
 	void PlayWave(ECL9NoiseSource Source, const FVector& Location, AActor* Instigator, bool bPredicted);
 

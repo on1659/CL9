@@ -18,6 +18,8 @@ UCL9SiteDef::UCL9SiteDef()
 	NightLighting.SkyLeak = 1.f;
 	NightLighting.FogDensity = 0.01f;
 	NightLighting.FogColor = FLinearColor(0.02f, 0.03f, 0.06f, 1.f);
+	// 밤에는 보이는 하늘도 눌러야 문밖이 하얗게 타지 않는다 (2026-09-16, 초안 — PIE 로 맞춘다)
+	NightLighting.SkyLuminance = 0.15f;
 
 	BlackoutLighting.SunScale = 0.f;
 	BlackoutLighting.SunColor = NightLighting.SunColor;
@@ -26,6 +28,7 @@ UCL9SiteDef::UCL9SiteDef()
 	BlackoutLighting.SkyLeak = 0.f;
 	BlackoutLighting.FogDensity = 0.01f;
 	BlackoutLighting.FogColor = FLinearColor::Black;
+	BlackoutLighting.SkyLuminance = 0.05f;
 }
 
 void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
@@ -48,6 +51,29 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 	};
 	CheckEntries(MonsterSpawns, TEXT("MonsterSpawns"));
 	CheckEntries(ItemSpawns, TEXT("ItemSpawns"));
+	for (const FCL9SiteZone& Zone : Zones)
+	{
+		if (Zone.DepthMin < 0.f || Zone.DepthMax > 1.f || Zone.DepthMin >= Zone.DepthMax)
+		{
+			OutErrors.Add(FString::Printf(TEXT("Zone '%s' needs 0 <= DepthMin < DepthMax <= 1."), *Zone.Name.ToString()));
+		}
+		CheckEntries(Zone.MonsterSpawns, *FString::Printf(TEXT("Zone '%s' MonsterSpawns"), *Zone.Name.ToString()));
+		CheckEntries(Zone.ItemSpawns, *FString::Printf(TEXT("Zone '%s' ItemSpawns"), *Zone.Name.ToString()));
+	}
+
+	// 덮어쓴 밤 시계끼리는 순서가 맞아야 한다 — 전역값과 섞인 조합은 규칙 행의 검사가 맡는다
+	if (NightLength < 0.f || DarkBase < 0.f || DarkMin < 0.f)
+	{
+		OutErrors.Add(TEXT("NightLength, DarkBase and DarkMin cannot be negative (0 = use CL9Rules)."));
+	}
+	if (DarkBase > 0.f && NightLength > 0.f && DarkBase > NightLength)
+	{
+		OutErrors.Add(TEXT("DarkBase must not exceed NightLength — the blackout would never come."));
+	}
+	if (DarkMin > 0.f && DarkBase > 0.f && DarkMin > DarkBase)
+	{
+		OutErrors.Add(TEXT("DarkMin must not exceed DarkBase — returns can only bring the blackout earlier."));
+	}
 
 	if (BaseDanger <= 0.f)
 	{
@@ -85,6 +111,10 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 		if (LoopChance < 0.f || LoopChance > 1.f || MainPathShare < 0.f || MainPathShare > 1.f)
 		{
 			OutErrors.Add(TEXT("LoopChance and MainPathShare must be between 0 and 1."));
+		}
+		if (UpperFloorShare < 0.f || UpperFloorShare > 1.f)
+		{
+			OutErrors.Add(TEXT("UpperFloorShare must be between 0 and 1 — an upper floor never gets more than the floor below."));
 		}
 		if (PassageShare < 0.f || DeadEndShare < 0.f || PassageShare + DeadEndShare > 1.f)
 		{

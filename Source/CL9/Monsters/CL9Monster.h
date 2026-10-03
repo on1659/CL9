@@ -142,8 +142,22 @@ public:
 		return PounceResultServerTime >= 0.f;
 	}
 
-	/** 호스트 전용(docs/systems/monster.md): HP 감소, HitStun 경직, 경보를 동반한 죽음 */
-	virtual void OnDamage(int32 Amount, AActor* Source) override;
+	/**
+	 * 호스트 전용(docs/systems/monster.md): HP 감소, HitStun 경직, 경보를 동반한 죽음. Knockback(cm, 아이템 행 `HitKnockback`)이
+	 * 0 보다 크면 Stun 진입 뒤 `HitStopTime` 을 기다렸다가 `HitKnockbackTime` 동안 Source 반대쪽으로 등속으로 밀린다 — 죽이는 타격에는
+	 * 없다(죽음 발사가 대신). 잡기·치트는 0
+	 */
+	virtual void OnDamage(int32 Amount, AActor* Source, float Knockback) override;
+
+	/**
+	 * 세상 지형만 보는 Visibility 선 트레이스 — 앞을 가린 폰(`ACL9Character`)·아이템·몬스터는 무시 목록에 넣고 다시 긋는다(최대 4회).
+	 * 막히면 true 와 그 결과. Self 와 AlsoIgnore(든 아이템 등)는 처음부터 뺀다. 죽음 발사·휘두르기 가림·표면음·넉백 스텝이 같이 쓴다
+	 * (docs/systems/monster.md 세상 트레이스)
+	 */
+	static bool TraceWorld(const UWorld* World, const AActor* Self, const FVector& From, const FVector& To, FHitResult& OutHit, const AActor* AlsoIgnore = nullptr);
+
+	/** 치트 `cl9.knockbacklog` 스위치 — 켜지면 호스트가 넉백이 끝날 때마다 `cl9.knockback:` 한 줄을 남긴다 (docs/systems/cheats.md) */
+	static bool bCheatKnockbackLog;
 
 	/**
 	 * 호스트 전용: 팩 동료나 거위 울음으로부터 경보 지점이 도착한다 — 잠든
@@ -167,11 +181,11 @@ public:
 	void OnShove(AActor* Shover);
 
 	/**
-	 * 호스트 전용: 손에 든 아이템에 맞았다 — 행의 HitDamage·HitStun(docs/plan/data/item/common.md
-	 * 사용)을 합친 것. 피해를 먼저 넣고, 죽지 않았을 때만 경직 종류대로 OnDamage의 경직 또는
-	 * OnShove의 밀쳐냄이 따라온다. 피해 0·경직 None이면 아무 일도 없다.
+	 * 호스트 전용: 손에 든 아이템에 맞았다 — 행의 HitDamage·HitStun·HitKnockback(docs/plan/data/item/common.md
+	 * 사용)을 합친 것. 피해와 넉백 거리를 OnDamage 에 먼저 넣고, 죽지 않았을 때만 경직 종류대로 OnDamage의 경직 또는
+	 * OnShove의 밀쳐냄(Push 행 — 지금은 쓰는 행이 없다)이 따라온다. 피해 0·경직 None이면 아무 일도 없다.
 	 */
-	void OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source);
+	void OnStrike(int32 Damage, ECL9HitStun Stun, float Knockback, AActor* Source);
 
 	/**
 	 * 호스트 전용, 치트 `cl9.execute`: 처형 종(IsExecutioner)이고 Dead·Execute 가 아닐 때만. 스토커는 계수기·거리·등 뒤·미발견·시야·
@@ -417,10 +431,16 @@ private:
 	/** 예고 진입 때 잠근 타깃 — 예고 동안 감각의 재타깃팅은 무시하고, 덮침은 이 타깃의 지금 위치로 간다 */
 	TWeakObjectPtr<ACL9Character> PounceTarget;
 
-	/** Stun 상태 동안 이어지는 떠밀림 넉백 — 남은 거리와 그 방향 */
+	/** Stun 상태 동안 이어지는 넉백 — 남은 거리와 그 방향·속도. 타격(OnDamage)은 진입 뒤 KnockbackDelay 를 기다리고, 밀침(OnShove)은 바로 */
 	float KnockbackRemaining = 0.f;
 	FVector KnockbackDir = FVector::ZeroVector;
 	float KnockbackSpeed = 0.f;
+	float KnockbackDelay = 0.f;
+
+	/** `cl9.knockbacklog` 용: 이번 넉백의 시작 자리·스텝 수·막힘 여부·총 거리 — 끝나는 틱에 한 줄로 남긴다 */
+	FVector KnockbackFrom = FVector::ZeroVector;
+	float KnockbackTotal = 0.f;
+	int32 KnockbackSteps = 0;
 
 	/** 죽음의 비명 이후 RageTime 동안의 사냥 모드 — 게이지를 고정하고 ChaseCooldown을 우회한다 */
 	float RageRemaining = 0.f;

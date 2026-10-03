@@ -3,6 +3,7 @@
 #include "World/CL9SiteMap.h"
 #include "CL9.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9ModuleDef.h"
 #include "Data/CL9PieceDef.h"
@@ -10,10 +11,12 @@
 #include "Data/CL9ProgressionDef.h"
 #include "Data/CL9SiteDef.h"
 #include "Engine/CollisionProfile.h"
+#include "Engine/Scene.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
+#include "GameMode/CL9GameState.h"
 #include "World/CL9FlapIn.h"
 #include "World/CL9TruckPad.h"
 
@@ -150,7 +153,8 @@ namespace
 
 ACL9SiteMap::ACL9SiteMap()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// 틱은 시설 조명의 정전 소등뿐이다 — 램프가 하나도 없으면 상태 비교 한 번으로 끝난다.
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = false;
 
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
@@ -248,6 +252,17 @@ void ACL9SiteMap::ClearBuilt()
 	}
 	KindComponents.Reset();
 
+	for (UPointLightComponent* Lamp : LampComponents)
+	{
+		if (Lamp != nullptr)
+		{
+			Lamp->DestroyComponent();
+		}
+	}
+	LampComponents.Reset();
+	FlickerLamps.Reset();
+	bLampsOn = true;
+
 	for (AActor* Actor : SpawnedActors)
 	{
 		if (IsValid(Actor))
@@ -256,6 +271,51 @@ void ACL9SiteMap::ClearBuilt()
 		}
 	}
 	SpawnedActors.Reset();
+}
+
+void ACL9SiteMap::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// 정전 판정은 게임 스테이트의 것이다. 에디터 월드(게임 스테이트 없음)에서는 늘 켜 둔다.
+	const ACL9GameState* State = GetWorld() != nullptr ? GetWorld()->GetGameState<ACL9GameState>() : nullptr;
+	SetLampsOn(State == nullptr || !State->IsBlackout());
+	TickFlicker();
+}
+
+void ACL9SiteMap::TickFlicker()
+{
+	if (!bLampsOn || FlickerLamps.Num() == 0 || GetWorld() == nullptr)
+	{
+		return;
+	}
+	// 펄린 노이즈 한 줄 — 램프마다 위상이 달라 같은 박자로 깜박이지 않는다. 진폭 1이면 0~2배 사이.
+	const float Time = GetWorld()->GetTimeSeconds();
+	for (const FFlickerLamp& Entry : FlickerLamps)
+	{
+		UPointLightComponent* Lamp = LampComponents.IsValidIndex(Entry.LampIndex) ? LampComponents[Entry.LampIndex].Get() : nullptr;
+		if (Lamp != nullptr)
+		{
+			const float Noise = FMath::PerlinNoise1D(Time * Entry.Speed + Entry.Phase);
+			Lamp->SetIntensity(Entry.BaseIntensity * (1.f + Entry.Amplitude * Noise));
+		}
+	}
+}
+
+void ACL9SiteMap::SetLampsOn(bool bOn)
+{
+	if (bOn == bLampsOn)
+	{
+		return;
+	}
+	bLampsOn = bOn;
+	for (UPointLightComponent* Lamp : LampComponents)
+	{
+		if (Lamp != nullptr)
+		{
+			Lamp->SetVisibility(bOn);
+		}
+	}
 }
 
 void ACL9SiteMap::MeasurePieces(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry)
@@ -293,11 +353,14 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	Params.MaxFloors = FMath::Clamp(Site.MaxFloors, 1, 8);
 	Params.StairCountMin = FMath::Max(1, Site.StairCountMin);
 	Params.StairCountMax = FMath::Max(Params.StairCountMin, Site.StairCountMax);
+	Params.UpperFloorShare = FMath::Clamp(Site.UpperFloorShare, 0.f, 1.f);
 	Params.bBuildCeilings = Site.bBuildCeilings;
+	Params.LampDensity = FMath::Clamp(Site.LampDensity, 0.f, 1.f);
 	Params.LoopChance = FMath::Clamp(Site.LoopChance, 0.f, 1.f);
 	Params.MainPathShare = FMath::Clamp(Site.MainPathShare, 0.f, 1.f);
 	Params.PassageShare = FMath::Clamp(Site.PassageShare, 0.f, 1.f);
 	Params.DeadEndShare = FMath::Clamp(Site.DeadEndShare, 0.f, 1.f - Params.PassageShare);
+	Params.SpecialCopies = FMath::Max(1, Site.SpecialCopies);
 
 	MeasurePieces(Site, Registry);
 
@@ -351,6 +414,9 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		if (!Kind.bBlocksSight)
 		{
 			Component->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+			// 소리 파동·카메라가 쓰는 전용 채널 CL9_Occlusion(Config/DefaultEngine.ini, GameTraceChannel2)도
+			// 같은 컬럼 하나로 정한다 — 물통·상자 뒤로 파동이 지나간다 (segkind.md, 2026-09-17)
+			Component->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Ignore);
 		}
 		Component->SetCanEverAffectNavigation(true);
 		Component->SetupAttachment(GetRootComponent());
@@ -509,6 +575,11 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		Component->RegisterComponent();
 		AddInstanceComponent(Component);
 	}
+	for (UPointLightComponent* Lamp : LampComponents)
+	{
+		Lamp->RegisterComponent();
+		AddInstanceComponent(Lamp);
+	}
 
 	for (const FName& Kind : MissingKinds)
 	{
@@ -578,6 +649,8 @@ int32 ACL9SiteMap::PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstCompon
 
 	// 스폰이 지점 둘레로 흔드는 폭 — GameMode의 ±(CellSize/2 − 120)과 같다. 항아리는 지점 정중앙에 선다.
 	const float Jitter = FMath::Max(Params.CellSize * 0.5f - 120.f, 0.f);
+	// 시설 조명 밀도 — 같은 시드면 같은 등이 꺼진다 (레이아웃 시드에서 파생, 배치 순서가 시드로 정해진다)
+	FRandomStream LampRng(static_cast<int32>(Layout.Seed ^ 0x5A17u));
 	const float Storey = FMath::Max(Params.FloorHeight, 1.f);
 
 	// 컴포넌트는 (메시, 몸 유무)마다 하나 — 충돌 설정이 다르면 한 묶음에 넣을 수 없다
@@ -712,6 +785,37 @@ int32 ACL9SiteMap::PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstCompon
 
 			ComponentFor(Mesh, Prop.bSolid)->AddInstance(Instance, /*bWorldSpace*/ false);
 			++Placed;
+
+			if (Prop.LightIntensity > 0.f && LampRng.FRand() < Params.LampDensity)
+			{
+				// 시설 조명 — 인스턴스 메시는 빛을 못 품으므로 소품마다 포인트 라이트를 하나 붙인다.
+				// 밀도(LampDensity)에서 빠진 등은 몸체만 서고 빛이 없다 — 불 꺼진 등.
+				// 그림자를 끄고 반경을 방 하나쯤으로 잡아 수십 개가 서도 무겁지 않게 한다.
+				UPointLightComponent* Lamp = NewObject<UPointLightComponent>(this, FName(*FString::Printf(TEXT("Lamp_%d"), LampComponents.Num())));
+				Lamp->SetMobility(EComponentMobility::Movable);
+				Lamp->SetIntensityUnits(ELightUnits::Candelas);
+				Lamp->SetIntensity(Prop.LightIntensity);
+				Lamp->SetAttenuationRadius(FMath::Max(Prop.LightRadius, 50.f));
+				Lamp->SetLightColor(Prop.LightColor);
+				Lamp->SetCastShadows(false);
+				Lamp->SetVolumetricScatteringIntensity(Prop.LightScattering);
+				Lamp->SetupAttachment(GetRootComponent());
+				Lamp->SetRelativeTransform(FTransform(Instance.GetRotation(), Instance.GetLocation() + Instance.GetRotation().RotateVector(Prop.LightOffset)));
+				Lamp->SetVisibility(bLampsOn);
+				if (Prop.LightFlicker > 0.f && Prop.LightFlickerSpeed > 0.f)
+				{
+					// 위상은 램프 순번에서 — 배치 순서가 시드로 정해지니 같은 시드면 같은 깜박임이고, 램프끼리는 어긋난다
+					// (자리 좌표로 만들면 500cm 격자에 맞은 자리끼리 같은 위상이 나온다 — 09-17 실측)
+					FFlickerLamp Entry;
+					Entry.LampIndex = LampComponents.Num();
+					Entry.BaseIntensity = Prop.LightIntensity;
+					Entry.Amplitude = Prop.LightFlicker;
+					Entry.Speed = Prop.LightFlickerSpeed;
+					Entry.Phase = LampComponents.Num() * 37.f;
+					FlickerLamps.Add(Entry);
+				}
+				LampComponents.Add(Lamp);
+			}
 		}
 	}
 

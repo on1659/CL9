@@ -131,9 +131,9 @@ public:
 	/**
 	 * 호스트 전용 (docs/systems/character.md 피격·넘어짐·죽음): HP 감소, 넘어짐,
 	 * 퀵슬롯 네 칸 전부 흘림. HP가 0이 되면 그날 밤 내내 쓰러진 채로 있으며 죽음 처리를
-	 * 게임 모드로 넘긴다 (전멸 체크, SpectateDelay 이후 관전).
+	 * 게임 모드로 넘긴다 (전멸 체크, SpectateDelay 이후 관전). Knockback 은 몬스터 몫이라 사람은 쓰지 않는다.
 	 */
-	virtual void OnDamage(int32 Amount, AActor* Source) override;
+	virtual void OnDamage(int32 Amount, AActor* Source, float Knockback) override;
 
 	/** 호스트 전용: HP를 굴려진 최대치로 되돌린다 — 트럭 패드의 치유 (docs/plan/data/rules.md 죽음과 회복) */
 	void HostHealFull();
@@ -276,6 +276,15 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category="CL9")
 	float GetSwingWindupElapsed() const;
+
+	/**
+	 * 호스트 전용, 치트 `cl9.swingtaps`: 좌클 누름+뗌 한 번을 지금 넣고(`Server_UseStart`·`Server_UseRelease` 와 같은 경로) 결과를
+	 * 돌려준다 — "swing"(즉시 휘두름) / "buffered"(회복 끝에 예약) / "lost"(거부). 서버 시각으로 판정한다 (docs/systems/cheats.md)
+	 */
+	const TCHAR* HostCheatSwingTap();
+
+	/** 치트 `cl9.swinglog` 스위치 — 켜지면 호스트가 휘두르기마다 `cl9.swing:` 한 줄을 남긴다 (docs/systems/cheats.md) */
+	static bool bCheatSwingLog;
 
 	/**
 	 * 마지막으로 먹은(HostEat) 뒤 지난 서버 초 — ABP가 먹기 클립(`AN_Farmer_Eat` 0.6초)을 태운다. 판정은 먹는 순간
@@ -529,7 +538,9 @@ protected:
 
 	/**
 	 * 좌클 뗌 — 대기 중이었으면 HostSwing(피해·사거리·경직은 대기 시간과 무관하게 동일). 대기 중 칸 전환·놓기·
-	 * 던지기·먹기·잡힘으로 손의 것이 바뀌면 대기가 취소되어 있어 타격이 나가지 않는다.
+	 * 던지기·먹기·잡힘으로 손의 것이 바뀌면 대기가 취소되어 있어 타격이 나가지 않는다. 회복 중(`SwingReadyTime` 전)이면
+	 * 거부하되, 회복 끝까지 `CL9Rules.SwingBufferTime` 이하로 남았으면 하나 예약한다(`bSwingBuffered`, 덮어쓰기) — 회복이
+	 * 끝나는 호스트 틱(`HostTickSwingBuffer`)에 같은 검사를 거쳐 낸다 (docs/systems/character.md 입력 예약).
 	 */
 	UFUNCTION(Server, Reliable)
 	void Server_UseRelease();
@@ -542,8 +553,9 @@ protected:
 	void Server_Eat();
 
 	/**
-	 * 호스트 전용: 휘두르기를 시작한다 — 시작 시각을 복제해 애님을 태우고, 이번 휘두르기의 히트 구간 상태(맞은 목록·이전 틱
-	 * 히트박스)를 연다. 실제 타격은 `HostTickSwingHit`이 구간 동안 매 틱 스윕해서 낸다 (docs/systems/inventory.md 사용).
+	 * 호스트 전용: 휘두르기를 시작한다 — 회복 중이면 거부, 아니면 `SwingReadyTime = 지금 + CL9Rules.SwingRecovery` 를 찍고 시작
+	 * 시각을 복제해 애님을 태우며, 이번 휘두르기의 히트 구간 상태(맞은 목록·이전 틱 경과·표면음 1회·로그 계수)를 연다.
+	 * 실제 타격은 `HostTickSwingHit`이 구간 동안 매 틱 판정한다 (docs/systems/character.md 휘두르기).
 	 */
 	void HostSwing();
 
@@ -604,9 +616,10 @@ protected:
 	void UpdateHitShakes();
 
 	/**
-	 * 모든 머신, 매 틱: 복제된 휘두르기 시작 시각(`SwingStartServerTime`)·넘어짐 시각(`KnockdownStartServerTime`)이 지난 틱과
-	 * 달라졌으면 폰 자리에서 `Swing`·`Hurt` 소리를 한 번씩 튼다 — 셰이크와 같은 틱 비교 방식이지만 남의 폰에서도 들려야
-	 * 하므로 로컬 조작 게이트 앞에서 돈다 (docs/systems/character.md 피격, docs/systems/sound.md).
+	 * 모든 머신, 매 틱: 복제된 휘두르기 시작 시각(`SwingStartServerTime`)·표면 타격 시각(`SwingSurfaceHitServerTime`)·넘어짐 시각
+	 * (`KnockdownStartServerTime`)이 지난 틱과 달라졌으면 폰 자리에서 `Swing`·`HitSurface`·`Hurt` 소리를 한 번씩 튼다 — 셰이크와
+	 * 같은 틱 비교 방식이지만 남의 폰에서도 들려야 하므로 로컬 조작 게이트 앞에서 돈다 (docs/systems/character.md 피격·표면음,
+	 * docs/systems/sound.md).
 	 */
 	void UpdateHitSounds();
 
@@ -754,15 +767,27 @@ private:
 	/** 호스트 전용: 활성 칸의 미러를 비우고 HUD에 알린다 — 손의 액터를 놓고·던지고·먹고·실은 뒤 부른다 */
 	void HostClearActiveSlot();
 
-	/** 호스트 전용: 좌클 공격 대기를 취소한다 — 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가 부른다 */
+	/** 호스트 전용: 좌클 공격 대기와 예약된 휘두르기를 취소한다 — 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가 부른다 */
 	void HostCancelSwingWindup();
 
+	/** 지금 좌클 뗌이 휘두르기가 될 수 있는 상태인가 — 손에 `UseAction == Swing` 행이 있고 넘어지거나 처형 중이 아님(`Server_UseRelease` 와 예약 발화가 같이 쓴다) */
+	bool CanSwingNow() const;
+
+	/** 호스트 전용, 매 틱: 예약된 휘두르기가 있고 회복이 끝났으면 `CanSwingNow` 를 다시 거쳐 `HostSwing` (docs/systems/character.md 입력 예약) */
+	void HostTickSwingBuffer();
+
 	/**
-	 * 호스트 전용, 매 틱: 휘두르기 히트 구간이 열려 있으면 손에 든 것의 히트박스를 **이전 틱 자리 → 지금 자리**로 스윕해
-	 * 닿은 몬스터마다 한 번씩 OnStrike를 낸다. 겹침이 아니라 스윕인 이유는 낮은 프레임률(PIE 자동화 3~8fps)에서 팬이
-	 * 닭을 지나쳐 버리기 때문이다. 손이 비거나 바뀌면 구간이 닫힌다 (docs/systems/inventory.md 사용).
+	 * 호스트 전용, 매 틱: 휘두르기 히트 구간 `[SwingHitStart, SwingHitEnd)` 이 열려 있으면 손 높이 원점에서 **그 순간의 컨트롤
+	 * 회전** 방향으로 `Origin + Dir·SwingHitRadius → Origin + Dir·SwingHitReach` 선분을 반경 `SwingHitRadius` 구로 스윕해
+	 * (WorldDynamic Overlap), 걸린 살아 있는 몬스터마다 원점→몬스터 중심 Visibility 선 트레이스로 가림을 검사한 뒤 한 번씩
+	 * OnStrike 를 낸다. 같은 틱에 원점→Reach 선 트레이스가 세상 지형에 막히고 그보다 가까운 명중이 이번 휘두르기에 없으면
+	 * `SwingSurfaceHitServerTime` 을 휘두르기당 한 번 찍는다. 구간 판정은 틱이 덮는 시간 구간의 겹침이라 낮은 프레임률에서도
+	 * 빠지지 않는다. 손이 비거나 바뀌면 구간이 닫힌다 (docs/systems/character.md 휘두르기).
 	 */
 	void HostTickSwingHit();
+
+	/** 호스트 전용, `cl9.swinglog` 가 켜져 있을 때 히트 구간이 닫히는 순간 이번 휘두르기 한 줄을 로그에 남긴다 */
+	void HostLogSwing() const;
 
 	/**
 	 * 매 틱, 호스트와 소유 클라이언트에서: 이동한 누적 거리가 행의 `StepDistance`를 넘을 때마다
@@ -830,8 +855,14 @@ private:
 	/** 소유 클라이언트: 마지막으로 휠 전환을 보낸 로컬 시각 — 한 노치에 한 칸만 넘기는 디바운스 기준 */
 	float LastSlotScrollTime = -1.f;
 
-	/** 다음 휘두르기가 거부되는 기준이 되는 호스트 시각 (휘두른 뒤 회복 시간) */
+	/** 다음 휘두르기가 거부되는 기준이 되는 호스트 시각 — `HostSwing` 이 `지금 + CL9Rules.SwingRecovery`, 첫 명중이 `+ HitStopTime` */
 	float SwingReadyTime = 0.f;
+
+	/** 호스트 전용: 회복 끝에 낼 휘두르기가 예약돼 있는가 — 하나뿐이고 덮어쓴다. `HostCancelSwingWindup` 이 지운다. 비복제 */
+	bool bSwingBuffered = false;
+
+	/** 호스트 전용: 마지막으로 받아들인(즉시·예약) 휘두르기 입력(좌클 뗌)의 서버 시각 — `cl9.swing` 로그의 `input`, 치트 판정용 */
+	float SwingInputServerTime = -1000.f;
 
 	/** 마지막 휘두르기의 서버 시각 — GetSwingElapsed의 원천. 음수 큰 값 = 아직 없음 */
 	UPROPERTY(Replicated)
@@ -843,11 +874,26 @@ private:
 	/** 호스트 전용: 이번 휘두르기에서 이미 맞은 몬스터들 — 한 번 휘두를 때 같은 몬스터는 한 번만 맞는다. 휘두르기 시작에 비운다 */
 	TSet<TWeakObjectPtr<ACL9Monster>> SwingHitMonsters;
 
-	/** 호스트 전용: 직전 틱의 히트박스 중심(월드) — 이번 틱 중심까지 스윕해 틱 사이를 메운다 */
-	FVector SwingHitPrevCenter = FVector::ZeroVector;
-
-	/** 호스트 전용: 직전 틱의 SwingElapsed, 음수면 이번이 이 휘두르기의 첫 틱이다(옛 자세에서 스윕하지 않는다) */
+	/** 호스트 전용: 직전 틱의 SwingElapsed, 음수면 이번이 이 휘두르기의 첫 틱이다 — 틱이 덮는 구간 (Prev, Now] 와 히트 구간의 겹침 판정용 */
 	float SwingHitPrevElapsed = -1.f;
+
+	/** 호스트 전용: 이번 휘두르기에서 원점 → 맞힌 몬스터 중심의 최소 거리(cm) — 표면음은 이보다 먼 지형에만 난다. 시작에 큰 값 */
+	float SwingNearestStruckDist = TNumericLimits<float>::Max();
+
+	/** 호스트 전용: 이번 휘두르기의 표면음을 이미 찍었는가 — 휘두르기당 한 번 */
+	bool bSwingSurfaceStamped = false;
+
+	/** 호스트 전용, `cl9.swinglog` 계수: 이번 휘두르기에서 스윕에 걸려 가림 검사까지 간 살아 있는 몬스터 수(틱 합계)와 그중 가려져 빠진 수 */
+	int32 SwingTestedCount = 0;
+	int32 SwingOccludedCount = 0;
+
+	/**
+	 * 이번 휘두르기가 세상 지형(벽·바닥)에 닿은 서버 시각 — 휘두르기당 한 번, 그보다 가까운 몬스터 명중이 없을 때만. 조건 없이
+	 * 복제해 모든 머신이 `HitSurface` 소리를 폰 자리에서 낸다(충돌점은 복제하지 않는다). 카메라 킥·팔 히트스톱은 없다.
+	 * 음수 큰 값 = 아직 없음 (docs/systems/character.md 표면음)
+	 */
+	UPROPERTY(Replicated)
+	float SwingSurfaceHitServerTime = -1000.f;
 
 	/**
 	 * 이번 휘두르기가 **처음으로** 살아 있는 몬스터를 맞힌 서버 시각 — 공격자 카메라 킥의 원천이며 한 휘두르기에 한 번만
@@ -939,6 +985,9 @@ private:
 
 	/** 지난 틱에 본 SwingStartServerTime — 달라지면 `Swing` 소리를 한 번 튼다 */
 	float LastSeenSwingStartTime = -1000.f;
+
+	/** 지난 틱에 본 SwingSurfaceHitServerTime — 달라지면 `HitSurface` 소리를 한 번 튼다 */
+	float LastSeenSurfaceHitTime = -1000.f;
 
 	/** 지난 틱에 본 KnockdownStartServerTime(소리용) — 달라지면 `Hurt` 소리를 한 번 튼다 */
 	float LastSeenHurtSoundTime = -1000.f;

@@ -23,6 +23,9 @@ class ICL9Damageable
 	GENERATED_BODY()
 
 public:
-	/** 호스트 전용. Amount는 그대로 HP 수치이고, Source는 공격자다 */
-	virtual void OnDamage(int32 Amount, AActor* Source) = 0;
+	/**
+	 * 호스트 전용. Amount는 그대로 HP 수치이고, Source는 공격자다. Knockback 은 Source 반대쪽으로 밀리는 거리(cm) —
+	 * 아이템 행 `HitKnockback` 이 몬스터에게 주는 값이고, 잡기·치트는 0 이다. 캐릭터는 받아도 쓰지 않는다
+	 */
+	virtual void OnDamage(int32 Amount, AActor* Source, float Knockback) = 0;
 };

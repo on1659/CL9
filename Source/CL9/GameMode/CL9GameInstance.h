@@ -112,4 +112,16 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UCL9WaveTable> WaveTable;
+
+	/**
+	 * 표들이 소프트 참조로 가리키는 에셋을 Init 이 미리 올리고 여기 붙들어 둔다 — 첫 사용 자리(첫 잡힘의 셰이크 클래스, 첫 링의
+	 * 나이아가라, 첫 타격의 플래시 재질·퍼프, 종별 첫 스폰의 메시·ABP)에서 게임 스레드가 동기 로드로 멈추지 않게(2026-09-21 실측:
+	 * 캐릭터 틱 안의 셰이크 BP 클래스 로드 577ms 히치). 로드만 하고 붙들지 않으면 다음 GC 에 풀려 첫 사용이 다시 콜드가 된다
+	 * (docs/systems/performance.md "첫 사용 동기 로드 금지")
+	 */
+	UPROPERTY()
+	TArray<TObjectPtr<UObject>> WarmAssets;
+
+	/** 표의 소프트 참조를 하나 로드한 결과를 WarmAssets 에 붙든다 — null(빈 열)은 조용히 건너뛴다 */
+	void Warm(UObject* Asset);
 };

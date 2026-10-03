@@ -85,9 +85,10 @@ public:
 	/**
 	 * 호스트 전용: 밤 시계를 가동한다 — 시작/종료/정전을 서버 시각으로 찍는다.
 	 * NightLength는 날짜로 보정된 길이이며, bNoBlackout이면 정전을 걸어두지 않는다
-	 * (docs/plan/data/progression.md 특정 일자 덮어쓰기).
+	 * (docs/plan/data/progression.md 특정 일자 덮어쓰기). DarkBase·DarkMin은 사이트 덮어쓰기가 반영된 값이다
+	 * (docs/plan/data/site.md 밤 시계, 2026-10-03).
 	 */
-	void StartNightClock(const UCL9RulesDef& Rules, float NightLength, bool bNoBlackout);
+	void StartNightClock(float NightLength, float DarkBase, float DarkMin, bool bNoBlackout);
 
 	/** 호스트 전용: 시계를 0으로 되돌린다(로비로 돌아왔을 때) */
 	void ClearNightClock();
@@ -289,6 +290,9 @@ protected:
 	/** 정전이 발생하는 서버 시각 — 반납이 있을 때마다 앞당겨지되 DarkMin 아래로는 내려가지 않는다(밤이 아니면 0) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
 	float BlackoutServerTime = 0.f;
+
+	/** 이번 밤의 DarkMin(사이트 덮어쓰기 반영) — 호스트 판정 전용이라 복제하지 않는다 */
+	float NightDarkMin = 0.f;
 
 	/** 이번 런의 목적지 행 alias — 파생된 런타임 상태이며, 행 자체는 각 머신의 레지스트리에 남아 있다 */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")

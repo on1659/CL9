@@ -430,7 +430,7 @@ void UCL9DefRegistry::CheckSiteReferences() const
 				*Site->GetName(), *Site->Theme.ToString());
 			continue;
 		}
-		bool bSeenType[5] = {false, false, false, false, false};
+		bool bSeenType[CL9ModuleTypeCount] = {};
 		for (const UCL9ModuleDef* Module : StageModules)
 		{
 			bSeenType[static_cast<int32>(Module->Type)] = true;

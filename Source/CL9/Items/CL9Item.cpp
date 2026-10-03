@@ -36,6 +36,8 @@ namespace
 	constexpr float RestHoldTime = 0.5f;
 }
 
+bool ACL9Item::bCheatGripLive = false;
+
 ACL9Item::ACL9Item()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -289,6 +291,18 @@ void ACL9Item::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// 치트 cl9.griplive: 테이블의 GripOffset/GripRotation을 매 틱 다시 읽어 적용한다 — 값 튜닝 중
+	// 손 소켓에 다시 붙지 않아도(들고 있는 채로) 바로 보이게 하는 개발용 스위치다.
+	if (bCheatGripLive && HoldState == ECL9ItemHoldState::Held && ItemDef != nullptr)
+	{
+		if (HasAuthority())
+		{
+			SetActorRelativeLocation(ItemDef->GripOffset);
+			SetActorRelativeRotation(ItemDef->GripRotation);
+		}
+		UpdateFirstPersonView();
+	}
+
 	// 시뮬레이션은 호스트 전용이며 권위를 가진다 — 클라이언트는 복제된 이동값을 보간할 뿐이다
 	// (docs/systems/item.md 액터 틀). 자유 상태와 밀리는 수레(Pushed)만 시뮬레이션한다.
 	const bool bSimulated = HoldState == ECL9ItemHoldState::Free || HoldState == ECL9ItemHoldState::Pushed;
@@ -501,10 +515,15 @@ void ACL9Item::UpdateFirstPersonView()
 	USkeletalMeshComponent* Arms = bInLocalHand ? Holder->GetFirstPersonMesh() : nullptr;
 	if (Arms != nullptr && Arms->GetSkeletalMeshAsset() != nullptr)
 	{
-		if (MeshComponent->GetAttachParent() != Arms)
+		const bool bNeedsAttach = MeshComponent->GetAttachParent() != Arms;
+		if (bNeedsAttach)
 		{
 			const FName Socket = Arms->DoesSocketExist(GripSocket) ? GripSocket : HandBone;
 			MeshComponent->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket);
+		}
+		// 치트 cl9.griplive가 켜져 있으면 이미 붙어 있어도(첫 부착이 아니어도) 매 호출마다 다시 적용한다
+		if (bNeedsAttach || bCheatGripLive)
+		{
 			MeshComponent->SetRelativeLocation(ItemDef != nullptr ? ItemDef->GripOffset : FVector::ZeroVector);
 			MeshComponent->SetRelativeRotation(ItemDef != nullptr ? ItemDef->GripRotation : FRotator::ZeroRotator);
 		}
@@ -520,30 +539,6 @@ void ACL9Item::UpdateFirstPersonView()
 UPrimitiveComponent* ACL9Item::GetBody() const
 {
 	return CastChecked<UPrimitiveComponent>(GetRootComponent());
-}
-
-bool ACL9Item::GetSwingHitSphere(FVector& OutCenter, float& OutRadius) const
-{
-	const UStaticMesh* Mesh = MeshComponent->GetStaticMesh();
-	if (ItemDef == nullptr || Mesh == nullptr)
-	{
-		return false;
-	}
-
-	// 모양은 메시 에셋의 경계 구다 — 행에 히트박스 열을 두지 않고 "보이는 것이 곧 맞는 것"으로 간다. 스케일은 메시 컴포넌트의
-	// 상대 스케일(LoadData가 행 Radius에 맞춰 넣은 값)이고, 팔로 재부착돼도(SnapToTargetNotIncludingScale) 그대로 남는다.
-	const FVector MeshScale = MeshComponent->GetRelativeScale3D();
-	const FBoxSphereBounds Bounds = Mesh->GetBounds();
-	OutRadius = Bounds.SphereRadius * MeshScale.GetAbsMax();
-	if (OutRadius <= UE_KINDA_SMALL_NUMBER)
-	{
-		return false;
-	}
-
-	// 자리는 **루트 구**의 월드 트랜스폼에서 뽑는다(헤더 주석). 남의 화면에서 메시는 이 구에 상대 트랜스폼 0으로 붙으므로
-	// (UpdateFirstPersonView), 구의 트랜스폼으로 경계 중심을 옮기면 그것이 곧 전신 손에 들린 메시의 자리다.
-	OutCenter = SphereComponent->GetComponentTransform().TransformPosition(Bounds.Origin * MeshScale);
-	return true;
 }
 
 void ACL9Item::PromoteMeshToBody()

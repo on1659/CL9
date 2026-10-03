@@ -9,9 +9,14 @@
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/PostProcessComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
+#include "Engine/StaticMeshActor.h"
+#include "Components/VolumetricCloudComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
@@ -77,6 +82,41 @@ void ACL9NightLighting::ResolveLights()
 		Fog = *It;
 		break;
 	}
+	for (TActorIterator<ASkyAtmosphere> It(World); It; ++It)
+	{
+		Atmosphere = *It;
+		break;
+	}
+	for (TActorIterator<AVolumetricCloud> It(World); It; ++It)
+	{
+		Clouds = *It;
+		break;
+	}
+	// 하늘 구는 이름으로 찾는다 — 엔진 `SM_SkySphere`(또는 이름에 SkySphere 가 든 메시)를 쓴 스태틱 메시 액터
+	for (TActorIterator<AStaticMeshActor> It(World); It; ++It)
+	{
+		const UStaticMeshComponent* MeshComponent = It->GetStaticMeshComponent();
+		if (MeshComponent != nullptr && MeshComponent->GetStaticMesh() != nullptr
+			&& MeshComponent->GetStaticMesh()->GetName().Contains(TEXT("SkySphere")))
+		{
+			SkySphere = *It;
+			BaselineSkyMaterial = MeshComponent->GetMaterial(0);
+			AppliedSkyMaterial = BaselineSkyMaterial;
+			break;
+		}
+	}
+	if (!SkySphere.IsValid())
+	{
+		UE_LOG(LogCL9, Log, TEXT("NightLighting: no SkySphere mesh in the level — the site's SkyMaterial has nowhere to go."));
+	}
+	if (Atmosphere.IsValid() && Atmosphere->GetComponent() != nullptr)
+	{
+		BaselineSkyLuminance = Atmosphere->GetComponent()->SkyLuminanceFactor;
+	}
+	else
+	{
+		UE_LOG(LogCL9, Log, TEXT("NightLighting: no SkyAtmosphere in the level — the site's SkyLuminance has nowhere to go."));
+	}
 
 	if (Sun.IsValid() && Sun->GetLightComponent() != nullptr)
 	{
@@ -127,6 +167,7 @@ bool ACL9NightLighting::TryBindGameState()
 
 	// 현재 단계로 즉시 맞춰서 중간 참가자에게도 곧바로 올바르게 보이도록 한다.
 	Current = SelectTarget(CL9GameState->GetPhase(), CL9GameState->IsBlackout());
+	ApplyDiscrete(Current);
 	ApplyToLights();
 	return true;
 }
@@ -179,11 +220,17 @@ void ACL9NightLighting::ApplyToLights() const
 	{
 		Sky->GetLightComponent()->SetIntensity(BaselineSkyIntensity * Current.SkyScale);
 		Sky->GetLightComponent()->SetLightColor(BaselineSkyColor * Current.SkyColor);
+		Sky->GetLightComponent()->SetVolumetricScatteringIntensity(Current.SkyScattering);
 	}
 	if (Fog.IsValid() && Fog->GetComponent() != nullptr)
 	{
 		Fog->GetComponent()->SetFogDensity(Current.FogDensity);
 		Fog->GetComponent()->SetFogInscatteringColor(Current.FogColor);
+	}
+	// 보이는 하늘은 태양 배율을 따라가지 않는다 — 대기가 낮 색으로 남아 문밖이 하얗게 타는 걸 따로 누른다.
+	if (Atmosphere.IsValid() && Atmosphere->GetComponent() != nullptr)
+	{
+		Atmosphere->GetComponent()->SetSkyLuminanceFactor(BaselineSkyLuminance * Current.SkyLuminance);
 	}
 	// 루멘이 닫힌 방을 완전한 검정으로 만드는 것을 표의 비율만큼 풀어 준다 — 노출 고정과
 	// 같은 포스트프로세스 컴포넌트에 얹는다.
@@ -191,6 +238,25 @@ void ACL9NightLighting::ApplyToLights() const
 	{
 		ExposureControl->Settings.bOverride_LumenSkylightLeaking = true;
 		ExposureControl->Settings.LumenSkylightLeaking = Current.SkyLeak;
+	}
+}
+
+void ACL9NightLighting::ApplyDiscrete(const FCL9LightingPhase& Target)
+{
+	// 하늘 재질은 보간할 수 없다 — 페이즈가 바뀌는 순간 바꾼다. 비면 레벨의 원래 재질(낮 하늘).
+	if (SkySphere.IsValid() && SkySphere->GetStaticMeshComponent() != nullptr)
+	{
+		UMaterialInterface* Wanted = Target.SkyMaterial.IsNull() ? BaselineSkyMaterial.Get() : Target.SkyMaterial.LoadSynchronous();
+		if (Wanted != nullptr && Wanted != AppliedSkyMaterial.Get())
+		{
+			SkySphere->GetStaticMeshComponent()->SetMaterial(0, Wanted);
+			AppliedSkyMaterial = Wanted;
+		}
+	}
+	if (Clouds.IsValid() && Target.bClouds != bAppliedClouds)
+	{
+		Clouds->SetActorHiddenInGame(!Target.bClouds);
+		bAppliedClouds = Target.bClouds;
 	}
 }
 
@@ -204,6 +270,7 @@ void ACL9NightLighting::Tick(float DeltaSeconds)
 	}
 
 	const FCL9LightingPhase Target = SelectTarget(BoundGameState->GetPhase(), BoundGameState->IsBlackout());
+	ApplyDiscrete(Target);
 
 	if (TransitionSpeed <= 0.f)
 	{
@@ -218,6 +285,8 @@ void ACL9NightLighting::Tick(float DeltaSeconds)
 		Current.SkyLeak = FMath::FInterpTo(Current.SkyLeak, Target.SkyLeak, DeltaSeconds, TransitionSpeed);
 		Current.FogDensity = FMath::FInterpTo(Current.FogDensity, Target.FogDensity, DeltaSeconds, TransitionSpeed);
 		Current.FogColor = FMath::CInterpTo(Current.FogColor, Target.FogColor, DeltaSeconds, TransitionSpeed);
+		Current.SkyLuminance = FMath::FInterpTo(Current.SkyLuminance, Target.SkyLuminance, DeltaSeconds, TransitionSpeed);
+		Current.SkyScattering = FMath::FInterpTo(Current.SkyScattering, Target.SkyScattering, DeltaSeconds, TransitionSpeed);
 	}
 
 	ApplyToLights();

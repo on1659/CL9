@@ -2,16 +2,6 @@
 
 #include "Data/CL9RulesDef.h"
 
-namespace
-{
-	/**
-	 * 휘두르기 클립이 ABP에서 도는 구간의 길이, 초 단위 — `ABP_Unarmed`·`ABP_FP_View`가 `SwingElapsed ∈ [0, 0.347)`
-	 * 동안만 시퀀스 평가기를 태운다(30fps 0.467초 클립을 0.12초 지점부터, docs/systems/animation.md). 애님 에셋의 사실이지
-	 * 밸런스 값이 아니라 여기 상수로 둔다 — 히트 구간이 이 밖으로 나가지 않는지만 검사한다.
-	 */
-	constexpr float SwingClipWindow = 0.347f;
-}
-
 void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 {
 	Super::Validate(OutErrors);
@@ -40,10 +30,27 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(FString::Printf(TEXT("Swing hit window needs 0 <= SwingHitStart < SwingHitEnd < %.3f (the ABP plays the swing clip only in that range)."), SwingClipWindow));
 	}
-	// 0이면 반경 0 스윕이라 아무것도 못 맞히고, 음수·NaN 은 구를 만들 수 없다 — 값의 문제가 아니라 오류다
-	if (!(FMath::IsFinite(SwingHitScale) && SwingHitScale > 0.f))
+	// 헤더 0 = 미설정. 옛 메시 스윕 경로는 없으므로 둘 다 셀이 있어야 하고, 선분이 앞을 향하려면 Reach >= Radius
+	if (!(FMath::IsFinite(SwingHitReach) && SwingHitReach > 0.f && FMath::IsFinite(SwingHitRadius) && SwingHitRadius > 0.f
+		&& SwingHitReach >= SwingHitRadius))
 	{
-		OutErrors.Add(TEXT("SwingHitScale must be a finite positive number — it scales the swing hit sphere radius (1 = mesh bounds)."));
+		OutErrors.Add(TEXT("SwingHitReach and SwingHitRadius must be set (finite, > 0, Reach >= Radius) — header 0 means unconfigured; there is no mesh-sweep fallback."));
+	}
+	// 회복은 팔 클립이 도는 동안(SwingClipWindow)은 이어져야 하고, 히트 구간이 끝난 뒤여야 한다 — 아니면 다음 휘두르기의 시작 시각
+	// 리셋이 팔 애님 도중이나 히트 구간 도중에 떨어진다
+	if (!(FMath::IsFinite(SwingRecovery) && SwingRecovery >= SwingClipWindow && SwingHitEnd < SwingRecovery))
+	{
+		OutErrors.Add(FString::Printf(TEXT("SwingRecovery needs SwingRecovery >= %.3f (the arm clip window) and SwingHitEnd < SwingRecovery."), SwingClipWindow));
+	}
+	// 예약 창은 0(끔) 이상이면 된다
+	if (!FMath::IsFinite(SwingBufferTime) || SwingBufferTime < 0.f)
+	{
+		OutErrors.Add(TEXT("SwingBufferTime must be finite and non-negative (0 = no input buffer)."));
+	}
+	// 넉백 속도 = 거리 / 시간 — 0 이면 무한 속도(순간이동)라 값의 문제가 아니라 오류다
+	if (!(FMath::IsFinite(HitKnockbackTime) && HitKnockbackTime > 0.f))
+	{
+		OutErrors.Add(TEXT("HitKnockbackTime must be a finite positive number — knockback speed is HitKnockback / HitKnockbackTime."));
 	}
 	// 0이면 플래시·비네트가 한 프레임도 보이지 않는다 — "맞았다"를 알리는 표현이 통째로 사라지므로 값의 문제가 아니라 오류다
 	if (HitFlashTime <= 0.f || HurtFlashTime <= 0.f || HurtVignetteTime <= 0.f)

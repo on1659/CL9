@@ -64,6 +64,8 @@ namespace
 	constexpr float WakeMoveMinSpeed = 10.f;
 }
 
+bool ACL9Monster::bCheatKnockbackLog = false;
+
 ACL9Monster::ACL9Monster()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -234,34 +236,13 @@ void ACL9Monster::HostTickDeathLaunch(float DeltaSeconds)
 	DeathLaunchVelocity.Z += GetWorld()->GetGravityZ() * DeltaSeconds;
 	const FVector Start = GetActorLocation();
 	FVector Next = Start + DeathLaunchVelocity * DeltaSeconds;
-
-	auto TraceWorld = [World = GetWorld(), Self = this](const FVector& From, const FVector& To, FHitResult& OutHit) -> bool
-	{
-		FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9DeathLaunch), false, Self);
-		// 앞을 가린 폰·아이템·몬스터를 하나씩 무시 목록에 넣고 다시 긋는다 — 시체가 사람 몸이나 계란 위에서 멈추지 않게
-		for (int32 Retry = 0; Retry < 4; ++Retry)
-		{
-			if (!World->LineTraceSingleByChannel(OutHit, From, To, ECC_Visibility, Params))
-			{
-				return false;
-			}
-			AActor* HitActor = OutHit.GetActor();
-			if (HitActor == nullptr
-				|| (!HitActor->IsA<ACL9Character>() && !HitActor->IsA<ACL9Item>() && !HitActor->IsA<ACL9Monster>()))
-			{
-				return true;
-			}
-			Params.AddIgnoredActor(HitActor);
-		}
-		return false;
-	};
 	FHitResult Hit;
 
 	// 벽: 지금 자리 → 다음 자리의 수평 선분이 막히면 그 자리에서 수평 속도 0 (남은 낙하만 이어진다)
 	if (!FVector2D(DeathLaunchVelocity).IsNearlyZero())
 	{
 		const FVector HorizontalEnd(Next.X, Next.Y, Start.Z);
-		if (TraceWorld(Start, HorizontalEnd, Hit))
+		if (TraceWorld(GetWorld(), this, Start, HorizontalEnd, Hit))
 		{
 			Next.X = Start.X;
 			Next.Y = Start.Y;
@@ -275,7 +256,7 @@ void ACL9Monster::HostTickDeathLaunch(float DeltaSeconds)
 	{
 		const FVector FloorStart(Next.X, Next.Y, Start.Z);
 		const FVector FloorEnd(Next.X, Next.Y, Next.Z - Radius);
-		if (TraceWorld(FloorStart, FloorEnd, Hit))
+		if (TraceWorld(GetWorld(), this, FloorStart, FloorEnd, Hit))
 		{
 			Next.Z = Hit.ImpactPoint.Z + Radius;
 			DeathLaunchVelocity = FVector::ZeroVector;
@@ -283,6 +264,36 @@ void ACL9Monster::HostTickDeathLaunch(float DeltaSeconds)
 	}
 
 	SetActorLocation(Next, false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+bool ACL9Monster::TraceWorld(const UWorld* World, const AActor* Self, const FVector& From, const FVector& To, FHitResult& OutHit, const AActor* AlsoIgnore)
+{
+	if (World == nullptr)
+	{
+		return false;
+	}
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(CL9TraceWorld), false, Self);
+	if (AlsoIgnore != nullptr)
+	{
+		Params.AddIgnoredActor(AlsoIgnore);
+	}
+	// 앞을 가린 폰·아이템·몬스터를 하나씩 무시 목록에 넣고 다시 긋는다 — 시체가 사람 몸이나 계란 위에서 멈추지 않고, 동료 폰이
+	// 휘두르기를 가리지 않는다. 사람은 맞지도 가리지도 않는다
+	for (int32 Retry = 0; Retry < 4; ++Retry)
+	{
+		if (!World->LineTraceSingleByChannel(OutHit, From, To, ECC_Visibility, Params))
+		{
+			return false;
+		}
+		AActor* HitActor = OutHit.GetActor();
+		if (HitActor == nullptr
+			|| (!HitActor->IsA<ACL9Character>() && !HitActor->IsA<ACL9Item>() && !HitActor->IsA<ACL9Monster>()))
+		{
+			return true;
+		}
+		Params.AddIgnoredActor(HitActor);
+	}
+	return false;
 }
 
 void ACL9Monster::TickHitFeel()
@@ -724,13 +735,32 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 
 	case ECL9MonsterState::Stun:
 	{
-		// 떠밀리면 스턴이 지속되는 동안 뒤로 튕겨나간다 — 벽에 닿으면 미끄러짐이 멈춘다
-		if (KnockbackRemaining > 0.f)
+		// 넉백: 타격은 진입 뒤 KnockbackDelay(= HitStopTime, 멈춘 프레임은 밀리지 않는다)를 기다렸다가 HitKnockbackTime 동안 등속,
+		// 밀침(OnShove)은 바로 스턴 시간에 걸쳐. 스텝마다 이동 전에 세상 트레이스(TraceWorld — 몸체 앞 가장자리까지)로 벽을 보고
+		// 막히면 그 자리에서 끝난다. AddActorWorldOffset 스윕은 WorldStatic 만 막는데 맵 조각 프로필이 제각각이라(2026-09-18) 믿지
+		// 않는다 (docs/systems/monster.md 넉백)
+		if (KnockbackRemaining > 0.f && GetStateElapsed() >= KnockbackDelay)
 		{
 			const float StepDist = FMath::Min(KnockbackSpeed * DeltaSeconds, KnockbackRemaining);
+			const float Radius = MonsterDef != nullptr ? MonsterDef->Radius : 0.f;
+			const FVector From = GetActorLocation();
 			FHitResult Hit;
-			AddActorWorldOffset(KnockbackDir * StepDist, true, &Hit);
-			KnockbackRemaining = Hit.bBlockingHit ? 0.f : KnockbackRemaining - StepDist;
+			const bool bBlocked = TraceWorld(GetWorld(), this, From, From + KnockbackDir * (StepDist + Radius), Hit);
+			if (!bBlocked)
+			{
+				AddActorWorldOffset(KnockbackDir * StepDist, true, &Hit);
+				++KnockbackSteps;
+			}
+			KnockbackRemaining = (bBlocked || Hit.bBlockingHit) ? 0.f : KnockbackRemaining - StepDist;
+			if (KnockbackRemaining <= 0.f && bCheatKnockbackLog)
+			{
+				const FVector To = GetActorLocation();
+				UE_LOG(LogCL9, Log, TEXT("cl9.knockback: %s#%u from=(%.1f %.1f %.1f) to=(%.1f %.1f %.1f) dist=%.1f steps=%d blocked=%d hitstop=%.3f time=%.3f"),
+					*(MonsterDef != nullptr ? MonsterDef->Alias.ToString() : GetName()), GetUniqueID(),
+					KnockbackFrom.X, KnockbackFrom.Y, KnockbackFrom.Z, To.X, To.Y, To.Z, FVector::Dist2D(KnockbackFrom, To),
+					KnockbackSteps, (bBlocked || Hit.bBlockingHit) ? 1 : 0, KnockbackDelay,
+					KnockbackTotal / FMath::Max(KnockbackSpeed, UE_KINDA_SMALL_NUMBER));
+			}
 		}
 		StunRemaining -= DeltaSeconds;
 		if (StunRemaining <= 0.f)
@@ -1188,7 +1218,7 @@ void ACL9Monster::HostCatch(ACL9Character& Target)
 
 	// 한 번 잡으면 KillCooldown이 재충전돼야 한다 — 연속 세 번 타격은
 	// 불가능해야 한다 (docs/systems/monster.md 잡기 = 공격).
-	Target.OnDamage(MonsterDef->CatchDamage, this);
+	Target.OnDamage(MonsterDef->CatchDamage, this, 0.f);
 	CatchCooldownRemaining = MonsterDef->KillCooldown;
 	EnterState(ECL9MonsterState::Catch);
 }
@@ -1299,7 +1329,7 @@ float ACL9Monster::GetPounceResultElapsed() const
 	return GetServerTime() - PounceResultServerTime;
 }
 
-void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
+void ACL9Monster::OnDamage(int32 Amount, AActor* Source, float Knockback)
 {
 	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
 	{
@@ -1309,6 +1339,7 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 	Hp = FMath::Max(Hp - Amount, 0);
 	if (Hp <= 0)
 	{
+		// 죽이는 타격에 넉백은 없다 — 죽음 발사가 대신한다
 		Die(Source);
 		return;
 	}
@@ -1328,7 +1359,32 @@ void ACL9Monster::OnDamage(int32 Amount, AActor* Source)
 		bHadSight = true;
 		DetectGauge = 1.f;
 	}
+
+	// 타격 넉백(아이템 행 HitKnockback): Source → 몬스터 수평, 없거나 겹치면 뒤쪽(OnShove 와 같은 폴백). Stun 진입 뒤 HitStopTime 을
+	// 기다렸다가 HitKnockbackTime 동안 등속으로 — 경직 시간과는 별개 시계다. 0 이면 옛 동작(제자리 경직)
 	KnockbackRemaining = 0.f;
+	if (Knockback > 0.f)
+	{
+		const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+		const UCL9DefRegistry* Registry = GameInstance != nullptr ? GameInstance->GetDefRegistry() : nullptr;
+		const UCL9RulesDef* Rules = Registry != nullptr ? Registry->GetRules() : nullptr;
+		if (Rules != nullptr)
+		{
+			FVector Away = Source != nullptr ? GetActorLocation() - Source->GetActorLocation() : FVector::ZeroVector;
+			Away.Z = 0.f;
+			KnockbackDir = Away.GetSafeNormal();
+			if (KnockbackDir.IsNearlyZero())
+			{
+				KnockbackDir = -GetActorForwardVector();
+			}
+			KnockbackRemaining = Knockback;
+			KnockbackSpeed = Knockback / Rules->HitKnockbackTime;
+			KnockbackDelay = Rules->HitStopTime;
+			KnockbackFrom = GetActorLocation();
+			KnockbackTotal = Knockback;
+			KnockbackSteps = 0;
+		}
+	}
 	StunRemaining = MonsterDef->HitStunMs / 1000.f;
 	bPushStun = false;
 	EnterState(ECL9MonsterState::Stun);
@@ -1357,6 +1413,10 @@ void ACL9Monster::OnShove(AActor* Shover)
 	}
 	KnockbackRemaining = MonsterDef->PushKnockback;
 	KnockbackSpeed = MonsterDef->PushKnockback / FMath::Max(MonsterDef->PushStun, UE_KINDA_SMALL_NUMBER);
+	KnockbackDelay = 0.f;
+	KnockbackFrom = GetActorLocation();
+	KnockbackTotal = MonsterDef->PushKnockback;
+	KnockbackSteps = 0;
 
 	// 떠밀림도 도발이다 — 스턴이 끝나면 범인을 쫓아간다
 	if (ACL9Character* Attacker = Cast<ACL9Character>(Shover))
@@ -1381,18 +1441,18 @@ void ACL9Monster::OnShove(AActor* Shover)
 	EnterState(ECL9MonsterState::Stun);
 }
 
-void ACL9Monster::OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source)
+void ACL9Monster::OnStrike(int32 Damage, ECL9HitStun Stun, float Knockback, AActor* Source)
 {
 	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
 	{
 		return;
 	}
 
-	// 피해가 먼저 — 죽으면 경직은 없다. 피해 있는 타격은 OnDamage가 HitStun 경직까지 주므로
-	// Hit 종류는 거기서 끝나고, Push는 그 위에 밀쳐냄으로 덮는다(경직 시간도 PushStun으로).
+	// 피해가 먼저 — 죽으면 경직·넉백은 없다. 피해 있는 타격은 OnDamage가 HitStun 경직과 HitKnockback 넉백까지 주므로
+	// Hit 종류는 거기서 끝나고, Push는 그 위에 밀쳐냄으로 덮는다(경직 시간·넉백도 PushStun·PushKnockback 으로).
 	if (Damage > 0)
 	{
-		OnDamage(Damage, Source);
+		OnDamage(Damage, Source, Knockback);
 		if (State == ECL9MonsterState::Dead || Stun != ECL9HitStun::Push)
 		{
 			return;
@@ -1401,7 +1461,7 @@ void ACL9Monster::OnStrike(int32 Damage, ECL9HitStun Stun, AActor* Source)
 	switch (Stun)
 	{
 	case ECL9HitStun::Hit:
-		OnDamage(0, Source);
+		OnDamage(0, Source, Knockback);
 		break;
 	case ECL9HitStun::Push:
 		OnShove(Source);

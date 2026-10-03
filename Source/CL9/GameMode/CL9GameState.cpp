@@ -263,7 +263,7 @@ void ACL9GameState::RecordReturn(FName ItemAlias, FName ItemSubAlias)
 	const UCL9RulesDef* Rules = GetRules();
 	if (Rules != nullptr && Phase == ECL9NightPhase::Night && BlackoutServerTime > 0.f)
 	{
-		const float Floor = NightStartServerTime + Rules->DarkMin;
+		const float Floor = NightStartServerTime + NightDarkMin;
 		BlackoutServerTime = FMath::Max(Floor, BlackoutServerTime - Rules->DarkAccel);
 	}
 
@@ -282,7 +282,7 @@ void ACL9GameState::SetPhase(ECL9NightPhase NewPhase)
 	OnRep_Phase();
 }
 
-void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules, float NightLength, bool bNoBlackout)
+void ACL9GameState::StartNightClock(float NightLength, float DarkBase, float DarkMin, bool bNoBlackout)
 {
 	if (!HasAuthority())
 	{
@@ -292,7 +292,8 @@ void ACL9GameState::StartNightClock(const UCL9RulesDef& Rules, float NightLength
 	NightStartServerTime = GetServerWorldTimeSeconds();
 	NightEndServerTime = NightStartServerTime + NightLength;
 	// 0이면 밤 내내 IsBlackout이 false로 유지된다; 그래도 ForceBlackout(cl9.blackout)으로 걸 수는 있다
-	BlackoutServerTime = bNoBlackout ? 0.f : NightStartServerTime + Rules.DarkBase;
+	BlackoutServerTime = bNoBlackout ? 0.f : NightStartServerTime + DarkBase;
+	NightDarkMin = DarkMin;
 }
 
 void ACL9GameState::SetDay(int32 NewDay)

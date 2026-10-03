@@ -538,4 +538,123 @@ bool FCL9SiteLayoutFloorsTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCL9SiteLayoutLargeSiteTest,
+	"CL9.Map.LargeSite",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FCL9SiteLayoutLargeSiteTest::RunTest(const FString& Parameters)
+{
+	// 대농장(farm) 행과 같은 손잡이 — 양계장의 5배 판이 64칸 상한에 눌리지 않고 끝까지 서는지 본다 (2026-10-03)
+	const FTestModules Modules;
+	FCL9SiteParams Params;
+	Params.Theme = TEXT("henhouse");
+	Params.ModuleCount = 200;
+	Params.MaxFloors = 2;
+	Params.StairCountMin = 3;
+	Params.StairCountMax = 5;
+	Params.UpperFloorShare = 0.25f;
+	Params.LoopChance = 0.35f;
+	Params.MainPathShare = 0.3f;
+	Params.PassageShare = 0.4f;
+	Params.DeadEndShare = 0.3f;
+	Params.SpecialCopies = 4;
+
+	int32 Disconnected = 0;
+	int32 Overlapped = 0;
+	int32 NoExit = 0;
+	int32 Unbuilt = 0;
+	int32 FewDeliveries = 0;
+	int32 Smallest = MAX_int32;
+	int32 SmallestGround = MAX_int32;
+	float Total = 0.f;
+	int32 Runs = 0;
+	const double Started = FPlatformTime::Seconds();
+
+	for (uint32 Seed = 1; Seed <= 30; ++Seed)
+	{
+		const FCL9SiteLayout Layout = CL9SiteLayout::Generate(Params, Modules.Defs, Seed);
+		if (!Layout.bBuilt)
+		{
+			++Unbuilt;
+			continue;
+		}
+		Disconnected += CL9SiteLayout::IsConnected(Layout) ? 0 : 1;
+		int32 Expected = 0;
+		int32 Ground = 0;
+		for (const FCL9ModulePlacement& Module : Layout.Modules)
+		{
+			Expected += Module.Size.X * Module.Size.Y * (Module.bStairUp ? 2 : 1);
+			Ground += Module.Floor == 0 ? 1 : 0;
+		}
+		Overlapped += Expected != CountOccupiedCells(Layout) ? 1 : 0;
+		int32 Deliveries = 0;
+		for (const FCL9ModulePlacement& Module : Layout.Modules)
+		{
+			Deliveries += Module.Def->Alias == FName(TEXT("delivery")) ? 1 : 0;
+		}
+		FewDeliveries += Deliveries < 2 ? 1 : 0;
+		NoExit += CountEdges(Layout, ECL9GridEdge::Flap) != 1 ? 1 : 0;
+		Smallest = FMath::Min(Smallest, Layout.Modules.Num());
+		SmallestGround = FMath::Min(SmallestGround, Ground);
+		Total += Layout.Modules.Num();
+		++Runs;
+	}
+	const double Elapsed = FPlatformTime::Seconds() - Started;
+
+	AddInfo(FString::Printf(TEXT("%d runs: smallest %d modules (ground %d of a wanted %d), avg %.1f, %.1f ms per layout."),
+		Runs, Smallest, SmallestGround, Params.ModuleCount, Total / FMath::Max(Runs, 1), 1000.0 * Elapsed / FMath::Max(Runs, 1)));
+
+	TestEqual(TEXT("every seed builds"), Unbuilt, 0);
+	TestEqual(TEXT("every module is reachable through doors"), Disconnected, 0);
+	TestEqual(TEXT("no two modules share a cell"), Overlapped, 0);
+	TestEqual(TEXT("exactly one emergency exit per run"), NoExit, 0);
+	// SpecialCopies 4 — 납품 방(항아리)이 판에 여럿 서야 깊은 곳에서도 반납할 데가 있다
+	TestEqual(TEXT("runs with fewer than two delivery rooms"), FewDeliveries, 0);
+	// 5배 판이라 부른 이상 1층이 목표의 90%는 서야 한다
+	TestTrue(FString::Printf(TEXT("the smallest ground floor had %d modules of a wanted %d"), SmallestGround, Params.ModuleCount),
+		SmallestGround >= Params.ModuleCount * 9 / 10);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCL9SiteLayoutDepthBandTest,
+	"CL9.Map.DepthBand",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FCL9SiteLayoutDepthBandTest::RunTest(const FString& Parameters)
+{
+	// 구역 띠를 이어 붙이면 지점이 빠지지도 겹치지도 않아야 하고, 깊은 띠일수록 홉이 커야 한다
+	const FTestModules Modules;
+	FCL9SiteParams Params;
+	Params.Theme = TEXT("henhouse");
+	Params.ModuleCount = 200;
+	const FCL9SiteLayout Layout = CL9SiteLayout::Generate(Params, Modules.Defs, 873);
+	TestTrue(TEXT("seed 873 builds"), Layout.bBuilt);
+
+	TArray<int32> All;
+	CL9SiteLayout::PointsOfPurpose(Layout, ECL9PointPurpose::Loot, All);
+	const float Edges[] = { 0.f, 0.35f, 0.7f, 1.f };
+	TArray<int32> Bands[3];
+	int32 Sum = 0;
+	for (int32 Band = 0; Band < 3; ++Band)
+	{
+		CL9SiteLayout::PointsInDepthBand(Layout, ECL9PointPurpose::Loot, Edges[Band], Edges[Band + 1], Bands[Band]);
+		Sum += Bands[Band].Num();
+		TestTrue(FString::Printf(TEXT("band %d has points"), Band), Bands[Band].Num() > 0);
+	}
+	TestEqual(TEXT("bands partition the loot points"), Sum, All.Num());
+
+	auto MaxHops = [&Layout](const TArray<int32>& Indices)
+	{
+		int32 Hops = 0;
+		for (int32 Index : Indices)
+		{
+			Hops = FMath::Max(Hops, Layout.Points[Index].Hops);
+		}
+		return Hops;
+	};
+	TestTrue(TEXT("outer band is shallower than middle"), MaxHops(Bands[0]) <= MaxHops(Bands[1]));
+	TestTrue(TEXT("middle band is shallower than deep"), MaxHops(Bands[1]) <= MaxHops(Bands[2]));
+	return true;
+}
+
 #endif

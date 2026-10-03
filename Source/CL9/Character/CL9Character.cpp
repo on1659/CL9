@@ -81,7 +81,15 @@ namespace
 	 * CrackSpeed 상한은 폐기 — 놓기에서 계란에 금이 가는 것은 규칙으로 받아들인다).
 	 */
 	constexpr float CargoLobMaxSpeed = 600.f;
+
+	/**
+	 * 휘두르기 판정 원점이 눈높이보다 낮은 만큼, cm 단위 — 눈 156 − 66 = 손 높이 ≈ 90(캡슐 중심). 눈높이 원점이면 수평 조준에서
+	 * 닭 중심(36)까지 높이차 ~120cm 라 붙어 선 닭을 놓친다. 농부 A 리그의 물리 치수라 표 열이 아니다 (docs/goal/combat-feel-pass-1.md D-1)
+	 */
+	constexpr float SwingHandDrop = 66.f;
 }
+
+bool ACL9Character::bCheatSwingLog = false;
 
 ACL9Character::ACL9Character(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCL9CharacterMovement>(ACharacter::CharacterMovementComponentName))
@@ -129,10 +137,11 @@ void ACL9Character::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 호스트에서는 전신 메시의 본을 **화면에 없어도** 갱신한다. 휘두르기 판정이 손 소켓에 붙은 히트박스를 읽는데,
-	// ACharacter 기본값(AlwaysTickPose)은 포즈만 굴리고 본 트랜스폼은 렌더될 때만 새로 쓴다 — 전신 메시는 자기
-	// 폰에서 OwnerNoSee이고 남의 폰은 화면 밖일 수 있어서, 그대로 두면 호스트가 보는 손이 휘두르기 내내 얼어 있다.
-	// 클라이언트는 표시만 하므로 기본값 그대로 둔다(성능). (docs/systems/inventory.md 사용)
+	// 호스트에서는 전신 메시의 본을 **화면에 없어도** 갱신한다. 든 아이템의 루트가 손 소켓에 붙어 있고 놓기(`Server_Drop`)가
+	// "든 자리에서 그대로" `HeldItem->GetActorLocation()` 을 읽는데, ACharacter 기본값(AlwaysTickPose)은 포즈만 굴리고
+	// 본 트랜스폼은 렌더될 때만 새로 쓴다 — 전신 메시는 자기 폰에서 OwnerNoSee이고 남의 폰은 화면 밖일 수 있어서, 그대로
+	// 두면 호스트가 읽는 손 자리가 옛 자세에 얼어 있다. 휘두르기 판정은 2026-09-22부터 손 소켓을 읽지 않는다(컨트롤 회전 +
+	// 손 높이 원점, HostTickSwingHit). 클라이언트는 표시만 하므로 기본값 그대로 둔다(성능). (docs/systems/inventory.md 놓기)
 	if (HasAuthority())
 	{
 		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -219,6 +228,8 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9Character, HeldItem);
 	DOREPLIFETIME(ACL9Character, PullingCart);
 	DOREPLIFETIME(ACL9Character, SwingStartServerTime);
+	// 표면음은 남의 폰에서도 들려야 한다 — 조건 없이(SwingHitServerTime 과 달리 OwnerOnly 가 아니다)
+	DOREPLIFETIME(ACL9Character, SwingSurfaceHitServerTime);
 	DOREPLIFETIME(ACL9Character, SwingWindupServerTime);
 	DOREPLIFETIME(ACL9Character, EatStartServerTime);
 	DOREPLIFETIME(ACL9Character, KnockdownEndServerTime);
@@ -628,12 +639,68 @@ void ACL9Character::Server_UseRelease_Implementation()
 	}
 	HostCancelSwingWindup();
 
-	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
-	if (Def == nullptr || Def->UseAction != ECL9UseAction::Swing || IsIncapacitated())
+	if (!CanSwingNow())
 	{
 		return;
 	}
+
+	// 회복 중이면 거부 — 단, 회복 끝까지 SwingBufferTime 이하로 남았으면 하나 예약한다(HostTickSwingBuffer 가 낸다). 예약은
+	// 하나뿐이고 덮어쓴다. 헤더 0 이면 예약 창이 없어 옛 동작(거부)이다 (docs/systems/character.md 입력 예약)
+	const float Now = GetServerTime();
+	if (Now < SwingReadyTime)
+	{
+		const UCL9RulesDef* Rules = GetRules();
+		if (Rules != nullptr && SwingReadyTime - Now <= Rules->SwingBufferTime)
+		{
+			bSwingBuffered = true;
+			SwingInputServerTime = Now;
+		}
+		else if (bCheatSwingLog)
+		{
+			UE_LOG(LogCL9, Log, TEXT("cl9.swing: rejected t=%.3f ready=%.3f"), Now, SwingReadyTime);
+		}
+		return;
+	}
+	SwingInputServerTime = Now;
 	HostSwing();
+}
+
+const TCHAR* ACL9Character::HostCheatSwingTap()
+{
+	if (!HasAuthority())
+	{
+		return TEXT("lost");
+	}
+	// 누르고 바로 뗀다 — 대기 시간은 결과에 영향이 없다. 받아들인 입력은 SwingInputServerTime 이 지금이 되고, 그중 시작 시각도
+	// 지금이면 즉시 휘두른 것, 아니면 예약이다. 같은 틱 안이라 서버 시각은 같다
+	const float Now = GetServerTime();
+	Server_UseStart_Implementation();
+	Server_UseRelease_Implementation();
+	if (SwingInputServerTime != Now)
+	{
+		return TEXT("lost");
+	}
+	return SwingStartServerTime == Now ? TEXT("swing") : (bSwingBuffered ? TEXT("buffered") : TEXT("lost"));
+}
+
+bool ACL9Character::CanSwingNow() const
+{
+	const UCL9ItemDef* Def = HeldItem != nullptr ? HeldItem->GetItemDef() : nullptr;
+	return Def != nullptr && Def->UseAction == ECL9UseAction::Swing && !IsIncapacitated();
+}
+
+void ACL9Character::HostTickSwingBuffer()
+{
+	if (!bSwingBuffered || GetServerTime() < SwingReadyTime)
+	{
+		return;
+	}
+	// 예약은 여기서 소비된다 — 손이 바뀌어 낼 수 없으면 그냥 사라진다(HostCancelSwingWindup 이 보통 먼저 지우지만 이중 안전)
+	bSwingBuffered = false;
+	if (CanSwingNow())
+	{
+		HostSwing();
+	}
 }
 
 void ACL9Character::Server_Eat_Implementation()
@@ -723,6 +790,7 @@ void ACL9Character::Tick(float DeltaSeconds)
 	// 클라의 휘두르기도 호스트에서 판정된다 (docs/systems/inventory.md 사용).
 	if (HasAuthority())
 	{
+		HostTickSwingBuffer();
 		HostTickSwingHit();
 	}
 
@@ -928,6 +996,7 @@ void ACL9Character::UpdateHitSounds()
 	{
 		bHitSoundsPrimed = true;
 		LastSeenSwingStartTime = SwingStartServerTime;
+		LastSeenSurfaceHitTime = SwingSurfaceHitServerTime;
 		LastSeenHurtSoundTime = KnockdownStartServerTime;
 		return;
 	}
@@ -937,6 +1006,12 @@ void ACL9Character::UpdateHitSounds()
 	{
 		LastSeenSwingStartTime = SwingStartServerTime;
 		CL9Sound::PlayAt(this, CL9SoundNames::Swing, GetActorLocation());
+	}
+	// 벽·바닥을 친 순간 — 충돌점은 복제하지 않으므로 폰 자리에서 (docs/systems/character.md 표면음)
+	if (SwingSurfaceHitServerTime != LastSeenSurfaceHitTime)
+	{
+		LastSeenSurfaceHitTime = SwingSurfaceHitServerTime;
+		CL9Sound::PlayAt(this, CL9SoundNames::HitSurface, GetActorLocation());
 	}
 	if (KnockdownStartServerTime != LastSeenHurtSoundTime)
 	{
@@ -1283,23 +1358,25 @@ int32 ACL9Character::FindPickUpSlot() const
 
 void ACL9Character::HostSwing()
 {
-	// 회복 시간만 아직 상수다 — 무엇에 맞느냐는 히트박스(아이템 메시)가, 피해·경직 종류는 행이, 경직 시간·넉백 거리는
-	// 몬스터 행이 정한다. 사거리·부채꼴 상수는 2026-09-15에 사라졌다(휘두르기 = 애니메이션을 따르는 히트박스).
-	constexpr float SwingRecovery = 0.6f;
-
+	// 회복·판정 모양은 규칙 열이, 피해·경직 종류·넉백 거리는 아이템 행이, 경직 시간은 몬스터 행이 정한다 (docs/systems/character.md 휘두르기)
+	const UCL9RulesDef* Rules = GetRules();
 	const float Now = GetServerTime();
-	if (!HasAuthority() || Now < SwingReadyTime)
+	if (!HasAuthority() || Rules == nullptr || Now < SwingReadyTime)
 	{
 		return;
 	}
-	SwingReadyTime = Now + SwingRecovery;
+	SwingReadyTime = Now + Rules->SwingRecovery;
 	SwingStartServerTime = Now;
 
 	// 이번 휘두르기의 히트 구간을 연다 — 실제 타격은 HostTickSwingHit이 구간 동안 낸다. 맞은 목록을 비워 새 휘두르기에서는
-	// 같은 몬스터를 다시 맞힐 수 있게 하고, 이전 틱 자리는 "아직 없음"으로 둬 첫 틱이 옛 자세에서 스윕하지 않게 한다.
+	// 같은 몬스터를 다시 맞힐 수 있게 하고, 이전 틱 경과는 "아직 없음"으로 둔다. 표면음·로그 계수도 휘두르기 단위다
 	SwingHitItem = HeldItem;
 	SwingHitMonsters.Reset();
 	SwingHitPrevElapsed = -1.f;
+	SwingNearestStruckDist = TNumericLimits<float>::Max();
+	bSwingSurfaceStamped = false;
+	SwingTestedCount = 0;
+	SwingOccludedCount = 0;
 }
 
 void ACL9Character::HostTickSwingHit()
@@ -1315,33 +1392,33 @@ void ACL9Character::HostTickSwingHit()
 	const UCL9ItemDef* Def = Item->GetItemDef();
 	if (Item != HeldItem || Rules == nullptr || Def == nullptr)
 	{
+		HostLogSwing();
 		SwingHitItem = nullptr;
 		return;
 	}
-
-	FVector Center = FVector::ZeroVector;
-	float Radius = 0.f;
-	if (!Item->GetSwingHitSphere(Center, Radius))
-	{
-		SwingHitItem = nullptr;
-		return;
-	}
-	// 메시 경계 구 위의 관용치 — 반경만 키우고 중심은 그대로다 (2026-09-20 "히트박스가 너무 작다")
-	Radius *= Rules->SwingHitScale;
 
 	const float Elapsed = GetSwingElapsed();
 	const float PrevElapsed = SwingHitPrevElapsed;
-	const FVector PrevCenter = PrevElapsed < 0.f ? Center : SwingHitPrevCenter;
 	SwingHitPrevElapsed = Elapsed;
-	SwingHitPrevCenter = Center;
 
 	// 판정은 점이 아니라 **구간 겹침**이다: 이번 틱이 덮는 시간 (PrevElapsed, Elapsed]가 히트 구간 [Start, End)와 겹치면
-	// 그 틱에 스윕한다. 점 판정(지금 Elapsed가 구간 안)이면 0.2초 폭이 틱 사이로 통째로 빠지는 낮은 프레임률(PIE 자동화
-	// 3~5fps)에서 닿는 거리인데도 헛스윙이 난다 (2026-09-15 리드).
+	// 그 틱에 판정한다. 점 판정(지금 Elapsed가 구간 안)이면 0.2초 폭이 틱 사이로 통째로 빠지는 낮은 프레임률(PIE 자동화
+	// 3~5fps)에서 닿는 거리인데도 헛스윙이 난다 (2026-09-15 리드). 구간은 "판정이 열린 시간"이지 손이 지나는 자리가 아니다
 	const bool bWindowOver = Elapsed >= Rules->SwingHitEnd;
 	if (Elapsed >= Rules->SwingHitStart && PrevElapsed < Rules->SwingHitEnd)
 	{
-		// 이전 틱 자리 → 지금 자리로 히트박스를 끌고 간다. 단순 겹침이면 팬이 한 틱 사이에 닭을 지나쳐 관통한다.
+		// 원점은 손 높이(눈높이 − 66 ≈ 90cm), 방향은 **그 순간의 컨트롤 회전** — 던지기와 같은 방식이다. 카메라 컴포넌트의
+		// 트랜스폼은 읽지 않는다: bUsePawnControlRotation 의 피치는 로컬 GetCameraView 안에서만 적용되므로 리슨 호스트에서
+		// 클라 소유 폰의 카메라는 피치 0 이다. 매 틱 다시 잡으므로 구간 동안 시선을 돌리면 선분도 따라간다
+		const FVector Dir = GetControlRotation().Vector();
+		const float HalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		const float EyeHeight = CharacterDef != nullptr ? CharacterDef->EyeHeight : CL9::EyeHeight;
+		const FVector Origin = GetActorLocation() + FVector(0.f, 0.f, EyeHeight - HalfHeight - SwingHandDrop);
+		const float Radius = Rules->SwingHitRadius;
+		const FVector SweepStart = Origin + Dir * Radius;
+		const FVector SweepEnd = Origin + Dir * Rules->SwingHitReach;
+
+		// 선분은 원점에서 반경 하나 앞에서 시작한다 — 구가 등 뒤로 나가 뒤에 선 닭이 bStartPenetrating 으로 걸리지 않게.
 		// 몬스터 몸체는 WorldDynamic이지만 **오브젝트 질의를 쓰지 않는다** — 오브젝트 질의는 걸리는 것을 전부 "블로킹"으로
 		// 보고해 가장 가까운 하나에서 스윕이 잘리고, 나란히 선 닭 둘 중 하나만 맞는다. 대신 WorldDynamic 채널 스윕에
 		// 그 채널만 Overlap(나머지는 Ignore)으로 응답해 **겹침(touch)으로** 받는다: 닿은 전부가 돌아오고, 벽(WorldStatic)·
@@ -1351,7 +1428,7 @@ void ACL9Character::HostTickSwingHit()
 		FCollisionResponseParams ResponseParams(ECR_Ignore);
 		ResponseParams.CollisionResponse.SetResponse(ECC_WorldDynamic, ECR_Overlap);
 		TArray<FHitResult> Hits;
-		GetWorld()->SweepMultiByChannel(Hits, PrevCenter, Center, FQuat::Identity, ECC_WorldDynamic,
+		GetWorld()->SweepMultiByChannel(Hits, SweepStart, SweepEnd, FQuat::Identity, ECC_WorldDynamic,
 			FCollisionShape::MakeSphere(Radius), Params, ResponseParams);
 
 		// 이번 휘두르기에서 아직 아무것도 못 맞혔는가 — 카메라 킥을 한 휘두르기에 한 번만 내기 위한 기준이다
@@ -1371,16 +1448,42 @@ void ACL9Character::HostTickSwingHit()
 			{
 				continue;
 			}
+			++SwingTestedCount;
+
+			// 가림: 원점 → 몬스터 구 **중심**(ImpactPoint 는 시작 관통이면 길이 0 이다)으로 Visibility 선 트레이스. 세상 지형이 먼저
+			// 막으면 벽 너머다. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 맞지도 가리지도 않는다). 열 없음, 항상 켜짐
+			FHitResult Block;
+			if (ACL9Monster::TraceWorld(GetWorld(), this, Origin, Monster->GetActorLocation(), Block, Item))
+			{
+				++SwingOccludedCount;
+				continue;
+			}
 			SwingHitMonsters.Add(Monster);
-			Monster->OnStrike(Def->HitDamage, Def->HitStun, this);
+			SwingNearestStruckDist = FMath::Min(SwingNearestStruckDist, FVector::Dist(Origin, Monster->GetActorLocation()));
+			Monster->OnStrike(Def->HitDamage, Def->HitStun, Def->HitKnockback, this);
 			++Struck;
 		}
 
 		// 맞은 순간을 찍어두면 소유 클라(와 리슨 호스트 자기 폰)가 그 변화를 보고 카메라를 한 번 튕긴다.
-		// 나란한 둘을 한 번에 맞혀도 킥은 한 번이고, 헛스윙이면 값이 그대로라 아무 일도 없다.
+		// 나란한 둘을 한 번에 맞혀도 킥은 한 번이고, 헛스윙이면 값이 그대로라 아무 일도 없다. 회복도 팔 히트스톱만큼 늦춘다 —
+		// 맞든 빗나가든 팔이 돌아온 뒤 같은 여유가 남고, 다음 시작 시각 리셋이 멈춘 팔 애님 도중에 떨어지지 않는다
 		if (bFirstConnect && Struck > 0)
 		{
 			SwingHitServerTime = GetServerTime();
+			SwingReadyTime += Rules->HitStopTime;
+		}
+
+		// 표면음: 같은 틱, 원점 → Reach **선** 트레이스(구가 아니다 — 손 높이에서 20° 아래를 보면 구는 30cm 앞 바닥에 닿아 닭보다
+		// 먼저 잡힌다). 세상 지형에 막히고 그보다 가까운 명중이 이번 휘두르기에 없으면 휘두르기당 한 번 찍는다. 소리뿐이다
+		if (!bSwingSurfaceStamped)
+		{
+			FHitResult Surface;
+			if (ACL9Monster::TraceWorld(GetWorld(), this, Origin, Origin + Dir * Rules->SwingHitReach, Surface, Item)
+				&& Surface.Distance <= SwingNearestStruckDist)
+			{
+				bSwingSurfaceStamped = true;
+				SwingSurfaceHitServerTime = GetServerTime();
+			}
 		}
 
 		UE_LOG(LogCL9, Verbose, TEXT("SwingHit: t=%.3f r=%.1f hits=%d struck=%d"), Elapsed, Radius, Hits.Num(), Struck);
@@ -1388,8 +1491,24 @@ void ACL9Character::HostTickSwingHit()
 
 	if (bWindowOver)
 	{
+		HostLogSwing();
 		SwingHitItem = nullptr;
 	}
+}
+
+void ACL9Character::HostLogSwing() const
+{
+	if (!bCheatSwingLog)
+	{
+		return;
+	}
+	const bool bHit = SwingHitServerTime >= SwingStartServerTime;
+	const bool bSurface = SwingSurfaceHitServerTime >= SwingStartServerTime;
+	UE_LOG(LogCL9, Log, TEXT("cl9.swing: start=%.3f input=%.3f hit=%s surface=%s ready=%.3f arm_return=%.3f tested=%d occluded=%d"),
+		SwingStartServerTime, SwingInputServerTime,
+		bHit ? *FString::Printf(TEXT("%.3f"), SwingHitServerTime) : TEXT("-"),
+		bSurface ? *FString::Printf(TEXT("%.3f"), SwingSurfaceHitServerTime) : TEXT("-"),
+		SwingReadyTime, SwingStartServerTime + UCL9RulesDef::SwingClipWindow, SwingTestedCount, SwingOccludedCount);
 }
 
 float ACL9Character::GetStatBonus(ECL9Stat Stat) const
@@ -1863,6 +1982,8 @@ void ACL9Character::HostCancelSwingWindup()
 	if (HasAuthority())
 	{
 		SwingWindupServerTime = ServerTimeNever;
+		// 예약된 휘두르기도 같이 — 손의 것이 바뀌는 경로마다 따로 취소 분기를 두지 않는다
+		bSwingBuffered = false;
 	}
 }
 
@@ -1959,7 +2080,7 @@ bool ACL9Character::IsCarryingAnything() const
 	return CL9PlayerState != nullptr && CL9PlayerState->HasAnyCarriedItem();
 }
 
-void ACL9Character::OnDamage(int32 Amount, AActor* Source)
+void ACL9Character::OnDamage(int32 Amount, AActor* Source, float /*Knockback*/)
 {
 	ACL9PlayerState* CL9PlayerState = GetCL9PlayerState();
 	if (!HasAuthority() || CL9PlayerState == nullptr || CL9PlayerState->Hp <= 0)

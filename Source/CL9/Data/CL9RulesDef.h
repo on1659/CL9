@@ -170,12 +170,42 @@ public:
 	float SwingHitEnd = 0.25f;
 
 	/**
-	 * 휘두르기 히트박스 반경 배율, 무단위 — 1 = 손에 든 메시의 경계 구 그대로(`ACL9Item::GetSwingHitSphere`). 호스트 스윕의
-	 * 반경에만 곱하고 중심은 그대로다. 모든 `Swing` 행 공통이라 팬·고기가 같이 커진다. 0·음수·NaN 은 로드 오류(`Validate`).
-	 * 값은 balance(docs/plan/data/rules.md)
+	 * 휘두르기 판정 선분의 끝, cm 단위 — 손 높이 원점에서 컨트롤 회전 방향으로 이 거리까지 구를 끌고 간다
+	 * (`ACL9Character::HostTickSwingHit`, docs/systems/character.md 휘두르기). 최대 닿는 거리 = Reach + Radius + 몬스터 반경.
+	 * **헤더 0 = 미설정 = 로드 오류**(`Validate`) — 되돌아갈 옛 경로가 없다. 값은 balance(docs/plan/data/rules.md)
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
-	float SwingHitScale = 1.f;
+	float SwingHitReach = 0.f;
+
+	/**
+	 * 휘두르기 판정 구의 반경, cm 단위 — 선분은 원점에서 이 거리만큼 앞에서 시작해(`Origin + Dir·Radius`) 구가 등 뒤로
+	 * 나가지 않는다. 옆 관용치 = √((Radius + 몬스터 반경)² − 높이차²). **헤더 0 = 미설정 = 로드 오류**(`Validate`).
+	 * `SwingHitReach >= SwingHitRadius` 여야 선분이 앞을 향한다. 값은 balance
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingHitRadius = 0.f;
+
+	/**
+	 * 휘두른 뒤 다음 휘두르기가 받아들여지기까지, 초 단위 — `HostSwing` 이 `SwingReadyTime = 지금 + 이 값` 을 찍고 그 전의
+	 * 입력은 거부(또는 `SwingBufferTime` 예약)한다. 첫 명중 때 `HitStopTime` 만큼 늘어난다(팔 히트스톱과 같은 여유).
+	 * `Validate`: `>= SwingClipWindow(0.347)` ∧ `> SwingHitEnd`. **헤더 0.6 = 옛 상수 동작**. 값은 balance
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingRecovery = 0.6f;
+
+	/**
+	 * 입력 예약 창, 초 단위 — 회복 중에 좌클을 떼었는데 회복 끝까지 이 시간 이하로 남았으면 그 휘두르기를 하나 예약해
+	 * 회복이 끝나는 호스트 틱에 낸다(`bSwingBuffered`, 덮어쓰기·중첩 없음). **헤더 0 = 끔 = 옛 동작**. 값은 balance
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Swing")
+	float SwingBufferTime = 0.f;
+
+	/**
+	 * 휘두르기 클립이 ABP에서 도는 구간의 길이, 초 단위 — `ABP_Unarmed`·`ABP_FP_View`가 `SwingElapsed ∈ [0, 0.347)`
+	 * 동안만 시퀀스 평가기를 태운다(30fps 0.467초 클립을 0.12초 지점부터, docs/systems/animation.md). 애님 에셋의 사실이지
+	 * 밸런스 값이 아니라 상수다 — 히트 구간·회복이 이 안팎에 있는지 검사하고(`Validate`), 치트 로그의 `arm_return` 이 읽는다.
+	 */
+	static constexpr float SwingClipWindow = 0.347f;
 
 	// -- 타격감·피격감 (docs/systems/monster.md 플래시, docs/systems/character.md 피격) --
 
@@ -243,6 +273,14 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
 	float HitStopTime = 0.08f;
+
+	/**
+	 * 타격 넉백이 걸리는 시간, 초 단위 — 맞은 몬스터가 Stun 진입 뒤 `HitStopTime` 을 기다렸다가(멈춘 프레임은 밀리지 않는다)
+	 * 이 시간 동안 등속(아이템 행 `HitKnockback` / 이 값)으로 밀린 뒤 멈춘다. 경직(`HitStunMs`)과는 별개의 시계라 경직
+	 * 튜닝에 끌려가지 않는다 (docs/systems/monster.md 넉백). 0·음수·NaN 은 로드 오류. 초안값
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitFeel")
+	float HitKnockbackTime = 0.12f;
 
 	/**
 	 * 죽는 타격에 몸이 날아가는 수평 속도, cm/s 단위 — 방향은 타격 원점(`Die(Source)`) → 몬스터. 호스트가 넉백과 같은

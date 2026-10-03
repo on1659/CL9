@@ -526,7 +526,7 @@ namespace
 		{
 			// ---- Special은 표에 있는 만큼 반드시 넣고, 나머지를 셋으로 나눈다.
 			const TArray<const UCL9ModuleDef*>& SpecialPool = Pools[static_cast<int32>(ECL9ModuleType::Special)];
-			const int32 SpecialWant = FMath::Min(SpecialPool.Num(), Remaining);
+			const int32 SpecialWant = FMath::Min(SpecialPool.Num() * FMath::Max(1, Params.SpecialCopies), Remaining);
 			Remaining -= SpecialWant;
 
 			WantPassage = FMath::RoundToInt(Remaining * Params.PassageShare);
@@ -552,9 +552,10 @@ namespace
 			}
 
 			// ---- 2단계: Special. 곁가지보다 먼저 넣어서 자리를 확보하되, 본줄기가 이미
-			//      뻗은 뒤라 입구 코앞에 붙지 않는다.
-			for (const UCL9ModuleDef* Def : SpecialPool)
+			//      뻗은 뒤라 입구 코앞에 붙지 않는다. 큰 판은 행마다 SpecialCopies 번 놓는다 (2026-10-03).
+			for (int32 Copy = 0; Copy < FMath::Max(1, Params.SpecialCopies) * SpecialPool.Num(); ++Copy)
 			{
+				const UCL9ModuleDef* Def = SpecialPool[Copy % SpecialPool.Num()];
 				const TArray<const UCL9ModuleDef*> One = {Def};
 				for (int32 Attempt = 0; Attempt < 24; ++Attempt)
 				{
@@ -575,6 +576,26 @@ namespace
 			WantPassage = FMath::RoundToInt(Remaining * Params.PassageShare);
 			WantDeadEnd = FMath::RoundToInt(Remaining * Params.DeadEndShare);
 			WantNormal = FMath::Max(0, Remaining - WantPassage - WantDeadEnd);
+
+			// ---- 위층도 본줄기를 먼저 뻗는다 (2026-09-16). 계단실 둘레의 가장 깊은 자리만 이어
+			//      붙여 한 줄기로 멀리 나가야 "올라오자마자 막히는" 층이 되지 않는다. 곁가지만으로
+			//      채우면 무작위 자리에 붙어 계단 주변의 뭉치로 끝난다. 비율은 1층과 같다.
+			TArray<const UCL9ModuleDef*> MainPool = Pools[static_cast<int32>(ECL9ModuleType::Passage)];
+			MainPool.Append(Pools[static_cast<int32>(ECL9ModuleType::Normal)]);
+			const int32 MainCount = FMath::Min(Remaining, FMath::RoundToInt(Remaining * Params.MainPathShare));
+			for (int32 Placed = 0; Placed < MainCount; ++Placed)
+			{
+				FFrontier Spot;
+				if (!TakeFrontier(Frontier, Layout, Floor, /*bDeepest*/ true, Rng, Spot)
+					|| !PlaceAt(Layout, Floor, Spot, MainPool, /*bStairUp*/ false, Frontiers, Params.LoopChance, Rng))
+				{
+					break;
+				}
+				const ECL9ModuleType Type = Layout.Modules.Last().Def->Type;
+				(Type == ECL9ModuleType::Passage ? WantPassage : WantNormal) -= 1;
+			}
+			WantPassage = FMath::Max(0, WantPassage);
+			WantNormal = FMath::Max(0, WantNormal);
 		}
 
 		// ---- 3단계: 곁가지. 남은 쿼터에서 타입을 뽑고, 막다른 방으로 끝을 맺는다.
@@ -628,6 +649,58 @@ namespace
 			else
 			{
 				++Stall;
+			}
+		}
+
+		// ---- 4단계: 채움 (2026-10-03). 큰 판(farm 200모듈)은 곁가지 단계가 비좁은 자리에 큰 모듈을 연달아
+		//      못 맞춰(StallLimit) 예산을 한참 남기고 끝난다 — 맞지 않은 자리는 프론티어에서 버려지기 때문이다.
+		//      **예산이 남았을 때만** 열린 변을 처음부터 다시 훑어, 자리마다 뻗는 타입(통로 → 방 → 막다른 방)
+		//      순서로 맞춰 본다. 예산을 채운 판(양계장 대부분)은 여기 들어오지 않아 배치가 그대로다.
+		int32 Left = WantPassage + WantNormal + WantDeadEnd;
+		for (int32 Pass = 0; Pass < 4 && Left > 0; ++Pass)
+		{
+			Frontier.Reset();
+			for (int32 Index = 0; Index < Layout.Modules.Num(); ++Index)
+			{
+				const FCL9ModulePlacement& Module = Layout.Modules[Index];
+				if (Module.Floor > Floor || Module.TopFloor() < Floor)
+				{
+					continue;
+				}
+				ForEachBoundaryCell(Module, [&](FIntPoint Cell, int32 Side)
+				{
+					const FIntPoint Neighbour = Cell + SideDir[Side];
+					if (Layout.IsInside(Neighbour) && Layout.CellAt(Floor, Neighbour) == INDEX_NONE
+						&& GetEdge(Layout, Floor, Cell, Side) == ECL9GridEdge::Open)
+					{
+						Frontier.Add({Index, Cell, Side, Module.Hops});
+					}
+				});
+			}
+
+			int32 PlacedThisPass = 0;
+			FFrontier Spot;
+			while (Left > 0 && TakeFrontier(Frontier, Layout, Floor, /*bDeepest*/ false, Rng, Spot))
+			{
+				const ECL9ModuleType Order[] = {ECL9ModuleType::Passage, ECL9ModuleType::Normal, ECL9ModuleType::DeadEnd};
+				for (const ECL9ModuleType Type : Order)
+				{
+					if (!PlaceAt(Layout, Floor, Spot, Pools[static_cast<int32>(Type)], /*bStairUp*/ false, Frontiers, Params.LoopChance, Rng))
+					{
+						continue;
+					}
+					// 쿼터는 그 타입 몫에서 깎되, 다 쓴 타입이면 남은 몫에서 깎는다 — 지금 세는 것은 예산 총량이다
+					int32& Own = Type == ECL9ModuleType::Passage ? WantPassage : (Type == ECL9ModuleType::Normal ? WantNormal : WantDeadEnd);
+					int32& Quota = Own > 0 ? Own : (WantPassage > 0 ? WantPassage : (WantNormal > 0 ? WantNormal : WantDeadEnd));
+					Quota -= 1;
+					--Left;
+					++PlacedThisPass;
+					break;
+				}
+			}
+			if (PlacedThisPass == 0)
+			{
+				break;
 			}
 		}
 	}
@@ -789,7 +862,8 @@ FCL9SiteLayout CL9SiteLayout::Generate(const FCL9SiteParams& Params, const TArra
 
 	// 격자는 모듈이 사방으로 퍼질 만큼만 잡는다 — 너무 크면 배치가 흩어지고,
 	// 너무 작으면 후보가 자꾸 격자 밖으로 떨어져 판이 짧아진다.
-	const int32 Span = FMath::Clamp(FMath::CeilToInt(FMath::Sqrt(Params.ModuleCount * 6.f)) * 2, 16, 64);
+	// 상한 128은 큰 판(farm 200모듈 → 70칸)이 64에 눌리지 않게 (2026-10-03) — 양계장은 36칸 이하라 그대로다.
+	const int32 Span = FMath::Clamp(FMath::CeilToInt(FMath::Sqrt(Params.ModuleCount * 6.f)) * 2, 16, 128);
 	Layout.GridSize = FIntPoint(Span, Span);
 	Layout.CellModule.Init(INDEX_NONE, Layout.FloorCount * Span * Span);
 	Layout.EdgeX.Init(static_cast<uint8>(ECL9GridEdge::Open), Layout.FloorCount * (Span + 1) * Span);
@@ -837,17 +911,17 @@ FCL9SiteLayout CL9SiteLayout::Generate(const FCL9SiteParams& Params, const TArra
 	Frontiers.SetNum(Layout.FloorCount);
 	OpenNeighbours(Layout, 0, StartIndex, Frontiers[0], Params.LoopChance, Rng);
 
-	// ---- 층별 예산. **1층은 ModuleCount를 그대로 받고, 위층은 그 절반씩 덧붙는다**
-	//      (2026-09-10 사용자 결정). 층을 켠다고 1층이 좁아지지 않는다 — 2층을 켜는 게 곧
-	//      맵이 커지는 일이다. 위층은 아래층이 받쳐 주는 자리에만 설 수 있어서 절반이면
-	//      충분히 채운다. 계단이 위층을 틔울 때 위층 예산을 먼저 당겨 쓰므로 배열이어야 한다.
+	// ---- 층별 예산. **1층은 ModuleCount를 그대로 받고, 위층은 그 UpperFloorShare 배씩 덧붙는다**
+	//      (2026-09-10 사용자 결정 "절반씩" → 2026-09-16 사이트 컬럼으로). 층을 켠다고 1층이 좁아지지
+	//      않는다 — 2층을 켜는 게 곧 맵이 커지는 일이다. 위층은 아래층이 받쳐 주는 자리에만 설 수
+	//      있어서 예산을 다 쓰지는 못한다. 계단이 위층을 틔울 때 위층 예산을 먼저 당겨 쓰므로 배열이어야 한다.
 	TArray<int32> FloorBudget;
 	Layout.Wanted = 1;
 	for (int32 Floor = 0; Floor < Layout.FloorCount; ++Floor)
 	{
 		const int32 Budget = Floor == 0
 			? Params.ModuleCount - 1
-			: FMath::Max(0, FMath::RoundToInt(Params.ModuleCount / static_cast<float>(1 << Floor)));
+			: FMath::Max(0, FMath::RoundToInt(Params.ModuleCount * FMath::Pow(Params.UpperFloorShare, static_cast<float>(Floor))));
 		FloorBudget.Add(Budget);
 		Layout.Wanted += Budget;
 	}
@@ -1122,6 +1196,25 @@ void CL9SiteLayout::PointsOfPurpose(const FCL9SiteLayout& Layout, ECL9PointPurpo
 		}
 	}
 	OutIndices.Sort([&Layout](int32 A, int32 B) { return Layout.Points[A].Hops > Layout.Points[B].Hops; });
+}
+
+void CL9SiteLayout::PointsInDepthBand(const FCL9SiteLayout& Layout, ECL9PointPurpose Purpose, float DepthMin, float DepthMax, TArray<int32>& OutIndices)
+{
+	PointsOfPurpose(Layout, Purpose, OutIndices);
+
+	// 깊이의 분모는 용도와 무관하게 판 전체에서 가장 먼 홉이다 — 그래야 용도가 다른 띠끼리 같은 눈금을 쓴다
+	int32 MaxHops = 0;
+	for (const FCL9LevelPoint& Point : Layout.Points)
+	{
+		MaxHops = FMath::Max(MaxHops, Point.Hops);
+	}
+	const float Scale = MaxHops > 0 ? 1.f / MaxHops : 0.f;
+	OutIndices.RemoveAll([&](int32 Index)
+	{
+		const float Depth = Layout.Points[Index].Hops * Scale;
+		// 끝은 제외하되, 1로 끝나는 띠는 가장 깊은 지점까지 품는다 — 띠를 이어 붙이면 빠지는 지점이 없다
+		return Depth < DepthMin || (DepthMax >= 1.f ? Depth > 1.f : Depth >= DepthMax);
+	});
 }
 
 bool CL9SiteLayout::IsConnected(const FCL9SiteLayout& Layout)

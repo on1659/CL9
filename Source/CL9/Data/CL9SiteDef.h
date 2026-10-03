@@ -7,6 +7,9 @@
 #include "Data/CL9Types.h"
 #include "CL9SiteDef.generated.h"
 
+class UMaterialInterface;
+class UWorld;
+
 /**
  * 밤 페이즈 하나의 조명 세팅 (docs/systems/light.md 렌더 세팅). 태양·하늘은 레벨에
  * 배치된 라이트의 원래 값에 **곱하는 배율**이고, 안개는 절대값이다 — 배율 1·색 흰색·
@@ -53,6 +56,63 @@ struct FCL9LightingPhase
 	/** 안개 산란색 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FLinearColor FogColor = FLinearColor::Black;
+
+	/**
+	 * 보이는 하늘(SkyAtmosphere) 밝기 배율 — 태양 배율과 별개다. 태양을 5%로 낮춰도 대기는 낮의
+	 * 색으로 남아 문밖과 마당이 하얗게 타는데, 그것을 여기서 누른다 (2026-09-16). 1이면 레벨 그대로.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0"))
+	float SkyLuminance = 1.f;
+
+	/**
+	 * 이 페이즈의 하늘 재질 — 레벨의 하늘 구(`SM_SkySphere`)에 씌운다. 비면 레벨에 놓인 재질(대기를 그리는
+	 * 낮 하늘) 그대로. 밤은 별이 있는 어두운 하늘로 바꾼다 (2026-09-18, "스카이박스가 밝다").
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UMaterialInterface> SkyMaterial;
+
+	/** 볼류메트릭 구름을 보이나 — 밤에는 태양이 낮아도 구름이 하얗게 남아 끈다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bClouds = true;
+
+	/**
+	 * 하늘빛(SkyLight)이 볼류메트릭 안개를 밝히는 세기 (VolumetricScatteringIntensity, 1 = 엔진 기본). 밤 SkyScale 이
+	 * 크면(양계장 5) 안개가 하늘빛을 받아 마당이 뿌옇게 밝아진다 — 밤엔 0.1 로 눌러 광원 둘레만 뿌옇게 남긴다 (2026-09-18).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0"))
+	float SkyScattering = 1.f;
+};
+
+/**
+ * 깊이 구역 하나 (docs/plan/data/site.md 구역). 깊이는 입구에서 그 지점까지의 홉 거리를 판에서 가장 먼
+ * 홉으로 나눈 값이다 — 0이 입구, 1이 가장 깊은 곳. 구역은 자기 띠 안의 스폰 지점에만 자기 몬스터와
+ * 재료를 놓는다. 그래서 "깊이 들어갈수록 위험하고 값진 것이 많다"가 C++ 규칙이 아니라 표의 행이 된다
+ * (2026-10-03 farm-stage).
+ */
+USTRUCT(BlueprintType)
+struct FCL9SiteZone
+{
+	GENERATED_BODY()
+
+	/** 로그와 문서에서 부르는 이름 (`outer` · `middle` · `deep`) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName Name;
+
+	/** 띠의 시작 깊이 (포함) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0", ClampMax="1.0"))
+	float DepthMin = 0.f;
+
+	/** 띠의 끝 깊이 (제외 — 단 1이면 가장 깊은 지점까지 포함) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0", ClampMax="1.0"))
+	float DepthMax = 1.f;
+
+	/** 이 띠에 사는 동물 — 사이트의 MonsterSpawns와 같은 규칙(기준값 × 일자 배율)으로 굴린다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FCL9SpawnEntry> MonsterSpawns;
+
+	/** 이 띠에 널린 재료 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FCL9SpawnEntry> ItemSpawns;
 };
 
 /**
@@ -79,6 +139,40 @@ public:
 	/** 주변에 널려 있는 재료 — 기준 개수이며, ItemCountCurve가 굴림값을 조정한다 (site.md 산출 재료) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawns")
 	TArray<FCL9SpawnEntry> ItemSpawns;
+
+	/**
+	 * 깊이 구역 — 비어 있으면 예전처럼 위 두 열만 쓴다(몬스터는 깊은 쪽 60%, 재료는 어디나). 행이 있으면
+	 * 구역마다 자기 띠 안에 자기 몫을 놓고, 위 두 열은 그 위에 예전 방식대로 더해진다 (2026-10-03).
+	 * 생성기가 없는 사이트(평지)에서는 띠를 가릴 수 없어 구역 몫이 트럭 주변 원환에 함께 떨어진다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Spawns")
+	TArray<FCL9SiteZone> Zones;
+
+	/**
+	 * 이 스테이지를 플레이하는 레벨. 게임 모드는 지금 열린 레벨과 같은 행을 골라 그 사이트로 밤을 치른다 —
+	 * 그래서 스테이지 하나 추가 = 이 표의 행 하나 + 레벨 하나다. 어느 행도 안 맞으면 게임 모드 BP의
+	 * DefaultSiteAlias로 떨어진다 (2026-10-03 farm-stage).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stage")
+	TSoftObjectPtr<UWorld> Level;
+
+	// -- 밤 시계 덮어쓰기 (site.md 밤 시계). 0이면 CL9Rules의 전역값을 쓴다. 큰 판은 들어갔다 나오는 데
+	//    시간이 더 걸리므로 시계도 사이트의 성격이다 (2026-10-03).
+
+	/** 밤 길이 (초) — 일자 곡선의 NightLength 배율은 이 값에도 곱해진다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0.0"))
+	float NightLength = 0.f;
+
+	/** 정전까지 (초) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0.0"))
+	float DarkBase = 0.f;
+
+	/** 반납이 정전을 앞당겨도 내려가지 않는 바닥 (초) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0.0"))
+	float DarkMin = 0.f;
+
+	/** 덮어쓴 값이 있으면 그것, 없으면 전역값 */
+	static float OrRule(float SiteValue, float RuleValue) { return SiteValue > 0.f ? SiteValue : RuleValue; }
 
 	/** 일자 커브가 곱하는 위험도 기준값 — 마리수가 아니라 개체당 압박감이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Progress")
@@ -150,6 +244,22 @@ public:
 	int32 StairCountMax = 4;
 
 	/**
+	 * 위층 하나가 받는 모듈 예산 — 바로 아래층 예산에 곱한다. 0.5면 위층이 아래층의 절반이고,
+	 * 층이 더 있으면 또 그 절반이다. 위층은 아래층이 받쳐 주는 자리에만 서므로 1에 가까워도
+	 * 다 서지는 않는다 (2026-09-16, 2층이 계단을 올라가자마자 끝나는 문제로 컬럼화 — 양계장 0.75 초안).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float UpperFloorShare = 0.5f;
+
+	/**
+	 * 시설 조명 밀도 (0~1) — 빛 값이 있는 소품 가운데 실제로 켜지는 비율. 소품(작업등 몸체)은 그대로 서고
+	 * 빛만 시드로 골라 뺀다 — 리썰처럼 불 꺼진 등이 섞인 복도가 된다 (2026-09-18, "조명 개수가 너무 많다").
+	 * 1이면 전부 켜진다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float LampDensity = 1.f;
+
+	/**
 	 * 실내 모듈에 천장을 씌우나. 끄면 위에서 맵 속이 들여다보인다 — 배치를 눈으로
 	 * 확인할 때 쓰라고 둔 스위치다 (2026-09-10, 그전에는 seg kind 이름을
 	 * `__ceiling_off__`로 바꿔서 껐다).
@@ -187,6 +297,13 @@ public:
 	/** 곁가지 예산에서 막다른 방(DeadEnd)이 차지하는 비율 — 곁가지의 끝을 맺는 방이다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="0.0", ClampMax="1.0"))
 	float DeadEndShare = 0.32f;
+
+	/**
+	 * Special 행(납품 방·주방) 하나를 한 판에 몇 번 놓나. 양계장은 1 — 판이 작아 하나로 충분하다. 5배 판에
+	 * 납품 방(반납 항아리)이 하나뿐이면 깊은 곳에서 반납하러 판을 가로질러야 해서 늘린다 (2026-10-03 farm).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="1", ClampMax="16"))
+	int32 SpecialCopies = 1;
 
 	// -- 조명 (docs/systems/light.md). 어둠은 사이트의 성격이다 — 축사의 밤과 다른 목적지의
 	//    밤이 다르게 보인다. 값은 레벨 라이트에 곱하는 배율이라 레벨을 바꿔도 그대로 쓴다.

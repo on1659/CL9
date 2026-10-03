@@ -85,7 +85,33 @@ public:
 	 */
 	void Execute(const TArray<FString>& Args);
 
+	/**
+	 * cl9.swingtaps <N> [interval_ms=100] — 호스트 폰에 `Server_UseStart`+`Server_UseRelease` 를 N 번 interval 간격(월드 타이머)으로
+	 * 넣고, 탭마다 서버 시각과 결과(swing 즉시 / buffered 예약 / lost 거부)를, 끝에 합계를 로그로 남긴다 — D-8 입력 유실 측정 (docs/systems/cheats.md)
+	 */
+	void SwingTaps(const TArray<FString>& Args);
+
+	/** cl9.swinglog [0|1] — 호스트가 휘두르기마다 `cl9.swing:` 한 줄(시작·입력·명중·표면·회복·팔 복귀·검사·가림)을 남기는 스위치. 인자 없으면 토글 */
+	void SwingLog(const TArray<FString>& Args);
+
+	/** cl9.knockbacklog [0|1] — 호스트가 넉백이 끝날 때마다 `cl9.knockback:` 한 줄(시작·끝·거리·스텝·막힘·히트스톱·시간)을 남기는 스위치. 인자 없으면 토글 */
+	void KnockbackLog(const TArray<FString>& Args);
+
+	/** cl9.griplive [0|1] — 켜져 있으면 손에 든 아이템이 매 틱 GripOffset/GripRotation을 다시 읽는다 — ItemTable 값을 PIE 중 튜닝할 때 다시 줍지 않아도 바로 보인다. 인자 없으면 토글 */
+	void GripLive(const TArray<FString>& Args);
+
 private:
+	/** cl9.swingtaps 의 타이머 한 틱 — 탭 하나를 넣고 결과를 세며, N 번째 뒤에 합계를 찍고 타이머를 멈춘다 */
+	void SwingTapTick();
+
+	FTimerHandle SwingTapTimer;
+	int32 SwingTapTotal = 0;
+	int32 SwingTapIndex = 0;
+	int32 SwingTapIntervalMs = 0;
+	int32 SwingTapSwung = 0;
+	int32 SwingTapBuffered = 0;
+	int32 SwingTapLost = 0;
+
 	/** "egg", "egg+cooked", 또는 cl9.list 번호를 실제 사용 가능한 아이템 행으로 변환한다 */
 	const UCL9ItemDef* ResolveItem(const FString& Token) const;
 

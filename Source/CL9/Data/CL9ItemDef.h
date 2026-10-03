@@ -214,6 +214,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	float LightConeAngle = 32.f;
 
+	/** 볼류메트릭 안개 속 빔 후광 세기 (VolumetricScatteringIntensity, 1 = 엔진 기본) — 리썰식 안개가 조명 기본 (2026-09-17, light.md) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0"))
+	float LightScattering = 1.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
 	bool bLightLostInPocket = true;
 
@@ -287,4 +291,12 @@ public:
 	/** Swing으로 맞힌 몬스터가 받는 경직 종류 — 피해로 죽으면 경직은 없다 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
 	ECL9HitStun HitStun = ECL9HitStun::None;
+
+	/**
+	 * Swing 으로 맞힌 몬스터가 밀리는 거리, cm 단위 — Stun 진입 뒤 `CL9Rules.HitStopTime` 을 기다렸다가 `HitKnockbackTime` 동안
+	 * 등속으로 밀린다(`ACL9Monster::OnDamage`, docs/systems/monster.md 넉백). 죽이는 타격에는 없다(죽음 발사가 대신).
+	 * **헤더 0 = 넉백 없음 = 옛 동작**. `UseAction != Swing` 인데 0 이 아니면 로드 오류. 값은 balance(docs/plan/data/item/common.md)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Use")
+	float HitKnockback = 0.f;
 };

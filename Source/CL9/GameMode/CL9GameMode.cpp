@@ -184,17 +184,22 @@ void ACL9GameMode::StartNight()
 	// progression 애셋이 없으면 보정이 없다는 뜻이고, site가 없으면 그날 밤은 텅 빈다.
 	const int32 Day = CL9GameState->GetCurrentDay();
 	const UCL9ProgressionDef* Progression = GetProgression();
-	const float NightLength = Rules->NightLength * (Progression ? Progression->NightLengthAt(Day) : 1.f);
 	const bool bNoBlackout = Progression != nullptr && Progression->IsBlackoutDisabled(Day);
 
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
-	const UCL9SiteDef* Site = Registry ? Registry->FindSite(DefaultSiteAlias) : nullptr;
+	const UCL9SiteDef* Site = Registry ? Registry->FindSite(ActiveSiteAlias) : nullptr;
 	if (Site == nullptr)
 	{
-		UE_LOG(LogCL9, Error, TEXT("StartNight: site row '%s' is missing or broken — no animals or ingredients tonight (assign DefaultSiteAlias in the game mode BP)."),
-			*DefaultSiteAlias.ToString());
+		UE_LOG(LogCL9, Error, TEXT("StartNight: site row '%s' is missing or broken — no animals or ingredients tonight (set the row's Level, or DefaultSiteAlias in the game mode BP)."),
+			*ActiveSiteAlias.ToString());
 	}
+
+	// 밤 시계는 사이트가 덮어쓸 수 있다 — 0이면 규칙의 전역값 (docs/plan/data/site.md 밤 시계)
+	const float NightLength = (Site ? UCL9SiteDef::OrRule(Site->NightLength, Rules->NightLength) : Rules->NightLength)
+		* (Progression ? Progression->NightLengthAt(Day) : 1.f);
+	const float DarkBase = Site ? UCL9SiteDef::OrRule(Site->DarkBase, Rules->DarkBase) : Rules->DarkBase;
+	const float DarkMin = Site ? UCL9SiteDef::OrRule(Site->DarkMin, Rules->DarkMin) : Rules->DarkMin;
 	const float Danger = (Site ? Site->BaseDanger : 1.f) * (Progression ? Progression->DangerAt(Day) : 1.f);
 	CL9GameState->SetSiteAndDanger(Site ? Site->Alias : NAME_None, Danger);
 
@@ -206,12 +211,12 @@ void ACL9GameMode::StartNight()
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	}
 
-	CL9GameState->StartNightClock(*Rules, NightLength, bNoBlackout);
+	CL9GameState->StartNightClock(NightLength, DarkBase, DarkMin, bNoBlackout);
 	CL9GameState->SetPhase(ECL9NightPhase::Night);
 	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, NightLength);
 
-	UE_LOG(LogCL9, Log, TEXT("Night %d started — %.0fs to dawn, blackout %s, danger ×%.2f."),
-		Day, NightLength, bNoBlackout ? TEXT("off (day override)") : *FString::Printf(TEXT("base %.0fs"), Rules->DarkBase), Danger);
+	UE_LOG(LogCL9, Log, TEXT("Night %d at '%s' started — %.0fs to dawn, blackout %s, danger ×%.2f."),
+		Day, *ActiveSiteAlias.ToString(), NightLength, bNoBlackout ? TEXT("off (day override)") : *FString::Printf(TEXT("base %.0fs"), DarkBase), Danger);
 
 	if (Site != nullptr)
 	{
@@ -535,49 +540,76 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		return false;
 	};
 
-	for (const FCL9SpawnEntry& Entry : Site.MonsterSpawns)
+	// 한 무리(사이트 열 또는 구역 하나)를 주어진 지점 목록 위에 놓는다. Where는 로그에 남길 이름이다.
+	auto SpawnMonsters = [&](const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, float DeepShare, const TCHAR* Where)
 	{
-		const int32 Count = RollCount(Entry, MonsterMult);
-		const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(Entry.Alias) : nullptr;
-		const float Radius = Def ? Def->Radius : 50.f;
-		int32 Placed = 0;
-		for (int32 Index = 0; Index < Count; ++Index)
+		for (const FCL9SpawnEntry& Entry : Entries)
 		{
-			FVector Location;
-			if (!(bUsePoints ? FindPointSpot(MonsterPoints, 0.6f, Location) : FindSpawnPoint(900.f, 2400.f, Location)))
+			const int32 Count = RollCount(Entry, MonsterMult);
+			const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(Entry.Alias) : nullptr;
+			const float Radius = Def ? Def->Radius : 50.f;
+			int32 Placed = 0;
+			for (int32 Index = 0; Index < Count; ++Index)
 			{
-				continue;
+				FVector Location;
+				if (!(bUsePoints ? FindPointSpot(Points, DeepShare, Location) : FindSpawnPoint(900.f, 2400.f, Location)))
+				{
+					continue;
+				}
+				Location.Z += Radius;
+				if (ACL9Monster* Monster = SpawnMonster(Entry.Alias, NAME_None, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Location)))
+				{
+					NightSpawned.Add(Monster);
+					++Placed;
+				}
 			}
-			Location.Z += Radius;
-			if (ACL9Monster* Monster = SpawnMonster(Entry.Alias, NAME_None, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Location)))
-			{
-				NightSpawned.Add(Monster);
-				++Placed;
-			}
+			UE_LOG(LogCL9, Log, TEXT("Night %d%s: %s ×%d placed (base %d~%d × %.2f = %d)."),
+				Day, Where, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, MonsterMult, Count);
 		}
-		UE_LOG(LogCL9, Log, TEXT("Night %d: %s ×%d placed (base %d~%d × %.2f = %d)."),
-			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, MonsterMult, Count);
-	}
+	};
 
-	for (const FCL9SpawnEntry& Entry : Site.ItemSpawns)
+	auto SpawnItems = [&](const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, const TCHAR* Where)
 	{
-		const int32 Count = RollCount(Entry, ItemMult);
-		int32 Placed = 0;
-		for (int32 Index = 0; Index < Count; ++Index)
+		for (const FCL9SpawnEntry& Entry : Entries)
 		{
-			FVector Location;
-			if (!(bUsePoints ? FindPointSpot(LootPoints, 1.f, Location) : FindSpawnPoint(400.f, 1800.f, Location)))
+			const int32 Count = RollCount(Entry, ItemMult);
+			int32 Placed = 0;
+			for (int32 Index = 0; Index < Count; ++Index)
 			{
-				continue;
+				FVector Location;
+				if (!(bUsePoints ? FindPointSpot(Points, 1.f, Location) : FindSpawnPoint(400.f, 1800.f, Location)))
+				{
+					continue;
+				}
+				if (ACL9Item* Item = SpawnItem(Entry.Alias, NAME_None, FTransform(Location + FVector(0.f, 0.f, 30.f))))
+				{
+					NightSpawned.Add(Item);
+					++Placed;
+				}
 			}
-			if (ACL9Item* Item = SpawnItem(Entry.Alias, NAME_None, FTransform(Location + FVector(0.f, 0.f, 30.f))))
-			{
-				NightSpawned.Add(Item);
-				++Placed;
-			}
+			UE_LOG(LogCL9, Log, TEXT("Night %d%s: %s ×%d placed (base %d~%d × %.2f = %d)."),
+				Day, Where, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
 		}
-		UE_LOG(LogCL9, Log, TEXT("Night %d: %s ×%d placed (base %d~%d × %.2f = %d)."),
-			Day, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, ItemMult, Count);
+	};
+
+	SpawnMonsters(Site.MonsterSpawns, MonsterPoints, 0.6f, TEXT(""));
+	SpawnItems(Site.ItemSpawns, LootPoints, TEXT(""));
+
+	// 깊이 구역: 구역마다 자기 띠의 지점에만 놓는다 (docs/plan/data/site.md 구역, 2026-10-03). 띠 안에서는
+	// 몬스터도 재료도 고르게 고른다 — 깊이에 따른 차이는 이미 구역의 행이 말하고 있다.
+	for (const FCL9SiteZone& Zone : Site.Zones)
+	{
+		TArray<int32> ZoneMonsterPoints;
+		TArray<int32> ZoneLootPoints;
+		if (bUsePoints)
+		{
+			CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Monster, Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints);
+			CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Loot, Zone.DepthMin, Zone.DepthMax, ZoneLootPoints);
+		}
+		const FString Where = FString::Printf(TEXT(" zone %s (depth %.2f~%.2f, %d monster / %d loot points)"),
+			*Zone.Name.ToString(), Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints.Num(), ZoneLootPoints.Num());
+		SpawnMonsters(Zone.MonsterSpawns, ZoneMonsterPoints, 1.f, *Where);
+		SpawnItems(Zone.ItemSpawns, ZoneLootPoints, *Where);
 	}
 
 	// 반환용 항아리는 납품 방마다 하나다 — Jar 지점은 그 방의 칸마다 하나씩 나오므로
@@ -709,14 +741,35 @@ bool ACL9GameMode::FindSpawnPoint(float MinDistance, float MaxDistance, FVector&
 	return false;
 }
 
+FName ACL9GameMode::ResolveSiteAlias() const
+{
+	// PIE 월드는 패키지 이름에 UEDPIE_N_ 접두가 붙는다 — 떼어 내야 표의 레벨 경로와 맞는다
+	const FString LevelPackage = UWorld::RemovePIEPrefix(GetWorld()->GetOutermost()->GetName());
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	if (const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr)
+	{
+		for (const UCL9SiteDef* Site : Registry->GetSites())
+		{
+			if (Site != nullptr && !Site->Level.IsNull() && Site->Level.ToSoftObjectPath().GetLongPackageName() == LevelPackage)
+			{
+				UE_LOG(LogCL9, Log, TEXT("Stage: level %s plays site '%s' (MapTable Level column)."), *LevelPackage, *Site->Alias.ToString());
+				return Site->Alias;
+			}
+		}
+	}
+	UE_LOG(LogCL9, Log, TEXT("Stage: no site row names level %s — using the game mode's DefaultSiteAlias '%s'."), *LevelPackage, *DefaultSiteAlias.ToString());
+	return DefaultSiteAlias;
+}
+
 void ACL9GameMode::StartPlay()
 {
 	Super::StartPlay();
 
 	// 오늘 밤의 미로는 첫 로비에서부터 세워진다 — 정차 지점이 밤이 향할 곳을 보여준다
+	ActiveSiteAlias = ResolveSiteAlias();
 	if (ACL9GameState* CL9GameState = GetGameState<ACL9GameState>())
 	{
-		CL9GameState->SetSiteAndDanger(DefaultSiteAlias, 1.f);
+		CL9GameState->SetSiteAndDanger(ActiveSiteAlias, 1.f);
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	}
 

@@ -208,6 +208,13 @@ protected:
 	/** 다음 밤을 위해 cl9.seed로 고정된 시드; 0 = 새로 굴린다 */
 	uint32 ForcedMapSeed = 0;
 
+	/**
+	 * 이 레벨이 치르는 사이트 — 사이트 표에서 Level 열이 지금 레벨인 첫 행, 없으면 DefaultSiteAlias
+	 * (docs/plan/data/site.md 스테이지, 2026-10-03). StartPlay에서 한 번 정한다.
+	 */
+	FName ResolveSiteAlias() const;
+	FName ActiveSiteAlias;
+
 	const UCL9RulesDef* GetRules() const;
 	const UCL9ProgressionDef* GetProgression() const;
 

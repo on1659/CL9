@@ -14,6 +14,7 @@
 #include "Data/CL9DefRegistry.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9RulesDef.h"
+#include "Data/CL9SoundTable.h"
 #include "Data/CL9WaveTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameState.h"
@@ -35,6 +36,33 @@ UCL9WaveRenderer* UCL9WaveRenderer::Get(const UObject* WorldContextObject)
 {
 	const UWorld* World = GEngine != nullptr ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr;
 	return World != nullptr ? World->GetSubsystem<UCL9WaveRenderer>() : nullptr;
+}
+
+void UCL9WaveRenderer::OnWorldBeginPlay(UWorld& InWorld)
+{
+	Super::OnWorldBeginPlay(InWorld);
+
+	const UCL9WaveTable* Table = GetTable();
+	if (Table == nullptr)
+	{
+		return;
+	}
+
+	// 같은 시스템을 여러 행이 쓰므로 한 번씩만. 아무도 못 보는 곳에 켜고 바로 끈다 — 자동 소멸이라 흔적이 남지 않는다
+	TSet<const UNiagaraSystem*> Warmed;
+	for (const TPair<ECL9NoiseSource, FCL9WaveInfo>& Row : Table->Rows)
+	{
+		UNiagaraSystem* System = Row.Value.Niagara.LoadSynchronous();
+		if (System == nullptr || Warmed.Contains(System))
+		{
+			continue;
+		}
+		Warmed.Add(System);
+		if (UNiagaraComponent* Wave = UNiagaraFunctionLibrary::SpawnSystemAtLocation(&InWorld, System, FVector(0.f, 0.f, -100000.f), FRotator::ZeroRotator, FVector::OneVector, true, true))
+		{
+			Wave->DeactivateImmediate();
+		}
+	}
 }
 
 bool UCL9WaveRenderer::ToggleShowNoise()
@@ -219,13 +247,8 @@ void UCL9WaveRenderer::PlayWave(ECL9NoiseSource Source, const FVector& Location,
 	}
 	const FCL9WaveInfo& Row = *Found;
 
-	// 2. 표시 시점
-	if (!IsVisibleNow(Row))
-	{
-		return;
-	}
-
-	// 3. 폭주 안전판 — 같은 발신자·같은 행이 MinInterval 안에 두 번 나지 않는다
+	// 2. 폭주 안전판 — 같은 발신자·같은 행이 MinInterval 안에 두 번 나지 않는다. 소리(아래 3)도 이 안전판 뒤에 있으므로 시각
+	//    게이트에 걸려 링이 안 그려진 사건도 여기서 시각을 찍는다 — 안 그러면 소리만 간격 없이 되풀이된다
 	const double Now = World->GetTimeSeconds();
 	const TPair<FObjectKey, uint8> IntervalKey(FObjectKey(Instigator), static_cast<uint8>(Source));
 	if (Row.MinInterval > 0.f)
@@ -238,8 +261,23 @@ void UCL9WaveRenderer::PlayWave(ECL9NoiseSource Source, const FVector& Location,
 			}
 		}
 	}
+	LastPlayTimes.Add(IntervalKey, Now);
 
-	// 4. 거리 컷 — 로컬 카메라에서 먼 발원지는 트레이스도 스폰도 하지 않는다
+	// 3. 소리 — 행이 `SoundRow` 를 가리키면 발원지에서 한 번. 시각 게이트(표시 시점·거리 컷·나이아가라) **앞**이라 링이 안 보여도
+	//    난다(정전 아님·컬링 밖). 리슨 호스트 이중 재생은 상위(`ACL9GameState::Multicast_Noise` 가 호스트에서 빠져나감)가 막는다.
+	//    행이 꺼져 있으면(1) 사건 자체가 없어 소리도 없다 — `if (Source == …)` 분기 없이 표가 정한다
+	if (!Row.SoundRow.IsNone())
+	{
+		CL9Sound::PlayAt(this, Row.SoundRow, Location);
+	}
+
+	// 4. 표시 시점
+	if (!IsVisibleNow(Row))
+	{
+		return;
+	}
+
+	// 5. 거리 컷 — 로컬 카메라에서 먼 발원지는 트레이스도 스폰도 하지 않는다
 	const APlayerController* LocalController = World->GetFirstPlayerController();
 	if (LocalController != nullptr && Table->CullDistance > 0.f)
 	{
@@ -252,16 +290,14 @@ void UCL9WaveRenderer::PlayWave(ECL9NoiseSource Source, const FVector& Location,
 		}
 	}
 
-	// 5. 반경 — 판정이 정하고 링은 그것을 비춘다
+	// 6. 반경 — 판정이 정하고 링은 그것을 비춘다
 	const float Radius = ResolveRadius(Row, Instigator);
 	if (Radius <= 0.f)
 	{
 		return;
 	}
 
-	LastPlayTimes.Add(IntervalKey, Now);
-
-	// 6. 색과 밝기 — 내 소리와 남의 소리는 색이 아니라 OwnerPowerScale이 가른다
+	// 7. 색과 밝기 — 내 소리와 남의 소리는 색이 아니라 OwnerPowerScale이 가른다
 	const bool bMine = bPredicted || IsLocalInstigator(Instigator);
 	const ACL9PlayerState* PlayerState = Cast<ACL9PlayerState>(Instigator);
 	const FLinearColor Color = (Row.bUseInstigatorColor && PlayerState != nullptr)
@@ -269,7 +305,7 @@ void UCL9WaveRenderer::PlayWave(ECL9NoiseSource Source, const FVector& Location,
 		: Row.Color;
 	const float Power = Row.Power * (bMine ? Row.OwnerPowerScale : 1.f);
 
-	// 7. 차폐 — 생성 때 한 번만 쏜다. 이후 링이 커지는 것은 나이아가라 안의 일이다
+	// 8. 차폐 — 생성 때 한 번만 쏜다. 이후 링이 커지는 것은 나이아가라 안의 일이다
 	TArray<float> Distances;
 	TraceOcclusion(Location, Row, Radius, Instigator, Distances);
 
@@ -284,7 +320,7 @@ void UCL9WaveRenderer::PlayWave(ECL9NoiseSource Source, const FVector& Location,
 #endif
 	}
 
-	// 8. 스폰 — 행의 나이아가라가 비어 있으면 여기까지만 한다(에셋 없이도 위의 로그로 사건을 검증할 수 있다)
+	// 9. 스폰 — 행의 나이아가라가 비어 있으면 여기까지만 한다(에셋 없이도 위의 로그로 사건을 검증할 수 있다)
 	UNiagaraSystem* System = Row.Niagara.LoadSynchronous();
 	if (System == nullptr)
 	{

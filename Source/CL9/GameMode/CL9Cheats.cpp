@@ -142,6 +142,38 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatExecute(
 		RouteCL9Cheat(TEXT("execute"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSwingTaps(
+	TEXT("cl9.swingtaps"),
+	TEXT("cl9.swingtaps <N> [interval_ms=100] — taps left-click N times on the host pawn at that interval and logs swing/buffered/lost per tap and in total (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("swingtaps"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatSwingLog(
+	TEXT("cl9.swinglog"),
+	TEXT("cl9.swinglog [0|1] — logs one 'cl9.swing:' line per swing on the host (start/input/hit/surface/ready/arm_return/tested/occluded); no argument toggles."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("swinglog"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatKnockbackLog(
+	TEXT("cl9.knockbacklog"),
+	TEXT("cl9.knockbacklog [0|1] — logs one 'cl9.knockback:' line per finished knockback on the host (from/to/dist/steps/blocked/hitstop/time); no argument toggles."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("knockbacklog"), Args, World, false);
+	}));
+
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatGripLive(
+	TEXT("cl9.griplive"),
+	TEXT("cl9.griplive [0|1] — while held items re-read GripOffset/GripRotation every tick, so ItemTable tuning shows up live without re-picking up; no argument toggles."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("griplive"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatNight(
 	TEXT("cl9.night"),
 	TEXT("cl9.night — starts the night from the lobby, ends it during the night (host ruling)."),

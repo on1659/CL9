@@ -10,6 +10,7 @@
 class UCL9DefRegistry;
 class UCL9SiteDef;
 class UInstancedStaticMeshComponent;
+class UPointLightComponent;
 
 /**
  * 생성된 사이트를 액터로 구현한 것(docs/systems/map.md 생성 흐름). 월드마다 하나씩만
@@ -26,6 +27,9 @@ class ACL9SiteMap : public AActor
 
 public:
 	ACL9SiteMap();
+
+	/** 정전이면 시설 조명을 끈다 — 판정은 게임 스테이트, 여기는 표현만 (docs/systems/light.md 정전) */
+	virtual void Tick(float DeltaSeconds) override;
 
 	/** 이 월드의 사이트맵, 아직 처음 빌드되지 않았다면 null */
 	static ACL9SiteMap* Find(UWorld* World);
@@ -77,6 +81,35 @@ private:
 	/** 여닫이문처럼 액터로 만들 수밖에 없었던 것들 */
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+	/**
+	 * 시설 조명 — 빛 값(`FCL9PropPlacement::LightIntensity`)이 있는 소품마다 하나. 인스턴스 메시는
+	 * 빛을 못 품으므로 따로 둔다. 정전이면 꺼진다 (docs/systems/light.md 시설 조명, 2026-09-16).
+	 */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UPointLightComponent>> LampComponents;
+
+	/** 깜박이는 램프 하나 — LampComponents 인덱스와 표의 진폭·속도, 램프마다 다른 노이즈 위상 */
+	struct FFlickerLamp
+	{
+		int32 LampIndex = INDEX_NONE;
+		float BaseIntensity = 0.f;
+		float Amplitude = 0.f;
+		float Speed = 0.f;
+		float Phase = 0.f;
+	};
+
+	/** 깜박임 진폭이 있는 램프만 — Tick 이 이 목록만 돈다 */
+	TArray<FFlickerLamp> FlickerLamps;
+
+	/** 램프를 켜고 끈다 — 상태가 바뀔 때만 컴포넌트를 건드린다 */
+	void SetLampsOn(bool bOn);
+
+	/** 깜박이는 램프의 세기를 노이즈로 흔든다 — 켜져 있을 때만 */
+	void TickFlicker();
+
+	/** 마지막으로 램프에 적용한 켜짐 상태 */
+	bool bLampsOn = true;
 
 	FCL9SiteParams Params;
 	FCL9SiteLayout Layout;

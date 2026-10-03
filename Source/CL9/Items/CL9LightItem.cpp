@@ -31,6 +31,7 @@ void ACL9LightItem::LoadData()
 	}
 
 	LightComponent->SetIntensity(GetItemDef()->LightIntensity);
+	LightComponent->SetVolumetricScatteringIntensity(GetItemDef()->LightScattering);
 	LightComponent->SetVisibility(false);
 	LightComponent->RegisterComponent();
 

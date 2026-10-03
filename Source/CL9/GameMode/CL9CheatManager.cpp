@@ -5,7 +5,9 @@
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
+#include "TimerManager.h"
 #include "CL9.h"
 #include "Character/CL9Character.h"
 #include "Data/CL9CharacterDef.h"
@@ -14,10 +16,12 @@
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9MonsterDef.h"
 #include "Data/CL9OrderDef.h"
+#include "Data/CL9RulesDef.h"
 #include "Data/CL9WaveTable.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
 #include "GameMode/CL9GameState.h"
+#include "Items/CL9Item.h"
 #include "Monsters/CL9Monster.h"
 
 void UCL9CheatManager::HandleCommand(const FString& CommandLine)
@@ -108,6 +112,22 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	else if (Command == TEXT("execute"))
 	{
 		Execute(Tokens);
+	}
+	else if (Command == TEXT("swingtaps"))
+	{
+		SwingTaps(Tokens);
+	}
+	else if (Command == TEXT("swinglog"))
+	{
+		SwingLog(Tokens);
+	}
+	else if (Command == TEXT("knockbacklog"))
+	{
+		KnockbackLog(Tokens);
+	}
+	else if (Command == TEXT("griplive"))
+	{
+		GripLive(Tokens);
 	}
 	else
 	{
@@ -216,7 +236,7 @@ void UCL9CheatManager::HitMonster(const TArray<FString>& Args)
 	}
 
 	const int32 Damage = Args.IsValidIndex(0) ? FMath::Max(FCString::Atoi(*Args[0]), 1) : 1;
-	Nearest->OnDamage(Damage, Pawn);
+	Nearest->OnDamage(Damage, Pawn, 0.f);
 	UE_LOG(LogCL9, Log, TEXT("cl9.hitmonster: -%d on '%s' (%.0fcm away)."), Damage, *GetNameSafe(Nearest), NearestDistance);
 }
 
@@ -412,6 +432,96 @@ void UCL9CheatManager::Execute(const TArray<FString>& Args)
 	}
 }
 
+void UCL9CheatManager::SwingTaps(const TArray<FString>& Args)
+{
+	const APlayerController* Controller = GetOuterAPlayerController();
+	ACL9Character* Character = Controller ? Cast<ACL9Character>(Controller->GetPawn()) : nullptr;
+	if (Character == nullptr || !Character->HasAuthority())
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.swingtaps: needs a pawn on the host."));
+		return;
+	}
+	const int32 Count = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) : 0;
+	if (Count < 1)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.swingtaps: usage cl9.swingtaps <N> [interval_ms=100]."));
+		return;
+	}
+	if (GetWorld()->GetTimerManager().IsTimerActive(SwingTapTimer))
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.swingtaps: a run is still in progress."));
+		return;
+	}
+
+	SwingTapTotal = Count;
+	SwingTapIndex = 0;
+	SwingTapIntervalMs = Args.IsValidIndex(1) ? FMath::Max(FCString::Atoi(*Args[1]), 1) : 100;
+	SwingTapSwung = 0;
+	SwingTapBuffered = 0;
+	SwingTapLost = 0;
+	// 첫 탭은 바로, 나머지는 interval 마다 — 탭 시각은 틱 위상이 아니라 서버 시각으로 찍는다
+	GetWorld()->GetTimerManager().SetTimer(SwingTapTimer, this, &UCL9CheatManager::SwingTapTick, SwingTapIntervalMs / 1000.f, true, 0.f);
+}
+
+void UCL9CheatManager::SwingTapTick()
+{
+	const APlayerController* Controller = GetOuterAPlayerController();
+	ACL9Character* Character = Controller ? Cast<ACL9Character>(Controller->GetPawn()) : nullptr;
+	const AGameStateBase* GameState = GetWorld()->GetGameState();
+	if (Character == nullptr || !Character->HasAuthority() || GameState == nullptr)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SwingTapTimer);
+		UE_LOG(LogCL9, Warning, TEXT("cl9.swingtaps: pawn lost — stopped."));
+		return;
+	}
+
+	// 호스트 폰에 누름+뗌 한 번 — 판정과 결과 분류는 캐릭터가 서버 시각으로 한다
+	++SwingTapIndex;
+	const float Now = GameState->GetServerWorldTimeSeconds();
+	const TCHAR* Result = Character->HostCheatSwingTap();
+	if (FCString::Strcmp(Result, TEXT("swing")) == 0)
+	{
+		++SwingTapSwung;
+	}
+	else if (FCString::Strcmp(Result, TEXT("buffered")) == 0)
+	{
+		++SwingTapBuffered;
+	}
+	else
+	{
+		++SwingTapLost;
+	}
+	UE_LOG(LogCL9, Log, TEXT("cl9.swingtaps: tap=%d t=%.3f result=%s"), SwingTapIndex, Now, Result);
+
+	if (SwingTapIndex >= SwingTapTotal)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SwingTapTimer);
+		const UCL9DefRegistry* Registry = GetRegistry();
+		const UCL9RulesDef* Rules = Registry != nullptr ? Registry->GetRules() : nullptr;
+		UE_LOG(LogCL9, Log, TEXT("cl9.swingtaps: N=%d interval_ms=%d swing=%d buffered=%d lost=%d recovery=%.3f buffer=%.3f"),
+			SwingTapTotal, SwingTapIntervalMs, SwingTapSwung, SwingTapBuffered, SwingTapLost,
+			Rules != nullptr ? Rules->SwingRecovery : -1.f, Rules != nullptr ? Rules->SwingBufferTime : -1.f);
+	}
+}
+
+void UCL9CheatManager::SwingLog(const TArray<FString>& Args)
+{
+	ACL9Character::bCheatSwingLog = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) != 0 : !ACL9Character::bCheatSwingLog;
+	UE_LOG(LogCL9, Log, TEXT("cl9.swinglog: %s."), ACL9Character::bCheatSwingLog ? TEXT("on") : TEXT("off"));
+}
+
+void UCL9CheatManager::KnockbackLog(const TArray<FString>& Args)
+{
+	ACL9Monster::bCheatKnockbackLog = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) != 0 : !ACL9Monster::bCheatKnockbackLog;
+	UE_LOG(LogCL9, Log, TEXT("cl9.knockbacklog: %s."), ACL9Monster::bCheatKnockbackLog ? TEXT("on") : TEXT("off"));
+}
+
+void UCL9CheatManager::GripLive(const TArray<FString>& Args)
+{
+	ACL9Item::bCheatGripLive = Args.IsValidIndex(0) ? FCString::Atoi(*Args[0]) != 0 : !ACL9Item::bCheatGripLive;
+	UE_LOG(LogCL9, Log, TEXT("cl9.griplive: %s."), ACL9Item::bCheatGripLive ? TEXT("on") : TEXT("off"));
+}
+
 void UCL9CheatManager::Blackout(const TArray<FString>& Args)
 {
 	UWorld* World = GetWorld();
@@ -469,7 +579,7 @@ void UCL9CheatManager::Damage(const TArray<FString>& Args)
 		}
 	}
 
-	Character->OnDamage(Amount, Nearest);
+	Character->OnDamage(Amount, Nearest, 0.f);
 	UE_LOG(LogCL9, Log, TEXT("cl9.damage: -%d on '%s' (source '%s')."), Amount, *GetNameSafe(Character), *GetNameSafe(Nearest));
 }
 

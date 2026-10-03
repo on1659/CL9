@@ -43,6 +43,14 @@ void UCL9ItemDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("HitDamage/HitStun only apply when UseAction is Swing."));
 	}
+	if (!FMath::IsFinite(HitKnockback) || HitKnockback < 0.f)
+	{
+		OutErrors.Add(TEXT("HitKnockback must be finite and 0 or more (0 = no knockback)."));
+	}
+	if (UseAction != ECL9UseAction::Swing && HitKnockback != 0.f)
+	{
+		OutErrors.Add(TEXT("HitKnockback only applies when UseAction is Swing."));
+	}
 
 	// 메시가 몸체인 행(수레)은 스프링 밀기·적재 판정에 필요한 값과 소켓이 전부 있어야 한다 (docs/plan/data/item/cart.md)
 	if (bMeshIsBody)

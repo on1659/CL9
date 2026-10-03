@@ -45,6 +45,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual FText GetDisplayName() const override;
 
+	/** 치트 `cl9.griplive` 스위치 — 켜지면 손에 든 동안 매 틱 GripOffset/GripRotation을 다시 적용한다(테이블 값 실시간 튜닝용, docs/systems/cheats.md) */
+	static bool bCheatGripLive;
+
 	/** 이 아이템이 지금 표시하는 행 — 별칭이 로드되기 전에는 null */
 	const UCL9ItemDef* GetItemDef() const
 	{
@@ -152,18 +155,6 @@ public:
 	 * 루트가 된 메시다. 힘을 주거나 깨우거나 시뮬레이션을 켜고 끄는 코드는 전부 이것을 거친다.
 	 */
 	UPrimitiveComponent* GetBody() const;
-
-	/**
-	 * 휘두르기 판정에 쓰는 히트박스 구 — 이 아이템 메시의 에셋 경계 구(× 메시 스케일)를 **전신 손에 붙은 자리**로 옮긴 것이다
-	 * (docs/systems/inventory.md 사용). 행에 모양 열을 따로 두지 않는다: 프라이팬은 팬 머리가, 계란은 알이 곧 판정 부피다.
-	 *
-	 * 기준은 루트 구의 월드 트랜스폼이다 — 메시 컴포넌트의 월드 트랜스폼을 읽으면 안 된다. 소유자 본인 화면에서는
-	 * `UpdateFirstPersonView`가 메시만 1인칭 팔(카메라 로컬 뷰모델)로 옮겨 놓으므로, 호스트가 자기 폰의 메시를 읽으면
-	 * 판정이 눈앞 허공으로 간다. 루트는 어느 머신에서나 전신 메시의 손 소켓에 붙어 있다.
-	 *
-	 * 메시나 행이 아직 없으면 false — 그 틱은 판정하지 않는다.
-	 */
-	bool GetSwingHitSphere(FVector& OutCenter, float& OutRadius) const;
 
 protected:
 	virtual void LoadData() override;

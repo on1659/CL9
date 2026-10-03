@@ -45,6 +45,12 @@ namespace CL9SoundNames
 	/** 몬스터가 Stun·Dead에 들어오는 순간(타격 플래시와 같은 에지) — 몬스터 자리에서, 모든 머신 */
 	inline const FName Hit(TEXT("Hit"));
 
+	/**
+	 * 휘두르기가 세상 지형(벽·바닥)에 닿은 순간(`SwingSurfaceHitServerTime` 변화, 조건 없는 복제) — 폰 자리에서, 모든 머신.
+	 * 휘두르기당 한 번, 그보다 가까운 몬스터 명중이 없을 때만. 충돌점은 복제하지 않는다 (docs/systems/character.md 표면음)
+	 */
+	inline const FName HitSurface(TEXT("HitSurface"));
+
 	/** 잡혀 넘어지는 순간(`KnockdownStartServerTime` 변화) — 폰 자리에서, 모든 머신 */
 	inline const FName Hurt(TEXT("Hurt"));
 

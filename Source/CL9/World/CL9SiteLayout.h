@@ -69,8 +69,14 @@ struct FCL9SiteParams
 	int32 StairCountMin = 2;
 	int32 StairCountMax = 4;
 
+	/** 위층 하나가 받는 모듈 예산 = 아래층 예산 × 이 값 (UCL9SiteDef::UpperFloorShare) */
+	float UpperFloorShare = 0.5f;
+
 	/** 실내 모듈에 천장을 씌우나 (UCL9SiteDef::bBuildCeilings) */
 	bool bBuildCeilings = true;
+
+	/** 빛 값이 있는 소품 가운데 실제로 켜지는 비율 (UCL9SiteDef::LampDensity) — 배치기가 시드로 고른다 */
+	float LampDensity = 1.f;
 
 	/**
 	 * 이미 놓인 모듈끼리 맞닿았을 때 문을 뚫을 확률 (UCL9SiteDef::LoopChance) — 여기서
@@ -87,6 +93,9 @@ struct FCL9SiteParams
 	 */
 	float PassageShare = 0.28f;
 	float DeadEndShare = 0.32f;
+
+	/** Special 행 하나를 몇 번 놓나 (UCL9SiteDef::SpecialCopies) — 큰 판에 납품 방(항아리)이 하나뿐이면 반납 길이 너무 멀다 */
+	int32 SpecialCopies = 1;
 
 	/**
 	 * 한 층의 높이 (cm) — 아래층 바닥에서 위층 바닥까지다. 모듈 천장 높이에
@@ -327,6 +336,12 @@ namespace CL9SiteLayout
 	 * 위험하다"가 배치만으로 성립한다.
 	 */
 	void PointsOfPurpose(const FCL9SiteLayout& Layout, ECL9PointPurpose Purpose, TArray<int32>& OutIndices);
+
+	/**
+	 * 깊이 = 홉 거리 ÷ 판에서 가장 먼 홉(0이 입구, 1이 가장 깊은 곳). PointsOfPurpose 중 깊이가 [DepthMin, DepthMax) 띠에 드는 것만 (먼 것부터). DepthMax가 1이면
+	 * 가장 깊은 지점까지 넣는다 — 사이트 구역(UCL9SiteDef::Zones)이 이 띠로 스폰 자리를 나눈다.
+	 */
+	void PointsInDepthBand(const FCL9SiteLayout& Layout, ECL9PointPurpose Purpose, float DepthMin, float DepthMax, TArray<int32>& OutIndices);
 
 	/** 문만으로 모든 모듈이 서로 도달 가능하면 true */
 	bool IsConnected(const FCL9SiteLayout& Layout);

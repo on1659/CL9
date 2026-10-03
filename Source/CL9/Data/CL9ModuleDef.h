@@ -135,6 +135,41 @@ struct FCL9PropPlacement
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
 	ECL9PropSideRule SideRule = ECL9PropSideRule::Always;
+
+	/**
+	 * 이 소품이 내는 빛의 세기 (칸델라). 0이면 빛이 없다. 작업등처럼 방을 밝히는 **시설 조명**이
+	 * 여기로 들어온다 — 배치기가 인스턴스마다 그림자 없는 포인트 라이트를 하나 붙이고, 정전이면
+	 * 끈다 (docs/systems/light.md 시설 조명, 2026-09-16).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0"))
+	float LightIntensity = 0.f;
+
+	/** 빛이 닿는 반경 (cm) — 방 하나쯤 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0"))
+	float LightRadius = 800.f;
+
+	/** 빛 색 — 작업등은 따뜻한 전구색 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
+	FLinearColor LightColor = FLinearColor(1.f, 0.82f, 0.6f, 1.f);
+
+	/** 광원이 놓이는 자리 — 소품 로컬(회전 전) 오프셋 cm. 갓 아래 전구 자리로 내리고 벽에서 조금 띄운다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light")
+	FVector LightOffset = FVector::ZeroVector;
+
+	/**
+	 * 볼류메트릭 안개 속 후광 세기 (라이트 VolumetricScatteringIntensity, 1 = 엔진 기본). 리썰식 안개가 조명
+	 * 기본이 되면서(2026-09-17) 광원 둘레의 뿌연 빛도 표 값이다 — 작업등은 옅게, 모닥불은 짙게.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0"))
+	float LightScattering = 1.f;
+
+	/** 깜박임 진폭 (0~1) — 세기가 (1 ± 진폭 × 노이즈) 로 흔들린다. 0이면 고정. 모닥불·낡은 전구용 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float LightFlicker = 0.f;
+
+	/** 깜박임 속도 (Hz) — 노이즈가 초당 몇 번 바뀌나 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Light", meta=(ClampMin="0.0"))
+	float LightFlickerSpeed = 6.f;
 };
 
 /** 한 모듈에 함께 깔리는 소품 한 벌 (module.md 결정 7). 인스턴스마다 이 중 하나가 뽑힌다 */

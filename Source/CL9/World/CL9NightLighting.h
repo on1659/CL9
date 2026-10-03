@@ -10,7 +10,11 @@
 
 class ADirectionalLight;
 class AExponentialHeightFog;
+class ASkyAtmosphere;
 class ASkyLight;
+class AStaticMeshActor;
+class AVolumetricCloud;
+class UMaterialInterface;
 class UPostProcessComponent;
 class ACL9GameState;
 
@@ -72,9 +76,21 @@ private:
 	/** 현재 보간된 값을 라이트·안개 컴포넌트에 반영한다 */
 	void ApplyToLights() const;
 
+	/** 보간하지 않는 것 — 하늘 재질·구름 표시 — 을 목표 페이즈로 바로 바꾼다(바뀔 때만) */
+	void ApplyDiscrete(const FCL9LightingPhase& Target);
+
 	TWeakObjectPtr<ADirectionalLight> Sun;
 	TWeakObjectPtr<ASkyLight> Sky;
 	TWeakObjectPtr<AExponentialHeightFog> Fog;
+	/** 보이는 하늘 — 태양과 별개로 배율(SkyLuminance)이 곱해진다 (2026-09-16) */
+	TWeakObjectPtr<ASkyAtmosphere> Atmosphere;
+	/** 하늘 구 — 레벨의 `SM_SkySphere` 스태틱 메시. 페이즈별 SkyMaterial 이 여기 씌워진다 (2026-09-18) */
+	TWeakObjectPtr<AStaticMeshActor> SkySphere;
+	TWeakObjectPtr<AVolumetricCloud> Clouds;
+	/** 레벨에 놓여 있던 하늘 재질 — SkyMaterial 이 빈 페이즈는 이것으로 돌아간다 */
+	TWeakObjectPtr<UMaterialInterface> BaselineSkyMaterial;
+	TWeakObjectPtr<UMaterialInterface> AppliedSkyMaterial;
+	bool bAppliedClouds = true;
 	TWeakObjectPtr<ACL9GameState> BoundGameState;
 
 	/** BeginPlay 시점에 기록한 원래 값 — 표의 배율들은 이 값에 곱해진다 */
@@ -82,6 +98,7 @@ private:
 	FLinearColor BaselineSunColor = FLinearColor::White;
 	float BaselineSkyIntensity = 0.f;
 	FLinearColor BaselineSkyColor = FLinearColor::White;
+	FLinearColor BaselineSkyLuminance = FLinearColor::White;
 
 	/** 보간되고 있는 현재 상태값 (사이트 행과 같은 단위 — 배율·색조·안개 절대값) */
 	FCL9LightingPhase Current;
