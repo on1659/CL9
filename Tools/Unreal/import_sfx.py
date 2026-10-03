@@ -5,7 +5,7 @@
 `create_asset` 을 기존 경로에 부르면 "오버라이드" 모달로 에디터가 멈추므로, 있음/없음을 먼저 보고 갈린다.
 
 만드는 것:
-  1. USoundWave 12개(타격감 9 + 잡기 예고 3: S_MonsterPounce·S_MonsterCatch·S_MonsterNear) — 아래 WAVES 표. 전부
+  1. USoundWave 13개(타격감 9 + 잡기 예고 3: S_MonsterPounce·S_MonsterCatch·S_MonsterNear + 벽 타격 1: S_HitSurface) — 아래 WAVES 표. 전부
      `sound_class_object = SC_Effects`(있어야 한다 — 없으면 멈춘다),
      `concurrency_set = {SCC_Effects4}`.
   2. USoundConcurrency `/Game/Sounds/Master/SCC_Effects4` — max_count 4(같은 소리 4 보이스까지). 없으면 생성, 있으면 값만 다시 쓴다.
@@ -57,6 +57,8 @@ WAVES = [
     ("monster_pounce.wav", "/Game/Sounds/SFX/Monster", "S_MonsterPounce"),
     ("monster_catch.wav", "/Game/Sounds/SFX/Monster", "S_MonsterCatch"),
     ("monster_near.wav", "/Game/Sounds/SFX/Monster", "S_MonsterNear"),
+    # 벽·바닥 타격(2026-09-22 combat-feel-pass-1 D-4) — 프라이팬이 월드 지오메트리에 닿을 때
+    ("hit_surface.wav", "/Game/Sounds/SFX/Carry", "S_HitSurface"),
 ]
 FOOTSTEP_CUE_DIR = "/Game/Sounds/SFX/Character"
 FOOTSTEP_CUE_NAME = "S_Footstep"
@@ -74,6 +76,7 @@ TABLE_ROWS = [
     ("MonsterPounce", "/Game/Sounds/SFX/Monster/S_MonsterPounce"),
     ("MonsterCatch", "/Game/Sounds/SFX/Monster/S_MonsterCatch"),
     ("MonsterNear", "/Game/Sounds/SFX/Monster/S_MonsterNear"),
+    ("HitSurface", "/Game/Sounds/SFX/Carry/S_HitSurface"),
 ]
 
 

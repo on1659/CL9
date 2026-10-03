@@ -1,0 +1,30 @@
+{
+  "alias": "farm",
+  "name_key": "Site.farm.Name",
+  "level": "/Game/Maps/Lvl_Farm",
+  "source_level": "/Game/Maps/Lvl_Henhouse",
+  "inherit_from": "henhouse",
+  "columns": {
+    "base_module_count": 200,
+    "max_floors": 2,
+    "stair_count_min": 3,
+    "stair_count_max": 5,
+    "upper_floor_share": 0.25,
+    "lamp_density": 0.35,
+    "loop_chance": 0.35,
+    "main_path_share": 0.30,
+    "passage_share": 0.40,
+    "dead_end_share": 0.30,
+    "special_copies": 4,
+    "night_length": 480.0,
+    "dark_base": 360.0,
+    "dark_min": 240.0
+  },
+  "monster_spawns": [],
+  "item_spawns": [],
+  "zones": [
+    {"name": "outer",  "depth": [0.0, 0.35],  "monsters": [["chicken", 8, 10], ["sheep", 3, 4]],                      "items": [["egg", 14, 18]]},
+    {"name": "middle", "depth": [0.35, 0.70], "monsters": [["chicken", 10, 12], ["sheep", 2, 3], ["goose", 2, 3]],   "items": [["egg", 16, 20], ["meat", 8, 10]]},
+    {"name": "deep",   "depth": [0.70, 1.0],  "monsters": [["chicken", 6, 8], ["pig", 2, 3], ["raccoon", 1, 2]],     "items": [["egg", 10, 12], ["meat", 14, 18]]}
+  ]
+}

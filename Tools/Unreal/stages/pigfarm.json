@@ -1,0 +1,27 @@
+{
+  "alias": "pigfarm",
+  "name_key": "Site.pigfarm.Name",
+  "level": "/Game/Maps/Lvl_PigFarm",
+  "source_level": "/Game/Maps/Lvl_Henhouse",
+  "inherit_from": "henhouse",
+  "columns": {
+    "base_module_count": 100,
+    "max_floors": 1,
+    "lamp_density": 0.2,
+    "loop_chance": 0.15,
+    "main_path_share": 0.45,
+    "passage_share": 0.45,
+    "dead_end_share": 0.30,
+    "special_copies": 2,
+    "night_length": 400.0,
+    "dark_base": 300.0,
+    "dark_min": 200.0
+  },
+  "monster_spawns": [],
+  "item_spawns": [],
+  "zones": [
+    {"name": "outer",  "depth": [0.0, 0.40],  "monsters": [["chicken", 4, 6], ["pig", 1, 2]],  "items": [["egg", 8, 10], ["meat", 4, 6]]},
+    {"name": "middle", "depth": [0.40, 0.75], "monsters": [["pig", 3, 4], ["sheep", 2, 3]],    "items": [["meat", 8, 10], ["egg", 4, 6]]},
+    {"name": "deep",   "depth": [0.75, 1.0],  "monsters": [["pig", 3, 4], ["raccoon", 2, 3]],  "items": [["meat", 10, 12]]}
+  ]
+}
