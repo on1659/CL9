@@ -1,0 +1,75 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "campfire.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Campfire_Body": {
+      "vertex_color": true,
+      "roughness": 0.88,
+      "metallic": 0
+    },
+    "M_CL9_Campfire_Flame": {
+      "vertex_color": true,
+      "roughness": 1,
+      "metallic": 0,
+      "emission_color": [
+        1,
+        0.52,
+        0.16,
+        1
+      ],
+      "emission_parameter": "FlameStrength",
+      "emission_default": 3,
+      "preview_on_strength": 3
+    }
+  },
+  "assets": {
+    "campfire": {
+      "object": "SM_Campfire_A",
+      "dimensions_cm": [
+        111.48873567581177,
+        115.30406475067139,
+        60.291481018066406
+      ],
+      "triangles": 1296,
+      "vertices": 714,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Campfire_Body",
+        "M_CL9_Campfire_Flame"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "e7199d8da8dc86e7bf4a4d1eed8762fe80842369972af8f731867d165cd1d3b0",
+      "anchors_cm": {
+        "Floor": [
+          -0.47138333320617676,
+          -1.0406017303466797,
+          2.27776837348938
+        ],
+        "LightOrigin": [
+          -0.47138333320617676,
+          -1.0406017303466797,
+          42.277767181396484
+        ]
+      },
+      "rig": "N/A static prop",
+      "states": {
+        "off": {
+          "FlameStrength": 0
+        },
+        "on_preview": {
+          "FlameStrength": 3
+        }
+      },
+      "flame_material": "unlit, emissive = vertex color x FlameStrength, WPO sway by vertex alpha (Tools/Unreal/import_campfire.py)",
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        30.145740509033203
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

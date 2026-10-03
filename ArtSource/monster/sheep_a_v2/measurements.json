@@ -1,0 +1,337 @@
+{
+  "pivot": [
+    0.36000001430511475,
+    0.0,
+    0.8299999833106995
+  ],
+  "variants": {
+    "orig": {
+      "S": 1.0,
+      "m": 1.0,
+      "t": 1.0,
+      "e": 1.0,
+      "w": 1.0,
+      "pal": "orig",
+      "face_bbox_cm": [
+        52.3,
+        32.0,
+        51.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.64,
+      "face_to_body_length": 0.417,
+      "face_to_body_area_sqrt": 0.516,
+      "face_top_z_cm": 115.2,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        164.9,
+        90.2,
+        116.4
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.0,
+      "area_sqrt_ratio_vs_orig": 1.0
+    },
+    "s120": {
+      "S": 1.2,
+      "m": 0.72,
+      "t": 1.0,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "face_bbox_cm": [
+        51.8,
+        38.4,
+        63.6
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.784,
+      "face_to_body_length": 0.413,
+      "face_to_body_area_sqrt": 0.569,
+      "face_top_z_cm": 118.7,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        162.9,
+        97.4,
+        120.3
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.225,
+      "area_sqrt_ratio_vs_orig": 1.103
+    },
+    "s128": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 1.0,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.837,
+      "face_to_body_length": 0.44,
+      "face_to_body_area_sqrt": 0.607,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.308,
+      "area_sqrt_ratio_vs_orig": 1.176
+    },
+    "s135": {
+      "S": 1.35,
+      "m": 0.72,
+      "t": 1.0,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "face_bbox_cm": [
+        58.2,
+        43.2,
+        71.5
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.882,
+      "face_to_body_length": 0.464,
+      "face_to_body_area_sqrt": 0.64,
+      "face_top_z_cm": 121.3,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        168.3,
+        109.6,
+        123.3
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.378,
+      "area_sqrt_ratio_vs_orig": 1.24
+    },
+    "s128_mild": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 0.5,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.837,
+      "face_to_body_length": 0.44,
+      "face_to_body_area_sqrt": 0.607,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.308,
+      "area_sqrt_ratio_vs_orig": 1.176
+    },
+    "s128_long": {
+      "S": 1.28,
+      "m": 1.0,
+      "t": 1.0,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "face_bbox_cm": [
+        67.0,
+        41.0,
+        66.4
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.819,
+      "face_to_body_length": 0.534,
+      "face_to_body_area_sqrt": 0.661,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        177.5,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.28,
+      "area_sqrt_ratio_vs_orig": 1.281
+    },
+    "s128_wool": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 1.0,
+      "e": 0.88,
+      "w": 1.12,
+      "pal": "v2",
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        128.0,
+        86.7,
+        84.9
+      ],
+      "face_to_body_height": 0.799,
+      "face_to_body_length": 0.431,
+      "face_to_body_area_sqrt": 0.587,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 117.8,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.248,
+      "area_sqrt_ratio_vs_orig": 1.138
+    },
+    "s128_pain_a": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 0.5,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "pain": {
+        "fwd": 0.0,
+        "lift": 0.024,
+        "tilt": 0.55,
+        "squint": 1.0
+      },
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.837,
+      "face_to_body_length": 0.44,
+      "face_to_body_area_sqrt": 0.607,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.308,
+      "area_sqrt_ratio_vs_orig": 1.176
+    },
+    "s128_pain_b": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 0.5,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "pain": {
+        "fwd": 0.02,
+        "lift": -0.006,
+        "tilt": 0.55,
+        "squint": 0.55
+      },
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.837,
+      "face_to_body_length": 0.44,
+      "face_to_body_area_sqrt": 0.607,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.308,
+      "area_sqrt_ratio_vs_orig": 1.176
+    },
+    "s128_pain_c": {
+      "S": 1.28,
+      "m": 0.72,
+      "t": 0.5,
+      "e": 0.88,
+      "w": 1.0,
+      "pal": "v2",
+      "pain": {
+        "fwd": 0.02,
+        "lift": -0.012,
+        "tilt": 0.6,
+        "squint": 0.22
+      },
+      "face_bbox_cm": [
+        55.2,
+        41.0,
+        67.8
+      ],
+      "body_bbox_cm": [
+        125.5,
+        83.2,
+        81.1
+      ],
+      "face_to_body_height": 0.837,
+      "face_to_body_length": 0.44,
+      "face_to_body_area_sqrt": 0.607,
+      "face_top_z_cm": 120.1,
+      "body_top_z_cm": 115.9,
+      "dimensions_cm": [
+        165.8,
+        103.9,
+        121.9
+      ],
+      "triangles": 14776,
+      "height_ratio_vs_orig": 1.308,
+      "area_sqrt_ratio_vs_orig": 1.176
+    }
+  }
+}

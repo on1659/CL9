@@ -20,6 +20,8 @@ Tools/Unreal/import_sfx.py 를 다시 돌린다 — SoundTable 행은 그대로�
   monster_pounce.wav 0.45초  꽥+퍼덕임 — 예고(Pounce) 시작. 톱니파 620→1050→620 Hz 꽥 + 날개짓 4번. 피크 -5 dBFS
   monster_catch.wav  0.50초  덮치는 꽥+퍼덕임 — 잡는 순간. pounce 보다 낮고 거칠게(600→300 Hz) + 110→60 Hz 쿵 + 낮은 날개짓 5번. 피크 -3 dBFS
   monster_near.wav   0.16초  짧은 꼬꼬댁 — 근접 소나(monster_prox, 0.65초마다). 부드러운 블립 두 개. 피크 -10 dBFS(반복돼도 안 거슬리게)
+벽·바닥 타격(2026-09-22 combat-feel-pass-1, docs/goal/combat-feel-pass-1.md D-4):
+  hit_surface.wav    0.20초  프라이팬이 벽에 닿는 "퍽/툭" — 180→110 Hz 사인 + 저역·중역 노이즈 + 25 ms 짧은 금속 틱. 피크 -6 dBFS(명중보다 작게)
 공통: 시작·끝 2 ms 페이드(클릭 방지), 피크 -3 dBFS 정규화(SOUNDS 항목에 세 번째 값을 적으면 그 dBFS).
 
 실행:  py -3 Tools/Audio/synth_sfx.py
@@ -234,6 +236,31 @@ def synth_hurt():
     return mix_into(body, burst, 0.0, 1.4)
 
 
+def synth_hit_surface():
+    """프라이팬이 벽·바닥에 닿는 "퍽/툭" — 금속 팬이 나무·흙 벽에 부딪히는 소리(combat-feel-pass-1 D-4).
+    허공 swing_whoosh(바람)·명중 hit_pan(긴 "땅")과 한 번에 갈리게: 몸통은 180→110 Hz 사인 감쇠(나무 벽 울림) + 25 ms 저역 노이즈(충돌) +
+    40 ms 중역(420 Hz) 노이즈 "톡", 금속 링은 hit_pan 과 같은 비조화 부분음이지만 tau 를 1/5 로 줄여 25 ms 안에 죽는 짧은 "틱" 만 남긴다.
+    피크 -6 dBFS(hit_pan -3 보다 작게)."""
+    seconds = 0.2
+    out = silence(seconds)
+    body = apply(sine_sweep(seconds, 180.0, 110.0, curve=0.6), exp_decay(seconds, 0.04, 0.001))
+    mix_into(out, body, 0.0, 1.0)
+    knock = apply(biquad(noise(0.025, seed=110), "lowpass", 700.0, 0.8), exp_decay(0.025, 0.008, 0.001))
+    mix_into(out, knock, 0.0, 1.1)
+    tok = apply(biquad(noise(0.04, seed=111), "bandpass", 420.0, 1.2), exp_decay(0.04, 0.012, 0.001))
+    mix_into(out, tok, 0.0, 0.9)
+    base = 1050.0
+    partials = [(1.0, 1.0, 0.028), (2.76, 0.55, 0.018), (5.4, 0.35, 0.012), (8.9, 0.2, 0.007)]  # (비율, 세기, tau) — hit_pan 의 1/5
+    ring = [0.0] * seconds_to_samples(0.06)
+    for ratio, gain, tau in partials:
+        freq = base * ratio
+        for i in range(len(ring)):
+            t = i / SAMPLE_RATE
+            ring[i] += gain * math.sin(2.0 * math.pi * freq * t) * math.exp(-t / tau)
+    mix_into(out, ring, 0.0, 0.3)
+    return out
+
+
 def synth_monster_death():
     """꽥+쿵 — 앞 0.2초 톱니파 900→220 Hz 급강하(비브라토 살짝), 뒤 0.3초 저역 쿵."""
     seconds = 0.5
@@ -322,6 +349,7 @@ SOUNDS = [
     ("monster_pounce.wav", synth_monster_pounce, -5.0),
     ("monster_catch.wav", synth_monster_catch, -3.0),
     ("monster_near.wav", synth_monster_near, -10.0),
+    ("hit_surface.wav", synth_hit_surface, -6.0),
 ]
 
 

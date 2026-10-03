@@ -1,0 +1,60 @@
+{
+  "source": "Original CL9 geometry through Blender MCP",
+  "source_blend": "pen_fence.blend",
+  "pivot": "floor center",
+  "axis": "+X forward / +Z up",
+  "materials": {
+    "M_CL9_Pen_Wood": {
+      "vertex_color": true,
+      "roughness": 0.94,
+      "metallic": 0
+    },
+    "M_CL9_Pen_Wire": {
+      "vertex_color": true,
+      "roughness": 0.55,
+      "metallic": 0.72
+    }
+  },
+  "assets": {
+    "pen_fence": {
+      "object": "SM_Pen_Fence_250_A",
+      "dimensions_cm": [
+        250.0,
+        20.000000298023224,
+        129.99999523162842
+      ],
+      "triangles": 800,
+      "vertices": 472,
+      "uv_layers": 1,
+      "materials": [
+        "M_CL9_Pen_Wood",
+        "M_CL9_Pen_Wire"
+      ],
+      "runtime_radius_cm": null,
+      "closed_surfaces": true,
+      "fbx_sha256": "28fa07e1b90413ae57d0fac79967ca362a2c47efc7c9c91d121c2c391a9c6119",
+      "anchors_cm": {
+        "SnapLeft": [
+          -125.0,
+          0.0,
+          0.0
+        ],
+        "SnapRight": [
+          125.0,
+          0.0,
+          0.0
+        ]
+      },
+      "rig": "N/A static architecture",
+      "tile_length_cm": 250,
+      "blocks_sight": false,
+      "height_cm": 130,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        65.0
+      ],
+      "collision_hulls": 1
+    }
+  }
+}

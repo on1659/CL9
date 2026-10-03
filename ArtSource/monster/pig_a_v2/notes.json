@@ -1,0 +1,114 @@
+{
+  "source": "pig_a.blend 사본 — build_pig_a_v2.py",
+  "measure_original": {
+    "body_cm": [
+      120.0,
+      76.0,
+      70.0
+    ],
+    "head_cm": [
+      60.0,
+      54.0,
+      50.0
+    ],
+    "head_unit_cm": [
+      73.4,
+      82.0,
+      60.0
+    ],
+    "head_over_body_height": 0.714,
+    "head_over_body_width": 0.711,
+    "head_over_body_length": 0.5,
+    "head_unit_over_body_height": 0.857,
+    "head_unit_over_body_width": 1.079
+  },
+  "tris": 8404,
+  "vertices": 4278,
+  "sat_gain_srgb_hsv": 1.4,
+  "colors_linear": {
+    "skin": [
+      0.54,
+      0.1855,
+      0.136
+    ],
+    "light": [
+      0.7,
+      0.2945,
+      0.2141
+    ],
+    "snout": [
+      0.44,
+      0.081,
+      0.0621
+    ],
+    "inner": [
+      0.3,
+      0.053,
+      0.053
+    ]
+  },
+  "hoof_chamfer_m": [
+    0.012,
+    0.02
+  ],
+  "brow_saved": "soft",
+  "brow_soft": {
+    "dz": 0.012,
+    "scale": [
+      0.92,
+      0.85,
+      0.72
+    ],
+    "pitch": -0.1
+  },
+  "head_scale_saved": 1.0,
+  "head_option_rendered": 1.08,
+  "previews": {
+    "orig": "preview\\original_neutral.png",
+    "orig_brow": "preview\\original_brow.png",
+    "brow_current": "preview\\v2_brow_current.png",
+    "brow_soft": "preview\\v2_brow_soft.png",
+    "v2": "preview\\v2_neutral.png",
+    "v2_head": "preview\\v2_head108_neutral.png",
+    "pain_candidates": "preview\\compare_pain_candidates.png",
+    "three_states": "preview\\compare_three_states.png"
+  },
+  "brow_pain_candidates": {
+    "A": {
+      "dz": 0.012,
+      "scale": [
+        0.92,
+        0.85,
+        0.72
+      ],
+      "pitch": -0.3,
+      "bend": 0.0
+    },
+    "B": {
+      "dz": 0.006,
+      "scale": [
+        0.95,
+        0.85,
+        0.75
+      ],
+      "pitch": -0.45,
+      "bend": 0.0
+    },
+    "C": {
+      "dz": 0.004,
+      "scale": [
+        0.95,
+        0.85,
+        0.75
+      ],
+      "pitch": -0.6,
+      "bend": 0.015
+    }
+  },
+  "brow_pain_pick": "B",
+  "shape_keys": {
+    "Basis": "soft(평소)",
+    "Brow_Current": "current(추격)",
+    "Brow_Pain": "pain B(피격)"
+  }
+}
