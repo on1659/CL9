@@ -153,6 +153,9 @@ py -3 .claude/hooks/render_roles.py --list
 3. `py -3 .claude/hooks/cl9_run.py init <slug> --task "<한 문장>" --roles ui,gameplay --grants <json>`
 4. 역할마다 `.claude/runs/<slug>/brief-<역할>.md` 를 Write 로 쓴다 — `docs/workflow/sessions.md` 의 brief 예시 형식 그대로:
    목표 / 파일(= grants) / 받는 인터페이스 / 주는 인터페이스 / 읽을 문서 / PIE 확인 / 보고서 경로(`.claude/runs/<slug>/report-<역할>.md`).
+   **성능(2026-09-21)**: 틱·광원·나이아가라·트레이스·위젯 틱·표의 소프트 참조 열을 **더하는** 역할(gameplay·map·ui)의 brief 에는 "읽을 문서" 에
+   `docs/systems/performance.md` "규칙" 절을, "PIE 확인" 에 `pie-scenarios.md` U 절(밤 실내 avg + `stat dumphitches` 30ms 히치 없음)을 넣는다 —
+   새 소프트 참조 열은 `UCL9GameInstance::Init` 의 Warm 목록에 한 줄을 더하는 것까지가 그 역할의 일이다.
 5. `py -3 .claude/hooks/cl9_run.py dispatch <slug>` — 기준선을 찍고 DISPATCHED. 여기서 거부되면 이유를 고치고 다시.
 6. 역할마다 `Agent` 도구로 띄운다: `subagent_type: "cl9-<역할>"`, 백그라운드, 프롬프트는 **brief 경로 + "읽고 그대로 수행, 끝나면 보고서 경로와 한 문단 요약"**
    (brief 내용을 프롬프트에 복사하지 않는다 — 파일이 정본). 인터페이스를 주는 쪽(예: gameplay 게터 → ui)이 있으면 그것을 먼저 띄우고
