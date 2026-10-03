@@ -8,19 +8,20 @@
 
 ```cpp
 UCLASS()
-class UCL9SaveGame : public USaveGame {
+class UCL9SaveGame : public USaveGame {   // Source/CL9/GameMode/CL9SaveGame.h
   GENERATED_BODY()
 public:
-  UPROPERTY() int32 SaveVersion;            // 마이그레이션용 — 필드 추가 때마다 올린다
+  static FString SlotName(int32 Slot);      // "CL9Save_<Slot>" — 지금은 1번만 쓰지만 슬롯 번호를 받는다
+  static constexpr int32 CurrentVersion = 2;// 필드를 더할 때마다 올린다 — 낮은 버전은 기본값으로 채워 읽는다
+  UPROPERTY() int32 SaveVersion = CurrentVersion;
 
   UPROPERTY() int32 CurrentDay;             // 현재 일차
   UPROPERTY() int32 SharedMoney;            // 누적 자금 (이더, int)
   UPROPERTY() int32 PeriodIncome;           // 이번 정산 기간 수입 (정산 중간 저장 대비)
-  UPROPERTY() TArray<FName> OwnedEquipment; // 보유 장비 (Alias — 실물은 로드 시 재스폰).
-                                            // 보존 판정: 밤 종료 시 트럭 존 안에 있는 실물만
-                                            // 남는다 — "두고 오면 잃는다"의 경계는 트럭 존이다
-  UPROPERTY() TArray<FCL9SavedOrder> ActiveOrders; // 진행 중 주문 (Alias + 남은 마감 일수)
-  UPROPERTY() TArray<FName> UnlockedSites;  // 해금된 목적지
+  UPROPERTY() TArray<FCL9AcceptedOrder> ActiveOrders; // 아직 납품하지 못한 주문 — 마감은 절대 일차, CurrentDay 와 함께 읽는다
+  UPROPERTY() TArray<FName> OwnedEquipment; // 보유 장비 (Alias — 실물은 로드 시 트럭 옆에 재스폰, 같은 것이 둘이면 항목 둘).
+                                            // 보존 판정: 새벽에 트럭 곁에 있던 실물만 남는다 — "두고 오면 잃는다"의
+                                            // 경계는 트럭 존이다. 버전 1 세이브에는 없어 비어 있다
 };
 ```
 

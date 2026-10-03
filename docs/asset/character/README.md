@@ -2,10 +2,12 @@
 
 기획: [캐릭터](../../plan/data/character.md), 기술: [애니메이션](../../systems/animation.md).
 1인칭 게임이므로 **동료에게 보이는 풀바디**와 **자기 화면의 팔**을 별도로 제작·검수한다.
+카드: [farmer_a.md](farmer_a.md)(농부 A 풀바디·1인칭 팔·클립). farmer_b 는 미제작([catalog](../catalog.md)).
 
 ## 몸 크기와 리그
 
-- 현재 기준 캡슐 반경 **39cm**, 반높이 **90cm**(전체 180cm), 눈높이 **156cm**.
+- 현재 기준 캡슐 반경 **39cm**, 반높이 **90cm**(전체 180cm), 눈높이 **156cm**(정본 `docs/plan/data/character.md`
+  `CapsuleRadius`·`CapsuleHalfHeight`·`EyeHeight`, 2026-09-21 확인 — 외형·시점 검수용 복사값).
   캡슐은 시각 모델의 키를 강제로 180cm로 정한다는 뜻은 아니다. 외형을 캡슐과 시점에 맞춰 검수한다.
   외형 때문에 판정 캡슐·눈높이를 변경하지 않는다.
 - 풀바디 원점은 바닥 중앙. 현재 `CL9Character`는 메시 Z를 `-CapsuleHalfHeight`, 회전을
@@ -33,13 +35,13 @@
 | 구분 | 클립/포즈 | 규칙 |
 |---|---|---|
 | 풀바디 | Idle, Walk, Run, Jump/Fall/Land | 기존 로코모션 재사용 우선, in-place |
-| 풀바디 | CarryPose | 손/품·짐 종류를 읽는 연결 여부 확인 |
+| 풀바디 | Hold(Small/Flashlight/Large) | 행 `HoldPose` 범주를 읽는 상체 레이어 — 2026-09-12 연결됨([farmer_a.md](farmer_a.md) 025) |
 | 풀바디 | HitReact, Knockdown/GetUp, Death | 실제 비틀/넘어짐 시간과 상태 전이에 맞춤 |
 | 팔 | Idle, HoldEgg, HoldFlashlight, CarryLarge | 1인칭 화면 가림·그립 검수 |
-| 팔 | Pickup, Throw, Swap, Use/Eat | 필요한 동작부터. 없던 게임 조작을 추가하지 않음 |
+| 팔 | Pickup, Throw, Use/Eat | 필요한 동작부터. 없던 게임 조작을 추가하지 않음(품·Swap 은 2026-09-13 폐기) |
 
 모든 행이 이미 AnimBP에 연결됐다는 뜻은 아니다. 제작 카드에 필요한 클립과 소비 상태를 매핑한다.
-품 교체·경직 시간은 현재 데이터 기준으로 맞추고, 클립의 Notify로 재고·HP·아이템 상태를 바꾸지 않는다.
+경직·넘어짐 시간은 현재 데이터 기준으로 맞추고, 클립의 Notify로 재고·HP·아이템 상태를 바꾸지 않는다.
 
 ## 검수
 

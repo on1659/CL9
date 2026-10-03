@@ -142,6 +142,6 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
   지우므로 날짜를 대조하지 않아도 된다. 날짜로 대조하면 미달 직후 판이 1일차로 되돌아가 결과를 잃는다.
 - **기록**: `UCL9RecordSave`(파일 `CL9Records`, 슬롯·판과 무관) — `BestDay`. 새벽마다,
   그리고 판이 끝날 때 갱신한다. "클리어는 없고 며칠까지 버텼는지가 기록이다".
-- **미구현**: 새벽 화면·정산 결과 표시(UI), `FinalDay`(0=무한이라 소비처가 없다),
-  `QuotaOverride`·`OrdersOfferedCurve` 같은 나머지 progression 컬럼.
+- **미구현**: `FinalDay`(0=무한이라 소비처가 없다), `QuotaOverride`·`OrdersOfferedCurve` 같은 나머지 progression
+  컬럼. 새벽 결과 화면(`WBP_Dawn`·`UCL9DawnWidget`)은 있다 — [ui.md](ui.md).
 - 치트: `cl9.settle`(목표·기간 수입 출력 + 정산일이면 판정), `cl9.settle force`(정산일이 아니어도 판을 지금 끝낸다).

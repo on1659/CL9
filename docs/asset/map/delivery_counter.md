@@ -1,5 +1,7 @@
 # 납품 창구
 
+상태: 게임 연결 검수됨 — 2026-09-11 `BP_CL9Counter` Mesh → `SM_DeliveryCounter_A`(배율 1, Lvl_Flat z 0), 021 PIE 납품·빈손 판매·충돌. 주문·수레·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 소비처 `ACL9Counter`/`ACL9Fixture`, `/Game/Items/BP_CL9Counter`.
 [실제 조회](../evidence/021-counter-consumer.json): Lvl_Flat의100cm 기본 큐브/중심Z50/배율1.
 새 모델100×100×100cm/바닥 중앙 피벗/+X 정면. 기존 인스턴스는 교체 때 바닥Z0으로 보정한다.

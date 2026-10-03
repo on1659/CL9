@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-27T16:08:01.224096+00:00",
+  "assets": [
+    {
+      "id": "pen_fence",
+      "path": "/Game/Maps/Henhouse/PenFence/SM_Pen_Fence_250_A.SM_Pen_Fence_250_A",
+      "dimensions_cm": [
+        250.0,
+        20.00004005432129,
+        130.0
+      ],
+      "max_dimension_error_cm": 3.975629806518555e-05,
+      "source_sha256": "28fa07e1b90413ae57d0fac79967ca362a2c47efc7c9c91d121c2c391a9c6119",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        0.0,
+        0.0,
+        65.0
+      ],
+      "materials": [
+        "/Game/Maps/Henhouse/PenFence/M_CL9_Pen_Wood.M_CL9_Pen_Wood",
+        "/Game/Maps/Henhouse/PenFence/M_CL9_Pen_Wire.M_CL9_Pen_Wire"
+      ],
+      "sphere_radius_cm": 140.980496672513,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

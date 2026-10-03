@@ -4,45 +4,52 @@
 
 ## 현재 재개 지점
 
-- **[fp-viewmodel 실행 2026-09-13 저녁] 농부 A 1인칭 클립 8종을 카메라 로컬 뷰모델로 재저작 + 전신 Swing 30fps 재수출 — FBX·미리보기 완료, 사용자 미리보기 "가" → UE 임포트·ABP_FP_View 연결 전.**
-  팔 메시가 카메라 자식이 되어(gameplay) 클립 공간 = 눈 (0,0,1.56m)·피치 0 고정·전 뼈 소유(`farmer_pose.py` 머리말, manifest `space: camera`).
-  `AN_Farmer_FPHoldSmall/Flashlight/Large`(리썰식 — 팔꿈치 ~90°, 주먹이 우하단 구석에서 들어옴; 사용자 피드백으로 brief 보다 바깥)·`FPArmsDown`·`FPRun`(앞 극점 100°)·`FPSwingWindup`(우상단)·
-  `FPSwing`·`AN_Farmer_Swing`(0.467초)·`FPEat`. 미리보기는 게임과 같은 카메라(`render_fp` 1280×720·FOV 70) + `fp_screen_uv` 실측.
-  일괄 재수출 `py -3 Tools/Blender/export_farmer_fp_clips.py`. 리드가 `Tools/Unreal/import_farmer_clips.py`(기본 9클립)로 임포트하고
-  전신 ABP 휘두르기 문턱 0.58→0.347·오프셋 0.15→0.12, ItemTable 손전등·두 손 행 갱신(031-item-grip.json), PIE A4·A5·A6·C4·Q1·E2.
-  카드: `docs/asset/character/farmer_a.md` 031, 증거 031-farmer-fp-viewmodel.json.
+- **[2026-09-21 정리] 다음 재개 지점 — 에셋 범위에서 남은 일은 아래뿐이다. 나머지 카드는 전부 UE 임포트·게임 연결까지 끝났다.**
+  - 처형 Run 2 두 리그 클립 `AN_Pig_Execute`·`AN_Farmer_Executed` — 각 blend 따로 굽고 UE 액터 공간 앵커 표를 공유, 길이 = `ExecuteDuration`,
+    농부는 DOWN 자세로 끝나 부활까지 유지. 종은 Run 2 착수 때 다시 정한다(09-20 저녁 종 재배치: 스토커 = 너구리, 돼지 = 잡히면 처형).
+    정본 `docs/goal/execute-sequence-pig.md` "Run 2", `docs/systems/animation.md` 처형 행, `docs/decisions.md` 2026-09-20 "처형 애니메이션은 Run 2 로".
+  - 계란 cooked·burnt·cracked·broken 4상태 — FBX 는 `ArtSource/item/egg_states/export/` 에 있으나 `Content/Items/Egg/` 에는 `SM_Egg_Raw_A` 만
+    임포트돼 있고 행도 raw 만 연결됐다([catalog](catalog.md) egg 행, [item/egg_states.md](item/egg_states.md)).
+  - 효과음 12개는 전부 파이썬 합성 임시음(`ArtSource/audio/README.md`) — 실음원 교체는 같은 이름 WAV 덮어쓰기 + `import_sfx.py`.
+  - `T_CL9_HurtDirection`(피격 방향 호, 2026-09-20)은 리드가 파이썬으로 만든 임시본이다(decisions.md) — 정식 텍스처는 요청 시.
+  - farmer_b 몸/팔 미제작(catalog). 닭 리그 날개 뼈 좌우 롤 비대칭은 관찰 기록만 — 리그 수정은 별건(decisions.md 2026-09-20).
+  - 에셋 범위 밖 포인터: `pig.md`·`raccoon.md` 처형 카메라 3열 셀 반영은 balance 몫(decisions.md 2026-09-20 밤).
 
-- **[quickslot-rename-ui 실행 2026-09-13 저녁] 퀵슬롯 아이템 아이콘 7종 PNG 완료 — UE 임포트·표 행 전.**
-  `ArtSource/item/<폴더>/icons/T_Icon_<alias>.png`(egg·meat·frying_pan·pot·flashlight·headlamp·standing_lamp, cart 제외) — 흰 실루엣 +
-  알파 128×128, Workbench Flat/Single 흰색·필름 투명·직교 3/4 위 시점(정면에서 −Y 45°·위 35°)·긴 변 88%, 모든 픽셀 RGB=1(색·흐림은 UI).
-  `py -3 Tools/Blender/run_headless.py render_item_icons.py [-- --only egg,pot --preview-dir <폴더>]` → 폴더별 `icons/manifest.json`
-  (png sha256·채움 비율) + `evidence/030-item-icons.json` `render` 절. 리드가 `Tools/Unreal/import_item_icons.py`(`/Game/UI/Icons/T_Icon_<alias>`,
-  TextureGroup UI·NoMipmaps·sRGB·NeverStream·UserInterface2D, sha 대조, 증거 `ue_import` 절) 로 임포트하고 `ItemTable.<alias>[.<sub>].Icon`
-  표 행을 적용한다(egg 상태 행·meat 상태 행은 같은 아이콘). 카드: `docs/asset/item/*.md` "아이콘" 절. PIE G2.
+- **[2026-09-20, 실행 monster-pounce-hurt-readability · execute-species-swap] 완료.** 닭 `AN_Chicken_PounceWindup`(0.6초·30fps·프레임 1~19, 끝 프레임 =
+  Catch 첫 프레임) 제작·임포트 — 증거 [032-creature-react-clips.json](evidence/032-creature-react-clips.json)(09-20 갱신본; 09-15 판은
+  `032-creature-react-clips.json.pre-pounce.bak`), 카드 [monster/chicken_a.md](monster/chicken_a.md). 효과음 3종 `monster_pounce/catch/near` 합성·임포트
+  (`S_MonsterPounce`·`S_MonsterCatch`·`S_MonsterNear`, `ArtSource/audio/README.md`). 몬스터 4종(거위·너구리·돼지·양) 정점색 재질 `M_CL9_<종>_Vertex`
+  를 SK 슬롯에 배정(`Tools/Unreal/create_creature_materials.py`, 그전엔 `WorldGridMaterial` 로 보였다).
 
-- **[fp-arms-flashlight 실행 2026-09-13 밤] 농부 A 1인칭 빈손 팔 클립 2개 + 손전등 Hold 쌍 재출력 FBX 완료 — UE 임포트·ABP 배선 전.**
-  `AN_Farmer_FPArmsDown`(2.0초 루프, 두 손이 프레임 밖 — 서기·걷기 기본, FPHoldIdle 대체)·`AN_Farmer_FPRun`(0.6초 루프, 좌·우 주먹이
-  화면 아래 좌우로 번갈아 올라옴, manifest `reference_speed_cm_s` 654 → ABP PlayRate = Speed/654), 전신 클립 없음.
-  손전등 `Flashlight.fp` 손목 앞 +8cm·위 +3cm → `AN_Farmer_FPHoldFlashlight`·`AN_Farmer_HoldFlashlight` 재출력(`animate_farmer_hold.py
-  -- --export --only Flashlight`, 다른 범주는 그대로). `Tools/Blender/animate_farmer_fparms.py -- --export` → `verify_farmer_clip_fbx.py`
-  (30fps·길이·루프 이음새 0·sha). 리드가 `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 이 4클립) 로 임포트하고 팔 ABP 빈손 가지
-  `IsRunning ? FPRun : FPArmsDown` + 두 ABP `Transform (Modify) Bone`(spine_03, AimPitch×0.6) — docs/systems/animation.md
-  "1인칭 팔 표시 규칙", PIE A4(신설). 카드: `docs/asset/character/farmer_a.md` 029, 증거 029-farmer-fparms.json.
+- **[2026-09-17~18, 실행 feel-hit-kill · 조명] 완료.** 타격감 에셋 — `NS_CL9_HitPuff`, `CS_HitShake` 사인파 재생성, `ShakeTable.Scale` 열, `SoundTable` +
+  효과음 9종 합성·임포트(`Tools/Audio/synth_sfx.py` → `Tools/Unreal/import_sfx.py`, 커밋 52fe32d·25f4e6c) — [README 효과 에셋 절](README.md).
+  캠프파이어 `SM_Campfire_A`(09-17 임포트, 09-18 불꽃 재질 재작성, 증거 [033-campfire-imports.json](evidence/033-campfire-imports.json)) —
+  카드 [map/campfire.md](map/campfire.md). 밤하늘 재질 `M_CL9_NightSky`(`Tools/Unreal/create_night_sky.py`, 09-18) — [catalog](catalog.md) 행.
 
-- **[use-hint-anim 실행 2026-09-13 밤] 농부 A 공격 대기·먹기 클립 4개 FBX 완료 — UE 임포트·ABP 배선·표 행 적용 전.**
-  `AN_Farmer_SwingWindup`/`FPSwingWindup`(루프 1.0초, 휘두르기 t=0.12 자세 + 손목 ±1cm 숨쉬기)·`AN_Farmer_Eat`/`FPEat`(0.6초 원샷,
-  HoldSmall→입 앞→HoldSmall), 30fps·Manny. `Tools/Blender/animate_farmer_windup.py`·`animate_farmer_eat.py -- --export` →
-  `verify_farmer_clip_fbx.py`(30fps·길이·루프 이음새 0 확인). 리드가 `Tools/Unreal/import_farmer_clips.py` 로 임포트하고
-  ABP 두 개에 `SwingWindupElapsed`·`EatElapsed` 가지(docs/systems/animation.md "공격 대기·먹기 가지"), PIE C4·Q1.
-  그립 역산 `measure_item_grip.py` → 고기 3행·팬 1행 `GripOffset`/`GripRotation` 후보(028-item-grip.json), 표 적용 뒤 PIE A5.
-  스테이징 fps 버그(24fps)를 `farmer_pose.export_action` 에서 고쳤다 — 기존 Swing 은 0.583초 그대로 두고 재수출하지 않았다.
-  카드: `docs/asset/character/farmer_a.md` 028.
+- **[2026-09-15, 애니메이션 보강, 커밋 7a6e92d] 완료.** 농부 13클립 임포트(`Tools/Unreal/import_farmer_clips_032.py`, 증거
+  [032-farmer-anim-pass.json](evidence/032-farmer-anim-pass.json)): Swing·FPSwing 재작업(0.467초), SwingWindup·FPSwingWindup 재수출,
+  Knockdown 0.5·Down 2.0 루프·GetUp 0.6, FPKnockdown·FPGetUp, ThrowWindup 1.0 루프·Throw 0.333, FPThrowWindup·FPThrow. PIE 수치
+  [032-anim-pie.json](evidence/032-anim-pie.json)·[032-anim-visual.json](evidence/032-anim-visual.json)(+ `032-anim-pie-*.png`). 몬스터 5종
+  Catch 0.8초·HitReact 재작업 + PushReact 0.8초 신설·임포트(`reimport_creature_clips.py`, 증거 `032-creature-react-clips.json.pre-pounce.bak`).
+  카드 [character/farmer_a.md](character/farmer_a.md) 032, [monster/README.md](monster/README.md) 표 + 종별 카드 09-15 절.
 
-- **[cart-physics 실행 2026-09-13] 수레 `SM_Cart_A` 물리 몸체용 재제작 — UE 재임포트 전.** 짐칸 안치수 120×80·벽 40·손잡이 100cm,
-  바운드 167.7×97.2×103.4cm, 6,280 tris, UCX 9(짐칸 안 비움)·소켓 `Grip`(80.15,0,48)·`Cargo`(−17.85,0,14), 짐칸 바닥 Z −6.0,
-  `cargo_extent_cm` [60,40,20]. `Tools/Blender/build_cart_a.py` → `verify_cart_a_fbx.py`(027-cart-physics-rebuild.json) → `preview_cart_a.py`.
-  Blender 헤드리스는 `py -3 Tools/Blender/run_headless.py <script>` 로 돌린다. 리드가 `Tools/Unreal/import_cart_a.py` 로 재임포트하고
-  B4 PIE. 카드: `docs/asset/item/cart.md`.
+- **[2026-09-13~14 재개 지점 4개] 전부 완료** — 옛 "UE 임포트 전" 서술은 지웠다; 상세는 카드에 있다.
+  - fp-viewmodel(031): `ABP_FP_View` 신설 + 1인칭 클립 8종·전신 Swing 30fps 임포트, 그립 행(커밋 aaec0a7·72b175b, 09-14). `ABP_FP_Copy`·
+    `CtrlRig_FPWarp`·`AN_Farmer_FPHoldIdle` 삭제. 카드 farmer_a.md 031, 증거 [031-farmer-fp-viewmodel.json](evidence/031-farmer-fp-viewmodel.json).
+  - quickslot-rename-ui(030): 아이콘 7종 `Content/UI/Icons/T_Icon_{egg,meat,frying_pan,pot,flashlight,headlamp,standing_lamp}` 임포트(ef3a7af)와
+    `ItemTable` `Icon` 열(72b175b). 카드 item/*.md "아이콘" 절, 증거 [030-item-icons.json](evidence/030-item-icons.json).
+  - fp-arms-flashlight(029)·use-hint-anim(028): FPArmsDown·FPRun·SwingWindup/FPSwingWindup·Eat/FPEat 임포트와 ABP 가지(커밋 5fc74bc, 09-13).
+  - cart-physics(027): `SM_Cart_A` 재임포트(5fc74bc; 증거 [027-cart-physics-imports.json](evidence/027-cart-physics-imports.json) — 167.7×97.2×103.4cm,
+    UCX 9, 소켓 Grip/Cargo, LOD 3), 물리 몸체 열 연결·PIE 는 decisions.md 2026-09-13~16. 카드 [item/cart.md](item/cart.md).
+
+### 025 이후 기록 방식 — iterations 문서 없이
+
+[iterations/](iterations/) 는 [024](iterations/024.md) 로 끝났다. 025 부터는 `/cl9` 실행(run) 단위로 일이 돌아가면서 반복 문서를 따로 쓰지
+않았고, 결정은 `docs/decisions.md` 날짜 항목과 `docs/goal/*.md` 실행 명세에, 제작 상세는 카드 안의 번호 절에, 검수 수치는 `evidence/NNN-*.json`
+에만 남았다(`docs/goal/asset-production-loop.md` 의 "매 반복마다 iterations/NNN.md" 는 이 시점부터 지켜지지 않았다 — 그 goal 문서는 리드 범위).
+증거 번호를 설명하는 문서는 다음과 같다: 025 Hold 클립 → farmer_a.md 025 · 026 Swing → 026 · 027 수레 물리 몸체 → item/cart.md ·
+028 공격 대기·먹기 → 028 · 029 빈손 팔 → 029 · 030 아이콘 → item/*.md "아이콘" · 031 뷰모델 → 031 · 032 애니메이션 보강 →
+farmer_a.md 032 + monster/README.md 표(반응 클립) · 033 캠프파이어 → map/campfire.md.
 
 - **[별도 세션 2026-09-11 저녁] CL9Art 미사용 에셋 일괄 연결 완료 — 되돌리지 말 것.** `docs/goal/wire-cl9art-assets.md`.
   맵 조각(벽 500/125·울타리·문짝·바닥·천장·마당·디딤판)은 `PieceTable`/`SegKindTable`에, 소품(둥지·상자·포대·
@@ -171,7 +178,7 @@
   1월드 적재/꺼내기 성공. 초기 지면 침투를 PIE에서 보정한 뒤 견인 연결·해제/수평 응답 확인.
   적재 바닥65.948cm 차이, 구체·메시 하단28.651cm 차이, 견인 중 Z 상승은 미통과.
   테스트 cart 행은 원복, PIE 종료. Blender `CL9_CART_A`, 실행 핸들 없음. **2026-09-13 cart-physics 실행에서 원본을
-  물리 몸체용으로 다시 만들었다(위 재개 지점) — 011 의 수치는 옛 메시 것.**
+  물리 몸체용으로 다시 만들었다([item/cart.md](item/cart.md), 증거 027) — 011 의 수치는 옛 메시 것.**
 - 다음 제작: standing_lamp 모델. 전체 맵 조립 제외/모델 제작 우선, 위 UE 의존성은 별도 미완료 유지.
 
 - 최신 [010](iterations/010.md): 프라이팬/냄비 신규 원본/FBX/UV0/2재질/최종 3렌더, UE 임포트/LOD3.
@@ -243,6 +250,37 @@
 - 사용자 UE 단서: Lvl_Flat 첫 실행 조작 불가, F8 탈출/복귀 후 정상. 입력 포커스/possess 경로 후보로 기록했으며 원인 확정/코드 수정은 하지 않았다.
 - 증거 주의: `001-pie-initial.json`은 재개 조회로 빈 worlds가 저장되어 초기 증거로 사용할 수 없다. 앞으로 조회 출력은 `Saved/asset-pie-current.json`, 실제 테스트 결과는 시각이 포함된 evidence 파일로 분리한다.
 
+### 반복 기록 색인 001~024
+
+iterations 문서가 있는 반복은 여기까지다(025 이후는 위 절). 각 문서는 계획·수행·검수·후속 행동을 담고, 증거는 `evidence/NNN-*.json` 이다.
+
+| 반복 | 내용 |
+|---|---|
+| [001](iterations/001.md) | 양계장 샘플 UE 왕복 |
+| [002](iterations/002.md) | 계란 상태와 닭 전용 모델 |
+| [003](iterations/003.md) | 너구리 모델과 재시작 체크포인트 |
+| [004](iterations/004.md) | 닭·너구리 UE 스켈레탈 왕복 |
+| [005](iterations/005.md) | 거위 모델과 10개 애니메이션 |
+| [006](iterations/006.md) | 돼지 모델/리그/8클립 |
+| [007](iterations/007.md) | 양 모델/24뼈/8클립 |
+| [008](iterations/008.md) | 고기 3상태 모델 / UE 임포트 / 첫 실사용 검수 |
+| [009](iterations/009.md) | 손전등 / 헬멧형 헤드램프 |
+| [010](iterations/010.md) | 프라이팬 / 냄비 |
+| [011](iterations/011.md) | 양계장 운반 수레 |
+| [012](iterations/012.md) | 삼각 받침 작업등 |
+| [013](iterations/013.md) | 재사용 양계장 울타리 파츠 |
+| [014](iterations/014.md) | 양계장 출입문 파츠 |
+| [015](iterations/015.md) | 양계장 작업대 |
+| [016](iterations/016.md) | 보·기둥·천장 구조 파츠 |
+| [017](iterations/017.md) | 짧은 벽과 계단 디딤판 |
+| [018](iterations/018.md) | 마당 바닥과 벽걸이 표식 |
+| [019](iterations/019.md) | 반납 항아리 |
+| [020](iterations/020.md) | 철판 조리대 |
+| [021](iterations/021.md) | 납품 창구 |
+| [022](iterations/022.md) | 트럭 회복 패드와 장비 패널 |
+| [023](iterations/023.md) | 푸드트럭 본체와 뒤 계단 |
+| [024](iterations/024.md) | 농부 A 몸/팔과 첫 UE 호환 검수 |
+
 ### 이전 샘플 왕복 이력
 
 - 2026-09-11: 전체 제작 goal **active**. 이전 응답의 세션 안내는 제작 진전이 없었으며, 이번 실행에서 실제 파일/프로세스/MCP 상태를 재검증하고 제작·검수를 재개했다.
@@ -266,4 +304,4 @@
 ## 실행 중 유지할 기록
 
 현재 반복 번호·선택 ID·현재 단계·Blender 파일/씬·UE 경로·완료 증거·차단 사유·다음 명령.
-한 항목이 끝날 때마다 갱신하고, 상세 검수는 개별 카드와 `iterations/NNN.md`에 둔다.
+한 항목이 끝날 때마다 갱신하고, 상세 검수는 개별 카드와 `evidence/NNN-*.json`(025 이후) 또는 `iterations/NNN.md`(024 까지)에 둔다.

@@ -1,5 +1,7 @@
 # goal: string-table-localization
 
+**상태**: 구현 완료 2026-09-12(커밋 `7fec481` — String Table `CL9` 키·ko/en/ja/zh-Hans; 정본 `docs/systems/localization.md`). 체크박스는 실행 당시 갱신되지 않았다.
+
 Written 2026-09-12 (autogoal, LIGHT track — design choices settled from engine source + one user decision).
 
 ## One-line Goal
@@ -88,7 +90,7 @@ Engine facts (UE 5.8 source) that fix the design:
 | `Source/CL9/CL9.cpp` / `CL9.h` | module class registering the table (replaces `FDefaultGameModuleImpl`) |
 | `Source/CL9/UI/*.cpp`, `Items/*.cpp`, `Character/CL9Character.cpp` | 86 `NSLOCTEXT` sites → `LOCTABLE` |
 | `Source/CL9/Data/CL9DefBase.cpp` | `Validate`: DisplayName/Description must be table references |
-| `Source/CL9/Core/CL9Cheats.cpp` (or where `REGISTER_CL9_CHEAT` lives) | `cl9.lang` |
+| `Source/CL9/GameMode/CL9Cheats.cpp` (2026-09-21 정정 — 옛 표기 `Source/CL9/Core/CL9Cheats.cpp`; `REGISTER_CL9_CHEAT` 매크로는 없고 `FAutoConsoleCommandWithWorldAndArgs` 블록으로 등록한다) | `cl9.lang` |
 | `Content/Data/*Table.uasset`, `Content/UI/WBP_*.uasset` | text → table references (editor script) |
 | `Tools/Unreal/convert_text_to_string_table.py` | one-shot converter (new) |
 | `Config/Localization/CL9*.ini`, `Config/DefaultEditor.ini`, `Config/DefaultGame.ini` | target + cultures + staging |

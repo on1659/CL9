@@ -1,5 +1,7 @@
 # goal: doc-audit-closeout
 
+**상태**: 완료 2026-09-09(커밋 `ee9eec7` 문서 감사 · `81d1971` `StaminaMinResume 1.f` 헤더·버프 표). Acceptance 는 실행 당시 갱신되지 않았고, 2026-09-21 감사에서 8항 중 6항을 확인해 `[x]` 로 바꿨다 — 남은 2항의 근거는 각 항 끝에.
+
 ## One-line Goal
 Finish the documentation audit started on 2026-09-09 — verify the reference-doc claims
 that were never checked, correct the one stale C++ default the audit exposed, and land
@@ -50,16 +52,16 @@ UI session already committed `4913fe4`, which calls into the uncommitted buff co
 
 ## Acceptance Criteria
 - [ ] Every current-state assertion in `docs/reference/` is either verified true or
-      carries a dated correction; none is silently wrong.
-- [ ] Corrections touch only the CL9-facing sentence — the R.E.P.O./Lethal analysis itself
-      is left as written.
-- [ ] Every `docs/systems/*.md` "정본" pointer resolves to an existing file.
-- [ ] `StaminaMinResume` defaults to `1.f` and its comment states the lock-until-full rule.
-- [ ] `CL9Editor Win64 Development` builds with exit code 0.
-- [ ] `HEAD` compiles: the buff commit contains `CL9BuffDef.*`, the registry change, the
-      `EatBuffs` column, `FCL9ActiveEffect::BuffAlias`, the two getters, and the three assets.
-- [ ] The three mechanical scans (symbols / columns both ways / links) still come back clean.
-- [ ] All touched files keep LF line endings.
+      carries a dated correction; none is silently wrong. — 2026-09-21 감사: `docs/reference/lethal/lethal-run.md:701`("잡혀도 바로 죽지 않는다")이 09-20 처형 도입 뒤 조용히 틀려 있었다 → 같은 날 정정 표기. 이 항은 결정마다 reference 를 다시 봐야 유지된다.
+- [x] Corrections touch only the CL9-facing sentence — the R.E.P.O./Lethal analysis itself
+      is left as written. — 2026-09-21 감사 확인(reference 의 날짜 정정 실재, 분석 본문 불변).
+- [x] Every `docs/systems/*.md` "정본" pointer resolves to an existing file. — 2026-09-21 감사 확인(깨진 정본 포인터 0).
+- [x] `StaminaMinResume` defaults to `1.f` and its comment states the lock-until-full rule. — `Source/CL9/Data/CL9CharacterDef.h:128` `StaminaMinResume = 1.f`(2026-09-21 확인).
+- [x] `CL9Editor Win64 Development` builds with exit code 0. — 2026-09-21 감사 확인(HEAD 컴파일).
+- [x] `HEAD` compiles: the buff commit contains `CL9BuffDef.*`, the registry change, the
+      `EatBuffs` column, `FCL9ActiveEffect::BuffAlias`, the two getters, and the three assets. — `Source/CL9/Data/CL9BuffDef.{h,cpp}` 커밋됨(`81d1971`, 2026-09-21 확인).
+- [ ] The three mechanical scans (symbols / columns both ways / links) still come back clean. — 2026-09-21 감사: 재실행 흔적 없음(스캔 스크립트가 저장소에 없다 — 2026-09-21 감사의 기계 점검이 대신 돌았고 링크 14건이 나왔다).
+- [x] All touched files keep LF line endings. — 2026-09-21 `git ls-files --eol` 확인(`docs/reference/**`·`CL9CharacterDef.h` 전부 LF).
 
 ## Related Files / Modules
 | File | Role |

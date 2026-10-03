@@ -8,6 +8,9 @@
 
 R.E.P.O.의 아이템 체계는 "종류당 ScriptableObject 하나(`Item`) + 프리팹에 붙는 공용 컴포넌트 묶음(`ItemAttributes`·`ItemToggle`·`ItemEquippable`·`ItemBattery`) + 종류별 동작 스크립트(`ItemGun`, `ItemMelee` …)"로 이루어져 있고, 런 상태는 전부 `StatsManager`의 `Dictionary<string,int>` 묶음에 문자열 키로 저장된다. 상점은 별도 레벨이며, 아이템을 트럭의 추출 구역에 놓고 추출 버튼을 누르면 잔액 범위 안에서 하나씩 "빨아들이며" 결제가 확정된다. 가격은 `Value` 프리셋 값에 배수 4를 곱해 천 단위(K)로 올림하고, 업그레이드는 구매 횟수마다 50 %씩, 힐팩·크리스털은 클리어한 레벨 수에 비례해 오른다. 판정은 거의 전부 마스터 클라이언트가 하고, 클라이언트는 `MasterOnlyRPC` 검사를 통과한 RPC만 받아들인다. 인벤토리는 플레이어당 3칸이며, 장착한 아이템은 물리에서 빠져 크기 0.01로 숨겨지고, 레벨을 옮길 때는 인스턴스 이름의 해시로 다시 장착된다.
 
+근접 무기의 움직임 감지·접촉 피드백은 2026-09-21 설치본 `ItemMelee`를 다시 읽어
+[리썰·CL9와의 조작감 비교](../lethal/lethal-combat-feel.md)에 보강했다. 코드 기본값과 프리팹 실값을 구분한다.
+
 ## 데이터 모델
 
 ### `Item` — 종류당 ScriptableObject 하나

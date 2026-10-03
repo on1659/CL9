@@ -191,7 +191,7 @@ NetworkBehaviour 하나다. 스크랩(고철)과 상점 물건은 별도의 클�
 |---|---|---|---|---|---|
 | `PhysicsProp` | 고철 | 없음 | 없음 | 떨어질 때만 (8 m / 0.5) | 로직 없는 순수 고철 |
 | `AnimatedItem` | 고철 | 없음 | 없음 | **예** — 재생 중 0.75초마다 `noiseRange`/`noiseLoudness` | 같은 자리 반복 시 `timesPlayedInOneSpot` 누적, 주머니에선 절반 |
-| `Shovel` | 상점 | 홀드(당겼다 놓기) | 없음 | 타격음 | `shovelHitForce = 1`. 0.35초 당기기 → 놓으면 스윙 → 0.13초 뒤 판정. `HitShovelServerRpc` / `ReelUpSFXServerRpc` |
+| `Shovel` | 상점 | 홀드(당겼다 놓기) | 없음 | 타격음 | `shovelHitForce = 1`(코드 기본값). 최소 0.35초 준비(일찍 떼어도 대기) → 뗌 확인 후 스윙 → 0.13초+프레임 끝에 판정 → 0.3초 회복. [조작감 직접 분석](lethal-combat-feel.md) |
 | `KnifeItem` | 상점 | 1회 | 없음 | 타격음 | 삽과 같은 구조지만 즉발. `HitShovelServerRpc`(이름 재사용) |
 | `ShotgunItem` | 고철(주움) | 1회, 좌/우로 안전장치 | 없음 | 총성(매우 큼) | `gunCompatibleAmmoID = 1410`, `shellsLoaded`, `safetyOn`, `misfireTimer = 30f`. `ShootGunServerRpc(position, forward)`로 **서버가 명중을 판정**. `GetItemDataToSave`로 장전 수 저장 |
 | `GunAmmo` | 고철 | 없음 | 없음 | — | `ammoType` 하나뿐. 산탄총 재장전 재료 |

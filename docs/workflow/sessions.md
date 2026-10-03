@@ -11,6 +11,7 @@
 |---|---|
 | `.claude/cl9-roles.json` | 역할 레지스트리 — 누가 무엇을 소유·공유하나. **유일한 정본**, 아래 표는 요약 |
 | `.claude/hooks/cl9_scope_guard.py` | PreToolUse 훅 — 역할 울타리 + 잠금 극성. `.claude/settings.json`에 `py -3 "$CLAUDE_PROJECT_DIR/.claude/hooks/cl9_scope_guard.py"`로 등록 — **반드시 절대 경로**(훅은 세션 셸의 cwd에서 돌고, 스크립트를 못 열면 종료 코드 2 = 차단이라 모든 셸이 막힌다) |
+| `.claude/hooks/cl9_roles.py` | 역할 레지스트리 로더 — `.claude/cl9-roles.json` 을 읽고 경로를 역할에 대응한다. 훅·렌더러·테스트가 이 모듈 하나만 쓴다(테스트 `test_cl9_roles.py`) |
 | `.claude/hooks/cl9_lock.py` | 에디터/빌드 잠금 CLI |
 | `.claude/hooks/render_roles.py` | 레지스트리 → 역할 계약/에이전트 본문 렌더 |
 | `.claude/hooks/cl9_status.py` | `/cl9 status` 출력 |
@@ -20,7 +21,7 @@
 | `Tools/Build/compile_check.py` | 에디터 켠 채 게임 타깃 컴파일 검사(잠금 자동) |
 | `Tools/Balance/check_inequalities.py` | docs/plan 표로 A1/A2 판정, A4 미결 — balance 보고서 '검증(부등식)' |
 | `Tools/Unreal/apply_table_rows.py` | 보고서 '표 행' 을 데이터 표 에셋에 적용·검증(에디터 안 또는 커맨드릿) |
-| `.claude/runs/` | 실행 산출물(gitignore) — `editor.lock`, `<slug>/brief-*.md`, `report-*.md`, `grants.json`, `run.json` |
+| `.claude/runs/` | 실행 산출물(gitignore) — `editor.lock`, `<slug>/brief-*.md`, `report-*.md`, `grants.json`, `run.json`. 하위 폴더: `compile/` = `Tools/Build/compile_check.py` 의 빌드 로그(`compile-<시각>.log`) · `hook-seen/` = `cl9_lock.py` 가 남기는 훅 활성 확인용 nonce 표식과 "훅이 acquire/release 를 대신 처리함" 표식(`last-lock-cmd.json`) · `probe/` = 롤아웃 1 의 훅·환경 조사 기록(`agent-report.md`·`after-ask.txt`·`env-*.json`, session-orchestration.md "Rollout 1") |
 | `.claude/skills/cl9/SKILL.md` | `/cl9` 스킬 |
 
 테스트: `py -3 -m unittest discover .claude/hooks`.
@@ -50,6 +51,22 @@
 - 우선순위: append-only > 리드 전용 > 소유(제외 반영) > 공유 > grant > 밖.
 
 역할이 grant 밖 경로를 만지면 훅이 막고 사유에 소유 역할을 적는다 → [`#거부`](#거부).
+
+### 모델 배분 (2026-10-04)
+
+서브에이전트 모델은 **역할이 아니라 일의 성격**으로 고른다 — 같은 art 역할이라도 새 에셋의 첫 모양은 판단이고, 확정된 모양의 변형은
+반복이다. 리드(메인 세션)는 사용자가 고른 모델(`/model`)로 돈다. 역할 서브에이전트의 정의 파일 기본값은 `opus`(`.claude/cl9-roles.json`
+`defaults.model`)라서, **sonnet·haiku 로 돌릴 일은 띄울 때 `model` 을 명시**한다. 명시하지 않으면 opus 로 돈다.
+
+| 일의 성격 | 예 | 모델 |
+|---|---|---|
+| 판단·설계·첫 형태 | 새 에셋의 첫 모양, 생성기·시스템 설계, 원인 조사, 밸런스 수치 근거, 리뷰 | `opus` |
+| 정해진 것의 반복·기계적 적용 | 승인된 모양의 변형·LOD, 임포트·배치 스크립트, 표 행 적용, 정해진 문서 갱신, 명세대로의 C++ 보일러플레이트 | `sonnet` |
+| 아주 단순한 일 | 색인 한 줄, 파일 목록·상태 수집 | `haiku` |
+
+- 애매하면 한 단계 위로 고른다 — 다시 돌리는 비용이 모델 차이보다 크다.
+- brief 에 쓴 모델과 이유 한 줄을 실행 기록(`run.json` 또는 보고서)에 남긴다 — 다음 실행이 같은 판단을 다시 하지 않게.
+- 리드의 권장 모델·추론 강도는 작업 명세(`docs/goal/<slug>.md` "Execution Notes")가 정한다.
 
 ---
 
@@ -251,10 +268,10 @@ balance 보고서는 `## 표 행`, `## 검증(부등식)` 두 절이 더 붙는�
 
 ## 인계 (`/cl9 handoff`)
 
-컨텍스트 75% 즈음: `memory/work-progress.md` 갱신 → `.claude/runs/<slug>/handoff.md` → 새 터미널용 재개 프롬프트 출력.
+컨텍스트 75% 즈음: `memory/work-progress.md`(Claude 메모리 폴더 `C:\Users\user\.claude\projects\D--Work-unreal-CL9\memory\work-progress.md` — 저장소 밖) 갱신 → `.claude/runs/<slug>/handoff.md` → 새 터미널용 재개 프롬프트 출력.
 
 ```
-CL9 이어서 하자 — memory/work-progress.md 끝 항목부터. 실행 <slug> 의 handoff.md 를 읽고 `/cl9 resume <slug>`.
+CL9 이어서 하자 — memory/work-progress.md(C:\Users\user\.claude\projects\D--Work-unreal-CL9\memory\work-progress.md, 저장소 밖) 끝 항목부터. 실행 <slug> 의 handoff.md 를 읽고 `/cl9 resume <slug>`.
 역할 <이름> 이면 먼저 `/cl9 role <이름>`.
 ```
 
@@ -280,6 +297,6 @@ CL9 이어서 하자 — memory/work-progress.md 끝 항목부터. 실행 <slug>
 
 **settings.json 을 바꾼 뒤** — 열린 세션 전부에 아래를 보낸다:
 ```
-.claude/settings.json 의 훅이 바뀌었다. 지금 하던 단위를 마치고 memory/work-progress.md 를 갱신한 뒤 세션을 재시작하라.
+.claude/settings.json 의 훅이 바뀌었다. 지금 하던 단위를 마치고 memory/work-progress.md(C:\Users\user\.claude\projects\D--Work-unreal-CL9\memory\work-progress.md, 저장소 밖)를 갱신한 뒤 세션을 재시작하라.
 재시작 전까지 네 세션은 잠금을 지키지도 따르지도 않는다 — 에디터 종료·빌드·PIE 를 하지 마라.
 ```

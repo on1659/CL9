@@ -4,6 +4,7 @@
 기준: `D:\Work\unreal\CL9\docs\ue-cpp-conventions.md` (Epic Coding Standard 한글판) 전 항목
 범위: `D:\Work\unreal\CL9\Source\CL9` .h/.cpp 123개, 7개 폴더 전량 정독
 성격: **읽기 전용 보고.** 이 문서는 어떤 파일도 고치지 않는다.
+2026-09-21 감사: A-1(배열 범위)은 작업 트리에서 `bSeenType[CL9ModuleTypeCount]` 로 고쳐져 있으나 미커밋(HEAD 는 `[5]`), A-4·B-5·B-8 은 미반영 확인.
 계기: "언리얼 표준이 있으면 그에 맞춰 리팩토링해야 하지 않나"는 질문. 커뮤니티 스킬
 (quodsoler·maystudios 등)은 표준이 아니라 개인 취향이므로 대조 기준에서 제외하고,
 Epic 공식 표준(=이 프로젝트의 `ue-cpp-conventions.md`)만으로 감사했다.

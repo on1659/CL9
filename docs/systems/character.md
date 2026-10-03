@@ -360,6 +360,7 @@ class ICL9Damageable {
 | 무엇 | 누가 보나 | 원천 | 어디서 |
 |---|---|---|---|
 | `Swing` 소리 (폰 자리, 맞든 빗나가든) | 전원 | `SwingStartServerTime` 변화 | `UpdateHitSounds` |
+| `HitSurface` 소리 (폰 자리 — 벽·바닥을 쳤다, 2026-09-22) | 전원 | `SwingSurfaceHitServerTime` 변화 (Replicated, 조건 없음) | `UpdateHitSounds` |
 | `Hurt` 소리 (폰 자리) | 전원 | `KnockdownStartServerTime` 변화 | `UpdateHitSounds` |
 | 1인칭 팔 히트스톱 | 때린 본인 | `SwingHitServerTime` 뒤 `CL9Rules.HitStopTime`(0.08초) | `GetSwingAnimElapsed()` → ABP `SwingElapsed` |
 | 발소리 `Footstep` (발밑) | 전원 | 수평 이동 거리 누적 ≥ 보폭 | `TickFootstepSound` |
@@ -395,6 +396,8 @@ class ICL9Damageable {
 | 위치·회전 | ACharacter 표준 (네트워크 스무딩 내장) | |
 | 잡힘·피격 판정 | 호스트 전용 (몬스터 → 캐릭터 함수 직접 호출) | |
 | 타격 킥 시각 | `SwingHitServerTime` (Replicated, `COND_OwnerOnly`) | 때린 본인만 느끼는 연출 |
+| 표면 타격 시각 | `SwingSurfaceHitServerTime` (Replicated, 조건 없음) | 벽·바닥을 친 소리는 남의 폰에서도 들려야 한다 (2026-09-22) |
+| 회복·예약 `SwingReadyTime`·`bSwingBuffered` | 호스트 전용, 비복제 | 판정 상태 — 표현은 복제된 시작 시각에서 나온다 |
 | 빨간 플래시·비네트·셰이크 | 복제 없음 — 위 시각들에서 각 머신이 파생 | 표현은 시계에서 나온다 |
 | 피격 사건 `HurtEvent` | Replicated `COND_OwnerOnly` | 카메라 모디파이어·방향 호 — 잡힌 본인만 |
 | 처형 `ExecuteStartServerTime`(OnRep)·`ExecutedBy` | Replicated (모두) | 남의 ABP·CMC 속도 0·처형 카메라 게이트. 뷰 타깃은 서버 `SetViewTarget`(관전 경로) |
@@ -449,5 +452,42 @@ class ICL9Damageable {
 `ToggleLight`는 누르는 순간 토글이고 대기가 없다. 대기 중 손의 것이 바뀌는 모든 경로(칸 전환·놓기·던지기·먹기·잡힘)가
 `HostCancelSwingWindup()`으로 대기를 지우므로 떼도 타격이 없다. 표현: `GetSwingWindupElapsed()`(대기 아니면 −1)로
 ABP가 대기 자세(`AN_Farmer_SwingWindup` 루프)를, `GetSwingElapsed()`로 휘두르기 클립을 태운다 ([animation.md](animation.md)).
-히트박스 반경 = 손에 든 메시의 경계 구(`GetSwingHitSphere`) × `CL9Rules.SwingHitScale` — `HostTickSwingHit`의 호스트 스윕에만
-적용하고 중심은 그대로다(값·근거는 [../plan/data/rules.md](../plan/data/rules.md)).
+
+### 판정 — 컨트롤 회전 + 손 높이 원점 (2026-09-22, [../goal/combat-feel-pass-1.md](../goal/combat-feel-pass-1.md) D-1~D-4)
+
+2026-09-15의 "히트박스 = 손에 든 메시"와 2026-09-20의 `SwingHitScale`은 폐기됐다(decisions.md). 호스트 `HostTickSwingHit`이
+히트 구간이 열린 틱마다:
+
+- **원점** = `GetActorLocation() + Z·(EyeHeight − CapsuleHalfHeight − 66)` ≈ 손 높이 90cm(`SwingHandDrop` 66은 농부 A 리그의
+  물리 치수라 코드 상수). **방향** = `GetControlRotation().Vector()` — 던지기와 같은 방식. 카메라 컴포넌트 트랜스폼은 읽지 않는다:
+  `bUsePawnControlRotation`의 피치는 로컬 `GetCameraView` 안에서만 적용되어 리슨 호스트에서 클라 소유 폰의 카메라는 피치 0이다.
+- **모양** = `Origin + Dir·SwingHitRadius → Origin + Dir·SwingHitReach` 선분을 반경 `SwingHitRadius` 구로 스윕. 선분이 반경
+  하나 앞에서 시작해 구가 등 뒤로 나가지 않는다. 채널·응답은 그대로(WorldDynamic 채널에 Overlap 응답 — 닿은 전부가 돌아오고
+  벽·폰은 결과에 없다; 자신·든 아이템 무시). 최대 닿는 거리 = Reach + Radius + 몬스터 반경.
+- **히트 구간** `[SwingHitStart, SwingHitEnd)`는 그대로 "판정이 열린 시간"이다(손이 지나는 자리가 아니다). 틱이 덮는 구간
+  `(Prev, Now]`와의 겹침 판정(2026-09-15 낮은 프레임률 안전)도 그대로. 매 틱 그 순간의 컨트롤 회전으로 선분을 다시 잡으므로
+  구간 동안 시선을 돌리면 따라간다. 몬스터당 한 휘두르기 1회(`SwingHitMonsters`).
+- **가림**: 스윕에 걸린 살아 있는 몬스터마다 원점 → 몬스터 구 **중심** `ECC_Visibility` 선 트레이스(`ACL9Monster::TraceWorld`).
+  세상 지형이 먼저 막으면 제외. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 맞지도 가리지도 않는다). 열 없음, 항상 켜짐.
+- **표면음**: 같은 틱, 원점 → `Origin + Dir·SwingHitReach` **선** 트레이스(구가 아니다 — 손 높이에서 아래를 보면 구는 바닥에
+  먼저 닿는다). 세상 지형에 막히고 그보다 가까운 몬스터 명중이 이번 휘두르기에 없으면 휘두르기당 한 번
+  `SwingSurfaceHitServerTime`(Replicated, **조건 없음**)을 찍는다. 모든 머신이 `UpdateHitSounds`의 틱 비교로 `HitSurface` 행을
+  **폰 자리**에서 튼다(충돌점은 복제하지 않는다). 카메라 킥·팔 히트스톱·소음 사건은 없다.
+- 규칙 열: `SwingHitReach`(cm, 헤더 0)·`SwingHitRadius`(cm, 헤더 0) — 둘 다 **헤더 0 = 미설정 = 로드 오류**, 옛 경로 폴백 없음.
+  `Validate`: 유한·> 0·`Reach >= Radius`. 값은 [../plan/data/rules.md](../plan/data/rules.md).
+- 휘두르기당 트레이스 수 = 스윕 1 + 걸린 몬스터 수 + 표면 선 1 ([performance.md](performance.md)).
+- 권한 전신 메시의 `AlwaysTickPoseAndRefreshBones`(`BeginPlay`)는 남는다 — 판정이 아니라 놓기(`Server_Drop`이 손 소켓에 붙은
+  `HeldItem->GetActorLocation()`을 읽는다, [inventory.md](inventory.md) 놓기)가 쓴다.
+
+### 회복·입력 예약 (2026-09-22, D-6·D-7)
+
+- **회복** `CL9Rules.SwingRecovery`(초, 헤더 **0.6** = 옛 상수 동작): `HostSwing`이 `SwingReadyTime = 지금 + SwingRecovery`를
+  찍고 그 전의 뗌은 거부한다. `Validate`: `SwingRecovery >= SwingClipWindow(0.347)` ∧ `SwingHitEnd < SwingRecovery`. 한 휘두르기의
+  **첫 명중**을 찍는 틱에 `SwingReadyTime += HitStopTime` — 팔 히트스톱만큼 늦춰 맞든 빗나가든 팔이 돌아온 뒤 같은 여유가 남고,
+  다음 `SwingStartServerTime` 리셋이 멈춘 팔 애님 도중에 떨어지지 않는다.
+- **예약** `CL9Rules.SwingBufferTime`(초, 헤더 **0** = 끔 = 옛 동작): `Server_UseRelease`가 회복 중(`Now < SwingReadyTime`)이고
+  `SwingReadyTime − Now <= SwingBufferTime`이면 `bSwingBuffered = true`(호스트 전용, 비복제, 하나뿐·덮어쓰기). 회복이 끝나는
+  호스트 틱에 `HostTickSwingBuffer`가 `CanSwingNow()`(손에 `Swing` 행 ∧ `!IsIncapacitated()`)를 다시 거쳐 `HostSwing`. 취소 분기는
+  따로 없다 — `HostCancelSwingWindup()`이 대기와 함께 예약도 지우고, 칸 전환·놓기·던지기·먹기·넘어짐·사망이 이미 그것을 부른다.
+  처형 진입은 부르지 않지만 발화 틱의 `CanSwingNow()`가 막는다(예약은 그냥 사라진다).
+- 측정 치트 `cl9.swingtaps`·`cl9.swinglog` ([cheats.md](cheats.md)).

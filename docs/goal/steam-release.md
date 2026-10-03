@@ -1,7 +1,7 @@
 <!-- /autoplan restore point: /c/Users/user/.gstack/projects/Work/master-autoplan-restore-20260906-220719.md -->
 # goal: steam-release
 
-Status: DRAFT (/autoplan review in progress)
+Status: AWAITING APPROVAL — not started (checked 2026-09-21: no session code under `Source/CL9`, no `Content/Maps/Lvl_Title`, no `Source/CL9/Tests`). Was: DRAFT (/autoplan review in progress, 2026-09-06)
 Date: 2026-09-06 · Branch: master
 
 ## One-line Goal

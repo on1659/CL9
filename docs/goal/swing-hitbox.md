@@ -1,5 +1,7 @@
 # goal: swing-hitbox
 
+**상태**: 구현 완료 2026-09-15(커밋 `d4fe2ec` — 애니메이션을 따르는 히트박스·손 자리 놓기; decisions 09-15 "휘두르기 판정은 애니메이션을 따르는 히트박스"·"놓기(G)는 손 자리 낙하"; PIE `docs/testing/pie-scenarios.md` C4). 체크박스는 실행 당시 갱신되지 않았다. 2026-09-20 전역 배율 `CL9Rules.SwingHitScale` 추가(실행 swing-hit-scale, decisions 09-20).
+
 ## One-line Goal
 Make the swung item hit monsters through a real hitbox that follows the swing
 animation (every monster it touches, once per swing, with damage values that can

@@ -25,6 +25,7 @@ docs/reference/
 |---|---|---|
 | 맵이 어떻게 만들어지나 | [repo/repo-map.md](repo/repo-map.md) | [lethal/lethal-map.md](lethal/lethal-map.md) |
 | 아이템·장비·상점 | [repo/repo-items.md](repo/repo-items.md) | [lethal/lethal-items.md](lethal/lethal-items.md) |
+| **전투·조작감: 입력→판정→반응** | [근접 물리와 CL9 비교](lethal/lethal-combat-feel.md) | [삽 직접 분석과 CL9 차이](lethal/lethal-combat-feel.md) |
 | 훔쳐 나르는 물건과 운반 물리 | [repo/repo-valuables.md](repo/repo-valuables.md) | (lethal-items.md 안) |
 | 몬스터와 함정 | [repo/repo-monsters.md](repo/repo-monsters.md) | [lethal/lethal-monsters.md](lethal/lethal-monsters.md) |
 | 스테이지 루프·쿼터·저장·멀티 | [repo/repo-run.md](repo/repo-run.md) | [lethal/lethal-run.md](lethal/lethal-run.md) |

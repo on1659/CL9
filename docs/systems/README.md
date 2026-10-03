@@ -31,6 +31,7 @@
 | 가격·자금·구매 계산 | [economy.md](economy.md) · 트럭 패널 화면은 [shop.md](shop.md) |
 | 일자 진행·난이도 곡선·밤 흐름 | [balance.md](balance.md) |
 | 원정(진입·회수·탈출) 흐름 | [raiding.md](raiding.md) |
+| **새 스테이지(목적지)를 만들고 싶다** — 레벨·판 크기·구역별 몬스터/재료·밤 길이 | [stage.md](stage.md) — 명세 JSON 하나 + `setup_stage.py` + 자동 PIE 확인 |
 | **맵을 만지고 싶다** (모듈 조립·배치 툴·시드) | [map.md](map.md) · 조각 표·에셋 팩 교체는 [asset-swap.md](asset-swap.md) |
 | 위험을 플레이어에게 알리는 연출 | [warning.md](warning.md) |
 | **소리 낸 자리에 퍼지는 링**(파동) — 소음원 추가·색·반경·벽 차폐 | [wave.md](wave.md) → 기획은 [../plan/wave.md](../plan/wave.md) |
@@ -40,6 +41,7 @@
 | 모든 액터의 공통 베이스(네트워크·RPC·Alias 로드) | [actor-base.md](actor-base.md) |
 | 표 컬럼·조회·Validate 규칙 | [../data/schema.md](../data/schema.md) · 기획 표 공통은 [../plan/data/README.md](../plan/data/README.md) |
 | PIE로 검증하는 순서 | [../testing/pie-scenarios.md](../testing/pie-scenarios.md) |
+| **PIE가 느리다 / 프레임을 재고 싶다 / 틱·광원·이펙트를 더할 때 지킬 것** | [performance.md](performance.md) "점검표"(창 최소화 3fps 스로틀부터) · "측정"(`Tools/Unreal/perf_probe.py`) · "규칙" |
 
 ---
 
@@ -47,7 +49,7 @@
 
 | 문서 | 한 줄 |
 |---|---|
-| [actor-base.md](actor-base.md) | `ACL9ActorBase` — 아이템·몬스터 공통 베이스(네트워크·RPC·사운드·Alias 데이터 로드) |
+| [actor-base.md](actor-base.md) | `ACL9ActorBase` — 아이템·몬스터 공통 베이스(네트워크·RPC 소유권·Alias 데이터 로드) |
 | [animation.md](animation.md) | 애니메이션은 표현 — 상태에서 파생, 판정에 안 들어감. 스켈레톤·AnimBP·보유 에셋 |
 | [asset-swap.md](asset-swap.md) | 맵을 무엇으로 짓는지(조각 표·배치 규약·테마) — 에셋 팩 교체 절차 |
 | [balance.md](balance.md) | 일자가 오르면 무엇이 어려워지나, 밤 하나의 흐름, 실패 조건 |
@@ -57,13 +59,14 @@
 | [drop.md](drop.md) | 몬스터 처치 드롭 |
 | [economy.md](economy.md) | 이더의 유입·유출, 가격 계산 |
 | [input.md](input.md) | Enhanced Input — IMC·IA 목록, 기본 키, 리바인딩, 키 표기 `{0}` |
-| [inventory.md](inventory.md) | 손 하나 + 품 + 수레 — 운반 마찰 |
+| [inventory.md](inventory.md) | 퀵슬롯 4칸 + 수레 — 운반 마찰 |
 | [item.md](item.md) | `ACL9Item` 공통 틀 — 상태 = SubAlias, 수명 |
 | [light.md](light.md) | 손전등·헤드램프·정전·렌더 세팅 |
 | [localization.md](localization.md) | String Table `CL9` — 마스터 시트, 키 규칙, 번역 파이프라인 |
 | [map.md](map.md) | 모듈 조립 맵 생성기, 배치 툴, 디버깅 |
 | [monster.md](monster.md) | AI 상태 기계 하나 — 감각·이동·잡기·경보·종별 차이 |
 | [order.md](order.md) | 주문서 — 루프의 엔진 |
+| [performance.md](performance.md) | 성능 — 예산·기준선(2026-09-21)·측정 도구·새 코드가 지킬 규칙·병목 레버 순서 |
 | [raiding.md](raiding.md) | 원정 — 진입·회수·탈출 |
 | [save.md](save.md) | 판 세이브 — 호스트의 것 |
 | [sequence.md](sequence.md) | 전이 연출 재생 |
@@ -74,7 +77,7 @@
 | [ui.md](ui.md) | 화면에 무엇을 띄우나 — HUD·각 화면의 내용 |
 | [ui_system.md](ui_system.md) | UI 코드 구조 — WBP_Main·UI 표·UIManager·화면 히스토리 |
 | [warning.md](warning.md) | 위험 전달 — 월드 연출 우선 |
-| [wave.md](wave.md) | 파동 — 소음 이벤트 하나로 모아 각 머신이 그리는 바닥 링 (미구현, 사전 문서) |
+| [wave.md](wave.md) | 파동 — 소음 이벤트 하나로 모아 각 머신이 그리는 바닥 링 |
 
 ---
 

@@ -1,5 +1,7 @@
 # 철판 조리대
 
+상태: 게임 연결 검수됨 — 2026-09-11 `BP_CL9Kitchen` Mesh → `SM_Kitchen_A`(배율 1, Yaw 90·z 0, HeatZone 절대 회전은 C++), 020 PIE 놓기·가열·익음→탐. 2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 현재 소비처는 `ACL9Kitchen`/`ACL9Fixture`, `/Game/Items/BP_CL9Kitchen`.
 [실제 Lvl_Flat 조회](../evidence/020-kitchen-consumer.json):100cm 기본 큐브에 배율3/1.2/0.9,
 세계 크기300×120×90cm/중심Z45cm. HeatZone은 BeginPlay 때 실제 바운드 상면 위60cm로 정해진다.

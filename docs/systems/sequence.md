@@ -85,11 +85,6 @@ Level Sequence 에셋은 어느 레벨에서든 틀 수 있지만, **레벨에 �
   안 된다. 호스트 타이머는 어차피 독립적으로 돈다.
 - 시퀀스 안에서 판정 값을 바꾸지 않는다 — 트랙은 카메라·애니메이션·조명·소리 등 렌더 전용.
 
-## 치트
-
-`cl9.playseq <alias|번호>` — 로컬 재생 테스트 ([cheats.md](cheats.md)). 판정에 안 닿는
-로컬 연출이라 Server RPC를 타지 않는다.
-
 ## 참고
 
 - 표 컬럼·연출 목록(초안): [../plan/data/sequence.md](../plan/data/sequence.md)

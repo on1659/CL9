@@ -113,9 +113,12 @@ G   → Server_Drop     : FindAimedCart + ComputeCargoLobVelocity 가 되면 OnT
                         아니면 OnPlaced(손 자리)                          → HostClearActiveSlot
 Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostClearActiveSlot
 좌클 누름 → Server_UseStart   : Swing이면 SwingWindupServerTime = 지금 / ToggleLight면 즉시 토글
-좌클 뗌   → Server_UseRelease : 대기 중이었으면 HostSwing (칸 전환·놓기·던지기·먹기·잡힘은 HostCancelSwingWindup)
-            HostSwing         : SwingStartServerTime = 지금, 맞은 목록 비움 (타격은 여기서 나가지 않는다)
-매 틱(호스트) → HostTickSwingHit : 히트 구간이면 히트박스를 이전 자리→지금 자리로 스윕 → 닿은 몬스터마다 OnStrike 1회
+좌클 뗌   → Server_UseRelease : 대기 중이었으면 HostSwing — 회복 중이면 거부, 회복 끝까지 SwingBufferTime 이하면 예약(bSwingBuffered)
+                                (칸 전환·놓기·던지기·먹기·잡힘은 HostCancelSwingWindup — 대기와 예약을 같이 지운다)
+            HostSwing         : SwingReadyTime = 지금 + SwingRecovery, SwingStartServerTime = 지금, 맞은 목록 비움 (타격은 여기서 나가지 않는다)
+매 틱(호스트) → HostTickSwingBuffer : 예약이 있고 회복이 끝났으면 CanSwingNow 재검사 → HostSwing
+매 틱(호스트) → HostTickSwingHit : 히트 구간이면 손 높이 원점에서 컨트롤 회전 방향으로 구 스윕 → 가림 트레이스 통과한 몬스터마다 OnStrike 1회
+                                   → 표면 선 트레이스가 지형에 막히면 SwingSurfaceHitServerTime (휘두르기당 1회)
 우클 길게 → Server_Eat (활성 칸 Dish) → HostEat → EatStartServerTime = 지금 → HostConsumeHeldItem
 먹기·항아리·창구 → HostConsumeHeldItem → HostClearActiveSlot     // 수레 싣기 경로는 없다 — G/던지기로 떨어뜨린다
 ```
@@ -125,26 +128,29 @@ Shift+G → Server_ThrowChargeStart / Server_ThrowRelease → OnThrown → HostC
 - `ResolveFocus`·`GetFocusPrompt`·`Server_PickPlace`가 같은 `CanPickUpItem()`(= `CanSwitchSlot() && 빈 칸 있음`)으로
   판단하므로 하이라이트·프롬프트·실제 결과가 어긋나지 않는다.
 
-## 휘두르기 히트박스 (2026-09-15 — 옛 "뗀 순간 200cm 부채꼴에서 가장 가까운 하나" 폐기)
+## 휘두르기 히트박스 (2026-09-22 — 컨트롤 회전 + 손 높이 원점; 2026-09-15 "히트박스 = 메시" 폐기)
 
-타격은 **휘두르기 애니메이션을 따라다니는 히트박스**가 낸다. 판정은 전부 호스트이고 난수는 없다.
+타격은 **히트 구간이 열린 동안 매 틱, 손 높이 원점에서 시선 방향으로 끌고 가는 구**가 낸다. 판정은 전부 호스트이고 난수는
+없다. 원점·모양·가림·표면음의 정의는 [character.md](character.md) "판정 — 컨트롤 회전 + 손 높이 원점"이 정본이다.
 
-- **구간**: 좌클을 뗀 뒤 `GetSwingElapsed()`가 `CL9Rules.SwingHitStart`~`SwingHitEnd`(초, 초안 0.05~0.25) 사이인 동안.
-  ABP는 같은 시계를 `SwingElapsed + 0.12`로 읽어 `[0, 0.347)` 동안 클립을 태우므로(→ [animation.md](animation.md))
-  구간은 그 안에 있어야 한다(`UCL9RulesDef::Validate`). 구간 도중 칸 전환·놓기·던지기로 손이 비면 구간도 끝난다.
-- **모양**: 손에 든 행의 `Mesh` 에셋 경계 구(× 메시 스케일)를 **전신 손에 붙었을 때의 자리**로 옮긴 것
-  (`ACL9Item::GetSwingHitSphere`). 행에 히트박스 열은 없다 — 보이는 것이 곧 맞는 것이다. 자리는 아이템 액터의
-  **루트 구**에서 뽑는다: 소유자 본인 화면에서는 메시만 1인칭 팔(카메라 자식)로 옮겨 붙어 있어(`UpdateFirstPersonView`)
-  메시의 월드 트랜스폼을 읽으면 호스트가 자기 폰을 판정할 때 눈앞 허공을 때린다.
-- **스윕**: 호스트의 매 틱, 히트박스를 **이전 틱 자리 → 지금 자리**로 스윕한다(`ACL9Character::HostTickSwingHit`).
-  단순 겹침이면 프레임이 긴 상황(PIE 자동화 3~8fps)에서 팬이 한 틱 사이에 닭을 지나쳐 관통한다. 휘두르기의 첫 틱은
-  이전 자리 = 지금 자리다(옛 자세에서 끌고 오지 않는다). 판정은 점이 아니라 구간 겹침이라, 이번 틱이 덮는 시간이
-  히트 구간과 겹치기만 하면 그 틱에 한 번 스윕한다 — 0.2초 폭이 틱 사이로 통째로 빠져도 헛스윙이 되지 않는다.
+- **구간**: 좌클을 뗀 뒤 `GetSwingElapsed()`가 `CL9Rules.SwingHitStart`~`SwingHitEnd`(초, 초안 0.05~0.25) 사이인 동안 —
+  "판정이 열린 시간"이지 손이 지나는 자리가 아니다. ABP는 같은 시계를 `SwingElapsed + 0.12`로 읽어 `[0, 0.347)` 동안 클립을
+  태우므로(→ [animation.md](animation.md)) 구간은 그 안에 있어야 한다(`UCL9RulesDef::Validate`). 구간 도중 칸 전환·놓기·던지기로
+  손이 비면 구간도 끝난다.
+- **모양**: 원점 `GetActorLocation() + Z·(EyeHeight − CapsuleHalfHeight − 66)`(≈ 손 높이 90cm), 방향 `GetControlRotation()`,
+  선분 `Origin + Dir·SwingHitRadius → Origin + Dir·SwingHitReach`, 구 반경 `SwingHitRadius`(둘 다 `CL9Rules` 열, 헤더 0 =
+  로드 오류). 행에 히트박스 열은 없고 든 메시의 모양도 판정에 들어가지 않는다 — 팬이든 고기든 같은 구다.
+- **틱 판정**: 호스트의 매 틱, 그 순간의 컨트롤 회전으로 선분을 다시 잡아 스윕한다(`ACL9Character::HostTickSwingHit`).
+  판정은 점이 아니라 구간 겹침이라, 이번 틱이 덮는 시간이 히트 구간과 겹치기만 하면 그 틱에 한 번 스윕한다 — 0.2초 폭이
+  틱 사이로 통째로 빠져도(PIE 자동화 3~8fps) 헛스윙이 되지 않는다.
+- **가림**: 걸린 몬스터마다 원점 → 몬스터 중심 Visibility 선 트레이스(`ACL9Monster::TraceWorld`)가 지형에 먼저 막히면 제외.
+  동료 폰·아이템·다른 몬스터는 가리지 않는다.
 - **한 번의 휘두르기에 몬스터마다 한 번**: 휘두르기 시작에 비우는 맞은 목록으로 거른다. 나란히 선 닭 둘은 한 번
   휘둘러 둘 다 맞고, 같은 닭이 한 휘두르기에 두 번 맞지는 않는다. 대상은 `ACL9Monster`뿐이다(사람은 맞지 않는다).
-- **호스트에서 본이 돌아야 한다**: 전신 메시는 자기 폰에서 `OwnerNoSee`이고 남의 폰은 화면 밖일 수 있는데
-  `ACharacter` 기본값(`AlwaysTickPose`)은 렌더될 때만 본을 새로 쓴다 → 권한 쪽 전신 메시에만
-  `AlwaysTickPoseAndRefreshBones`를 준다(`BeginPlay`). 이게 빠지면 손 소켓이 얼어 히트박스가 제자리에 선다.
+- **호스트 전신 메시의 본 갱신**(`AlwaysTickPoseAndRefreshBones`, `BeginPlay`)은 이제 판정용이 아니라 **놓기**용이다 —
+  `Server_Drop`이 손 소켓에 붙은 `HeldItem->GetActorLocation()`을 "든 자리"로 읽는다(2026-09-15 "그 자리에서 떨어지게").
+  전신 메시는 자기 폰에서 `OwnerNoSee`이고 남의 폰은 화면 밖일 수 있는데 `ACharacter` 기본값(`AlwaysTickPose`)은 렌더될
+  때만 본을 새로 쓰므로, 이게 빠지면 놓는 자리가 옛 자세의 손이 된다.
 
 ## 무게와 감속
 

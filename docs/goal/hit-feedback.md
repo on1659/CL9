@@ -1,5 +1,7 @@
 # goal: hit-feedback
 
+**상태**: 구현 완료 2026-09-15(커밋 `3e20783` — 빨간 오버레이·공격자 킥·피격 셰이크·비네트; decisions 09-15 "타격감·피격감은 복제된 시각에서 파생한다"; PIE `docs/testing/pie-scenarios.md` C3~C5). 체크박스는 실행 당시 갱신되지 않았다. `CS_HitShake` 는 2026-09-18 사인파 오실레이터로 번복됐다(아래 정정 표기, decisions 09-18).
+
 ## One-line Goal
 Make hits *feel* like hits: a struck monster and a caught player both flash red,
 the attacker's camera kicks on a connecting swing, and the caught player gets a
@@ -53,7 +55,7 @@ were caught. `docs/systems/warning.md` already plans "피격: 비틀거림 + 카
   overlay, emissive red, opacity from a scalar parameter `Opacity` default 0.6),
   `/Game/Effects/CS_HitShake` and `/Game/Effects/CS_HurtShake` (duplicates of
   `CS_StaminaShake` with oscillation values from balance: Hit = short sharp
-  kick ~0.15 s, Hurt = heavier ~0.5 s), and the two `ShakeTable` rows.
+  kick ~0.15 s, Hurt = heavier ~0.5 s), and the two `ShakeTable` rows. (2026-09-18 번복 — `CS_HitShake` 는 펄린 복제가 아니라 사인파 오실레이터 `WaveOscillatorCameraShakePattern`, Pitch −3°@4Hz·0.12초·블렌드 아웃 0.04·FOV −3°; 정본 `Tools/Unreal/create_hit_feedback_assets.py` `HIT_SHAKE`. `CS_HurtShake` 는 펄린 그대로. decisions 09-18)
 - Docs: `docs/systems/monster.md` (flash rule), `docs/systems/character.md`
   (피격 절: flash·vignette·shake), `docs/systems/warning.md` (몸 감각 line),
   `docs/systems/ui.md` (HUD vignette), `docs/plan/data/rules.md` (4 rows),

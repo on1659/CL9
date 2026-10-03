@@ -1,7 +1,8 @@
 <!-- /autoplan restore point: /c/Users/user/.gstack/projects/Work/master-autoplan-restore-20260912-132850.md -->
 # goal: session-orchestration
 
-Status: APPROVED (/autoplan, gate cycle 2, 2026-09-12 — user chose "그대로 승인"; Korean
+Status: IMPLEMENTED — verified on Claude Code 2.1.201 on 2026-09-13 (`docs/workflow/sessions.md` is the operating
+spec), landed in commit `e0a44fc` (2026-09-15). Was: APPROVED (/autoplan, gate cycle 2, 2026-09-12 — user chose "그대로 승인"; Korean
 walkthrough in [session-orchestration.walkthrough.md](session-orchestration.walkthrough.md))
 Date: 2026-09-12 · Branch: master
 

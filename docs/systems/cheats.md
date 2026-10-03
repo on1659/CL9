@@ -83,7 +83,7 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 - 번호는 행 추가·삭제로 밀릴 수 있으므로 **타이핑 편의용**이고, 재현 가능한 리포트·스크립트에는
   Alias를 쓴다.
 
-## 명령 목록 (코드 등록 21개와 1:1 — `grep -n 'TEXT("cl9\.' Source/CL9/GameMode/CL9Cheats.cpp`, 2026-09-21)
+## 명령 목록 (코드 등록 24개와 1:1 — `grep -n 'TEXT("cl9\.' Source/CL9/GameMode/CL9Cheats.cpp`, 2026-09-22)
 
 | 명령 | 인자 | 하는 일 |
 |---|---|---|
@@ -106,6 +106,10 @@ cl9.additem 1             → cl9.list가 마지막으로 찍은 목록의 1번
 | `cl9.seed <N>` | 0 = 외곽만 | 지금 그 시드로 맵을 다시 깔고 다음 밤도 그 시드로 고정 (호스트). **PIE 없이 에디터 콘솔에서 치면** 같은 생성기로 레벨에 트랜지언트 액터를 깐다 — 5a 맵 배치 툴의 창 없는 판 (`cl9.seed clear`로 제거, 두 번째 인자로 목적지 alias) |
 | `cl9.wave <alias\|enum>` | 호스트 판정 | 내 발밑에서 그 소음원의 파동을 한 번 낸다 — `run` · `pickup_loud` 처럼 표의 alias나 enum 이름(`PickupLoud`)을 받는다 ([wave.md](wave.md) 소음원 enum). 발신자가 사람이라 `monster_call`은 읽을 몬스터 행이 없어 조용히 끝난다 |
 | `cl9.execute` | 호스트 판정 | **가장 가까운 살아 있는 처형 종**(`MonsterTable` 의 `ExecuteRadius > 0` 또는 `bExecuteOnCatch` — `IsExecutioner()`; `Dead`·`Execute` 제외) 몬스터가 나를 처형한다. 스토커(너구리)는 스토킹 계수기·거리·등 뒤·미발견·시야·`KillCooldown` 검사를 **우회**, 타깃 상태(넘어짐·처형 중·죽음)와 **앵커 스윕**·`HostBeginExecuted` 는 그대로; 잡히면 처형인 종(돼지)은 타깃 상태 검사만 하고 앵커 스윕·텔레포트 없이 그 자리에서 즉시 진입 ([monster.md](monster.md) 스토킹과 처형). 처형 종이 없으면 로그 한 줄(`cl9.addmonster pig` 또는 `raccoon` 먼저), 앵커가 막히면 몬스터가 사유(`anchor-blocked`)를 찍는다. 내가 죽었거나 처형 중이면 무시 |
+| `cl9.swingtaps <N> [interval_ms]` | 호스트 판정 · interval 기본 100 | **휘두르기 입력 유실 측정**(goal/combat-feel-pass-1.md D-8 ④). 호스트 폰에 월드 타이머로 N 번 `ACL9Character::HostCheatSwingTap()`(= `Server_UseStart`+`Server_UseRelease` 와 같은 경로, 누르고 바로 뗌)을 넣고 탭마다 `cl9.swingtaps: tap=<i> t=<서버초 .3f> result=<swing\|buffered\|lost>`(swing = 즉시 휘두름, buffered = 회복 끝에 예약, lost = 거부)를, N 번째 뒤에 `cl9.swingtaps: N=<N> interval_ms=<ms> swing=<a> buffered=<b> lost=<c> recovery=<SwingRecovery> buffer=<SwingBufferTime>` 을 찍는다. 시각은 틱 위상이 아니라 서버 시각. 실행 중이면 새 요청은 거부(`a run is still in progress`). 손에 `Swing` 행이 없으면 전부 lost 다 — `cl9.additem frying_pan` 먼저 |
+| `cl9.swinglog [0\|1]` | 호스트 판정 · 인자 없으면 토글 | 휘두르기마다 히트 구간이 닫히는 틱(구간 끝 또는 손이 바뀜)에 `cl9.swing: start=<t> input=<t> hit=<t\|-> surface=<t\|-> ready=<t> arm_return=<start+0.347> tested=<n> occluded=<m>` — start = `SwingStartServerTime`, input = 받아들인 뗌의 서버 시각(예약이면 뗀 순간), hit = 첫 명중 `SwingHitServerTime`, surface = `SwingSurfaceHitServerTime`, ready = `SwingReadyTime`(첫 명중 뒤 `+HitStopTime` 반영), arm_return = start + `SwingClipWindow`, tested = 스윕에 걸려 가림 검사까지 간 살아 있는 몬스터 수(틱 합계), occluded = 그중 지형에 가려 빠진 수. 회복 중이라 거부된 뗌(예약도 안 됨)은 `cl9.swing: rejected t=<t> ready=<t>`. 스위치는 `ACL9Character::bCheatSwingLog`(정적, 호스트) |
+| `cl9.knockbacklog [0\|1]` | 호스트 판정 · 인자 없으면 토글 | 몬스터 넉백(타격 `HitKnockback`·밀침 `PushKnockback` 둘 다)이 끝나는 틱에 `cl9.knockback: <alias>#<UniqueID> from=(x y z) to=(x y z) dist=<수평 cm .1f> steps=<n> blocked=<0\|1> hitstop=<지연 s> time=<총거리/속도 s>` — from = Stun 진입 자리, to = 멈춘 자리, steps = 실제로 옮긴 틱 수, blocked = `TraceWorld` 또는 스윕이 막아 조기 종료, hitstop = 이동 전 대기(타격 `HitStopTime`, 밀침 0). 스위치는 `ACL9Monster::bCheatKnockbackLog`(정적, 호스트) |
+| `cl9.griplive [0\|1]` | 호스트 판정 · 인자 없으면 토글 | 켜져 있으면 손에 든 아이템이 매 틱 `ItemTable`의 `GripOffset`/`GripRotation`을 다시 읽어 적용한다 — 꺼져 있을 때는 손에 붙는 순간(줍기) 한 번만 적용되므로, 값 튜닝 중 PIE를 다시 켜거나 놓았다 줍지 않아도 회전이 바로 보인다. 스위치는 `ACL9Item::bCheatGripLive`(정적, 호스트) |
 | `cl9.shownoise` | 로컬 전용 | 소음 판정 반경을 디버그 원으로 그리고, 파동마다 반경·차폐 광선 수를 `LogCL9`에 찍는다 — 링이 멈추는 자리와 판정 반경이 같은지 대조하는 용도 ([wave.md](wave.md) PIE 확인) |
 | `cl9.lang [ko\|en\|ja\|zh-Hans]` | 로컬 전용 (에디터/PIE는 게임 언어 미리보기) | 인자 없으면 현재 언어 출력, 있으면 지금 바꾸고 `GameUserSettings.ini`에 저장 — 설정 화면 언어 항목과 같은 `UCL9GameUserSettings::ApplyLanguage`를 부른다 ([localization.md](localization.md)) |
 | `cl9.shownav` | **미구현** | 몬스터 이동·경로 시각화 (구 bp_show_cells) |

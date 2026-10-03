@@ -24,7 +24,7 @@
   상태의 OnRep에서
 - 클라발 Server RPC로 사운드를 요청하지 않는다 (비소유 액터 함정 — actor-base.md)
 - **구현된 효과음(2026-09-18)은 Multicast도 OnRep도 아니다** — 이미 복제되는 시계·상태(`SwingStartServerTime`·
-  `KnockdownStartServerTime`·몬스터 `StateStartServerTime`·아이템 `HoldState`)를 매 틱 지난 틱과 비교해 **상승 에지**에서
+  `SwingSurfaceHitServerTime`(2026-09-22)·`KnockdownStartServerTime`·몬스터 `StateStartServerTime`·아이템 `HoldState`)를 매 틱 지난 틱과 비교해 **상승 에지**에서
   모든 머신이 각자 튼다. 새 RPC가 없고, 리슨 호스트도 자기 폰에서 같은 길을 탄다(OnRep은 호스트 자신에게 뜨지 않는다 —
   character.md 피격 절의 셰이크와 같은 이유). 아래 "구현 — `SoundTable`" 절. 예외 하나(2026-09-20): `MonsterNear`는 파동
   멀티캐스트(`Multicast_Noise`, Unreliable)에 얹혀 온다 — 파동 표 행의 `SoundRow` 열이 "이 소음이 나면 낼 소리"를 가리킨다.
@@ -71,10 +71,14 @@
   한 번에 치면 **닭마다 하나씩** 난다(카메라 킥은 휘두르기당 한 번이지만 소리는 맞은 몬스터가 낸다). 시체를 쳐도 안 난다.
 - `Hurt` 행 (옛 `SFX_Hurt`) — 잡혀 넘어지는 순간, 맞은 사람 쪽(`KnockdownStartServerTime` 변화 — C3 피격감). 일어날 때는
   없다. 남의 화면에서도 그 폰 자리에서 들린다.
+- `HitSurface` 행 (2026-09-22, goal/combat-feel-pass-1.md D-4) — 휘두르기가 벽·바닥에 닿은 순간(`SwingSurfaceHitServerTime`
+  변화 — 조건 없는 복제라 남의 폰에서도 난다). 휘두르기당 한 번, 그보다 가까운 몬스터 명중이 없을 때만 — 허공·벽·몬스터가
+  `Swing`·`HitSurface`·`Hit` 세 소리로 갈린다. 충돌점은 복제하지 않아 **폰 자리**에서 난다. 재질별 소리·킥·소음 사건은 없다.
 
 | 행 | 에지 | 어느 머신 | 어디서 | 위치 |
 |---|---|---|---|---|
 | `Swing` | `SwingStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
+| `HitSurface` | `SwingSurfaceHitServerTime` 변화 (휘두르기당 1회, 호스트 `HostTickSwingHit`의 표면 선 트레이스) | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
 | `Hurt` | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 |
 | `Hit` | Stun·Dead ∧ `GetStateElapsed() < HitFlashTime` 창의 상승 에지, 또는 창 안에서 `StateStartServerTime` 변화 | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심(`Bounds.Origin`) |
 | `MonsterDeath` | 같은 에지인데 상태가 Dead | 모든 머신 | `ACL9Monster::TickHitFeel` | 몬스터 메시 중심, `Hit`과 함께 |
@@ -118,8 +122,8 @@ Content/Sounds/
 
 **표.** `UCL9SoundTable`(`Source/CL9/Data/CL9SoundTable.h`, DataAsset — `UCL9ShakeTable`과 같은 틀)은
 `TMap<FName, TSoftObjectPtr<USoundBase>> Rows` 하나다. 효과음을 추가한다는 것은 사운드 에셋을 만들고 여기에 행을 더하는
-것이지 rules 에셋에 열이 늘어나는 일이 아니다. C++가 조회하는 행 이름은 `CL9SoundNames` 상수 10개 — `Pickup`·`Place`·`Swing`·
-`Hit`·`Hurt`·`MonsterDeath`·`Footstep`·`MonsterPounce`·`MonsterCatch`·`MonsterNear`(뒤 셋은 2026-09-20) — 그 외 행은 데이터
+것이지 rules 에셋에 열이 늘어나는 일이 아니다. C++가 조회하는 행 이름은 `CL9SoundNames` 상수 11개 — `Pickup`·`Place`·`Swing`·
+`Hit`·`Hurt`·`MonsterDeath`·`Footstep`·`MonsterPounce`·`MonsterCatch`·`MonsterNear`(뒤 셋은 2026-09-20)·`HitSurface`(2026-09-22) — 그 외 행은 데이터
 전용이다. 다만 **파동 표의 `SoundRow` 열은 어느 행이든 이름으로 가리킬 수 있다**([wave.md](wave.md)) — `MonsterNear`는 C++
 상수가 있지만 재생 지점은 그 열이다. 에셋은 `/Game/Data/SoundTable`이고
 `BP_CL9GameInstance.SoundTableAsset`(`UCL9GameInstance`, `ShakeTableAsset`과 같은 자리)이 가리킨다 — C++에는 에셋 경로가
@@ -160,10 +164,11 @@ Concurrency `SCC_Effects4`(`USoundConcurrency`, `MaxCount` 4 — 같은 음이 �
 | `MonsterPounce` | `/Game/Sounds/SFX/Monster/S_MonsterPounce` | `monster_pounce.wav` (톱니파 꽥 + 날개짓 4번, 피크 −5 dBFS) | 0.45초 |
 | `MonsterCatch` | `/Game/Sounds/SFX/Monster/S_MonsterCatch` | `monster_catch.wav` (급강하 꽥 + 쿵 + 날개짓, 피크 −3 dBFS — 예고보다 낮고 크게) | 0.50초 |
 | `MonsterNear` | `/Game/Sounds/SFX/Monster/S_MonsterNear` | `monster_near.wav` (블립 두 개 꼬꼬댁, 피크 −10 dBFS) | 0.16초 |
+| `HitSurface` | `/Game/Sounds/SFX/Carry/S_HitSurface` | `hit_surface.wav` (프라이팬이 벽·바닥에 닿는 "퍽/툭", 피크 −6 dBFS — 명중 `hit_pan` −3 보다 작게) | 0.20초 |
 
-뒤 세 행(2026-09-20)은 WAV·임포트 스크립트까지 art가 냈고 **에셋 임포트와 `SoundTable` 행 추가는 리드가 에디터에서 한다**
-(`import_sfx.py` 실행 → `SoundTable.Rows`에 `MonsterPounce`·`MonsterCatch`·`MonsterNear`). 행이 들어오기 전까지는 재생
-지점이 조용히 통과한다 — 소리만 없다.
+뒤 세 행(2026-09-20)과 `HitSurface`(2026-09-22)는 WAV·임포트 스크립트까지 art가 냈고 **에셋 임포트와 `SoundTable` 행 추가는
+리드가 에디터에서 한다**(`import_sfx.py` 실행 → `SoundTable.Rows`에 행 추가). 행이 들어오기 전까지는 재생 지점이 조용히
+통과한다 — 소리만 없다.
 
 ## 재생 API (표현 계층)
 

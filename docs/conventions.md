@@ -75,7 +75,8 @@ int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // CL9Progression
 - **판정/스폰/데미지/상태 전이 코드는 서버에서만 실행한다.**
   함수 진입부에 `if (!HasAuthority()) return;`을 둔다.
   
-- **GameMode는 서버에만 존재한다.** 클라 코드에서 `GetGameMode()` 호출 금지.
+- **GameMode는 서버에만 존재한다.** 받을 때는 `GetWorld()->GetAuthGameMode<ACL9GameMode>()` 하나로 —
+  클라에서는 `nullptr`를 돌려주므로 반환값을 **반드시 null 검사**한다(코드 18곳 전부 이 형태, 2026-09-21 감사).
   공유 상태는 GameState에만 두고, GameMode는 로직 전용이다.
 
 - **클라에 보여야 하는 상태는 Replicated UPROPERTY 또는 Multicast RPC로만 전송한다.**
@@ -86,6 +87,16 @@ int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // CL9Progression
 
 - **HasAuthority() 추천.** GetNetMode() 직접 비교는 Standalone/PIE를 빠뜨리기 쉬워 버그가 남는다.
 
+### RPC·호스트 함수 명명 (코드 관행 그대로 — 2026-09-21 명문화)
+
+| 접두 | 뜻 | 예 |
+|---|---|---|
+| `Server_*` | 클라 → 호스트 요청. `UFUNCTION(Server, Reliable)` — **소유 액터(Character·PlayerController)에만** 둔다 ([systems/actor-base.md](systems/actor-base.md) 소유권 규칙) | `Server_PickPlace` · `Server_Drop` · `Server_UseStart` · `Server_SelectSlot` · `Server_CL9Cheat` |
+| `Client_*` | 호스트 → 소유 클라 한 명 (`Client`) | `Client_OpenScreen` · `Client_BuyRejected` |
+| `Multicast_*` | 호스트 → 전원 (`NetMulticast`). 복제된 시각의 비교로 담기지 않는 **순간 사건**에만 | `Multicast_Noise` · `Multicast_Settled` |
+| `Host*` | RPC 가 아닌 **호스트 전용 일반 함수** — 진입부 `HasAuthority` 관문. Server RPC 가 검증 뒤 이것을 부르고, 호스트 자신·몬스터 AI 도 직접 부른다 | `HostApplyDamage` · `HostKill` · `HostSwing` · `HostDropEverything` · `HostReportNoise` · `HostTickAI` |
+| `OnRep_*` | Replicated 콜백 — 리슨 호스트는 자기 액터에서 뜨지 않는다 (§ 6 예외) | `OnRep_AliasPair` · `OnRep_State` |
+
 ---
 
 ## § 3. 모듈·폴더 구조
@@ -95,13 +106,20 @@ int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // CL9Progression
 **소스 코드 (Source/CL9/):**
 ```
 CL9/
-  ├─ Character/        (ACL9Character, 이동 로직)
-  ├─ GameMode/         (ACL9GameMode, ACL9GameState, ACL9PlayerState)
-  ├─ Items/            (ACL9Item, 아이템 로직)
-  ├─ Monsters/         (ACL9Monster, AI)
-  ├─ Data/             (ACL9Types.h, CL9Constants.h, 구조체)
-  └─ UI/               (ACL9HUD, 위젯 클래스)
+  ├─ Core/             (ACL9ActorBase 공통 베이스, ICL9Damageable·ICL9Interactable 인터페이스,
+  │                     CL9InputText 키 표기 `{0}`, CL9ReplicationCheck 복제 등록 자동화 테스트)
+  ├─ Character/        (ACL9Character, 커스텀 CMC CL9CharacterMovement)
+  ├─ GameMode/         (ACL9GameMode, ACL9GameState, ACL9PlayerState, ACL9PlayerController, GameInstance,
+  │                     CheatManager·CL9Cheats 등록부, SaveGame, GameUserSettings, CameraManager, HurtLookModifier)
+  ├─ Items/            (ACL9Item 와 파생 LightItem/FlashItem/LampItem, ACL9Cart, 시설 액터 Kitchen/Counter/Jar/TruckPanel)
+  ├─ Monsters/         (ACL9Monster, AI 상태 기계)
+  ├─ World/            (ACL9SiteMap 맵 조립·소품·램프, CL9SiteLayout 레이아웃(+Tests), ACL9NightLighting,
+  │                     ACL9Fixture 시설물 베이스, ACL9FlapIn 문짝, ACL9TruckPad)
+  ├─ FX/               (UCL9WaveRenderer 파동 링)
+  ├─ Data/             (CL9Types.h, CL9Constants.h, *Def 행 클래스, DefRegistry, Sound/Wave/Shake 표)
+  └─ UI/               (위젯 클래스, UITable, SettingsTable)
 ```
+(2026-09-21 감사로 실제 디스크와 맞춤 — Public/Private 분리 없음)
 
 **Constants.h 정책:**
 - ✅ **물리 상수** (플레이어 반경, 눈높이, 통로 폭 등) — Constants.h에 OK
@@ -119,7 +137,8 @@ Content/
   ├─ Maps/             (Lvl_Flat 테스트 맵, Lvl_Henhouse, Henhouse/·FoodTruck/ 맵 조각·소품 메시)
   ├─ Data/             (DataAsset 표 — *Table, CL9DefList/Rules/Progression. 접두사 없음 — 2026-09-12)
   ├─ UI/               (WBP_* 위젯 블루프린트, UITable)
-  ├─ Effects/          (카메라 셰이크·파티클·사운드)
+  ├─ Effects/          (카메라 셰이크 CS_*·나이아가라 NS_CL9_*·히트 플래시 재질 — 사운드는 여기 없다)
+  ├─ Sounds/           (SFX/Carry·Character·Monster 효과음, Master/ 사운드 믹스·SoundClass — systems/sound.md)
   ├─ Strings/          (CL9_Strings.csv 마스터 시트 + 생성물 CL9.csv — systems/localization.md)
   ├─ Localization/CL9/ (수집·번역 산출물 manifest·po·locres — 생성물, 커밋함)
   ├─ Tests/            (검수 레벨 Lvl_AssetQA01·리그 왕복 프로브 — 게임이 참조하지 않는 테스트물)
@@ -147,6 +166,12 @@ Content/
 - **예외 — 이동 예측 상태:** 스태미나·유효 무게에서 파생되는 이동 속도처럼 CMC 예측에
   들어가는 값은 CMC/`FSavedMove` 경로에 산다 (안 그러면 러버밴딩). PlayerState에는
   표시용 미러만 둔다.
+- **예외 — 표현 파생용 서버 시각과 소지 실물 (Character Replicated):** 넘어짐·처형·휘두르기·먹기·던지기의
+  시작 시각(`KnockdownStart/EndServerTime`·`ExecuteStartServerTime`·`SwingStartServerTime` 등)과 피격 사건
+  `FCL9HurtEvent`(`COND_OwnerOnly`), 그리고 손·머리·수레의 **실물 참조**(`HeldItem`·`WornItem`·`PullingCart`)는
+  `ACL9Character`에 Replicated 로 둔다 — 애니메이션·카메라·소리가 폰에서 파생되고 실물이 폰에 붙기 때문이다.
+  PlayerState 는 미러(`Slots`·`ActiveSlot`·`HeadItem`)만 갖는다. HP 는 규약대로 PlayerState 에만
+  (decisions.md 2026-09-13 퀵슬롯 · 09-15 넘어짐 시계 · 09-20 `FCL9HurtEvent`; 표는 [systems/character.md](systems/character.md) 네트워크 정리).
 - 몬스터 상태 → `ACL9Monster`에 Replicated 변수로. 호스트에서 수정, 클라에서 읽기.
 - 게임 상태 (일차, 밤 시계, 판 자금) → `ACL9GameState`에만.
 
@@ -160,7 +185,8 @@ Content/
 1. **로드** (각 머신, 게임 시작 시)
    - `UCL9DefRegistry`가 DataAsset을 로드 — 호스트·클라 모두 로컬에서
 2. **검증**
-   - 로드 검사(참조 무결성·관계 부등식) + 접속 시 `CL9TuningHash`로 호스트·클라 값 대조
+   - 로드 검사(참조 무결성·관계 부등식). 접속 시 `CL9TuningHash`로 호스트·클라 값을 대조하는 것은
+     **설계만 있고 미구현**이다(소스에 심볼 없음 — plan/build-order.md) — 지금은 같은 빌드가 같은 표를 갖는다는 전제뿐
 3. **런타임 상태만 복제** (GameState/PlayerState)
    - 일차·밤 시계·판 자금·주문 진행처럼 **변하는 상태**만 Replicated
 4. **표현** (로컬)
@@ -175,7 +201,7 @@ Content/
 
 ### ❌ 절대 금지
 
-- 클라 코드에서 `GetGameMode()` 호출
+- `GetAuthGameMode<ACL9GameMode>()` 반환값을 null 검사 없이 쓰기 — 클라에서는 `nullptr`다 (§ 2)
 - Actor가 자신의 Replicated 상태를 직접 수정 (서버에서만 가능)
 - `TakeDamage()`, `UDamageType` — 엔진 데미지 파이프라인 대신 `ICL9Damageable::OnDamage(Amount, Source)`
   가상 함수 + 단순 HP 값을 쓴다 (호스트에서만 호출 — systems/character.md)
@@ -189,9 +215,14 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
 
 - 판정 코드 진입부: `if (!HasAuthority()) return;`
 - 공유 상태: GameState/PlayerState에만 두기
-- Replicated 변수: 서버에서만 수정하고, 클라는 OnRep_ 콜백으로 반응한다
+- Replicated 변수: 서버에서만 수정하고, 클라는 OnRep_ 콜백으로 반응한다.
+  **예외 — 리슨 호스트 표현:** 리슨 호스트는 자기 액터에서 OnRep 이 뜨지 않으므로 셰이크·소리·플래시 같은
+  표현은 OnRep 이 아니라 **복제된 서버 시각·상태를 매 틱 비교해 상승 에지에서** 낸다 — 모든 머신이 같은 코드를
+  돈다 (decisions.md 2026-09-15 타격감 · 2026-09-18 SoundTable; UI 폴링 예외는 [systems/ui_system.md](systems/ui_system.md))
 - 데이터: 모두 DataAsset/에디터에서 관리
 - 복제 업데이트: `SetNetUpdateFrequency(20)` (20 FPS 고정)
+  — 현재 부르는 곳은 `ACL9Character`·`ACL9ActorBase`·`ACL9PlayerState` 셋이고 `ACL9GameState`·`ACL9PlayerController`
+  는 부르지 않는다 (2026-09-21 감사 — 결정 필요)
 - 게임 시간: `GameState->GetServerWorldTimeSeconds()` 기준 — 엔진이 클라 시계 오프셋을
   동기화해주므로 공유 타임스탬프(밤 시계·정전 시각·잠금)를 클라가 그대로 해석할 수 있다
 - 화면 문자열: **String Table `CL9`의 키만** 쓴다 — 코드는 `LOCTABLE("CL9", "Shop.NoMoney")`, UMG·데이터
@@ -203,10 +234,14 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
 
 ### 📋 개발 중 체크리스트
 
-- [ ] 새 플레이어 상태 변수를 만들 때: PlayerState에 Replicated로, 절대 Character에 안 됨
+- [ ] 새 플레이어 상태 변수를 만들 때: PlayerState에 Replicated로. Character 에 두는 것은 § 4 의 두 예외 —
+      이동 예측 상태(CMC/`FSavedMove`), 표현 파생용 서버 시각(넘어짐·처형·피격 사건 `FCL9HurtEvent`)과 소지 실물
+      참조(`HeldItem`·`WornItem`·`PullingCart`; PlayerState 는 미러) — 뿐이다
 - [ ] 새 판정 로직을 만들 때: 액터의 자신 로직은 자신에서 (Monster.Die(), Item.OnPickup()), 게임 전체 진행은 GameMode에서만
 - [ ] 데이터를 읽을 때: 정적 표는 로컬 레지스트리(DefRegistry)로, 런타임 상태는 GameState로
 - [ ] 네트워크 테스트: 호스트 1명 + 클라 최소 1명으로 항상 검증
+- [ ] 틱·광원·나이아가라·트레이스·위젯 틱을 **더할 때**: [systems/performance.md](systems/performance.md) "규칙"(틱은 이유가 있을 때만, 틱 안 전체 훑기 금지,
+      시설 빛은 그림자 없음, 이펙트는 바운드·상한·컬 거리) — 끝나면 같은 자리에서 `perf_probe.py` 로 밤 실내 avg 를 재고 +1ms 넘으면 decisions.md 에 이유
 - [ ] 새 기능을 만들 때: 플레이어가 바꿀 값인지 [plan/settings.md](plan/settings.md) 체크리스트로 판단 — 옵션이면 [systems/settings.md](systems/settings.md) "옵션 추가" 절대로. 어느 시스템 문서를 볼지는 [systems/README.md](systems/README.md)
 
 ---
@@ -338,7 +373,9 @@ You: 에디터에서 확인
 **원칙:** 모든 게임 이벤트에 사운드를 첨부한다.
 
 - 사운드 재생은 **표현 계층(Character, Monster, UI)에서만** — 판정 코드(GameMode, 서버)에서 직접 재생하지 않는다.
-- 동기화는 **Multicast RPC** 또는 Replicated 콜백으로.
+- 동기화는 **복제된 서버 시각·상태의 틱 비교**로 — 각 머신이 같은 상승 에지에서 `CL9Sound::PlayAt` 을 부른다.
+  리슨 호스트는 자기 액터에서 OnRep 이 뜨지 않아 OnRep 콜백을 쓰지 않고, 소리용 Multicast RPC 도 두지 않는다
+  (§ 6 예외 — decisions.md 2026-09-15·09-18). Multicast 는 시각으로 담기지 않는 순간 사건(`Multicast_Noise`)뿐.
 - 시스템 공용 에셋(MasterSoundMix)만 경로 하드코딩 예외 — 게임 콘텐츠는 항상 DataAsset에서 읽는다.
 
 전문(분류·이벤트 목록·에셋 위치·재생/볼륨 설정)은 [systems/sound.md](systems/sound.md).
@@ -347,7 +384,7 @@ You: 에디터에서 확인
 
 ## § 10. 액터 베이스 규칙
 
-**원칙:** 아이템·몬스터 등 CL9 액터는 `ACL9ActorBase`를 상속한다. 공통 로직(네트워크, RPC, 사운드)은 베이스에 두고, 상세 구현은 자식에서.
+**원칙:** 아이템·몬스터 등 CL9 액터는 `ACL9ActorBase`를 상속한다. 공통 로직(복제 설정, Alias 데이터 로드, 종류·표시 이름)은 베이스에 두고, 상세 구현은 자식에서. 사운드 멤버는 베이스에 없다(§ 9).
 
 - **예외 — 캐릭터:** `ACL9Character`는 `ACharacter`를 상속한다 (2026-08-31 A4 결정). CMC 예측 이동(커스텀 CMC + `FSavedMove`)이 필요해서 AActor 계열 베이스를 쓸 수 없다.
 - `Alias`는 Replicated — **SetAlias()는 서버에서만** 호출한다.

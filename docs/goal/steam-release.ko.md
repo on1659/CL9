@@ -1,7 +1,7 @@
 <!-- 한글 번역판 — 정본은 같은 폴더의 steam-release.md (영어). 두 파일이 다르면 영어본이 우선한다. -->
 # goal: steam-release (한글 번역판)
 
-상태: 초안 (/autoplan 리뷰 진행 중)
+상태: 승인 대기 — 미착수(2026-09-21 확인: `Source/CL9` 에 세션 코드 없음, `Content/Maps/Lvl_Title`·`Source/CL9/Tests` 없음). 이전 표기: 초안 (/autoplan 리뷰 진행 중, 2026-09-06)
 날짜: 2026-09-06 · 브랜치: master
 
 ## 한 줄 목표

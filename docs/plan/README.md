@@ -33,6 +33,9 @@
 | **이 기능을 옵션으로 열어도 되나** | [settings.md](settings.md) 체크리스트 |
 | 플레이어 외형을 추가하고 싶다 | [data/character.md](data/character.md) |
 | 벽·상자 같은 맵 조각을 만지고 싶다 | [data/segkind.md](data/segkind.md) |
+| **방(모듈)을 추가하거나 소품 세트를 만지고 싶다** | [data/module.md](data/module.md) |
+| 먹으면 걸리는 효과(버프)를 추가하고 싶다 | [data/buff.md](data/buff.md) |
+| 밤 시작·정전·전멸·새벽 같은 전이 연출을 만지고 싶다 | [data/sequence.md](data/sequence.md) |
 | 표의 공통 규칙 (조회·기믹·소프트 참조) | [data/README.md](data/README.md) |
 | **저쪽 게임은 이걸 어떻게 했나** | [../reference/README.md](../reference/README.md) |
 | 참고 게임에서 CL9로 가져올 것 | [../reference/takeaways.md](../reference/takeaways.md) |

@@ -49,7 +49,8 @@ WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호
 **마우스좌 사용**(누르면 공격 대기·떼면 타격 — 프라이팬 / 손전등은 누르는 즉시 켜고 끄기 — 행이 정함) ·
 **마우스우 스캔/먹기**(탭: 시야 안 아이템 라벨 / `UseHoldTime` 0.4초 길게: 든 요리 먹기) · F 헤드램프 ·
 **M 메뉴 열기·닫기** · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate).
-R은 비어 있다 — 옛 품 교체(`IA_Swap`)가 2026-09-13 퀵슬롯로 대체되며 사라졌다.
+R은 비어 있다 — 옛 품 교체(`IA_Swap`)가 2026-09-13 퀵슬롯로 대체되며 사라졌다. 에셋 `IA_Swap`·`IA_Throw`는
+`Content/Input/Actions/`에 참조 0으로 아직 남아 있다(코드 바인딩·IMC 행 없음 — 삭제 보류, decisions.md 2026-09-13).
 (2026-09-05: 이 화면을 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
 PIE 정지 키와 겹쳐 에디터가 꺼진다. IMC_Gameplay·IMC_UI 모두 M→IA_Pause 한 행, Esc 행 없음).
 
@@ -183,7 +184,8 @@ UserSettings->RegisterInputMappingContexts({IMC_Gameplay, IMC_UI, IMC_Spectate})
 - `ACL9Character`는 `PickPlace` 키 텍스트를 **캐시**하고(`OnSettingsChanged`에서 갱신, `LastFocusPrompt` 비움)
   `GetFocusPrompt` 출구 한 곳에서 `FText::Format`한다 — `ICL9Interactable::GetPrompt`는 원문 패턴을 그대로 돌려준다.
   틱마다 프로필을 조회하면 할당에다 못 찾을 때 Warning 스팸이다. 관전 위젯은 `NativeConstruct`에서 한 번.
-- 개발 편의: `cl9.resetkeys`([cheats.md](cheats.md)) — 프롬프트가 현재 키를 찍으니 "왜 `[F] 줍기`지?"가 생긴다.
+- 개발 편의: 프롬프트가 현재 키를 찍으니 "왜 `[F] 줍기`지?"가 생기면 설정 화면의 **[키 초기화]** 버튼
+  (`HandleResetKeysClicked`, [settings.md](settings.md)) — 콘솔 명령(`cl9.resetkeys`)은 없다.
 
 ## 네트워크 정리
 

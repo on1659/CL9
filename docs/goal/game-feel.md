@@ -1,5 +1,7 @@
 # goal: game-feel
 
+**상태**: 1차 구현 2026-09-18~20(실행 feel-hit-kill — 커밋 `2bd6641` C++ · `52fe32d` 효과음·셰이크 스크립트 · `e84b387` 문서 · `25f4e6c` 에셋; decisions 09-18 8항목): §1 효과음·`SoundTable`, §2 히트스톱·킥·타격 퍼프, §3 죽음 발사·드랍 호, 발소리 착지. **§4 줍기 팔 클립(`AN_Farmer_FPPickup`)·퀵슬롯 펄스와 §5 몬스터 HP 핍(`WBP_MonsterHp`)은 미제작**(2026-09-21 확인 — `Content/`·`Source/CL9/UI/`·`Source/CL9/Character/` 에 없다). 체크박스는 실행 당시 갱신되지 않았다. 초안 수치(6°·420·220)의 확정값은 본문에 병기했다.
+
 ## One-line Goal
 Make swinging, hitting, killing and picking up *feel* like something happened: every one of
 those moments gets a sound, a hit stops time for a blink, a kill throws the body and its loot,
@@ -61,7 +63,7 @@ the presentation layers around them.
   `SwingHitServerTime + HitStopTime > now` (owner-only, the clock is `COND_OwnerOnly`).
   Movement, AI and hitbox sweep are unaffected. Rejected: `SetGlobalTimeDilation` (affects all
   players on the listen server); `CustomTimeDilation` on the pawn (breaks movement prediction).
-- **Camera kick:** `ShakeTable` row `Hit` gets a stronger asset — pitch amplitude 6°, plus FOV
+- **Camera kick:** `ShakeTable` row `Hit` gets a stronger asset — pitch amplitude 6° (확정 −3°@4Hz·0.12초 — `Tools/Unreal/create_hit_feedback_assets.py` `HIT_SHAKE`, decisions 09-18), plus FOV
   oscillation −3° over 0.12 s (balance decides final numbers; PIE-measured peak must reach
   ≥ 2° pitch). `Hurt` unchanged.
 - **Hit particle:** `NS_CL9_HitPuff` (Niagara, CPU sprites, 12–20 short-lived feathers/dust)
@@ -72,7 +74,7 @@ the presentation layers around them.
 
 ### 3. Death: thrown body and lobbed loot
 - On `Dead` entry the host launches the monster away from the strike source: horizontal
-  direction = source→monster, speed `CL9Rules.DeathLaunchSpeed` (draft 420 cm/s) with an
+  direction = source→monster, speed `CL9Rules.DeathLaunchSpeed` (draft 420 cm/s — 확정 300, `Source/CL9/Data/CL9RulesDef.h`·decisions 09-18) with an
   upward component `DeathLaunchUp` (draft 260 cm/s). `ACL9Monster` is a custom pawn (not a
   Character), so the host integrates the flight itself the way the shove knockback does
   (`AddActorWorldOffset` sweep per tick, plus gravity on the vertical part; a blocking hit or
@@ -80,7 +82,7 @@ the presentation layers around them.
   plays while the body flies and lands. Rejected: ragdoll — `SK_Chicken_A` has no physics
   asset and none of the monster skeletal meshes do; `LaunchCharacter` — not a Character.
 - `DropItems` spawn at the monster's location and are `OnThrown` with a random lob
-  (`DeathLootSpeed` draft 220 cm/s, elevation 45–70°, random yaw) so they scatter and roll
+  (`DeathLootSpeed` draft 220 cm/s — 확정 300, `Source/CL9/Data/CL9RulesDef.h`·decisions 09-18, elevation 45–70°, random yaw) so they scatter and roll
   (existing item physics/sleep rules apply).
 - `HitPuff` at 3× on death (see §2), `MonsterDeath` sound (§1).
 
@@ -90,7 +92,7 @@ the presentation layers around them.
   getter `GetPickupElapsed()` (−1 when none), filled into `ABP_FP_View` like the other clocks.
 - New camera-space clip `AN_Farmer_FPPickup` (0.35 s one-shot, 30 fps): the right hand starts
   below the frame, comes up into the `FPHoldSmall` pose and settles with a small overshoot.
-  Authored by `Tools/Blender/animate_farmer_pickup.py` in the same camera-local convention as
+  Authored by `Tools/Blender/animate_farmer_pickup.py` (미제작 — 2026-09-21 확인: 이 스크립트도 `AN_Farmer_FPPickup` 클립도 없다) in the same camera-local convention as
   the other FP clips (manifest entry `space: "camera"`), exported to `ArtSource/character/...`
   and imported by `Tools/Unreal/import_farmer_clips.py` (list extended). ABP branch: priority
   between `EatElapsed` and `ThrowElapsed`: `PickupElapsed ∈ [0, 0.35)` → evaluator
@@ -151,10 +153,10 @@ rationale; no new inequality.
 | `Source/CL9/GameMode/CL9GameInstance.{h,cpp}` | `SoundTableAsset` slot + registry access |
 | `Source/CL9/Items/CL9Item.cpp` | `Place` sound in `OnPlaced`/`OnThrown` |
 | `Source/CL9/UI/CL9QuickSlotWidget.{h,cpp}`, `CL9HUDWidget.{h,cpp}` | `Pulse()` and its trigger |
-| `Source/CL9/UI/CL9MonsterHpWidget.{h,cpp}` (new) | Pips widget class for `WBP_MonsterHp` |
+| `Source/CL9/UI/CL9MonsterHpWidget.{h,cpp}` (new) | Pips widget class for `WBP_MonsterHp` (미제작 — 2026-09-21 확인) |
 | `Tools/Audio/synth_sfx.py` (new), `Tools/Unreal/import_sfx.py` (new) | Sound generation and import |
-| `Tools/Blender/animate_farmer_pickup.py` (new), `Tools/Unreal/import_farmer_clips.py` | Pick-up arm clip |
-| `Content/Effects/NS_CL9_HitPuff`, `Content/Effects/CS_HitShake`, `Content/Data/SoundTable`, `Content/Data/CL9Rules`, `Content/UI/WBP_MonsterHp`, `Content/Characters/FarmerA/ABP_FP_View`, `Content/GameMode/BP_CL9GameInstance` | Lead-applied assets |
+| `Tools/Blender/animate_farmer_pickup.py` (new), `Tools/Unreal/import_farmer_clips.py` | Pick-up arm clip (미제작 — 2026-09-21 확인) |
+| `Content/Effects/NS_CL9_HitPuff`, `Content/Effects/CS_HitShake`, `Content/Data/SoundTable`, `Content/Data/CL9Rules`, `Content/UI/WBP_MonsterHp`(미제작 — 2026-09-21 확인), `Content/Characters/FarmerA/Anims/ABP_FP_View`(2026-09-21 경로 정정 — 옛 표기 `FarmerA/ABP_FP_View`), `Content/GameMode/BP_CL9GameInstance` | Lead-applied assets |
 | `docs/systems/sound.md`, `monster.md`, `character.md`, `ui.md`, `animation.md`, `docs/plan/data/rules.md`, `docs/testing/pie-scenarios.md` | Docs |
 
 ## Must-Preserve

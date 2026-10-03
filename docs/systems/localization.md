@@ -129,7 +129,8 @@ C++이 런타임에 덮어쓰는 자리표시자도 같은 키를 고른다(디�
   그래서 `cl9.lang`은 `GIsEditor`면 **게임 언어 미리보기**(`FTextLocalizationManager::EnableGameLocalizationPreview`,
   에디터 설정 "Preview Game Language"와 같은 것)를 켜고 저장하지 않는다. 미리보기는 비동기 로드라 한두 프레임 뒤에
   바뀐다. 실제 저장·시작 언어 동작은 Standalone/패키지 빌드에서 본다.
-- 설정 화면([settings.md](settings.md) 언어 항목)이 생기면 같은 두 줄을 부른다 — 치트는 그때 빼도 된다.
+- 설정 화면의 언어 항목([settings.md](settings.md) — `UCL9SettingsWidget::Languages` = ko·en 두 선택지)도 같은
+  `UCL9GameUserSettings::ApplyLanguage`를 부른다. 치트는 ja·zh-Hans 미리보기 용도로 남아 있다.
 
 ## 하지 말 것
 

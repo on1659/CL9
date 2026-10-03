@@ -1,5 +1,7 @@
 # goal: monster-catch-alarm-species
 
+**상태**: 완료 2026-09-03(커밋 `67391d3` 3e+3f 잡기·넘어짐·짐 흘림·경보 · `88021e4` `cl9.hitmonster` · `98b0c16` 3g 거위·너구리 행). 체크박스는 당시 갱신되지 않았다. **여기 적힌 너구리 값(ChaseSpeed 462 등)·대역 메시(AVP Fox·`ABP_Fox`)는 이후 폐기됐다** — 2026-09-11 자체 제작 `SK_Raccoon_A`·`ABP_Raccoon_A`(decisions 09-11 "동물 5종을 자체 제작 메시·클립으로"), 2026-09-20 저녁 너구리 = 스토커·처형 종(decisions 09-20 "처형 종 재배치"). 현행 값의 정본은 `docs/plan/data/monster/raccoon.md`. 본문의 옛 값은 이력이라 지우지 않는다.
+
 ## One-line Goal
 Finish build-order ③ overnight: 3e (catch + knockdown + load spill), 3f (pack/kill
 alarms + revenge), 3g (goose + raccoon rows on the existing frame), unattended —

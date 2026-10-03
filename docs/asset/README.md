@@ -10,6 +10,7 @@
 |---|---|
 | [common.md](common.md) | 단위·축·명명·재질·성능 예산 |
 | [reference-direction.md](reference-direction.md) | 리썰 컴퍼니·R.E.P.O.의 방식과 분위기를 제작 규칙에 적용 |
+| [design-concept.md](design-concept.md) | 톤 축(귀여움)·실루엣 계열·소재 불가지 규칙 5개 — 사이트가 바뀌어도 유지되는 것 |
 | [workflow.md](workflow.md) | 제작 의뢰 → Blender MCP → FBX → UE 검수 |
 | [전체 제작 goal](../goal/asset-production-loop.md) | 전체 목록 기반 제작·검수·규격 갱신 반복 |
 | [production-progress.md](production-progress.md) | 장기 제작의 진행 기록과 다음 재개 지점 |

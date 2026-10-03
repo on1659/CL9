@@ -150,13 +150,35 @@
   값(`PounceWindup`·`PounceLunge`)이 정하는 사실이지 코드가 보장하는 것이 아니다. 헛친 뒤 간격은 같은 속도로 물러나는
   사람에겐 다시 좁혀지지 않는다 — 재예고는 "간격이 다시 좁혀지면(멈추거나 돌면)"이다.
 - 플레이어의 대응: 도망(속도 부등식 A1·A4가 탈출을 보증), 든 아이템 휘두르기(좌클 —
-  행의 `HitDamage`·`HitStun`이 `OnStrike`로 들어온다: 프라이팬 = `Push`(`PushStun` + `PushKnockback`),
-  고기 = `Hit`(`HitStunMs`); 2026-09-12, [../plan/data/item/common.md](../plan/data/item/common.md) 사용).
-  **맞느냐 마느냐는 휘두르기 히트박스가 정한다** (2026-09-15 — 옛 "뗀 순간 200cm 부채꼴의 가장 가까운 하나" 폐기):
-  좌클을 뗀 뒤 `CL9Rules.SwingHitStart`~`SwingHitEnd` 구간 동안 든 물건의 메시 경계 구가 손을 따라 지나가고,
-  그 자리에 닿은 몬스터가 **한 번의 휘두르기에 각각 한 번씩** `OnStrike`를 받는다 — 나란히 선 둘은 한 번에 둘 다
-  맞고, 빗나가면 아무도 맞지 않는다. 판정은 호스트 전용이고 `OnStrike`의 의미(피해 먼저, 죽으면 경직 없음,
-  `Push`는 `OnShove`로 덮음)는 그대로다 ([inventory.md](inventory.md) 휘두르기 히트박스).
+  행의 `HitDamage`·`HitStun`·`HitKnockback`이 `OnStrike(Damage, Stun, Knockback, Source)`로 들어온다: 프라이팬 = `Hit`(`HitStunMs`
+  경직 + `HitKnockback` 넉백, 2026-09-22 — 옛 `Push` 행은 없다), 고기 = `Hit`(넉백 0);
+  [../plan/data/item/common.md](../plan/data/item/common.md) 사용).
+  **맞느냐 마느냐는 휘두르기 판정이 정한다** (2026-09-22 — 손 높이 원점에서 컨트롤 회전 방향으로 끄는 구 + 가림 트레이스;
+  2026-09-15의 "메시 경계 구가 손을 따라 지나간다"는 폐기): 좌클을 뗀 뒤 `CL9Rules.SwingHitStart`~`SwingHitEnd` 구간 동안
+  걸린 몬스터가 **한 번의 휘두르기에 각각 한 번씩** `OnStrike`를 받는다 — 나란히 선 둘은 한 번에 둘 다 맞고, 빗나가면 아무도
+  맞지 않으며, 벽 너머는 맞지 않는다. 판정은 호스트 전용이고 `OnStrike`의 의미(피해 먼저, 죽으면 경직·넉백 없음, `Push`는
+  `OnShove`로 덮음)는 그대로다 ([character.md](character.md) 판정, [inventory.md](inventory.md) 휘두르기 히트박스).
+
+### 타격 넉백 (2026-09-22, [../goal/combat-feel-pass-1.md](../goal/combat-feel-pass-1.md) D-5)
+
+- `OnDamage(Amount, Source, Knockback)` — `ICL9Damageable` 시그니처가 바뀌었다. Knockback(cm)은 아이템 행 `HitKnockback`이고
+  잡기(`HostCatch`)·치트(`cl9.hitmonster`·`cl9.damage`)는 0을 넘긴다. 캐릭터 구현은 받아도 쓰지 않는다.
+- **시계**: Stun 진입 뒤 `CL9Rules.HitStopTime`(0.08) 동안은 멈춘 프레임이라 밀리지 않고(`KnockbackDelay`), 그 뒤
+  `HitKnockbackTime` 동안 등속(`HitKnockback / HitKnockbackTime`)으로 민 뒤 멈춘다 — 경직 시간(`HitStunMs`)과는 별개 시계라
+  0.08 + 0.12 = 0.2 < 0.3 안에 끝난다. `OnShove`의 밀침 넉백은 옛 그대로(지연 0, `PushKnockback / PushStun`).
+- **방향**: Source → 몬스터 수평; Source가 null이거나 겹쳐 0이면 `−ActorForward`(`OnShove`와 같은 폴백).
+- **벽**: 스텝마다 이동 전에 `TraceWorld`(아래)로 지금 자리 → 다음 자리 + 몸체 반경까지 그어 막히면 그 자리에서 종료.
+  `AddActorWorldOffset` 스윕은 WorldStatic만 막는데 맵 조각 프로필이 제각각이라(2026-09-18) 믿지 않는다. 스텝당 트레이스 1회.
+- **죽이는 타격(HP ≤ 0 → `Die`)에 넉백은 없다** — 죽음 발사가 대신한다. 측정할 때 이 둘을 섞지 않는다.
+- `ECL9HitStun::Push`·`OnShove`·`bPushStun`·`PushStun`/`PushKnockback` 열·`PushReact` 클립은 **남는다**(사용자 결정, 쓰는 행 없음).
+- 측정 치트 `cl9.knockbacklog` ([cheats.md](cheats.md)).
+
+### 세상 트레이스 `ACL9Monster::TraceWorld` (2026-09-22 공용 승격)
+
+`static bool TraceWorld(const UWorld*, const AActor* Self, const FVector& From, const FVector& To, FHitResult& OutHit, const AActor* AlsoIgnore = nullptr)`
+— `ECC_Visibility` 선 트레이스로 **세상 지형만** 본다: 맞은 것이 `ACL9Character`·`ACL9Item`·`ACL9Monster`면 무시 목록에 넣고
+다시 긋는다(최대 4회). Self·AlsoIgnore(든 아이템)는 처음부터 뺀다. 막히면 true. 죽음 발사(벽·바닥)·휘두르기 가림·표면음·
+넉백 스텝 넷이 같이 쓴다 — 옛 `HostTickDeathLaunch`의 람다를 올린 것이다.
 
 ### 스토킹과 처형 (Stalk·Execute, 2026-09-20)
 
@@ -266,7 +288,7 @@
 | `MonsterNear` 소리 | 근접 소나 사건 `monster_prox` (`HostTickProxNoise` → 파동) | 모든 머신 | `UCL9WaveRenderer::PlayWave` | 파동 행의 `SoundRow` 열 — 링과 같은 박자, 시각 게이트 앞이라 링이 안 그려져도 난다 ([wave.md](wave.md)) |
 | `Place` 소리 | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown, 클라는 OnRep) | 아이템 자리. 수레 Pushed→Free·죽음 드랍은 아님 |
 | `Footstep` 소리 | 수평 이동 거리 누적 ≥ 보폭 (`FootstepStrideRun/Walk`) | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑, 피치 ±8 %. 폰은 속도 > `WalkSpeed`면 달리기 보폭, 몬스터는 Chase 면 달리기 보폭. 서 있으면·공중이면·시체면 안 난다. 클라의 몬스터는 보간된 메시 자리로 잰다 |
-| 죽음 발사 | `Die(Source)` | 호스트 (트랜스폼 복제) | `HostTickDeathLaunch` (`HostTickAI` 의 Dead 거름 앞) | 원점→몬스터 수평 `DeathLaunchSpeed` + 위 `DeathLaunchUp`, 월드 중력. 몸체 구 스윕·WorldStatic 오브젝트 질의는 바닥을 지나쳤다(2026-09-18 PIE — `Floor_0` 은 BlockAllDynamic = WorldDynamic) → **Visibility 채널** 선 트레이스로 검사한다(폰·아이템·몬스터에 맞으면 무시하고 뒤를 다시 긋는다) — 수평 선분이 막히면 그 자리에서 수평 속도 0, 발밑(중심 − Radius)까지 내려 그은 선이 닿으면 발을 바닥에 스냅하고 끝. 죽는 클립은 그대로 |
+| 죽음 발사 | `Die(Source)` | 호스트 (트랜스폼 복제) | `HostTickDeathLaunch` (`HostTickAI` 의 Dead 거름 앞) | 원점→몬스터 수평 `DeathLaunchSpeed` + 위 `DeathLaunchUp`, 월드 중력. 몸체 구 스윕·WorldStatic 오브젝트 질의는 바닥을 지나쳤다(2026-09-18 PIE — `Floor_0` 은 BlockAllDynamic = WorldDynamic) → **Visibility 채널** 선 트레이스 `TraceWorld`(위 "세상 트레이스" — 폰·아이템·몬스터에 맞으면 무시하고 뒤를 다시 긋는다)로 검사한다 — 수평 선분이 막히면 그 자리에서 수평 속도 0, 발밑(중심 − Radius)까지 내려 그은 선이 닿으면 발을 바닥에 스냅하고 끝. 죽는 클립은 그대로 |
 | 드랍 호 | `Die` 의 `SpawnItem` 뒤 | 호스트 | `Die` → `ACL9Item::OnThrown` | 몬스터 중심 높이·옆 30~90cm 무작위 자리에서 `DeathLootSpeed`, 앙각 45~70°·요 무작위. 옆 오프셋은 둘 이상이 30cm 이상 떨어지게 하는 보장(호만으로는 3/4 확률). 이후는 아이템 물리 |
 
 에지 검출은 첫 틱에 기준값만 받아 적는다(`bHitFeelPrimed`·`bHitSoundsPrimed`) — 늦게 들어온 클라가 이미 지난

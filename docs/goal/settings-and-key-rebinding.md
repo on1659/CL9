@@ -1,5 +1,7 @@
 # goal: settings-and-key-rebinding
 
+**상태**: 구현 완료 2026-09-12~13(커밋 `2053d6b` 설정 화면·로컬 옵션 저장·히스토리 스택 · `e1b459e` 문자열·input/ui/settings 문서; PIE `docs/testing/pie-scenarios.md` S절; 정본 `docs/systems/settings.md`). 체크박스는 실행 당시 갱신되지 않았다. **`cl9.resetkeys` 치트는 만들지 않았다** — 같은 일은 설정 화면 [키 초기화] 버튼(`UCL9SettingsWidget::HandleResetKeysClicked`)만 한다(2026-09-21 확인).
+
 ## One-line Goal
 A local options system (`UCL9GameUserSettings` + Enhanced Input user settings) with a Settings screen — key rebinding, mouse sensitivity / Y-invert, language, audio volumes — where every user-facing key label (`[E] 줍기`, `(Tab)`) is a `{0}` format argument filled with the currently bound key, and Screen-layer UI navigates as a history stack (M / X = one step back).
 
@@ -35,7 +37,7 @@ Track: **HEAVY** — new system + screen + UI navigation change; a 4-perspective
    - `CloseWidget(name)`: if `name` is the top → pop and re-open the previous entry (fresh instance); if it is deeper in the history → just remove it (e.g. Spectate closing while Pause is on top). `GetOpenScreen()` = top.
    - `PauseInput` (M): a Screen is open → `CloseWidget(top)` (one step back); none → `OpenWidget(Pause)`. The Spectate special-case in `PauseInput` goes away — Spectate sits in the history, so Spectate → Pause → Settings → M → M → Spectate, and Pause [계속] (`CloseSelf`) also returns to Spectate (fixes the existing gap).
    - `UCL9Widget` base gains: optional `CloseButton` (`BindWidgetOptional`, wired to `CloseSelf`) and `protected virtual void OnClosing()` called from `PlayOutro` (before the fade). `WBP_Settings` uses the base X; existing WBPs keep their own buttons (they already call `CloseSelf`).
-7. **Cheats**: `cl9.resetkeys` (reset active key profile + save). `cl9.lang` body moves to the shared `ApplyLanguage`.
+7. **Cheats**: `cl9.resetkeys` (reset active key profile + save). `cl9.lang` body moves to the shared `ApplyLanguage`. (2026-09-21 정정 — `cl9.resetkeys` 는 구현되지 않았다; 키 초기화는 설정 화면 [키 초기화] 버튼만 한다. `cl9.lang` 은 있다.)
 8. **Docs** (all Korean, per repo rules)
    - New `docs/plan/settings.md`: the options policy — what options exist and why, the "gameplay values are never options" rule, and the checklist a feature author runs to decide whether a feature needs an option (and where it goes). Linked from `docs/plan/README.md`.
    - Rewrite `docs/systems/settings.md` (storage, apply/save timing, screen, extension recipe = settings field + builder line + sheet row [+ SoundClass ref], PIE caveats: `Saved/SaveGames/EnhancedInputUserSettings.sav`, shared across PIE instances, one `UGameUserSettings` per engine, language in PIE is preview-only, `GameUserSettingsClassName` change resets stored resolution once).
@@ -55,7 +57,7 @@ Track: **HEAVY** — new system + screen + UI navigation change; a 4-perspective
 - [ ] PIE: Pause → [설정] opens the Settings screen with Keys / Mouse / Audio / Language sections; M closes one step (Settings → Pause → game); X on Settings returns to Pause; Pause [계속] returns to game.
 - [ ] PIE: click a key button → "키를 누르세요…" → press F → row shows F; the HUD prompt reads `[F] 줍기` immediately when looking at an item; M during capture does **not** close the screen; Esc or 5 s cancels; gamepad/wheel/Tilde/F11 show the rejected hint.
 - [ ] PIE: bind Flashlight to E while PickPlace is E → rows swap, hint reads `손전등: E · 줍기: F`; both keys work in game accordingly.
-- [ ] PIE: [키 초기화] restores defaults and prompt shows `[E]` again; `cl9.resetkeys` does the same from the console.
+- [ ] PIE: [키 초기화] restores defaults and prompt shows `[E]` again; `cl9.resetkeys` does the same from the console. (2026-09-21 정정 — `cl9.resetkeys` 없음; [키 초기화] 버튼만)
 - [ ] Rebinding persists across PIE sessions (`Saved/SaveGames/EnhancedInputUserSettings.sav`), sensitivity/invert/volumes persist in `GameUserSettings.ini` under `[/Script/CL9.CL9GameUserSettings]`.
 - [ ] PIE: sensitivity 200 % turns twice as fast; Y-invert flips pitch; volume sliders change `SoundMix` overrides (verify via `au.Debug.SoundMixes` or equivalent log).
 - [ ] Language segmented control switches ko/en immediately (preview in PIE) and the Settings screen's own labels re-render.

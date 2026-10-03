@@ -1,5 +1,7 @@
 # 계란 상태 5종 — 제작 카드
 
+상태: raw 는 게임 연결 검수됨(`SM_Egg_Raw_A`, 001 왕복·행 연결), cooked·burnt·cracked·broken 은 Blender 검수됨 — FBX 는 `export/` 에 있으나 `Content/Items/Egg/` 에 미임포트·행 미연결(2026-09-21 확인) · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 2026-09-11 · 제작 중. UE 전체 QA 미통과.
 
 실제 `ItemTable`의 egg/None, cooked, burnt, cracked, broken을 대상으로 한다.

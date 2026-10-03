@@ -55,6 +55,11 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 스탠드인(트럭 패드 앵커 원환, 몬스터 900~2400cm · 재료 400~1800cm, `ThreatActMinRadius` 안 회피).
 밤 스폰분은 로비 복귀 때 철거된다(들고 나온 것은 남는다). 상세 [balance.md](balance.md).
 
+**스테이지와 구역 (2026-10-03)**: 게임 모드는 `StartPlay`에서 지금 레벨을 `Level` 열에 가진 사이트 행을 고른다
+(없으면 `DefaultSiteAlias`). 사이트에 깊이 구역(`Zones`)이 있으면 구역마다 자기 깊이 띠의 지점에 자기 몬스터·재료를
+놓는다 — 로그 `Night N zone <이름> (…)`. 밤 시계(`NightLength`·`DarkBase`·`DarkMin`)도 사이트가 덮어쓸 수 있다.
+정본 [../plan/data/site.md](../plan/data/site.md).
+
 ## 소리 규칙
 
 몬스터가 듣는 소음 반경은 `CL9Rules`의 값이다 ([../plan/data/rules.md](../plan/data/rules.md)).
@@ -66,8 +71,9 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 
 - 밤 시계는 `NightLength`(245초) 하나 — 만료는 새벽 실패다 ([balance.md](balance.md))
 - 정전이 오면 손전등도 죽는다 — 정전 시계는 반납이 앞당긴다
-- 트럭 패드가 유일한 회복 채널이다. 죽으면 관전으로 넘어간다 (`SpectateDelay` 초안 3초).
-  전원이 죽으면 전멸 — 밤이 그 자리에서 끝난다 (4a, [character.md](character.md) 죽음 절)
+- 트럭 패드가 유일한 회복 채널이다. 죽으면 그 순간부터 **데스캠**(자기 시체를 3인칭으로 보는 폰의
+  `DeathCamera`, 2026-09-20 밤)이고, `SpectateDelay`(초안 3초) 뒤 동료 관전으로 넘어간다 — 혼자면 데스캠이
+  밤 끝까지 이어진다. 전원이 죽으면 전멸 — 밤이 그 자리에서 끝난다 (4a, [character.md](character.md) 죽음·데스캠 절)
 
 ## 네트워크 동기화
 
@@ -80,6 +86,6 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 
 - 맵 생성·항아리 배치: [map.md](map.md)
 - 손전등·정전: [light.md](light.md)
-- 운반(손·품·수레): [inventory.md](inventory.md)
+- 운반(퀵슬롯·수레): [inventory.md](inventory.md)
 - 몬스터 AI (공용 상태 기계): [monster.md](monster.md) — 값은 [../plan/data/monster/common.md](../plan/data/monster/common.md)
 - 드롭: [drop.md](drop.md)

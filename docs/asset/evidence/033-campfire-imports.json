@@ -1,0 +1,35 @@
+{
+  "engine": "5.8.1-56057345+++UE5+Release-5.8",
+  "utc": "2026-09-17T15:41:33.948551+00:00",
+  "assets": [
+    {
+      "id": "campfire",
+      "path": "/Game/Maps/Henhouse/Props/SM_Campfire_A.SM_Campfire_A",
+      "dimensions_cm": [
+        111.48873519897461,
+        115.3040657043457,
+        60.291481018066406
+      ],
+      "max_dimension_error_cm": 9.5367431640625e-07,
+      "source_sha256": "e7199d8da8dc86e7bf4a4d1eed8762fe80842369972af8f731867d165cd1d3b0",
+      "lod_count": 3,
+      "convex_collision_hulls": 1,
+      "bounds_center_cm": [
+        1.9073486328125e-06,
+        -1.9073486328125e-06,
+        30.145740509033203
+      ],
+      "materials": [
+        "/Game/Maps/Henhouse/Props/M_CL9_Campfire_Body.M_CL9_Campfire_Body",
+        "/Game/Maps/Henhouse/Props/M_CL9_Campfire_Flame.M_CL9_Campfire_Flame"
+      ],
+      "sphere_radius_cm": 65.75654587748201,
+      "runtime_radius_cm": null,
+      "runtime_scale": null,
+      "runtime_dimensions_cm": null,
+      "runtime_lens_center_cm": null,
+      "predicted_sphere_bottom_gap_cm": null,
+      "actual_gameplay_qa": "not tested in import step"
+    }
+  ]
+}

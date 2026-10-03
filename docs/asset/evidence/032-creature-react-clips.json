@@ -1,131 +1,16 @@
 {
   "engine": "5.8.1-56057345+++UE5+Release-5.8",
-  "utc": "2026-09-14T17:10:59.028537+00:00",
+  "utc": "2026-09-19T21:59:59.278246+00:00",
   "creatures": [
     {
       "species": "Chicken",
       "skeleton": "/Game/Monsters/ChickenA/SK_Chicken_A_Skeleton.SK_Chicken_A_Skeleton",
       "clips": [
         {
-          "name": "HitReact",
-          "path": "/Game/Monsters/ChickenA/AN_Chicken_HitReact.AN_Chicken_HitReact",
-          "duration_seconds": 0.30000001192092896,
-          "sha256": "c070321d3895c257c0ef2812ba121e5109990c3aba8c5f58dff677025e70da3b",
-          "replaced": true
-        },
-        {
-          "name": "Catch",
-          "path": "/Game/Monsters/ChickenA/AN_Chicken_Catch.AN_Chicken_Catch",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "249ae7a1b72c915af1e0c35095872cae29fced44fa51405465cbfbe2876d282e",
-          "replaced": true
-        },
-        {
-          "name": "PushReact",
-          "path": "/Game/Monsters/ChickenA/AN_Chicken_PushReact.AN_Chicken_PushReact",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "7354a4f34da99def9247e38483a753d5f08ed205f9ca83ba31443fe2b20ece1d",
-          "replaced": false
-        }
-      ]
-    },
-    {
-      "species": "Goose",
-      "skeleton": "/Game/Monsters/GooseA/SK_Goose_A_Skeleton.SK_Goose_A_Skeleton",
-      "clips": [
-        {
-          "name": "HitReact",
-          "path": "/Game/Monsters/GooseA/AN_Goose_HitReact.AN_Goose_HitReact",
-          "duration_seconds": 0.30000001192092896,
-          "sha256": "317ca3d38896ec988dbe81ebcce4b518c2b244f3932d56b014eb80d8778b9302",
-          "replaced": true
-        },
-        {
-          "name": "PushReact",
-          "path": "/Game/Monsters/GooseA/AN_Goose_PushReact.AN_Goose_PushReact",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "889510deeccd764b2473ab0034ef75bfa78ccff19c909fb58a350ef1ff550e7c",
-          "replaced": false
-        }
-      ]
-    },
-    {
-      "species": "Raccoon",
-      "skeleton": "/Game/Monsters/RaccoonA/SK_Raccoon_A_Skeleton.SK_Raccoon_A_Skeleton",
-      "clips": [
-        {
-          "name": "HitReact",
-          "path": "/Game/Monsters/RaccoonA/AN_Raccoon_HitReact.AN_Raccoon_HitReact",
-          "duration_seconds": 0.30000001192092896,
-          "sha256": "432f325561b502aec233fb25eb81b71629b71d0aad0fb1717c26fb96579243dc",
-          "replaced": true
-        },
-        {
-          "name": "Catch",
-          "path": "/Game/Monsters/RaccoonA/AN_Raccoon_Catch.AN_Raccoon_Catch",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "d4f899bb3650dac4057e9d307a3c6ba4a1382d280c9fcf48f9854a8d51c50126",
-          "replaced": true
-        },
-        {
-          "name": "PushReact",
-          "path": "/Game/Monsters/RaccoonA/AN_Raccoon_PushReact.AN_Raccoon_PushReact",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "d6fa8eb9c88058193648fed05cb13501be249b8943168017104673d012aa8f56",
-          "replaced": false
-        }
-      ]
-    },
-    {
-      "species": "Pig",
-      "skeleton": "/Game/Monsters/PigA/SK_Pig_A_Skeleton.SK_Pig_A_Skeleton",
-      "clips": [
-        {
-          "name": "HitReact",
-          "path": "/Game/Monsters/PigA/AN_Pig_HitReact.AN_Pig_HitReact",
-          "duration_seconds": 0.30000001192092896,
-          "sha256": "7f6cd19c82f21b9dcd0591e97452006b2a666133a1f3ca7997db7105918eb5e2",
-          "replaced": true
-        },
-        {
-          "name": "Catch",
-          "path": "/Game/Monsters/PigA/AN_Pig_Catch.AN_Pig_Catch",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "eae4f311f680c06d3ddf204c4c972bd180380e2039c29a5aacf670423e20b019",
-          "replaced": true
-        },
-        {
-          "name": "PushReact",
-          "path": "/Game/Monsters/PigA/AN_Pig_PushReact.AN_Pig_PushReact",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "8133736ed812b2885275f8c92faca1a22495075107bef8a91f7fb9a362245883",
-          "replaced": false
-        }
-      ]
-    },
-    {
-      "species": "Sheep",
-      "skeleton": "/Game/Monsters/SheepA/SK_Sheep_A_Skeleton.SK_Sheep_A_Skeleton",
-      "clips": [
-        {
-          "name": "HitReact",
-          "path": "/Game/Monsters/SheepA/AN_Sheep_HitReact.AN_Sheep_HitReact",
-          "duration_seconds": 0.30000001192092896,
-          "sha256": "0cd2f61cef25f9bf826021ce1c0f5dd1cbac700dfe838c23a88fd3218b2cad68",
-          "replaced": true
-        },
-        {
-          "name": "Catch",
-          "path": "/Game/Monsters/SheepA/AN_Sheep_Catch.AN_Sheep_Catch",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "2b8450bbc42c3301f2b09dbd4738dab3397f72b4b9df52c357a1173a65461095",
-          "replaced": true
-        },
-        {
-          "name": "PushReact",
-          "path": "/Game/Monsters/SheepA/AN_Sheep_PushReact.AN_Sheep_PushReact",
-          "duration_seconds": 0.800000011920929,
-          "sha256": "878c9fd3281dfb48ddf8a066befbdaee42a83c2f52d10c343b31a60e58de7b0b",
+          "name": "PounceWindup",
+          "path": "/Game/Monsters/ChickenA/AN_Chicken_PounceWindup.AN_Chicken_PounceWindup",
+          "duration_seconds": 0.6000000238418579,
+          "sha256": "60778a82a8f74e6a9ef98ecf91b3315d96600bbcef877ebf95d4128e9b933e46",
           "replaced": false
         }
       ]

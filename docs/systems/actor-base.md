@@ -1,21 +1,22 @@
 # 액터 베이스 구조 (ACL9ActorBase)
 
-> 아이템·몬스터 등 CL9 액터의 공통 베이스 클래스 설계 — 네트워크, RPC, 사운드, Alias 데이터 로드.
+> 아이템·몬스터 등 CL9 액터의 공통 베이스 클래스 설계 — 네트워크, RPC 소유권, Alias 데이터 로드.
 > 상속·Alias 규칙은 [../conventions.md](../conventions.md) § 10 참고.
 
 ## 원칙
 
-아이템·몬스터 등 CL9 액터는 `ACL9ActorBase`를 상속한다. 공통 로직(네트워크, RPC, 사운드)은 베이스에 두고, 상세 구현은 자식에서.
+아이템·몬스터 등 CL9 액터는 `ACL9ActorBase`를 상속한다. 공통 로직(복제 설정, Alias 데이터 로드, 종류·표시 이름)은 베이스에 두고, 상세 구현은 자식에서.
+소리는 베이스에 없다 — 자유 함수 `CL9Sound::PlayAt`([sound.md](sound.md))를 각 머신의 표현 코드가 부른다.
 
-**예외 — 캐릭터:** `ACL9Character`는 `ACharacter`를 상속한다 (2026-08-31 A4 결정). 멀티플레이어 예측 이동에 CharacterMovementComponent(커스텀 CMC + `FSavedMove`)가 필요해서 AActor 계열 베이스를 쓸 수 없다. Alias 데이터 로드가 필요하면 같은 패턴(Replicated `Alias` + `OnRep_Alias`)을 캐릭터 쪽에 별도로 구현한다.
+**예외 — 캐릭터:** `ACL9Character`는 `ACharacter`를 상속한다 (2026-08-31 A4 결정). 멀티플레이어 예측 이동에 CharacterMovementComponent(커스텀 CMC + `FSavedMove`)가 필요해서 AActor 계열 베이스를 쓸 수 없다. Alias 데이터 로드가 필요하면 같은 패턴(Replicated `Alias` + `OnRep_AliasPair`)을 캐릭터 쪽에 별도로 구현한다.
 
 ## 액터 상속 구조
 
 ```cpp
-// Public/Core/CL9ActorBase.h
+// Source/CL9/Core/CL9ActorBase.h (Public/Private 분리 없음)
 class ACL9ActorBase : public AActor {
 public:
-  ACL9ActorBase();
+  ACL9ActorBase();   // bReplicates = true; SetNetUpdateFrequency(20.f); — conventions § 6
   
   // === 네트워크 ===
   virtual void GetLifetimeReplicatedProps(
@@ -33,27 +34,14 @@ public:
   // === 종류 ===
   ECL9ActorKind GetKind() const;   // Item/Monster — 자식 클래스 생성자가 Kind를 정한다 (클래스마다 고정이라 복제 안 함)
   
-  // === 사운드 ===
-  UPROPERTY(EditAnywhere, BlueprintReadWrite)
-  class UAudioComponent* AudioComponent;
-  
   // === RPC ===
   // ⚠️ Server RPC를 이 베이스에 두지 않는다 — 아이템·몬스터는 어느 클라의 소유도
   // 아니라서, 클라가 비소유 액터의 Server RPC를 부르면 조용히 드롭된다.
   // 클라발 요청은 전부 소유 액터(Character/PlayerController)의 Server RPC로 올리고,
   // 호스트가 이 액터의 함수를 직접 호출한다 (input.md 상호작용 틀).
-  UFUNCTION(NetMulticast, Unreliable)   // 호스트→전 클라 표현은 OK
-  virtual void Multicast_PlaySoundAtLocation(
-    const FName& SoundEventName,
-    FVector Location
-  );
-  
-  // === 편의 함수 ===
-  UFUNCTION(BlueprintCallable, Category="CL9|Audio")
-  void PlaySFX(const FName& SoundEventName);
-  
-  void PlaySFX3D(const FName& SoundEventName, FVector Location);
-  
+  // 사운드 멤버·Multicast 도 없다 — 소리는 `CL9Sound::PlayAt`(sound.md)을 표현 코드가
+  // 복제된 상태·시각의 틱 비교(상승 에지)에서 부른다.
+
 protected:
   // 데이터 로드 (자식에서 override)
   virtual void LoadData();
@@ -83,14 +71,10 @@ class ACL9Character : public ACharacter { };
                     결과는 Replicated 상태 / Multicast로 전 클라 표현
 ```
 
-**사운드 재생 (호스트 → 전 클라, 표현):**
-```cpp
-// 호스트 판정 코드 안에서만
-void ACL9Monster::Die() {
-  if (!HasAuthority()) return;
-  Multicast_PlaySoundAtLocation("MonsterDeath", GetActorLocation());  // Unreliable
-}
-```
+**사운드·연출 (표현 — 각 머신이 파생):** 소리용 Multicast RPC 는 없다. 각 머신의 표현 코드가 복제된 상태·시각
+(`State`·`StateStartServerTime`·`KnockdownStartServerTime` 등)의 변화를 틱 비교로 감지해 `CL9Sound::PlayAt(WorldContext, Row, Location)`
+([sound.md](sound.md))을 부른다 — 리슨 호스트는 자기 액터에서 OnRep 이 뜨지 않기 때문이다(decisions.md 2026-09-15·09-18).
+Multicast 는 시각 비교로 담기지 않는 순간 사건(`ACL9GameState::Multicast_Noise`·`Multicast_Settled`)에만 쓴다.
 
 ## Alias 설정 & 동기화 (데이터 주도)
 
@@ -206,12 +190,12 @@ void ACL9GameMode::InitializeNight(int32 Day) {
 - ✅ 초기 로드는 BeginPlay, 런타임 변경은 OnRep — 두 진입점 모두 필요
 - ✅ SetAlias()는 **서버에서만** 호출
 - ✅ 클라발 요청은 소유 액터(Character/PC)의 Server RPC 경유 — 비소유 액터에 Server RPC 금지
-- ✅ 사운드·연출은 호스트발 Multicast(Unreliable)로
+- ✅ 소리·연출은 복제된 상태·시각에서 각 머신이 파생(틱 비교) — Multicast 는 순간 사건(`Multicast_Noise`·`Multicast_Settled`)만
 
 ## 참고
 
 - Alias 하드코딩 금지 (모두 데이터 기반)
-- 모든 사운드 로직은 베이스에서 처리 — 사운드 상세는 `sound.md` 참고
+- 소리는 베이스에 없다 — `CL9Sound::PlayAt`, 상세는 `sound.md` 참고
 - 네트워크 테스트: 호스트 + 클라 1명 이상
 - 데이터 구조 정의는 `../data/schema.md` 참고
 

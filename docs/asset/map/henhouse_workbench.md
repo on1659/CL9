@@ -1,5 +1,7 @@
 # 양계장 작업대
 
+상태: 게임 연결 검수됨 — 2026-09-11 `PropSets`(tool_room·office·kitchen), 015 PIE 상판 지지·빈 공간 비차단. 실제 아이템·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 카탈로그 `henhouse_workbench`: 사무실/작업 공간의 독립 가구 파츠.
 기획 [module](../../plan/data/module.md)의 office RectangularTable 계열을 위한 신규 외형이다.
 특정 현재 메시 치수의 실측 복제는 아니며 **180×75×90cm**를 제작 초안으로 선택했다.

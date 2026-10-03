@@ -1,5 +1,7 @@
 # 반납 항아리
 
+상태: 게임 연결 검수됨 — 2026-09-11 `BP_CL9Jar` Mesh → `SM_ReturnJar_A`(배율 1, 두 레벨 z 0), 019 PIE 반납·기록·입구/몸통 충돌. 수레·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 소비처: `ACL9Jar`/`ACL9Fixture`, `/Game/Items/BP_CL9Jar`. 현재 Lvl_Flat에는100cm 원통,
 중심Z49.5cm/배율1의 고정물이 있다([조회](../evidence/019-jar-consumer.json)).
 새 원본은 바닥 중앙 피벗, 약100cm 높이/폭으로 제작한다. 기존 인스턴스 교체 시 바닥 원점을

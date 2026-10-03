@@ -230,3 +230,30 @@ UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin
   (0, 0, 0.8) — 선 머리와 누운 몸이 다 들어온다).
 - UE 임포트 `Tools/Unreal/import_farmer_clips_034.py`(2클립, 증거 [034-farmer-executed.json](../evidence/034-farmer-executed.json) — 리드가 채운다),
   에셋 `/Game/Characters/FarmerA/Anims/AN_Farmer_Executed_{Pig,Raccoon}`. 몬스터 짝은 [../monster/pig_a.md](../monster/pig_a.md)·[../monster/raccoon_a.md](../monster/raccoon_a.md).
+
+## v2 귀여움 1단계 — 얼굴·눈·채도 (2026-09-30, farmer-cute-eyes, 사용자 승인 전)
+
+[../design-concept.md](../design-concept.md) 의 "귀여움은 비율이 아니라 형태·색·표정에서만" 을 따른 첫 재작업이다. 실물 `farmer_a.blend`·`export/`·UE 는
+건드리지 않았고, 결과는 `ArtSource/character/farmer_a_v2/` 에 따로 있다. 모든 수치는 렌더 옵션이며 확정은 사용자가 한다.
+
+- **스크립트** `Tools/Blender/cute_farmer_a_v2.py`(실물 blend 를 열어 읽기만 하고 `save_as_mainfile(copy=True)` 로 v2 에 쓴다). 얼굴 구조 실측은
+  `Tools/Blender/probe_farmer_face.py`(읽기 전용)로 했다. 실물 얼굴은 머리 뼈 가중치 1인 섬들로 되어 있다: 얼굴 로프트(96정점, 초타원 지수 .85), 귀 2, 검은 상자 눈 2(1.9×1.3cm),
+  갈색 상자 눈썹 2, 코·콧수염·아랫입술 상자.
+- **비율 불변**: 몸 치수가 111.35×43.05×184.4cm 로 실물과 같다. 모자·장갑·장화 섬과 리그·클립도 그대로다. 몸은 4,100 → 4,588 tris, 2,148 → 2,404 정점이다.
+  재질 슬롯 3개(Cloth·Skin·Detail)는 순서까지 그대로다.
+- **얼굴**: 로프트 지수를 .85 에서 1.0(타원)으로 바꿨고, 턱 끝 링은 (5.2, 4.4) → (5.8, 4.8)cm 로 넓혔다. 코는 60% 구형화한 뒤 얼굴 쪽 뒷면을 기준으로
+  (.9, .8, .85)배 줄였다. 콧수염은 크기는 그대로 두고 45% 구형화했다.
+- **눈**: 옛 눈·눈썹 상자를 지우고 흰자(반지름 1.55×1.85cm)·동공(1.18×1.48cm)·하이라이트(0.36cm, 두 눈 모두 +X 위)를 저폴리 타원체로 붙였다.
+  위치는 (±3.6, 171.6cm)로, 원본(±3.2, 172.3)보다 조금 벌리고 낮췄다. 눈썹은 짧은 타원체(1.35×0.36cm)로 174.6cm 에 두었다. 볼 홍조(1.2×0.75cm, ±5.7, 168.8)를
+  새로 더했다. 위치는 얼굴 표면에 레이캐스트해 잡고, 방향은 표면 법선에 맞춘다.
+- **눈 2단**(셰이프 키): `Basis` 는 평소 표정이다. 피격 후보는 둘이다 — `Eye_Hurt_A` 는 흰자와 동공을 세로 0.5배로 찡그리고 안쪽을 0.12rad 올린다. `Eye_Hurt_B` 는 흰자를 세로 0.8배로 줄이고
+  동공을 0.55배로 줄이며 하이라이트를 숨긴다. 두 후보 모두 눈썹 안쪽 끝을 0.38rad 올리고, 눈썹을 0.3cm 위·0.15cm 안쪽으로 옮긴다. 셰이프 키는 FBX 에서 모프 타깃으로 나간다.
+  HitReact 와 어떻게 이을지는 2단계에서 정한다.
+- **채도**(선형 RGB): 작업복 기본 틴트(Cloth 재질 곱)를 (.13, .20, .08) → (.07, .25, .04)로 바꿨다. 소매 끝·모자 띠·주머니 입구 녹색에는 휘도를 유지한 채 채도 1.5배를,
+  장화·장갑·띠·버클 등 나머지 유채색에는 1.2배를 줬다. 피부는 1.15배로 (.48, .30, .19) → (.50, .30, .17)이 됐다. 몸·팔 정점색을 같은 규격(256×8, 32칸)의
+  `farmer_a_v2/textures/T_Farmer_Palette_v2.png`(20색)로 다시 굽고 UV1 을 다시 이었다. 전체 색 대응은 `farmer_a_v2/measure.json` 에 있다.
+- **렌더**(레스트 포즈): `preview/compare_full.png` 는 실물 | v2 전신이다. `neutral.png` 와 같은 무대(카메라 (2.1, −3.1, 1.8)·정사영 3.05·Key/Fill)에서 실물도 다시 찍었다.
+  `preview/compare_eyes.png` 는 실물 | 평소 | 피격 A | 피격 B 얼굴 근접이다(85mm 원근 + 얼굴 보조광). 개별 컷은 `preview/full_*.png`·`face_*.png` 이다.
+- **v2 blend**: `SK_Farmer_A_Body` 가 v2 메시이고, 실물 메시는 `REF_Original_SK_Farmer_A_Body` 로 숨겨 보관했다. `SK_Farmer_A_Arms` 는 형태는 그대로 두고 색만 바꿨다.
+  리그는 레스트 포즈다.
+- 다음(2단계, 승인 후): 선택한 옵션 확정, FBX 수출(모프 타깃 포함), UE 재임포트, 틴트 기본값·4슬롯 `TintColor` 적용 확인, 피격 눈 연결.

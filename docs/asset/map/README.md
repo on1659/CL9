@@ -10,9 +10,32 @@
 토큰 사용을 줄이기 위해 파츠별 제작 스크립트를 재사용하고, 대표 연결부만 작은 UE 테스트 공간에서 검수한다.
 이미 통과한 검수는 원본 변경이나 새로운 결함이 있을 때만 반복한다.
 
+## 카드
+
+| 카드 | 대상 |
+|---|---|
+| [henhouse.md](henhouse.md) | 양계장 시각 방향(제작 카드가 아닌 방향 문서) |
+| [henhouse_sample_01.md](henhouse_sample_01.md) | 첫 샘플 8종 부품(벽·바닥·둥지·상자·포대·작업등·여물통·기준 큐브) |
+| [henhouse_fence.md](henhouse_fence.md) | 판자 울타리 250 |
+| [pen_fence.md](pen_fence.md) | 우리 철망 울타리 250(개방형, 높이130) |
+| [henhouse_door.md](henhouse_door.md) | 일방향 출입문 문짝 |
+| [henhouse_workbench.md](henhouse_workbench.md) | 작업대 |
+| [henhouse_structure.md](henhouse_structure.md) | 보·기둥·천장 |
+| [henhouse_access_parts.md](henhouse_access_parts.md) | 짧은 벽 250/125·계단 디딤판 |
+| [henhouse_yard.md](henhouse_yard.md) | 마당 바닥·벽걸이 표식 4종 |
+| [return_jar.md](return_jar.md) | 반납 항아리 |
+| [kitchen.md](kitchen.md) | 철판 조리대 |
+| [delivery_counter.md](delivery_counter.md) | 납품 창구 |
+| [truck_parts.md](truck_parts.md) | 트럭 회복 패드·장비 패널 |
+| [food_truck.md](food_truck.md) | 푸드트럭 본체·계단 |
+| [campfire.md](campfire.md) | 마당 모닥불 `SM_Campfire_A`(2026-09-17) |
+
+밤하늘 재질 `M_CL9_NightSky`(`Content/Maps/Sky/`, `Tools/Unreal/create_night_sky.py`, 2026-09-18)는 Blender 에셋이 아니라 카드가 없다 —
+[catalog](../catalog.md) `night_sky` 행과 `docs/systems/light.md` "밤 하늘 구 재질" 이 정본이다.
+
 ## 격자와 치수
 
-- 양계장 **CellSize=500cm**. 벽 길이는 500cm의 약수에 맞춘다. 폭·두께·높이는 각각 측정한다.
+- 양계장 **CellSize=500cm**(정본 `docs/plan/data/site.md` `CellSize`, 2026-09-21 확인). 벽 길이는 500cm의 약수에 맞춘다. 폭·두께·높이는 각각 측정한다.
 - 현재 팩 벽 실측 예시는 **500×40×400cm**. 이는 기존 조각의 크기이며 모든 방의 천장 높이가 아니다.
 - 층 높이는 최신 모듈 문서의 실측 조합을 따른다(2026-09-10 문서 예시 610cm).
   과거의 “단층”이나 630cm 벽 높이를 전체 에셋에 고정 적용하지 않는다.

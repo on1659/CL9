@@ -1,5 +1,7 @@
 # 손전등 / 헬멧형 헤드램프
 
+상태: 게임 연결 검수됨 — 2026-09-11 `flashlight`·`headlamp` 행 → `SM_Flashlight_A`·`SM_Headlamp_A`(`BP_CL9FlashItem`), PIE 줍기·착용·F 토글·렌즈 앞 광원; 아이콘 09-14, `GripRotation` 031. 정전·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 실제 item flashlight/None, headlamp/None, Radius12cm. 정면은 광원과 같은 +X다.
 손전등은 황색 공업용 몸체/고무 손잡이/넓은 렌즈, 헤드램프는 기획대로 헬멧에 붙은 램프로 만든다.
 헬멧 아래는 실제로 열린 구조이며, 테두리/고정 밴드/전면 램프를 큰 형태로 구분한다.

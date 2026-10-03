@@ -24,10 +24,13 @@
 | `SettingsTable` | `UCL9SettingsTable` | [plan/settings.md](../plan/settings.md) | [systems/settings.md](../systems/settings.md) | `Source/CL9/UI/CL9SettingsTable.h` |
 | `ShakeTable` | `UCL9ShakeTable` | — | [systems/character.md](../systems/character.md)(스태미나 셰이크) · [warning.md](../systems/warning.md) | `CL9ShakeTable.h` |
 | `UI/UITable` | `UCL9UITable` | — | [systems/ui_system.md](../systems/ui_system.md) | `Source/CL9/UI/` |
+| `SoundTable` | `UCL9SoundTable` (행 이름 상수 `CL9SoundNames`) | — | [systems/sound.md](../systems/sound.md) "구현 — `SoundTable`" | `CL9SoundTable.h` |
+| `WaveTable` | `UCL9WaveTable` (`TMap<ECL9NoiseSource, FCL9WaveInfo>`) | [plan/data/wave.md](../plan/data/wave.md) | [systems/wave.md](../systems/wave.md) | `CL9WaveTable.h` |
 | `SequenceTable` (미구현) | `UCL9SequenceDef` | [plan/data/sequence.md](../plan/data/sequence.md) | [systems/sequence.md](../systems/sequence.md) | — |
 
-`CL9Rules`·`CL9Progression`·`CL9DefList`만 단일 에셋이고 나머지 표는 `UCL9DefTable` 안에 행이 인라인으로 산다
-(2026-09-02). 헤더는 적지 않은 것 전부 `Source/CL9/Data/`.
+`CL9Rules`·`CL9Progression`·`CL9DefList`만 단일 에셋이고 나머지 `*Def` 표는 `UCL9DefTable` 안에 행이 인라인으로 산다
+(2026-09-02). `ShakeTable`·`WaveTable`·`SoundTable`·`SettingsTable`·`UITable`은 `UCL9DefTable`이 아닌 독자 `UDataAsset`이다
+(행 키가 Alias 가 아니라 이름·enum). 헤더는 적지 않은 것 전부 `Source/CL9/Data/`.
 
 ## 공용 타입 (모든 표가 나눠 쓰는 것)
 
@@ -47,7 +50,7 @@
 | `FCL9LightingPhase` | 사이트 조명 3상(로비·밤·정전) | [plan/data/site.md](../plan/data/site.md) 조명 · [systems/light.md](../systems/light.md) | `CL9SiteDef.h` |
 | `FCL9PropSet` · `FCL9PropPlacement` · `ECL9PropSide` · `ECL9PropSideRule` | 모듈 소품 세트 | [plan/data/module.md](../plan/data/module.md) · [systems/asset-swap.md](../systems/asset-swap.md) | `CL9ModuleDef.h` |
 | `ECL9SegPlacement` (Stretch·Tile·Grid) | 조각 배치 모드 | [systems/asset-swap.md](../systems/asset-swap.md) | `CL9SegKindDef.h` |
-| `FSoundEffect` | 사운드 정의 | [systems/sound.md](../systems/sound.md) | `CL9Types.h` |
+| `UCL9SoundTable` · `CL9SoundNames` · `CL9Sound::PlayAt` | 효과음 행·행 이름 상수·재생 자유 함수 | [systems/sound.md](../systems/sound.md) | `CL9SoundTable.h` |
 
 ## 조회·등록·검사
 
@@ -56,7 +59,7 @@
 | `UCL9DefRegistry` · `FindItem` · `FindMonster` · `FindSite` · `FindOrder` · `FindEquipment` · `FindCharacter` · `FindBuff` · `FindPiece` · `FindSegKind` · `FindModule` · `GatherModules` | Alias(+SubAlias)로 행 찾기 — 경로가 아니라 이름으로 | [plan/data/README.md](../plan/data/README.md) · 헤더 `CL9DefRegistry.h` |
 | `UCL9DefList` · `RefreshFromFolder` | 표 등록 목록 — 코드에 에셋 경로를 쓰지 않는다. MCP 저장은 재스캔이 안 돼 `defs`를 다시 쓴다 | [plan/data/README.md](../plan/data/README.md) · `CL9DefRegistry.h` 주석 |
 | `Validate` · `Usable` / `Broken`(코드에선 주석의 EDefStatus 개념) · `CheckSiteReferences` | 로드 검사 — 깨진 행은 `Find*`에서 nullptr, 어느 행·컬럼인지 로그 | [systems/actor-base.md](../systems/actor-base.md) · [systems/cheats.md](../systems/cheats.md)(`cl9.list`) |
-| 부등식 A1 · A2 · A4 | 캐릭터·몬스터 속도/스태미나 관계 검사 | [plan/economy.md](../plan/economy.md) "지켜야 하는 부등식" |
+| 부등식 A1 · A2 · A4 · A5 · A6 · A7 | 캐릭터·몬스터 속도/스태미나·잡기 예고·처형 앵커/후퇴 관계 검사 (`check_inequalities.py` — A4 는 식 미확정으로 판정 안 함) | [plan/economy.md](../plan/economy.md) "지켜야 하는 부등식" |
 | `CL9TuningHash` (설계만, 미구현) | 멀티 접속 시 호스트·클라 표 값 대조 | [systems/session.md](../systems/session.md) |
 
 ## 표를 만들거나 고칠 때의 규칙 (요지 — 이유는 링크)

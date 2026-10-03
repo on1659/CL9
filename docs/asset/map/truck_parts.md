@@ -1,5 +1,7 @@
 # 트럭 회복 패드와 장비 패널
 
+상태: 게임 연결 검수됨 — 2026-09-11 `BP_CL9TruckPad`/`BP_CL9TruckPanel` Mesh → `SM_TruckPad_A`/`SM_TruckPanel_A`(배율 1), 022 PIE 회복 존·패널 Shop. 경사·경계·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
+
 [실제 소비처](../evidence/022-truck-consumers.json): BP_CL9TruckPad는400×400×20cm 원통,
 회복 존은400×400×240cm 상자다. BP_CL9TruckPanel은15×80×120cm 기본 큐브다.
 패드의 기존 배율4/4/.2는 존 상대 위치까지 줄인다. 신규 자연 치수 메시에는 배율1을 사용하고

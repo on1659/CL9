@@ -6,8 +6,11 @@
 > UE에서 어떻게 짓는지는 [../systems/wave.md](../systems/wave.md), 값은
 > [data/wave.md](data/wave.md)(표)와 [data/rules.md](data/rules.md)(판정 반경).
 
-**상태: 미구현 — 문서만 (2026-09-16).** 전신 프로젝트 CCL8(웹, three.js)에 있던 연출이고,
-사용자가 "우리 게임에 꼭 구현해야 한다"고 정해 CL9로 옮겨 온다.
+**상태: 구현됨 (2026-09-16).** C++ `Source/CL9/FX/CL9WaveRenderer.*`·`Source/CL9/Data/CL9WaveTable.*`,
+표 에셋 `Content/Data/WaveTable`, 나이아가라 `Content/Effects/NS_CL9_Wave` — 구현 상태와 실제 모양은
+[../systems/wave.md](../systems/wave.md). 전신 프로젝트 CCL8(웹, three.js)에 있던 연출이고,
+사용자가 "우리 게임에 꼭 구현해야 한다"고 정해 CL9로 옮겨 왔다. 값은 전부 초안이라 PIE 관찰 뒤
+확정한다 ([data/wave.md](data/wave.md) PIE 관찰).
 
 ---
 
@@ -81,7 +84,7 @@ CCL8은 파동을 정전 전용으로 묶어 두었다. 밝은 구간의 밸런�
 
 ### 4. 소음원은 전부 구현하고, 행마다 켜고 끈다
 
-"구현해 두고 표로 제어"가 원칙이다. 1차 소음원 열한 가지:
+"구현해 두고 표로 제어"가 원칙이다. 소음원 열두 가지 (1차 열한 가지 + 2026-09-20 `monster_pounce`):
 
 | 행 | 무엇이 낸다 | 기본 | 비고 |
 |---|---|---|---|
@@ -96,6 +99,7 @@ CCL8은 파동을 정전 전용으로 묶어 두었다. 밝은 구간의 밸런�
 | `walk` | 걷는 발걸음 | **꺼짐** | 어그로 0이라 그릴 반경이 없다 |
 | `monster_prox` | 몬스터가 가까이 왔을 때 몬스터 자리에서 | 켜짐 | 아래 6 |
 | `monster_call` | 몬스터 울음 (기상 예고·경보) | 켜짐 | 반경 = 그 개체의 `PackAlarmRadius` — 무리 경보의 시각 표현이다 |
+| `monster_pounce` | 몬스터가 잡기 예고(`Pounce`)에 들어가는 순간 몬스터 자리에서 | 켜짐 | 반경 306 = `Speed` 510 × `PounceWindup` 0.6 — **링이 다 퍼지는 순간이 덮치는 순간**이라 아래 7의 예외로 피해자에게 닿는다. `PounceWindup`을 바꾸면 이 행도 같이 (2026-09-20, [data/wave.md](data/wave.md)) |
 
 행을 늘리는 것은 표가 아니라 코드다 — 소음원이 하나 늘면 그 사건을 내는 코드에 호출이 한 줄
 필요하기 때문이다. 대신 **그 행의 값은 전부 표에 있다** ([../systems/wave.md](../systems/wave.md)
@@ -130,6 +134,10 @@ CCL8은 파동을 정전 전용으로 묶어 두었다. 밝은 구간의 밸런�
 
 벽 차폐가 링을 깎으므로 벽 너머의 몬스터는 링도 잘려서 온다. 이것도 정직함의 일부다.
 
+**예외는 잡기 예고 링(`monster_pounce`) 하나다** (2026-09-20). 그 링은 "근처에 뭔가 있다"가 아니라
+**덮침이 닿는 거리와 시각**을 보여 주는 것이 목적이라 피해자에게 닿는다 — 링이 멎는 순간이 덮치는
+순간이다. 레이더가 아니라 예고 자체의 그림이다 ([data/monster/common.md](data/monster/common.md) 잡기 예고).
+
 ---
 
 ## 파동이 아닌 것
@@ -137,7 +145,7 @@ CCL8은 파동을 정전 전용으로 묶어 두었다. 밝은 구간의 밸런�
 | 헷갈리는 것 | 무엇이 다른가 |
 |---|---|
 | **스캔 파동** (우클릭) | 화면 중앙에서 퍼지는 **UMG 화면 효과**다. 아이템 이름·가격 라벨을 붙이는 UI이고 월드에 링이 없다 ([../systems/ui.md](../systems/ui.md) 스캔) |
-| **미니맵** | 미니맵에 위협을 그리지 않는다는 계약은 그대로다 ([overview.md](overview.md)) — 파동은 월드 연출이지 지도 표시가 아니다 |
+| **미니맵** | 미니맵에 무엇을 그리나는 전역 계약이 아니라 **종별 값** `bShowOnMinimap`이 정한다 ([data/monster/common.md](data/monster/common.md) 표시) — 파동은 그와 무관한 월드 연출이지 지도 표시가 아니다 |
 | **몬스터 청각 판정** | 파동은 눈에만 보인다. 몬스터가 무엇을 듣는지는 여전히 `CL9Rules`와 몬스터 감각이 정한다 ([../systems/monster.md](../systems/monster.md)) |
 
 ---
@@ -210,5 +218,5 @@ CCL8의 수치는 **원안**일 뿐이다. CCL8은 1u = 3cm이므로 속도 170u
 - 값(표): [data/wave.md](data/wave.md) · 판정 반경: [data/rules.md](data/rules.md) 소리
 - 몬스터 감각: [../systems/monster.md](../systems/monster.md) · 위험 전달: [../systems/warning.md](../systems/warning.md)
 - 어둠·정전: [../systems/light.md](../systems/light.md) · 슬롯 색: [data/character.md](data/character.md)
-- CCL8 원안: `chicken-heist.html`의 `spawnWave`/`updWaves`와
-  `docs/goal/chicken-heist-maze-blackout.md`의 "Wave visualization" 절 (읽기 전용 참고)
+- CCL8 원안 (다른 저장소, 읽기 전용 참고): `D:\Work\vibe\CCL8\chicken-heist.html`의 `spawnWave`/`updWaves`와
+  `D:\Work\vibe\CCL8\docs\goal\chicken-heist-maze-blackout.md`의 "Wave visualization" 절

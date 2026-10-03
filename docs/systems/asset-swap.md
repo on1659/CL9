@@ -174,6 +174,7 @@ LogCL9: Site map: 'barn' tiled with a 500 x 40 x 400 piece — 128 instances, wo
 | `yard` | `yard`(야외 모듈의 바닥) | 500×500 흙·자갈 판. `Grid` |
 | `tread` | `tread`(계단 디딤판) | 디딤판 한 장. `Tile`이 계단 진행 방향에 맞춰 90° 돌린다 — 500 폭 통로에 264짜리 두 장(맞춤 0.95) |
 | `ceiling` | `ceiling` | 500×500 판. `Grid`. 양계장은 천장을 꺼 두어(site `bBuildCeilings`) 켤 때 바로 쓰인다 |
+| `penFence` | `pen`(우리 울타리, 2026-09-28) | 가슴 높이 철망 한 장. 250 × 20 × 130cm(`SM_Pen_Fence_250_A`) — 길이가 칸 500의 약수라 변마다 두 장이 1.00으로 맞는다. **생성기는 아직 `pen` 종류를 안 낸다** — Lvl_Flat 전시 우리에서 손배치로 먼저 쓴다 |
 | `box` | (없음 — 폴백) | 무늬 없는 100cm 정육면체. `Stretch` 전용 |
 
 **`door` 조각을 문틀로 쓰면 안 된다.** 문짝 메시를 개구부에 채우면 콜리전이 생겨 문이 통째로
@@ -191,6 +192,14 @@ LogCL9: Site map: 'barn' tiled with a 500 x 40 x 400 piece — 128 instances, wo
 
 `cage` 역할도 비어 있다 — 케이지 열이 사라져 seg kind 자체가 안 불린다. 모듈 안 소품으로
 되살아날 여지는 남아 있다.
+
+**`fence`와 `penFence`는 다른 역할이다** (2026-09-28). 둘 다 울타리지만 `fence`는 야외 경계용
+288cm 불투명 판자(시야 차단)이고 `penFence`는 우리용 130cm 철망(시야 투과)이다. 한 역할에
+같이 넣으면 자리 해시가 둘을 섞어 뽑아 마당 담 사이에 가슴 높이 철망이 끼므로, 행을 반드시
+따로 둔다 — 아래 "폐허 변형을 한 역할에 섞었다"와 같은 함정이다.
+문 옆 토막(`penStub`)은 아직 없다. `pen` 종류가 생성기에서 문을 뚫는 변에 쓰이게 되면 125짜리
+반 폭 조각(`penFenceQuarter`)이 필요하다 — art 쪽에서 만들 수 있다고 확인됐다
+([../asset/map/pen_fence.md](../asset/map/pen_fence.md)).
 
 ### 팩에 있지만 아직 안 쓰는 것
 

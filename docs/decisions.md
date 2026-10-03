@@ -1541,3 +1541,91 @@
   참조 교체) → 리디렉터 삭제 → rename 으로 다시 넣었다(`.claude/runs/execute-clips/lead_reimport_interchange.py`; art 가 도구 스크립트에 반영). 검증: 닭 PounceWindup·돼지·너구리 Execute 모두 +X,
   스크린샷 `pie_execute_pig_victim_0.8s.png`(돼지 정면·농부 HIT)·`pie_execute_raccoon_victim_0.6s.png`(너구리가 등에 올라탐)·`*_deathcam.png`.
   art 가 `Tools/Unreal/reimport_creature_clips.py` 를 같은 방식(Interchange + consolidate + rename, `how = consolidated`)으로 다시 썼고 리드가 양 HitReact 한 번으로 검증했다. 농부 `import_farmer_clips.py` 는 레거시 경로지만 032·034 PIE 에서 방향이 맞아 그대로.
+- **2026-09-22 — 전투 조작감 1차(실행 `combat-feel-pass-1`, 명세 `docs/goal/combat-feel-pass-1.md`, 패널 3+교차 심문 1 로 확정). 사용자 결정: 밀치기 전용 동작은 만들지 않는다 —
+  `PushKnockback 1560cm` 은 리썰 이식값이 아니라 구 CCL8 상수(`PushKnockbackU 520`)였고 리썰 삽에는 밀어내기가 없다. 팬 = `Hit` + 작은 밀림.** 아래 8항목은 gameplay 보고서, 그 다음 balance·art·리드.
+- **2026-09-22 — 휘두르기 판정 원점을 손 소켓 메시에서 컨트롤 회전 + 손 높이 원점으로 바꿨다(gameplay).** 2026-09-15 의 "히트박스 = 손에 든 메시", "사거리 숫자가 아니라 애니메이션이 정한다" 는 번복 —
+  보이는 팬(카메라 자식 1인칭 팔)과 판정 구(전신 손 + 메시 경계)가 다른 클립·다른 공간을 써서 일치하지 않았다. 판정은 `[SwingHitStart, SwingHitEnd)` 동안 매 틱 `GetActorLocation() + Z·(EyeHeight − CapsuleHalfHeight − 66)`
+  (손 높이 ≈ 90cm) 에서 `GetControlRotation()` 방향으로 `SwingHitRadius` 앞 → `SwingHitReach` 까지 구 스윕. **카메라 컴포넌트 트랜스폼은 읽지 않는다**(리슨 호스트에서 클라 폰의 카메라는 피치 0 —
+  `bUsePawnControlRotation` 은 로컬 `GetCameraView` 에서만 적용). 눈높이 원점이면 밀착한 닭(중심 36cm)을 못 맞힌다. WorldDynamic Overlap 응답 근거(나란한 둘 다 맞기)·구간 겹침 판정·몬스터당 1회는 그대로.
+- **2026-09-22 — `SwingHitScale`(2026-09-20) 폐기 → `SwingHitReach 100`·`SwingHitRadius 60`(balance).** 메시 경계 구가 사라져 배율할 것이 없다. 2.2 가 지키던 두 관찰(C4 ⑦ 2m 밖 불명중 182cm, ⑬ 옆 한 걸음 89cm)을
+  새 열이 196cm(100+60+닭 36) / ≈79cm(√(96²−54²)) 로 잇는다. 명세 초안 150/80 은 266cm 로 ⑦ 을 깼다. 옛 경로 폴백·`SwingHitMode` 는 두지 않는다 — 롤백은 git. `GetSwingHitSphere`·`SwingHitPrevCenter` 삭제.
+  `AlwaysTickPoseAndRefreshBones`(권한 전신 메시)는 남는다 — 판정용이 아니라 놓기(`Server_Drop` 의 "든 자리")용.
+- **2026-09-22 — `SwingRecovery` 상수(0.6) → `CL9Rules` 열(헤더 0.6 = 옛 동작, 셀 0.347 = `SwingClipWindow`).** 초안의 "0.467 = 클립 길이" 는 틀렸다 — ABP 는 [0, 0.347) 만 `ExplicitTime + 0.12` 로 평가하므로
+  팔은 0.347 에 Hold 로 돌아온다. 첫 명중 틱에 `SwingReadyTime += HitStopTime` — 맞든 빗나가든 팔이 돌아온 뒤 같은 여유. `Validate`: `>= SwingClipWindow` ∧ `> SwingHitEnd`. 함께 `SwingBufferTime` 한 칸 예약
+  (헤더 0 = 끔, 셀 0.15) — 회복 끝 0.15초 안의 뗌 하나만 기억, 취소 분기 없이 `HostCancelSwingWindup()` 이 예약도 지운다(칸 전환·놓기·던지기·먹기·넘어짐·사망이 이미 그것을 부른다).
+  실측(호스트, 연타 30회·100ms): 옛값 swing 5 / lost 25 · 회복만 8 / 22 · 회복+예약 1+buffered 12 / 17. 팔 복귀 − 다음 입력 수락 0.003~0.015초(≤ 1프레임).
+- **2026-09-22 — 표면음은 `SwingSurfaceHitServerTime` 전이로 낸다(gameplay·art).** 원점 → Reach **선** 트레이스(구가 아니다 — 손 높이에서 20° 만 내려도 구는 30cm 앞 바닥에 먼저 닿아 닭을 버린다)가 지형에
+  막히고 그보다 가까운 명중이 없으면 휘두르기당 1회. `SwingHitServerTime` 을 재사용하지 않는 이유: OwnerOnly 라 남의 폰에서 소리가 비대칭이고 팔 히트스톱을 건다. 조건 없는 복제, 폰 자리 재생(충돌점 비복제),
+  킥·히트스톱·소음 사건 없음 — 킥은 "살아 있는 몬스터를 처음 맞혔다" 신호로만. 소리 `hit_surface.wav`(0.20s, −6dBFS — 명중 −3 보다 작게, 금속 링은 명중의 1/5) → `S_HitSurface` → SoundTable `HitSurface`.
+- **2026-09-22 — 팬 = `Hit` + 아이템 열 `HitKnockback`(팬 120cm, 고기 0) + 규칙 열 `HitKnockbackTime`(0.12초). 2026-09-15 balance "팬 = Push" 근거 갱신(balance).** 두 대에 죽는 것(`HitDamage` 2)은 유지, 15.6m 핑퐁만
+  폐기. 넉백은 Stun 진입 뒤 `HitStopTime` 을 기다렸다가(멈춘 프레임은 밀리지 않는다) `HitKnockbackTime` 동안 등속(경직 시간과 분리 — 0.08 + 0.12 = 0.20 ≤ `HitStunMs` 0.3), 스텝마다 `TraceWorld` 로 벽 검사,
+  죽이는 타격엔 없음(죽음 발사가 대신). 120 의 근거: 회복 0.347초 동안 걷기 396 → 137cm > 120 이라 밀린 만큼은 회복 중에 따라잡는다. 종별 열(5셀 동일)·속도=거리/경직시간(히트스톱 중 미끄러짐)·0cm·감속 곡선은 반려.
+  **`Push` 기제(`ECL9HitStun::Push`·`OnShove`·`bPushStun`·`PushStun`/`PushKnockback` 열·`PushReact` 클립)는 남긴다** — 사용자 결정. 쓰는 행은 없고 컴파일·동작을 유지한다(삭제는 별건).
+  실측: 넉백 dist 120.0 · steps 8 · hitstop 0.080 · time 0.120; 벽 옆(벽까지 24cm) `blocked=1` dist 0; 죽는 타격에 넉백 줄 없음.
+- **2026-09-22 — `ACL9Monster::TraceWorld` 공용 정적(gameplay).** 죽음 발사의 람다를 올려 죽음 발사·휘두르기 가림·표면음·넉백 스텝이 같은 "세상 지형만 보는 Visibility 트레이스"(폰·아이템·몬스터 무시 후 재시도)를
+  쓴다. 가림은 스윕에 걸린 몬스터마다 원점 → 몬스터 구 중심(`ImpactPoint` 는 시작 관통 때 길이 0). 동료 폰은 가리지 않는다(사람은 맞지도 가리지도 않는다). 열 없음, 항상 켜짐. 실측: BlockAll 벽 너머 닭 5회 0타(`occluded = tested`).
+- **2026-09-22 — performance 규칙: 휘두르기당 트레이스 = 스윕 1 + 걸린 몬스터 수(가림) + 표면 선 1; 넉백 = 스텝당 선 트레이스 1.** 새 소프트 참조 열 없음(Warm 목록 변경 없음).
+- **2026-09-22 — 몬스터 ABP 5종의 빈 평가기 복구(리드).** a2c4834 커밋 상태에서 ABP_{Chicken,Goose,Raccoon,Pig,Sheep}_A 마다 시퀀스가 빠진 평가기가 하나씩 있었다(닭 PounceWindup·거위 PushReact·너구리/돼지 Execute·
+  양 HitReact — 09-21 consolidate 재임포트 뒤 ABP 를 다시 저장하지 않아 참조가 유실된 것). 이 상태로 StartPIE 를 두 번째 부르면 "블루프린트 에셋 컴파일 5오류" 모달이 게임 스레드를 잠근다. MCP BlueprintTools 로 같은 자리에
+  평가기를 다시 만들어 ExplicitTime·Pose 연결을 복원, 컴파일·저장(`.claude/runs/combat-feel-pass-1/abp_repair.py`). 재임포트 뒤에는 **ABP 도 함께 저장**한다.
+- **2026-09-22 — 리드 PIE 측정 도구 `Tools/Unreal/pie_combat_feel.py`.** Python 원격 실행으로 PIE 안에서 팬 줍기 → 연타 → 닭을 자리에 놓고(틱 끔) 휘두르기 → 결과 json + 로그 표식. 벽은 PIE 전에 에디터 레벨에 놓는
+  BlockAll 큐브 고정물(저장 안 함). `GameplayStatics` 에는 스폰 함수가 파이썬으로 노출되지 않는다. 결과: 밀착 10/10 · 2m 밖 0/3 · 옆 70cm 3/3 · 옆 110cm 0/3 · 명중 시각 start+0.050~0.067 · 벽만 `surface=t`, 허공 `surface=-`.
+
+## 2026-09-28
+
+- **`pen`(우리) 울타리는 판자 울타리와 별도 계열로 간다(art, `/cl9 task pen-fence-model`).** `henhouse_fence`(288cm 불투명 판자, 시야 차단, 미로 복도용 `wall` seg)는 그대로 두고, 우리용은
+  `SM_Pen_Fence_250_A`(나무 기둥+철망, 250×20×130cm, 800 tris, `docs/asset/map/pen_fence.md`)를 새로 만들었다. 높이 130cm 는 플레이어 캡슐 반높이 90cm 위·눈높이 156cm 아래로 잡아 **몸통은 막고 시야는 연다** —
+  우리 안 동물이 보여야 몰래 접근하는 긴장이 생긴다는 판단(사용자 2026-09-27). 충돌은 시각적 철망 틈과 무관하게 닫힌 UCX 상자 1개로 130cm까지 막아 아이템이 새지 않게 한다.
+  `docs/asset/design-concept.md` 규칙 2(채도 상향 — 1.png 복셀 레퍼런스 참고)를 적용한 첫 맵 파츠다. UE 임포트 완료: `/Game/Maps/Henhouse/PenFence/SM_Pen_Fence_250_A`(치수 오차 <0.0001cm, UCX 1개, LOD 3단).
+  `pen` 전용 SegKindTable 행(`blocks_sight=false`)과 Lvl_Flat 실배치는 다음 실행 `pen-fence-wire`(map) 몫.
+- **우리 울타리의 시야 투과는 코드 변경 없이 표 한 행으로 된다(map, `pen-fence-wire`).** `ACL9SiteMap::Rebuild`의 `ComponentFor`가 인스턴스 묶음을
+  `(seg kind, 메시)` 쌍마다 만들고 그 종류의 `bBlocksSight`로 채널 응답을 정하므로, `SegKindTable`에 `pen` 행(`Piece=penFence`·`Tile`·`Height=130`·
+  `bBlocksSight=false`)을 넣으면 판자 울타리(`wall`, 288cm 차단)와 철망 울타리(`pen`, 130cm 투과)가 같은 코드에서 갈린다. 콜리전은 둘 다 `BlockAll`이라
+  130cm까지 몸·아이템을 막는다. 조각 역할 `penFence`는 `fence`와 별개 행이다 — 한 역할에 섞으면 자리 좌표 해시가 288cm 판자와 130cm 철망을 섞어 뽑는다.
+- **Lvl_Flat 전시 우리 확정: 중심선 500cm 정사각형·우리마다 8장·총 40장, 125cm 반 폭 변형 불필요.** 250cm 조각이 변 500에 두 장씩 1.00으로 맞는다.
+  옛 큐브 20개(StaticMeshActor_8~27) 제거하고 `SM_Pen_Fence_250_A` 40장으로 교체 완료(리드, 2026-09-28). 좌표 정본은 `docs/systems/map.md`.
+- **(미결, 사용자 결정 2026-09-28) 130cm 울타리는 점프로 넘을 수 있다(정점 156cm > 130cm) — 두 계열로 간다.** 130cm는 넘을 수 있되 넘으면 페널티
+  (이동속도 감소 또는 HP 감소 — 구체적인 수치·방식 미정), 160cm는 완전히 못 넘는 차단용. 130cm 페널티 기제는 새 게임플레이 메커닉이라
+  별도 착수 필요(경계 감지·페널티 적용·balance 수치 확정) — 이번 실행 범위 밖, 다음 세션 `/autogoal` 대상.
+- **(미결, 사용자 승인 2026-09-28) `ModuleTable`에 `PerimeterKind` 열 신설 승인.** henhouse 생성 맵의 `pen` 모듈 둘레를 울타리로 바꾸려면
+  "이 모듈의 어느 변이 울타리인가"를 정할 데이터가 필요하다(`CL9SiteLayout.cpp`의 `WallKind()`는 지금 양옆 모듈의 `bOutdoor`만 본다).
+  제안: `UCL9ModuleDef`에 `PerimeterKind`(FName, 비우면 기존 동작) + seg kind `penStub`(문 옆 토막). 격자 밖과 닿은 변(`INDEX_NONE`)은 계속
+  `barn`이어야 한다(안 그러면 아이템을 맵 밖으로 던질 수 있다). 구현은 다음 실행 `pen-fence-perimeter`(map) — 이번 실행 범위 밖.
+
+## 2026-10-03
+
+- **스테이지 = `MapTable` 행 하나 + 레벨 하나 (리드, `/autogoal` farm-stage — 사용자 부재, 자율 판단).** 사용자 "맵·아이템·몬스터·요리·트럭을
+  하나로 합쳐 플레이하고 싶다, 양계장보다 5배 큰 맵을 레벨 하나에 밸런스 있게, 배치도 데이터 드리븐으로 — 스테이지 관리하는 무언가가 필요".
+  새 시스템을 만들지 않고 이미 목적지 행인 `UCL9SiteDef`를 스테이지 행으로 쓴다: `Level` 열(soft `UWorld`)을 더해 게임 모드가 `StartPlay`에서
+  지금 레벨을 가리키는 행을 고르고, 없으면 `DefaultSiteAlias`로 떨어진다. 반려: 별도 `UCL9StageDef` 표 — 목적지 행과 같은 것을 두 표로 나눠
+  들게 된다; 레벨마다 게임 모드 BP 복제 — 데이터가 아니라 에셋이 늘어난다.
+- **배치는 깊이 구역(`Zones`)으로 (리드).** 구역 = `{Name, DepthMin, DepthMax, MonsterSpawns, ItemSpawns}`, 깊이 = 지점 홉 ÷ 판의 최대 홉.
+  구역이 비면 예전 규칙(몬스터 깊은 60%, 재료 전체) 그대로 — 양계장 불변. 반려: 거리(cm) 기준 띠 — 판 모양마다 뜻이 달라지고 층을 무시한다.
+- **밤 시계 사이트 덮어쓰기 구현 — `NightLength`·`DarkBase`·`DarkMin`, 0 = `CL9Rules` (리드).** site.md 에 설계만 있던 것. 5배 판은 245초로 깊이
+  갔다 올 수 없다. 대농장 480/360/240(초안).
+- **`SpecialCopies` 열 (리드).** Special 행(납품 방·주방)을 판에 몇 번 놓나. 첫 헤드리스 실행에서 5배 판에 항아리가 1개뿐이었다. 대농장 4.
+- **생성기: 격자 상한 64 → 128, 예산이 남았을 때만 도는 채움 단계 (리드).** 200모듈 판은 곁가지 단계가 비좁은 자리에서 48회 연속 헛돌아 일부 시드가
+  70/200에서 끝났다(`CL9.Map.LargeSite` 실패). 채움 단계는 열린 변을 다시 훑어 통로 → 방 → 막다른 방 순으로 맞춘다. 예산을 채운 판(양계장)은
+  들어오지 않는다. 테스트 `CL9.Map.LargeSite`·`CL9.Map.DepthBand` 추가, `CL9.Map.*` 6개 통과.
+- **`Lvl_Farm`의 레벨 저장 내비메시를 지웠다 (리드).** 양계장 레벨을 복제하면 저장된 RecastNavMesh 가 옛 작은 경계 기준 타일 용량을 들고 와 런타임에
+  farm 경계의 일부(약 200타일 덩어리)만 지어졌다 — PIE 실측 몬스터 11/26 이 내비 밖에서 영영 못 움직였다. 지우면 런타임(Dynamic)이 지금 경계로
+  새로 만든다: 내비 전면, 25/25 내비 위, +20초에 빌드 끝. **같은 문제가 `Lvl_Henhouse`에도 있다**(경계가 x −1700~11000 · y −2100~2500 으로 판보다
+  훨씬 작고, PIE 대조 실측 몬스터 5마리 중 1마리만 내비 위·0마리 이동) — 이번 범위 밖, 고칠지 사용자 확인 필요.
+- **두 번째 스테이지 `pigfarm`(돼지 농장) + 스테이지 만드는 가이드 (리드, 사용자 부재 — "스테이지 하나 더 만들고 이걸 토대로 가이드").**
+  대농장과 겹치지 않는 성격으로 골랐다: 단층 100모듈·우회로 적음(`LoopChance` 0.15)·긴 본줄기·어두움(`LampDensity` 0.2)·돼지 위주 고기 판.
+  지금 있는 모듈 세트·몬스터·재료만 쓴다(새 아트 없음). `ValueRate`·`BaseDanger`는 1.0 — 경제를 건드리지 않는다. 반려: "작고 어려운 양계장 변형" —
+  대농장과 마찬가지로 크기만 다른 판이 되어 가이드의 예시로 약하다. 첫 실측에서 1일차 돼지가 3마리뿐이라 구역 돼지 최소를 3으로 올렸다
+  (1일차 몬스터 배율 0.6 의 반올림 — 가이드 함정 표에 올림).
+- **스테이지는 명세 JSON 이 정본 (`Tools/Unreal/stages/<alias>.json` → `Tools/Unreal/setup_stage.py`).** 대농장 전용 스크립트를 일반화했다. 행은
+  매번 명세대로 덮어쓰므로 에디터에서 행을 손으로 고친 값은 다음 apply 때 사라진다 — 값은 명세에서 고친다. 가이드 `docs/systems/stage.md`.
+- **바깥 모습을 어두운 저녁 하늘 + 흙바닥으로, 모든 레벨·모든 스테이지 공통 (리드, 사용자 "바깥이 테스트존에 밝은 스카이박스, 어두운 걸로 —
+  지금까지랑 앞으로 만들 모든 것에").** 하늘은 새 재질이 아니라 `M_CL9_NightSky`의 인스턴스 `MI_CL9_DuskSky`(같은 그래프, 색만 저녁)로 해서 밤
+  하늘과 한 계열로 둔다. 레벨 하늘 구의 기본 재질과 사이트 행 로비 `SkyMaterial` 양쪽에 넣었다 — 하나만 바꾸면 에디터 화면이나 로비 중 한쪽이
+  밝게 남는다. 로비 `SunScale` 0.2·`SkyLuminance` 0.3·구름 끔. 레벨 라이트의 원래 값은 안 바꿨다(밤 배율이 그 값에 맞춰져 있다). 새 스테이지는
+  `setup_stage.py`가 `outdoor_look.py`를 불러 자동 적용 — 명세 열이 아니라 공통 규칙으로 둔 것은 "모든 것에"라는 요청 때문이다.
+
+## 2026-10-04
+
+- **서브에이전트 모델은 일의 성격으로 고른다 — 상시 규칙 (사용자 "1회용으로 하지 말고 앞으로 진행하게 남기자").** 판단·설계·첫 형태 = opus,
+  정해진 것의 반복·기계적 적용 = sonnet, 아주 단순한 일 = haiku, 리드는 사용자가 고른 모델. 역할 정의 기본값(`cl9-roles.json` opus)은 그대로 두고
+  띄울 때 `model`을 명시한다. 반려: 역할별 기본 모델 — 같은 역할 안에서도 판단과 반복이 갈린다. 정본 `docs/workflow/sessions.md` "모델 배분".
