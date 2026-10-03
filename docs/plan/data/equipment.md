@@ -46,7 +46,7 @@
 |---|---|---|---|---|
 | `frying_pan` | 200 (초안) | `Carryable` | ✔ | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대다). 들고 다니는 물건이고 팔 수도 있다. 아이템 표 `frying_pan` 행만 있고 전용 클래스는 없다 — 4f 전엔 `cl9.additem frying_pan`으로 꺼낸다 |
 | `cart` | 미정 | `Carryable` | ✕ | `CartOnly` 아이템 운반을 연다. 끌면 `CartMult` 0.75 — 물건 정의는 [item/cart.md](item/cart.md) |
-| `pot` | 미정 | `Carryable` | 미정 | 두 번째 조리 용기 — 동시에 두 요리 |
+| `pot` | 미정 | `Carryable` | 미정 | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대, 동시 요리 수 = 조리대 수. 냄비는 프라이팬처럼 그냥 아이템). 아이템 표 `pot` 행은 2026-09-11에 프라이팬 행을 복제해 만들었다 — 두 손(`HoldPose` Large) 물건 |
 | `standing_lamp` | 미정 | `Carryable` | ✕ | 놓으면 주변을 밝힌다. 조명 세팅([../../systems/light.md](../../systems/light.md)) 검토 후 값을 정한다 |
 | `headlamp` | 미정 | `Carryable` (ItemDef `headlamp`, CarrySlot `Head`) | ✕ | 머리에 쓰는 빛 — 손이 빈다. 정전에 안 꺼진다. 4f 전엔 바닥에 놓아 준다 — [item/headlamp.md](item/headlamp.md) |
 

@@ -27,8 +27,11 @@
 반경은 규칙 값이 정하는 별개 축이다. 반응 음성은 어둠 속에서 동료의 상황을 귀로 알리는
 채널이다.
 
-> **이 두 열은 아직 `UCL9CharacterDef`에 없다** — 소리 자체가 미구현이라(소스에 오디오
-> 코드가 한 줄도 없다) 소비처가 생길 때 넣는다. 그때 이 두 줄이 명세가 된다 (2026-09-09 확인).
+> **이 두 열은 아직 `UCL9CharacterDef`에 없다.** 소리 자체는 있다 — `SoundTable`(`Content/Data`) 행
+> 10개(`CL9SoundNames`: Pickup·Place·Swing·Hit·Hurt·MonsterDeath·Footstep·MonsterPounce·MonsterCatch·MonsterNear,
+> 2026-09-18~20, [../../systems/sound.md](../../systems/sound.md)) — 그러나 **종별 음성·발소리 세트 열은 없다.**
+> 발소리는 종 공통 `Footstep` 행 하나를 `CL9Rules.FootstepStrideRun/Walk` 공용 보폭(거리 누적기)으로 낸다
+> (2026-09-18, 종별 보폭 열은 다음에). 종별 열은 소비처가 생길 때 넣고, 그때 이 두 줄이 명세가 된다.
 
 ---
 
@@ -133,5 +136,9 @@ ACL9Character (C++)           BP_CL9Character (블루프린트 자식)
 
 ## 지금 있는 것
 
-없다. ①c에서 임시 메시로 첫 행을 만든다. **시작은 2종이다** — 데이터 에셋이라 행 추가로
-늘린다.
+`CharacterTable`(`Content/Data`)의 `farmer_a` 행 — 자체 제작 농부 A 전신·1인칭 팔(`Content/Characters/FarmerA`,
+2026-09-11 연결, 09-13 카메라 자식 뷰모델 `ABP_FP_View` — [../../asset/character/farmer_a.md](../../asset/character/farmer_a.md))이
+붙어 있고, 몸 수치는 위 표 값이다. `TintColor`는 파동 링의 슬롯 색으로 쓰인다 —
+`ACL9PlayerState::GetSlotColor`가 캐릭터 행에서 읽는다(2026-09-16, 슬롯 번호 배정은 아직 없음).
+외형은 데이터 에셋이라 행 추가로 늘린다 — 두 번째 외형(`farmer_b`)은 로비 캐릭터 선택
+([../../systems/session.md](../../systems/session.md))과 함께 온다.

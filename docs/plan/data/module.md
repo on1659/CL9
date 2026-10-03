@@ -1,6 +1,8 @@
-# 맵 모듈 — `UCL9ModuleDef` (설계, 미구현)
+# 맵 모듈 — `UCL9ModuleDef`
 
-> **2026-09-08 결정. 아직 코드가 없다.** 이 문서가 착수 지점이다.
+> **2026-09-08 결정·구현, 2026-09-17까지 층·소품·크기 확대.** 코드 `Source/CL9/Data/CL9ModuleDef.*`
+> (배치기는 `Source/CL9/World/CL9SiteLayout`·`CL9SiteMap`), 에셋 `Content/Data/ModuleTable`(양계장 스테이지).
+> 구현 상태는 [../../systems/map.md](../../systems/map.md), 결정 경위는 [../../decisions.md](../../decisions.md) 2026-09-08~17.
 > 참고 분석: [../../reference/repo/repo-map.md](../../reference/repo/repo-map.md)(주 모델) ·
 > [../../reference/lethal/lethal-map.md](../../reference/lethal/lethal-map.md)(층 개념)
 > 조각 표: [../../systems/asset-swap.md](../../systems/asset-swap.md)
@@ -48,7 +50,7 @@
 | `Size` | `FIntPoint` | 격자 칸 단위 W × H |
 | `Sockets` | 4비트 마스크 | 어느 변이 열리나 — N/S/E/W (회전 전 기준). 열린 변의 경계 칸이 전부 문 후보다 |
 | `Rarity` | int 1~3 | 뽑힐 가중치 (REPO `ModuleRarity1/2/3`) |
-| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다 |
+| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다. 소품의 `LightIntensity`(cd, 0이면 빛 없음)·`LightRadius`·`LightColor`·`LightOffset`이 있으면 **시설 조명**이 된다 — 인스턴스마다 포인트 라이트가 붙고 정전이면 꺼진다(2026-09-16, light.md). `LightScattering`(안개 후광, 기본 1)·`LightFlicker`(깜박임 진폭 0~1)·`LightFlickerSpeed`(Hz, 기본 6)는 2026-09-17 — 작업등 10cd·산란 1·깜박임 0, 모닥불 12cd·산란 4·깜박임 0.35/5 |
 | `Height` | float | 천장 높이 (모듈마다 다를 수 있다) |
 | `bStairs` | bool | 모듈 **안에서** 오르내리는 높이차가 있는가 — 바깥으로 전파되지 않는다 |
 | `bOutdoor` | bool | 야외 모듈인가 (마당) — 천장을 안 씌우고 벽 대신 울타리를 세운다 |
@@ -58,11 +60,12 @@
 (asset-swap.md). 이 표가 정하는 건 "몇 칸짜리 방이고 어디가 뚫리나"까지다. 벽 두께는
 `barn` 조각의 얇은 축에서, 문 폭은 `door` 조각의 넓은 축에서 실측으로 온다.
 
-사이트 표(`UCL9SiteDef`) 쪽 맵 컬럼은 열둘이다 — `Generator` · `Theme`(모듈 표와 조각 표를
-함께 가리킨다) · `CellSize` · `BaseModuleCount` · `EntryOffset`, 2026-09-10에 층이
-돌아오면서 더한 `MaxFloors` · `StairCountMin` · `StairCountMax`, 그리고 2026-09-15에 생성기
-상수에서 끄집어낸 `LoopChance` · `MainPathShare` · `PassageShare` · `DeadEndShare`
-([site.md](site.md)). 옛 격자 컬럼 열세 개가 앞의 다섯으로 줄었다가 배치 비율 넷이 표로 올라왔다.
+사이트 표(`UCL9SiteDef`) 쪽 맵 컬럼(Category `Map`)은 열다섯이다 — `Generator` · `Theme`(모듈 표와
+조각 표를 함께 가리킨다) · `CellSize` · `BaseModuleCount` · `EntryOffset`, 2026-09-10에 층이
+돌아오면서 더한 `MaxFloors` · `StairCountMin` · `StairCountMax` · `bBuildCeilings`, 2026-09-15에 생성기
+상수에서 끄집어낸 `LoopChance` · `MainPathShare` · `PassageShare` · `DeadEndShare`, 2026-09-16의
+`UpperFloorShare`(위층 예산 비율), 2026-09-18의 `LampDensity`(켜지는 소품 조명 비율) —
+값은 [site.md](site.md). 옛 격자 컬럼 열세 개가 앞의 다섯으로 줄었다가 층·배치 비율·조명 열이 표로 올라왔다.
 
 ## 양계장 모듈 19종 (1스테이지)
 
@@ -70,7 +73,7 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 
 | # | Alias | Type | 크기 | 무엇 | 소품 후보 |
 |---|---|---|---|---|---|
-| 1 | `yard_gate` | Start | 3×2 | 마당 입구 — 트럭이 붙는다 | 울타리·문 |
+| 1 | `yard_gate` | Start | 3×2 | 마당 입구 — 트럭이 붙는다 | 울타리·문 · 모닥불(`SM_Campfire_A`, 2026-09-17 — 세트마다 하나, (500,500), 12cd·반경 700·오프셋 z60·산란 4·깜박임 0.35/5Hz. 09-18 불꽃 혀 7개·정점색 그라데이션·재질 흔들림) |
 | 2 | `corridor` | Passage | 1×2 | 곧은 복도 | 건초 부스러기·통 |
 | 3 | `corner` | Passage | 2×2 | 꺾인 복도 | 〃 |
 | 4 | `stair_pass` | Passage | 2×2 | 계단 통로 (높이차) | 사다리·널판 |
@@ -78,7 +81,7 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 | 6 | `pen` | Normal | 3×2 | 축사 우리 | `HayStack` · `Trough_FoodPile` · `Trough_WaterPlane` |
 | 7 | `feed_store` | Normal | 2×3 | 사료 창고 | `SackOpen_Grain` · `Grain_Round` · `Barrel_01~04` · `SackStack` |
 | 8 | `cross` | Normal | 2×2 | 사거리 홀 | 기둥·등 |
-| 9 | `yard_open` | Normal | 3×3 | 마당 (야외) | `Well` · `Scarecrow` · `VillageFence` · `TreeLog` |
+| 9 | `yard_open` | Normal | 3×3 | 마당 (야외) | `Well` · `Scarecrow` · `VillageFence` · `TreeLog` · 모닥불(`SM_Campfire_A`, 2026-09-17 — 세트마다 하나, (1000,1000), 12cd·반경 700·오프셋 z60) |
 | 10 | `incubator` | DeadEnd | 2×2 | 부화실 | 보온 상자(`brooder`) |
 | 11 | `tool_room` | DeadEnd | 2×2 | 도구방 | `Pitchfork` · `Rake` · `Hoe` · `Shovel` · `Ladder` · `WoodcutterAxe` |
 | 12 | `storage` | DeadEnd | 2×2 | 잡동사니 창고 | `Crate*` · `Barrel*` · `Firewood` |
@@ -97,6 +100,23 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 둔다 — 1×2 세트의 로컬 좌표를 그대로 못 쓴다(후속). 곁가지에서 통로가 뽑히는 비중은 사이트
 행의 `PassageShare`(양계장 0.40 초안)가 정한다.
 
+**`pen`(6번) 둘레는 울타리다 — 아트는 생겼고 연결 규칙은 미결 (2026-09-28).** 우리용 조각
+`SM_Pen_Fence_250_A`(250 × 20 × 130cm, 시야 투과)와 그걸 세우는 seg kind `pen`이 생겼다
+([segkind.md](segkind.md) · [../../systems/asset-swap.md](../../systems/asset-swap.md) `penFence`).
+막힌 것은 **"이 모듈의 어느 변이 울타리인가"를 무엇이 정하나**다. 지금 `BuildSegments`의
+`WallKind()`는 변 양옆 모듈의 `bOutdoor`만 보고 `barn`/`wall`을 고른다 — 별칭 `pen`을 C++에
+박는 것은 이 표를 만든 이유(데이터 주도)에 어긋나므로 하지 않았다. 후보는 둘이다.
+
+1. **모듈 표에 열 하나** — 예: `PerimeterKind`(비우면 지금 그대로, `pen`이면 이 모듈에 닿은
+   변을 울타리로). 격자 밖과 닿은 변(`INDEX_NONE`)은 그대로 `barn`으로 둬야 한다. 안 그러면
+   판 바깥 경계가 130cm로 낮아져 아이템을 맵 밖으로 던질 수 있다.
+2. **모듈 안 소품으로** — `PropSets`에 울타리 메시를 여러 개 놓아 방 안에 우리를 만든다.
+   생성기·표 변경이 0이지만, 소품은 `bSolid`가 곧 `BlockAll`이라 **시야도 막는다**(배치기
+   `PlaceProps`) — 우리 안이 보여야 한다는 설계 의도가 깨진다.
+
+1번이 맞아 보이지만 열 추가 = `ModuleTable` 스키마 변경이라 사용자 결정이 필요하다. 그래서
+이번 실행에서는 표·문서만 준비하고 생성기는 손대지 않았다.
+
 **소품은 이미 보유하고 있다** — Dreamscape Farmlands의 `Meshes/Props/Interior`(58) ·
 `Exterior`(84), 총 142종. 양계장에 필요한 게 거의 다 있다.
 
@@ -109,7 +129,10 @@ seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"�
 2. **본줄기**를 뻗는다 — 열린 소켓 하나를 골라, 맞는 타입(`Passage`/`Normal`)의 모듈을
    빈 칸에 놓는다. 칸 점유 검사로 겹침을 막는다.
 3. **곁가지**를 쳐서 `DeadEnd`로 끝낸다. 리썰컴퍼니는 **본줄기 8~22개에 가지 22~25개** —
-   지나는 곳 대부분이 막다른 곁가지다. 그 비율을 참고한다. 본줄기 비율 · 통로/막다른 방 비율 ·
+   지나는 곳 대부분이 막다른 곁가지다. 그 비율을 참고한다.
+   **위층도 같다 (2026-09-16)**: 계단실마다 위층을 3모듈 이상 틔운 뒤, 위층 예산(아래층 × `UpperFloorShare`)으로
+   먼저 본줄기(가장 깊은 자리만 이어 붙임)를 뻗고 그다음 곁가지를 친다. 곁가지만으로 채우면 계단 둘레의
+   뭉치로 끝나 "올라가자마자 막힌다". 본줄기 비율 · 통로/막다른 방 비율 ·
    고리 확률은 사이트 행의 컬럼이다(`MainPathShare` · `PassageShare` · `DeadEndShare` ·
    `LoopChance`, 2026-09-15 — 그전에는 생성기 상수였다).
 4. **`Special` 모듈**(납품·조리대)을 필요한 수만큼 배치.
@@ -189,14 +212,16 @@ seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"�
 용도를 정하는 것은 C++이 아니라 표다 — 모듈 표의 `PointPurposes` 컬럼이다. 그래서
 "항아리는 납품 방에만" 같은 규칙이 코드에 별칭으로 박히지 않는다.
 
-### 5. 한 판 20 → 24 → 30 모듈
+### 5. 한 판 크기 = 사이트 기준값 × 일자 곡선 (2026-09-08: 20 → 24 → 30, 2026-09-15부터 34 → 40 → 50)
 
 기존 규약(사이트가 기준값 · 진행 커브가 배율)을 그대로 따른다.
 
-- `UCL9SiteDef::BaseModuleCount = 24`
+- `UCL9SiteDef::BaseModuleCount` — **헤더 기본 24 / 양계장 셀 40** (2026-09-15 리썰 실측에 맞춰 올림 —
+  [site.md](site.md) "크기는 일자가 정한다")
 - `UCL9ProgressionDef::SiteSizeCurve` — 1일차 **0.85** → 5일차 **1.0** → 10일차 **1.25**, 이후 유지
 
-곱하면 1일차 20 · 5일차 24 · 10일차 30이 나와 결정 5의 "한 판 20~30모듈"을 그대로 채운다.
+곱하면 셀 40 기준 1층 1일차 34 · 5일차 40 · 10일차 50이다. 2026-09-08의 "한 판 20~30모듈"은 기본값
+24 시절의 수치(20 · 24 · 30)였고 그때 실측 평균이 24.0이었다 — 여기에 위층이 `UpperFloorShare`만큼 덧붙는다(아래 층 절).
 
 ## 층 (2026-09-10)
 
@@ -229,8 +254,9 @@ seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"�
    허공에 뜬 방이 안 생기고, 위층 바닥이 밟을 것 위에만 깔린다.
 2. **계단은 층이 자라는 도중에 섞어 놓는다.** 다 채운 뒤에 놓으려 하면 빈자리가 없다.
 3. **위층은 1층을 깎지 않고 덧붙는다** (2026-09-10 사용자). 1층은 `BaseModuleCount × SiteSizeCurve`를
-   그대로 받고, 위층은 그 절반씩 더 얹는다 — 1일차 20 + 2층 10 = 30. 2층을 켜는 게 곧 맵이
-   커지는 일이지 1층을 나눠 쓰는 일이 아니다.
+   그대로 받고, 위층은 그 × `UpperFloorShare`(사이트 열, 헤더 기본 0.5 / 양계장 셀 **0.75** —
+   2026-09-16 "0.5 상수에서 컬럼으로", 09-17 PIE 확인)만큼 더 얹는다. 2층을 켜는 게 곧 맵이
+   커지는 일이지 1층을 나눠 쓰는 일이 아니다. (2026-09-10 당시는 절반 고정 — 1일차 20 + 2층 10 = 30.)
 4. **고리는 그대로 산다.** 문을 뚫는 판정이 한 층 안에서만 돌아서, 높이가 어긋난 두 방은
    애초에 후보가 아니다. 리썰컴퍼니가 안 쓴 문틀을 3D 격자(`Vector3Int`, y 포함)에 해시해
    얻는 성질을 격자가 공짜로 준다.

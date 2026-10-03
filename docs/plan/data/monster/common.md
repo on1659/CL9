@@ -19,7 +19,7 @@
 |---|---|---|
 | `HpMin` | int | 최소 체력 |
 | `HpMax` | int | 최대 체력 |
-| `HitStunMs` | int | 죽지 않는 타격의 경직 (1000 = 1초) |
+| `HitStunMs` | int | 죽지 않는 타격의 경직 (1000 = 1초). 넉백(아이템 행 `HitKnockback`)은 히트스톱(`CL9Rules.HitStopTime`) 뒤 `CL9Rules.HitKnockbackTime` 동안 밀리고 경직 안에서 끝난다 — `HitStopTime + HitKnockbackTime ≤ HitStunMs` (2026-09-22) |
 
 HP는 `HpMin`~`HpMax`에서 굴린 정수다. 즉사를 피하고 싶은 종은 HP 값으로 조절한다 —
 원칙이 아니라 값의 문제다. (일자별 HP 배율 곡선은 현재 progression.md에 없다 — 필요해지면 추가.)
@@ -212,8 +212,8 @@ Category `Execute`. 처형에는 두 갈래가 있고 표 값으로만 갈린다
 | `KillCooldown` | 다시 죽일 수 있을 때까지 재장전 (초) | 9.0 | `KillCooldown` |
 | `RevengeTime` | 복수 지속 (초) | 5.0 | `RevengeT` |
 | `RevengeRadius` | 복수가 퍼지는 거리 (cm) | 276 | `RevengeRadiusU 92` |
-| `PushStun` | 밀쳐졌을 때 경직 (초) | 0.8 | `PushStun` |
-| `PushKnockback` | 밀려나는 거리 (cm) | 1560 | `PushKnockbackU 520` |
+| `PushStun` | 밀쳐졌을 때 경직 (초) — 남겨 두되 사용 행 없음(2026-09-22, 팬이 `Hit` 로 옮겨감 — 삭제는 별건) | 0.8 | `PushStun` |
+| `PushKnockback` | 밀려나는 거리 (cm) — 남겨 두되 사용 행 없음(2026-09-22, 삭제는 별건). 타격 넉백은 아이템 행 `HitKnockback` 이 갖는다 | 1560 | `PushKnockbackU 520` |
 
 **`KillCooldown` = `RageTime`은 하나로 묶인 손잡이다.** 따로 움직이지 않는다 — 로드 검사가
 이 등식을 확인한다.

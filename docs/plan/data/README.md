@@ -16,7 +16,7 @@
 | [segkind.md](segkind.md) | 맵 조각 11종 |
 | [module.md](module.md) | 맵 모듈 — 생성기가 조립하는 단위 |
 | [sequence.md](sequence.md) | 연출 시퀀스 — 전이 지점(밤 시작·정전·전멸·새벽). **표는 아직 없다** |
-| [wave.md](wave.md) | 파동 — 소음원마다 링의 리소스·속도·색·파워·차폐 광선 수. **아직 안 쓴 문서다** (행 스키마는 [../../systems/wave.md](../../systems/wave.md)) |
+| [wave.md](wave.md) | 파동 — 소음원마다 링의 리소스·속도·색·파워·차폐 광선 수 (구현됨 2026-09-16, 행 스키마 정본은 [../../systems/wave.md](../../systems/wave.md)) |
 
 ---
 
@@ -78,17 +78,20 @@ UCL9DefBase : UPrimaryDataAsset
 UCL9DefRegistry             // 게임 인스턴스가 들고 있는다
   FindItem(Alias, SubAlias)      → UCL9ItemDef*
   FindMonster(Alias, SubAlias)   → UCL9MonsterDef*
-  FindSite / FindOrder / FindEquipment / FindCharacter / FindSequence
+  FindCharacter / FindSite / FindOrder / FindEquipment / FindBuff
+  FindSegKind(Alias) / FindPiece(Role, Theme) / FindModule(Alias, Stage)   // 맵 표 셋
 ```
+
+(`Source/CL9/Data/CL9DefRegistry.h` 기준 열 개. 시퀀스 표는 아직 없어 조회 함수도 없다 — [sequence.md](sequence.md).)
 
 에셋 목록은 전용 목록 에셋에 등록한다. **코드에 에셋 경로를 쓰지 않는다** — 하드코딩된 경로가
 아니라 등록된 목록을 순회한다.
 
 ### 읽는 경로
 
-정적 표는 **각 머신이 로컬 레지스트리로 읽는다** — 모두 같은 에셋을 갖고 있고,
-`CL9TuningHash`가 접속 시 일치를 검증한다. GameState는 런타임 진행 상태만 나른다
-([../../conventions.md](../../conventions.md) § 5).
+정적 표는 **각 머신이 로컬 레지스트리로 읽는다** — 모두 같은 에셋을 갖고 있다는 전제이고,
+접속 시 일치를 검증하는 `CL9TuningHash`는 **설계만 있고 아직 미구현**이다 (2026-09-21 확인 —
+소스에 없다). GameState는 런타임 진행 상태만 나른다 ([../../conventions.md](../../conventions.md) § 5).
 
 ---
 
@@ -99,7 +102,8 @@ UCL9DefRegistry             // 게임 인스턴스가 들고 있는다
 
 검사하는 부등식 목록은 [../economy.md](../economy.md).
 
-멀티는 `CL9TuningHash`가 접속할 때 호스트와 클라의 값을 대조한다. 표를 고친 사람은 접속이 막힌다.
+멀티에서 접속할 때 호스트와 클라의 값을 대조해 표를 고친 사람의 접속을 막는 장치(`CL9TuningHash`)는
+설계만 있고 **아직 미구현**이다 (2026-09-21 확인).
 
 ---
 

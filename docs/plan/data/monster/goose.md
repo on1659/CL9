@@ -14,6 +14,8 @@
 | `RetreatSpeed` | 270 | `GooseBackSpeedU 90` |
 | `Radius` | 45 | `GooseRadiusU 15` |
 | `HomeRange` | 2280 | `GooseLeashU 760` |
+| `CatchRadius` | 0 — **잡지 않는 종** (아래 규칙; A1·A4·A5 대상 아님) | |
+| `PackAlarmRadius` | 미결 — 경보를 내는 유일한 종인데 값이 아직 없다 (파동 `monster_call` 링 반경이 이 값 — [../wave.md](../wave.md) 미결 3) | |
 | `bAlertsOthers` | **true** — 지금은 거위만 | |
 
 ## 거위 전용 컬럼 (잠·경보꾼)
@@ -31,7 +33,7 @@
 
 ## 규칙
 
-- **거위는 잡는 몬스터가 아니라 경보꾼이다** (초안 — `CatchRadius` 0). 추격은 잡기가 아니라
+- **거위는 잡는 몬스터가 아니라 경보꾼이다** (`CatchRadius` 0 — 위 표). 추격은 잡기가 아니라
   쫓아내기라서, 부등식 A1("지친 빈손 > 잡는 몬스터의 추격")의 대상이 아니다 —
   ChaseSpeed 528 > 506이어도 하드락이 아니다 ([../../economy.md](../../economy.md)).
 - **기본 스폰은 0~1마리다** (양계장 기준값 Min 0 / Max 1 — [../site.md](../site.md)).

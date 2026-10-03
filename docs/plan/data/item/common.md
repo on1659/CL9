@@ -1,7 +1,7 @@
 # 아이템 공통 — `UCL9ItemDef`
 
 주울 수 있는 물건의 **컬럼 정의**. 개별 아이템의 값과 서사는 이 폴더의 각 문서에 있다 —
-[egg.md](egg.md) · [meat.md](meat.md) · [cart.md](cart.md) · [flashlight.md](flashlight.md).
+[egg.md](egg.md) · [meat.md](meat.md) · [cart.md](cart.md) · [flashlight.md](flashlight.md) · [headlamp.md](headlamp.md).
 
 공통 컬럼(`Alias`·`SubAlias`·`Mesh`·`Icon`·`Gimmicks` 등)은 [../README.md](../README.md) 참조.
 
@@ -25,16 +25,23 @@
 
 | 컬럼 | 타입 | 뜻 | 기본값 |
 |---|---|---|---|
-| `UseAction` | enum `ECL9UseAction` | 든 채 좌클을 **누르면** 하는 일 — `None` 무동작 / `ToggleLight` 누르는 순간 든 손전등 켜고 끄기 / `Swing` 누르면 **공격 대기**(무한, 자세만 바뀐다), **떼면** 휘둘러, 히트박스가 지나간 자리에 닿은 몬스터를 타격 — 평범하게 클릭하면 평범한 공격이고, 누르고 있으면 타이밍을 고른다(리썰 삽 방식). 대기 시간은 피해·판정을 바꾸지 않는다. **먹기는 좌클이 아니라 우클 길게 누르기**(`CL9Rules.UseHoldTime` 0.4초)이고 `Dish` 행만 먹힌다(별도 플래그 없음) — 익은 고기는 좌클이면 휘두르고 우클 길게면 먹는다 | `None` |
+| `UseAction` | enum `ECL9UseAction` | 든 채 좌클을 **누르면** 하는 일 — `None` 무동작 / `ToggleLight` 누르는 순간 든 손전등 켜고 끄기 / `Swing` 누르면 **공격 대기**(무한, 자세만 바뀐다), **떼면** 휘둘러, 판정이 열린 동안 조준 방향의 구에 닿은 몬스터를 타격 — 평범하게 클릭하면 평범한 공격이고, 누르고 있으면 타이밍을 고른다(리썰 삽 방식). 대기 시간은 피해·판정을 바꾸지 않는다. **먹기는 좌클이 아니라 우클 길게 누르기**(`CL9Rules.UseHoldTime` 0.4초)이고 `Dish` 행만 먹힌다(별도 플래그 없음) — 익은 고기는 좌클이면 휘두르고 우클 길게면 먹는다 | `None` |
 | `HitDamage` | int | `Swing`으로 맞힌 몬스터의 HP 피해 — **0이면 피해 없음**. 죽으면 경직은 없다 | 0 |
-| `HitStun` | enum `ECL9HitStun` | `Swing`으로 맞힌 몬스터의 경직 종류 — `None` / `Hit`(몬스터 행 `HitStunMs`) / `Push`(몬스터 행 `PushStun` 경직 + `PushKnockback` 넉백 + 범인 추격). 시간·거리 값은 몬스터 행이 갖는다 | `None` |
+| `HitStun` | enum `ECL9HitStun` | `Swing`으로 맞힌 몬스터의 경직 종류 — `None` / `Hit`(몬스터 행 `HitStunMs` 경직 + 아래 `HitKnockback` 넉백) / `Push`(몬스터 행 `PushStun` 경직 + `PushKnockback` 넉백 + 범인 추격). 시간·거리 값은 몬스터 행이 갖는다. **`Push` 는 지금 어떤 행도 쓰지 않는다(2026-09-22)** — 팬도 `Hit` 로 옮겼다. 열거값·`OnShove`·`PushReact` 클립은 미래의 행을 위해 남는다 | `None` |
+| `HitKnockback` | float | `Swing`으로 맞힌 몬스터가 밀리는 거리 (cm) — 경직(`HitStunMs`) 진입 뒤 `CL9Rules.HitStopTime` 을 기다렸다가 `CL9Rules.HitKnockbackTime` 동안 등속으로 밀린다. 방향은 때린 사람→몬스터 수평. 벽에 막히면 그 자리에서 끝. 죽이는 타격에는 없다(죽음 발사가 대신). **0 = 넉백 없음**(옛 동작). `Swing` 이 아닌 행은 0 이어야 한다(로드 검사: 유한·≥ 0, `UseAction != Swing` 인데 ≠ 0 이면 오류) | 0 |
 
-**무엇을 맞히느냐는 히트박스가 정한다** (2026-09-15, 옛 "사거리 200cm·정면 부채꼴에서 가장 가까운 하나" 폐기).
-좌클을 뗀 뒤 `CL9Rules.SwingHitStart`~`SwingHitEnd` 구간 동안, 손에 든 것의 **메시 경계 구를 전신 손 자리에 놓은
-히트박스**가 호스트의 매 틱 이전 자리에서 지금 자리로 스윕하며 지나간다 — 닿은 몬스터는 **한 번의 휘두르기에
-각각 한 번씩** 맞고, 안 닿으면 헛스윙이다. 히트박스 모양은 행 컬럼이 아니라 그 행의 `Mesh`다("보이는 것이 맞는다").
-회복 0.6초만 아직 상수다(컬럼 아님). 현재 값: 프라이팬 `Swing`/2/`Push`, 고기(생·익·탄) `Swing`/1/`Hit`,
-손전등 `ToggleLight`, 나머지 `None`. `Swing`이 아닌 행에 피해·경직 값이 있으면 로드 검사가 깨진 행으로 잡는다.
+**무엇을 맞히느냐는 카메라(컨트롤 회전) 기준 판정이 정한다** (2026-09-22 — 2026-09-15 의 "손에 든 메시의 경계 구를
+전신 손 자리에 놓은 히트박스" 번복. 보이는 팬은 카메라 자식 1인칭 팔이고 판정 구는 전신 손이라 다른 클립·다른 공간을
+써서 일치하지 않았다). 좌클을 뗀 뒤 `CL9Rules.SwingHitStart`~`SwingHitEnd` 구간 동안 호스트가 매 틱 손 높이 원점에서
+컨트롤 회전 방향으로 `CL9Rules.SwingHitReach`·`SwingHitRadius` 구를 스윕한다([../rules.md](../rules.md) 던지기와 운반) —
+닿은 몬스터는 **한 번의 휘두르기에 각각 한 번씩** 맞고, 안 닿으면 헛스윙이다. 판정 모양은 행의 `Mesh` 와 무관한 전역
+값이라 팬과 고기의 사거리가 같다. 회복은 `CL9Rules.SwingRecovery`(0.347초 = 보이는 팔이 돌아오는 시간), 회복 중 뗀
+입력은 `SwingBufferTime` 한 칸 예약. 현재 값(`UseAction`/`HitDamage`/`HitStun`/`HitKnockback`): 프라이팬
+`Swing`/2/`Hit`/120, 고기(생·익·탄) `Swing`/1/`Hit`/0, 손전등 `ToggleLight`, 나머지 `None`. 팬 120 = 닭 두 대에 죽는
+건 그대로이되 첫 대 뒤 닭이 "한 걸음"에 다시 닿는 거리 — 회복 `SwingRecovery` 0.347초 동안 걷기 396cm/s 로
+≈ 137cm > 120 이라 밀린 만큼은 회복 동안 따라잡고, 붙어서 쳤으면(중심 거리 ≤ 76cm) 걸음 없이 사거리 196 안이다.
+옛 `PushKnockback` 1560cm 의 15.6m 핑퐁은 없다. 넉백 속도 120/0.12 = 1000cm/s, 닭 몸통(`Radius` 36) 세 개 남짓.
+`Swing`이 아닌 행에 피해·경직·넉백 값이 있으면 로드 검사가 깨진 행으로 잡는다.
 
 **첫 줍기 힌트는 설명이 필요한 종류만** — `UseAction != None`이거나 `Dish`인 행(`UCL9ItemDef::HasUseHint()`).
 본 적 있음은 `Alias`별로 내 PC 설정(`UCL9GameUserSettings.SeenItemHints`)에 남는다 (2026-09-13).
@@ -82,13 +89,17 @@
 
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
-| `ActorClass` | class | 빛을 내려면 `BP_CL9FlashItem`(스포트, 좌클 토글) — 2026-09-11 클래스 분리 전에는 `bEmitsLight`+`LightKind` 컬럼이었다 |
-| `LightRadius` | float | 발광 반경 (cm) |
-| `bLightLostInPocket` | bool | 활성이 아닌 퀵슬롯 칸에 있을 때 빛을 잃나 (열 이름은 옛 품 시절 그대로 — 비활성 칸은 액터가 없어 자연히 꺼진다) |
-| `CarrierSeenRadius` | float | 발광 소지자가 정전 때 보이는 거리 (cm) |
+| `ActorClass` | class | 빛을 내려면 `BP_CL9FlashItem`(스포트, 좌클 토글) — 2026-09-11 클래스 분리 전에는 `bEmitsLight`+`LightKind` 컬럼이었다. 아래 값은 그 클래스가 읽는 광원 수치다 |
+| `LightRadius` | float (기본 0) | 소지 중 발광 반경 / 손전등 도달 거리 (cm) |
+| `LightIntensity` | float (기본 5000) | 밝기 — 포인트 라이트는 칸델라, 손전등은 빔 강도 |
+| `LightConeAngle` | float (기본 32) | 손전등 외곽 원뿔의 반각 (도) — 발광(점광원)에서는 무시된다 |
+| `LightScattering` | float (기본 1, 하한 0) | 볼류메트릭 안개 속 빔 후광 세기 (`VolumetricScatteringIntensity`, 1 = 엔진 기본) — 2026-09-17, [../../../systems/light.md](../../../systems/light.md) |
+| `bLightLostInPocket` | bool (기본 true) | 활성이 아닌 퀵슬롯 칸에 있을 때 빛을 잃나 (열 이름은 옛 품 시절 그대로 — 비활성 칸은 액터가 없어 자연히 꺼진다) |
+| `CarrierSeenRadius` | float (기본 0) | 발광 소지자가 정전 때 보이는 거리 (cm) |
 
 **발광이 세지면 손전등의 역할이 무의미해지고, 약하면 "들고 있으면 들킨다"가 사라진다.**
-이 둘 사이가 좁다.
+이 둘 사이가 좁다 — 그래서 **발광 아이템(계란 Glow)은 2026-09-11에 폐기했다**: 빛은 손전등·헤드램프
+(`BP_CL9FlashItem`)에서만 나오고, `CarrierSeenRadius`는 열만 남아 지금 쓰는 행이 없다 (decisions.md).
 
 ---
 
@@ -164,7 +175,8 @@
 | 계란 (`egg` + cooked/burnt) | [egg.md](egg.md) | 물리·발광·요리 값 있음 — **눈금의 기준** |
 | 고기 (`meat` + cooked/burnt) | [meat.md](meat.md) | 안 깨진다, 값 초안 |
 | 수레 (`cart`) | [cart.md](cart.md) | CartOnly 운반을 연다 — 상점 행은 [../equipment.md](../equipment.md) |
-| 손전등 (`flashlight`) | [flashlight.md](flashlight.md) | 손에 드는 빛 — 값 초안 |
+| 손전등 (`flashlight`) | [flashlight.md](flashlight.md) | 손에 드는 빛 — 광원 값 확정(2026-09-17), 무게·가치 초안 |
+| 헤드램프 (`headlamp`) | [headlamp.md](headlamp.md) | 머리에 쓰는 빛(`CarrySlot` `Head`) — 손전등과 같은 광원 값, 상점 행은 [../equipment.md](../equipment.md) |
 
 밤당 몇 개가 나오는지는 [../site.md](../site.md)가 정한다.
 
