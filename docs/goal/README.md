@@ -8,6 +8,7 @@
 |---|---|---|
 | [asset-production-loop.md](asset-production-loop.md) | 아이템·몬스터·캐릭터 모델·애니메이션과 재사용 맵 파츠를 만들어 UE 에서 검수하는 아트 제작 루프(2026-09-11 범위 축소 — 맵 조립은 UE 작업으로) | 진행 기록은 [../asset/production-progress.md](../asset/production-progress.md) |
 | [doc-audit-closeout.md](doc-audit-closeout.md) | 2026-09-09 문서 감사 종결 — reference 주장 검증·`StaminaMinResume` 헤더 정정·HEAD 컴파일 복구 | 완료(09-09); 09-21 감사에서 8항 중 6항 확인 |
+| [giant-stage.md](giant-stage.md) | 대농장의 5~10배 판(1000~2000모듈, 한 변 약 1.1km) — 생성기·내비·성능·밤 흐름 재설계 | 명세 초안(10-04), 미결 5개 — 새 세션 `/autogoal`(HEAVY 예상) |
 | [outdoor-backdrop.md](outdoor-backdrop.md) | 맵 격자 밖 배경 레벨 — 공용 배경 서브레벨 + 판 둘레 자동 배치, 모델 배분 포함 | 명세 초안(10-04), 미결 6개 — 새 세션 `/autogoal` 대기 |
 | [farm-stage.md](farm-stage.md) | 대농장 스테이지 — `Lvl_Farm`(양계장 5배 판), 사이트 행 `Level`·깊이 구역·밤 시계 덮어쓰기·`SpecialCopies` | 구현·검증(10-03), 미커밋 |
 | [execute-sequence-pig.md](execute-sequence-pig.md) | 처형 시퀀스 — 스토커(너구리)의 등 뒤 처형·돼지의 잡히면 처형, 처형 카메라 | Run 1 완료(09-20)·종 재배치·데스캠; Run 2(2인 클립) 미착수 |

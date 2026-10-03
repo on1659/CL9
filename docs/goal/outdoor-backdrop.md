@@ -37,6 +37,11 @@ Rejected in discussion: hand-placing per level (repeats per stage, gets covered 
 - Lighting/fog tuned so the backdrop reads at dusk and at night (docs/systems/light.md values).
 - Docs: docs/systems/stage.md, light.md, map.md, site.md; decisions.md entry; asset cards under docs/asset/.
 
+## Dependency
+- docs/goal/giant-stage.md (2026-10-04): the grid becomes 5–10× the farm (~1.1 km a side). The backdrop must sit outside the
+  largest grid of every stage, so decide giant-stage's size/shape (its Open Questions 1 and 3) before placing the far backdrop.
+  Near dressing (generated around the built outline) is unaffected by the size.
+
 ## Out-of-scope
 - Changing the generated site interior, module set, monsters, economy.
 - Fixing `Lvl_Henhouse` nav bounds (separate pending user decision — see docs/systems/map.md).
@@ -96,8 +101,9 @@ Rejected in discussion: hand-placing per level (repeats per stage, gets covered 
    forest". Any reference image paths?
 2. **What's out there** — confirm/edit the list: horizon hills, treeline, dirt road to the truck, dead trees, bushes, broken
    fences, rocks, utility poles, a ruined barn or two.
-3. **Walkable range** — can players walk outside, and how far (proposal: 50 m beyond the grid, then an invisible wall)?
-   Or backdrop only (block at the grid edge)?
+3. ~~Walkable range~~ — **answered 2026-10-04: make it big.** The outside area should be wide — on the order of 5–10× the
+   grid's footprint, walkable — and the grid itself grows 5–10× from the farm (docs/goal/giant-stage.md). Still ask: where the
+   invisible wall sits, and whether the far horizon beyond it is backdrop-only.
 4. **Shared vs per stage** — confirm the hybrid (shared far backdrop + per-stage near dressing via site columns).
 5. **Asset sourcing** — Blender-made only, or free sources allowed (Poly Haven CC0 / Poly Pizza CC-BY with credit /
    Sketchfab by license)?
