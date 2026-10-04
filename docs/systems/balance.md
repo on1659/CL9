@@ -91,7 +91,8 @@ int32 ChickenCount = FMath::RoundToInt(
 앵커 원환, `ThreatActMinRadius` 안 회피, 바닥 트레이스). `DangerScale = Site.BaseDanger ×
 DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sight에 곱한다(monster.md).
 `NightLength × NightLengthAt(Day)`. 로비 복귀(`EnterLobby`) 때 밤 스폰분 철거·DangerScale 1 복귀.
-로그 `Night N: chicken ×P placed (base 8~12 × 0.60 = C)`로 곡선 반영을 읽는다.
+로그 `Night N: chicken ×P queued (base 8~12 × 0.60 = C)`로 곡선 반영을 읽는다(재료는 `placed`). 몬스터는 큐에 들어가
+`CL9Rules.MonsterSpawnPerFrame`(마리/프레임) 씩 다음 프레임부터 스폰된다 — [raiding.md](raiding.md) "구역 사이트와 나눠 스폰".
 
 ## 일자 덮어쓰기
 

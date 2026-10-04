@@ -398,10 +398,13 @@ void ACL9GameState::RebuildSiteMap()
 	const UCL9SiteDef* Site = Registry ? Registry->FindSite(CurrentSiteAlias) : nullptr;
 	if (Site != nullptr && Site->Generator != ECL9Generator::None)
 	{
+		// 구역이 있는 사이트면 구역마다 한 판 — 시드는 이 하나에서 구역별 하위 시드로 갈라지고, 첫 구역만
+		// 지금 짓고 나머지는 프레임마다 하나씩 선다(ACL9SiteMap::IsBuildPending). 호스트·클라이언트 같은 길이다.
 		ACL9SiteMap::Rebuild(World, *Site, *Registry, SiteMapKey.Seed, CurrentDay);
 	}
 	else
 	{
+		// 구역 액터까지 전부 걷는다
 		ACL9SiteMap::Clear(World);
 	}
 }

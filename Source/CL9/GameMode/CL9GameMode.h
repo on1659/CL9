@@ -18,6 +18,13 @@ class UCL9ProgressionDef;
 class UCL9RulesDef;
 class UCL9SiteDef;
 
+/** 밤 시작에 자리까지 정해 둔, 아직 스폰하지 않은 몬스터 한 마리 — 프레임마다 몇 마리씩 꺼내 스폰한다 */
+struct FCL9PendingMonsterSpawn
+{
+	FName Alias;
+	FTransform Transform;
+};
+
 /**
  * 베이스 게임 모드. 리슨 호스트에만 존재한다 — 권한을 가진 게임 흐름
  * 로직은 여기에 두고, 클라이언트가 필요로 하는 상태는 대신 게임
@@ -47,7 +54,11 @@ public:
 	/** 호스트 전용: 몬스터 하나를 표준 데이터 경로로 스폰한다 — 아이템과 동일한 ActorClass 규칙을 따른다 */
 	ACL9Monster* SpawnMonster(FName MonsterAlias, FName MonsterSubAlias, const FTransform& Transform);
 
-	/** 호스트 전용: 로비 → 밤 — 시계를 가동하고 만료를 예약한다(docs/plan/data/rules.md 밤) */
+	/**
+	 * 호스트 전용: 로비 → 밤 — 시계를 가동하고 만료를 예약한다(docs/plan/data/rules.md 밤).
+	 * 구역 짓기(`ACL9SiteMap::IsBuildPending`)나 내비 빌드가 아직 진행 중이면 다음 프레임으로 미루고 다시 본다 — 기다린
+	 * 시간은 로그로 남는다(docs/goal/giant-stage.md Nav). 기다리는 동안은 여전히 로비다.
+	 */
 	void StartNight();
 
 	/** 호스트 전용: 지금 밤 → 새벽. 만료와 전멸 모두 여기로 온다 */
@@ -169,9 +180,23 @@ protected:
 	/**
 	 * 호스트 전용, 밤 시작: 사이트의 기준값 × 날짜 곡선을 굴려
 	 * 오늘 밤의 동물과 재료를 스폰한다(docs/systems/raiding.md 스폰).
-	 * 아직 맵 생성기가 없어(⑤) 평지 레벨이 트럭 주변에 흩뿌려 대신한다.
+	 * 지어진 맵(구역 사이트면 구역마다 하나)마다 그 맵의 지점·구역 행·항아리를 따로 다룬다. 맵이 없으면 평지 레벨이
+	 * 트럭 주변에 흩뿌려 대신한다. 재료·항아리는 지금 스폰하고, 몬스터는 자리까지 정해 큐에 넣은 뒤 다음 프레임부터
+	 * `MonsterSpawnPerFrame` 마리씩 스폰한다(SpawnPendingMonsters).
 	 */
 	void SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9ProgressionDef* Progression, int32 Day);
+
+	/** 호스트 전용: 밤 몬스터 큐에서 이번 프레임 몫을 스폰하고, 남았으면 다음 프레임에 다시 부른다 */
+	void SpawnPendingMonsters();
+
+	/**
+	 * 호스트 전용: 구역 짓기나 내비 빌드가 진행 중이면 다음 프레임에 `StartNight` 를 다시 부르도록 걸고 true.
+	 * 다 끝났으면 false — 기다렸던 경우 그 시간을 로그로 남긴다.
+	 */
+	bool DeferNightStartWhileBuilding();
+
+	/** 미룬 밤 시작의 재시도 — 핸들을 비우고 StartNight 를 다시 부른다 */
+	void RetryStartNight();
 
 	/** 호스트 전용, 로비: 사이트는 밤과 함께 사라진다 — 스포너가 배치한 것이 전부 없어진다(docs/plan/data/equipment.md 원정과 분실) */
 	void ClearNightPopulation();
@@ -220,6 +245,19 @@ protected:
 
 	FTimerHandle NightExpiryHandle;
 	FTimerHandle DawnHandle;
+
+	/** 미룬 밤 시작의 다음 프레임 재시도 — 유효하면 이미 기다리는 중이다 */
+	FTimerHandle NightStartRetryHandle;
+
+	/** 밤 시작을 미루기 시작한 실시간(초); 기다리지 않는 중이면 음수 */
+	double NightStartWaitBegan = -1.0;
+
+	/** 밤 몬스터 큐 — 밤 시작에 자리까지 정해 두고, NextPendingMonster 부터 프레임마다 꺼낸다 */
+	TArray<FCL9PendingMonsterSpawn> PendingMonsterSpawns;
+	int32 NextPendingMonster = 0;
+	int32 PendingMonstersSpawned = 0;
+	double PendingMonstersBegan = 0.0;
+	FTimerHandle MonsterSpawnHandle;
 
 	/** 밤 스포너가 배치한 것들 — 다음 로비에서 제거된다; 치트 스폰과 레벨 소품은 남는다 */
 	UPROPERTY(Transient)

@@ -54,6 +54,11 @@
 
 - 상태는 enum 하나 (`ECL9MonsterState`) — Replicated, OnRep에서 애니메이션·소리 전환. `Pounce`·`Stalk`·
   `Execute`는 enum **끝**에 그 순서로 있다(복제·에셋의 옛 값 보존).
+- **안 보이는 몬스터의 애님** (2026-10-04, [../goal/giant-stage.md](../goal/giant-stage.md)): 메시
+  `VisibilityBasedAnimTickOption = OnlyTickMontagesWhenNotRendered` — 화면에 없으면 포즈를 계산하지 않는다. 다섯 종 모두
+  판정·AI·이동이 포즈에 기대지 않아(ABP 는 게터만 읽고 노티파이·몽타주가 없다) 예외 종이 없다. 포즈를 읽는 곳은 표현뿐
+  (히트 퍼프 `spine` 소켓, 처형 카메라 소켓). AI·감각·이동은 거리와 무관하게 매 틱 돈다(재우기·디스폰·늦추기 없음 — 사용자 결정).
+  새 종의 ABP 에 게임플레이 노티파이나 몽타주를 넣으면 이 줄을 다시 본다.
 - `ChaseCooldown`은 **새로 경계 상태에 들어가는 것만** 막는다. 정전·복수·기절에서 깨어나는 건
   못 막는다.
 - **타격 플래시** (2026-09-15): `Stun`·`Dead`에 들어간 뒤 `HitFlashTime`(rules) 동안 메시가

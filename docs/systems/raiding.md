@@ -60,6 +60,14 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 놓는다 — 로그 `Night N zone <이름> (…)`. 밤 시계(`NightLength`·`DarkBase`·`DarkMin`)도 사이트가 덮어쓸 수 있다.
 정본 [../plan/data/site.md](../plan/data/site.md).
 
+**구역 사이트와 나눠 스폰 (2026-10-04, [../goal/giant-stage.md](../goal/giant-stage.md))**: 스폰은 지어진 맵마다 돈다
+(`ACL9SiteMap::FindAll`, 구역 순) — 맵마다 자기 지점, 자기 구역 행(`GetZones()`, 구역 행이 비면 사이트 `Zones`), 자기 항아리
+중복 제거 집합. 사이트 열(`MonsterSpawns`·`ItemSpawns`)도 맵마다 더해진다. 단일 사이트는 맵이 하나라 예전과 같고, 로그에만
+구역이면 `Night N district i …` 가 붙는다. 재료·항아리는 밤 시작에 바로 놓고, **몬스터는 밤 시작에 자리·방향까지 정해 큐에 넣은 뒤
+다음 프레임부터 `CL9Rules.MonsterSpawnPerFrame` 마리씩 스폰한다** — 로그 `… ×P queued (…)` 와 큐가 빈 뒤 `Night N: S of Q queued monsters
+spawned, F per frame, T s.` 밤 시작은 호스트에서 구역 짓기(`ACL9SiteMap::IsBuildPending`)나 내비 빌드(더러운 영역 포함)가 진행 중이면
+다음 프레임으로 미뤄지고(여전히 로비), 기다린 시간이 `StartNight: … done after T s of waiting` 로 남는다.
+
 ## 소리 규칙
 
 몬스터가 듣는 소음 반경은 `CL9Rules`의 값이다 ([../plan/data/rules.md](../plan/data/rules.md)).

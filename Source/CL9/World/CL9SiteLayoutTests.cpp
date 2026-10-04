@@ -6,6 +6,8 @@
 
 #include "CoreMinimal.h"
 #include "Data/CL9ModuleDef.h"
+#include "Data/CL9SiteDef.h"
+#include "HAL/PlatformTime.h"
 #include "Misc/AutomationTest.h"
 #include "UObject/StrongObjectPtr.h"
 #include "World/CL9SiteLayout.h"
@@ -654,6 +656,226 @@ bool FCL9SiteLayoutDepthBandTest::RunTest(const FString& Parameters)
 	};
 	TestTrue(TEXT("outer band is shallower than middle"), MaxHops(Bands[0]) <= MaxHops(Bands[1]));
 	TestTrue(TEXT("middle band is shallower than deep"), MaxHops(Bands[1]) <= MaxHops(Bands[2]));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCL9SiteLayoutDistrictsTest,
+	"CL9.Map.Districts",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FCL9SiteLayoutDistrictsTest::RunTest(const FString& Parameters)
+{
+	// 거대 스테이지의 구역 한 채 = 대농장(farm) 손잡이 그대로에 모듈 수만 다른 판 (docs/goal/giant-stage.md).
+	// 명세 슬롯의 기준 모듈 수 160·190·230 을 10일차 배율로 곱한 판이 상한 128칸 격자에서 끝까지 서는지,
+	// 그리고 그 판이 실제로 차지하는 넓이(점유 경계 상자)가 얼마인지 잰다 — 슬롯 간격은 이 값으로 정한다.
+	const FTestModules Modules;
+	FCL9SiteParams Params;
+	Params.Theme = TEXT("henhouse");
+	Params.MaxFloors = 2;
+	Params.StairCountMin = 3;
+	Params.StairCountMax = 5;
+	Params.UpperFloorShare = 0.25f;
+	Params.LoopChance = 0.35f;
+	Params.MainPathShare = 0.3f;
+	Params.PassageShare = 0.4f;
+	Params.DeadEndShare = 0.3f;
+	Params.SpecialCopies = 4;
+
+	// 진행 표 SiteSizeCurve 의 10일차 값 (1일 0.85 ~ 10일 1.25 — docs/systems/stage.md 손잡이 표)
+	constexpr float Day10SizeMult = 1.25f;
+	const int32 BaseCounts[] = { 160, 190, 230 };
+
+	for (int32 Slot = 0; Slot < static_cast<int32>(UE_ARRAY_COUNT(BaseCounts)); ++Slot)
+	{
+		Params.ModuleCount = FMath::Max(2, FMath::RoundToInt(BaseCounts[Slot] * Day10SizeMult));
+		const int32 Span = CL9SiteDistrict::GridSpan(Params.ModuleCount);
+
+		int32 Unbuilt = 0;
+		int32 Disconnected = 0;
+		int32 Overlapped = 0;
+		int32 NoExit = 0;
+		int32 FewDeliveries = 0;
+		int32 SpanMismatch = 0;
+		int32 SmallestGround = MAX_int32;
+		int32 Runs = 0;
+		double TotalMs = 0.0;
+		double SlowestMs = 0.0;
+		FVector2D BoxSum = FVector2D::ZeroVector;
+		FIntPoint LargestBox = FIntPoint::ZeroValue;
+
+		for (uint32 Seed = 1; Seed <= 30; ++Seed)
+		{
+			// 런타임과 같은 하위 시드 — 슬롯 번호를 구역 인덱스로 쓴다
+			const uint32 SubSeed = CL9SiteDistrict::SubSeed(Seed, Slot);
+			const double Started = FPlatformTime::Seconds();
+			const FCL9SiteLayout Layout = CL9SiteLayout::Generate(Params, Modules.Defs, SubSeed);
+			const double Ms = (FPlatformTime::Seconds() - Started) * 1000.0;
+			if (!Layout.bBuilt)
+			{
+				++Unbuilt;
+				continue;
+			}
+			++Runs;
+			TotalMs += Ms;
+			SlowestMs = FMath::Max(SlowestMs, Ms);
+
+			// 슬롯 검사가 옮겨 적은 격자 식이 생성기와 같은가
+			SpanMismatch += Layout.GridSize.X != Span ? 1 : 0;
+			Disconnected += CL9SiteLayout::IsConnected(Layout) ? 0 : 1;
+			NoExit += CountEdges(Layout, ECL9GridEdge::Flap) != 1 ? 1 : 0;
+
+			int32 Expected = 0;
+			int32 Ground = 0;
+			int32 Deliveries = 0;
+			// 점유 경계 상자 — 격자 한 변이 아니라 모듈이 실제로 차지한 칸의 범위 (층과 무관한 평면)
+			FIntPoint BoxMin(MAX_int32, MAX_int32);
+			FIntPoint BoxMax(MIN_int32, MIN_int32);
+			for (const FCL9ModulePlacement& Module : Layout.Modules)
+			{
+				Expected += Module.Size.X * Module.Size.Y * (Module.bStairUp ? 2 : 1);
+				Ground += Module.Floor == 0 ? 1 : 0;
+				Deliveries += Module.Def->Alias == FName(TEXT("delivery")) ? 1 : 0;
+				BoxMin.X = FMath::Min(BoxMin.X, Module.Origin.X);
+				BoxMin.Y = FMath::Min(BoxMin.Y, Module.Origin.Y);
+				BoxMax.X = FMath::Max(BoxMax.X, Module.Origin.X + Module.Size.X);
+				BoxMax.Y = FMath::Max(BoxMax.Y, Module.Origin.Y + Module.Size.Y);
+			}
+			Overlapped += Expected != CountOccupiedCells(Layout) ? 1 : 0;
+			FewDeliveries += Deliveries < 2 ? 1 : 0;
+			SmallestGround = FMath::Min(SmallestGround, Ground);
+
+			const FIntPoint Box = BoxMax - BoxMin;
+			BoxSum += FVector2D(Box.X, Box.Y);
+			LargestBox.X = FMath::Max(LargestBox.X, Box.X);
+			LargestBox.Y = FMath::Max(LargestBox.Y, Box.Y);
+		}
+
+		const float CellM = Params.CellSize / 100.f;
+		const int32 SafeRuns = FMath::Max(Runs, 1);
+		AddInfo(FString::Printf(TEXT("slot %d: base %d -> day-10 %d modules on a %d-cell grid (%.0f m). %d runs, smallest ground %d, generate avg %.1f ms / max %.1f ms per layout, occupied box avg %.0f x %.0f m, largest %.0f x %.0f m (X = depth from the gate, Y = across)."),
+			Slot, BaseCounts[Slot], Params.ModuleCount, Span, Span * CellM, Runs, SmallestGround == MAX_int32 ? 0 : SmallestGround,
+			TotalMs / SafeRuns, SlowestMs, BoxSum.X / SafeRuns * CellM, BoxSum.Y / SafeRuns * CellM, LargestBox.X * CellM, LargestBox.Y * CellM));
+
+		TestEqual(*FString::Printf(TEXT("slot %d: every seed builds"), Slot), Unbuilt, 0);
+		TestEqual(*FString::Printf(TEXT("slot %d: the copied span formula matches the generator"), Slot), SpanMismatch, 0);
+		TestEqual(*FString::Printf(TEXT("slot %d: every module is reachable through doors"), Slot), Disconnected, 0);
+		TestEqual(*FString::Printf(TEXT("slot %d: no two modules share a cell"), Slot), Overlapped, 0);
+		TestEqual(*FString::Printf(TEXT("slot %d: exactly one emergency exit per run"), Slot), NoExit, 0);
+		TestEqual(*FString::Printf(TEXT("slot %d: runs with fewer than two delivery rooms"), Slot), FewDeliveries, 0);
+		TestTrue(*FString::Printf(TEXT("slot %d: the smallest ground floor had %d modules of a wanted %d"), Slot, SmallestGround, Params.ModuleCount),
+			Runs > 0 && SmallestGround >= Params.ModuleCount * 9 / 10);
+	}
+
+	// 하위 시드 — 복제된 시드 0 은 구역에서도 "짓지 않음"이고, 그 밖에는 0 이 안 나오며 구역끼리 다르다
+	TestEqual(TEXT("seed 0 stays 0 for every district"), CL9SiteDistrict::SubSeed(0, 3), 0u);
+	int32 ZeroSubSeeds = 0;
+	int32 SameSubSeeds = 0;
+	for (uint32 Seed = 1; Seed <= 1000; ++Seed)
+	{
+		for (int32 Index = 0; Index < 5; ++Index)
+		{
+			const uint32 Sub = CL9SiteDistrict::SubSeed(Seed, Index);
+			ZeroSubSeeds += Sub == 0 ? 1 : 0;
+			SameSubSeeds += (Index > 0 && Sub == CL9SiteDistrict::SubSeed(Seed, Index - 1)) ? 1 : 0;
+		}
+	}
+	TestEqual(TEXT("no non-zero seed gives a zero sub-seed"), ZeroSubSeeds, 0);
+	TestEqual(TEXT("neighbouring districts never share a sub-seed"), SameSubSeeds, 0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCL9SiteDistrictSlotsTest,
+	"CL9.Map.DistrictSlots",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FCL9SiteDistrictSlotsTest::RunTest(const FString& Parameters)
+{
+	// 슬롯 검사(CL9SiteDistrict::CheckSlots)를 명세의 초기 슬롯 값으로 검증한다 (docs/goal/giant-stage.md Design Decisions
+	// "5 fixed slots"). 실제 mongjang 행은 다음 실행에서 서므로 값은 여기 적은 명세 초기값이다.
+	FCL9DistrictSlotRules Rules;
+	Rules.CellSize = 500.f;
+	// 사이트 행 기본값 — 거대 스테이지 행은 henhouse 를 물려받는다
+	Rules.EntryOffset = 1000.f;
+	Rules.SizeMult = 1.25f;
+	Rules.NightLength = 600.f;
+	Rules.MainPathShare = 0.3f;
+	Rules.YardSpeed = 450.f;
+
+	// 회전은 액터 회전(FRotator Yaw)과 같은 뜻이어야 한다 — 그래야 슬롯 사각형이 실제로 선 판과 맞는다
+	for (int32 Yaw = 0; Yaw < 360; Yaw += 90)
+	{
+		const FVector2D Probe(1234.f, -567.f);
+		const FVector Expected = FRotator(0.0, static_cast<double>(Yaw), 0.0).RotateVector(FVector(Probe.X, Probe.Y, 0.0));
+		const FVector2D Got = CL9SiteDistrict::Rotate(Probe, CL9SiteDistrict::QuarterTurns(Yaw));
+		TestTrue(*FString::Printf(TEXT("quarter turn agrees with actor yaw %d"), Yaw), Got.Equals(FVector2D(Expected.X, Expected.Y), 0.01f));
+	}
+	TestEqual(TEXT("-90 is the same turn as 270"), CL9SiteDistrict::QuarterTurns(-90), 3);
+
+	// 어림식이 명세의 `1.59·N + 0.444·L ≤ 440` 과 같은가 (밤 600 − 기준 160 = 440)
+	const float Base = CL9SiteDistrict::NightEstimate(0, 0.f, Rules.MainPathShare, Rules.YardSpeed);
+	TestTrue(TEXT("estimate base is 160 s"), FMath::IsNearlyEqual(Base, 160.f, 0.01f));
+	TestTrue(TEXT("1.59 s per base module"),
+		FMath::IsNearlyEqual(CL9SiteDistrict::NightEstimate(100, 0.f, Rules.MainPathShare, Rules.YardSpeed) - Base, 159.f, 0.01f));
+	TestTrue(TEXT("0.444 s per metre of yard"),
+		FMath::IsNearlyEqual(CL9SiteDistrict::NightEstimate(0, 9000.f, Rules.MainPathShare, Rules.YardSpeed) - Base, 40.f, 0.01f));
+
+	// 입구가 트럭에서 GateMetres 떨어진 슬롯 — 구역 원점 = 입구 방향 × (거리 − EntryOffset)
+	auto MakeSlot = [&Rules](float GateMetres, int32 Yaw, int32 ModuleCount)
+	{
+		FCL9SiteDistrict District;
+		District.Yaw = Yaw;
+		District.ModuleCount = ModuleCount;
+		const FVector2D Facing = CL9SiteDistrict::Rotate(FVector2D(1.f, 0.f), CL9SiteDistrict::QuarterTurns(Yaw));
+		District.Offset = Facing * (GateMetres * 100.f - Rules.EntryOffset);
+		return District;
+	};
+
+	// 동(0°)·서(180°) 230모듈 · 입구 20 m, 북(90°)·남(270°) 190모듈 · 입구 210 m
+	const TArray<FCL9SiteDistrict> Near = { MakeSlot(20.f, 0, 230), MakeSlot(20.f, 180, 230), MakeSlot(210.f, 90, 190), MakeSlot(210.f, 270, 190) };
+	TestTrue(TEXT("east gate is 20 m from the truck"), FMath::IsNearlyEqual(CL9SiteDistrict::GateDistance(Near[0], Rules.EntryOffset), 2000.f, 0.1f));
+	TestTrue(TEXT("north gate is 210 m from the truck"), FMath::IsNearlyEqual(CL9SiteDistrict::GateDistance(Near[2], Rules.EntryOffset), 21000.f, 0.1f));
+
+	// 북쪽 슬롯의 10일차 사각형: 238모듈 → 76칸 = 380 m, 입구에서 북으로 뻗고 X 로는 가운데
+	{
+		const FBox2D North = CL9SiteDistrict::SpanRect(Near[2], 238, Rules.CellSize, Rules.EntryOffset);
+		TestTrue(TEXT("north rectangle spans x -190..190 m, y 210..590 m"),
+			North.Min.Equals(FVector2D(-19000.f, 21000.f), 0.1f) && North.Max.Equals(FVector2D(19000.f, 59000.f), 0.1f));
+	}
+
+	TArray<FString> Errors;
+	const bool bNearFits = CL9SiteDistrict::CheckSlots(Near, Rules, Errors);
+	for (const FString& Error : Errors)
+	{
+		AddInfo(Error);
+	}
+	// 동쪽(y −210..210 m)과 북쪽(y 210 m~)은 맞닿기만 한다 — 겹침이 아니다
+	TestTrue(TEXT("the four cardinal slots fit — no overlap, every one inside the night"), bNearFits);
+
+	// 검사가 실제로 잡는가 — 겹침과 밤 초과
+	{
+		TArray<FString> Caught;
+		TestFalse(TEXT("a slot inside the east rectangle is caught as an overlap"),
+			CL9SiteDistrict::CheckSlots({ Near[0], MakeSlot(300.f, 0, 160) }, Rules, Caught));
+		TArray<FString> Late;
+		TestFalse(TEXT("230 modules behind 300 m of yard is caught as over the night"),
+			CL9SiteDistrict::CheckSlots({ MakeSlot(300.f, 0, 230) }, Rules, Late));
+	}
+
+	// 명세의 기준 모듈 수 합 = 1,000 ± 5%
+	const int32 Sum = 230 + 230 + 190 + 190 + 160;
+	TestTrue(*FString::Printf(TEXT("base module counts sum to %d (1000 +- 5%%)"), Sum), Sum >= 950 && Sum <= 1050);
+
+	// 먼 구역(~160모듈 · ~300 m)은 명세가 방향을 안 정했다. 네 방향에 놓아 본 결과를 남긴다 — 10일차 격자 사각형을
+	// 그대로 쓰면 가까운 슬롯과 겹치는지가 여기서 보인다. 최종 오프셋은 CL9.Map.Districts 의 점유 경계 상자 실측 뒤에 정한다.
+	for (int32 Yaw = 0; Yaw < 360; Yaw += 90)
+	{
+		TArray<FCL9SiteDistrict> Five = Near;
+		Five.Add(MakeSlot(300.f, Yaw, 160));
+		TArray<FString> FarErrors;
+		const bool bFits = CL9SiteDistrict::CheckSlots(Five, Rules, FarErrors);
+		AddInfo(FString::Printf(TEXT("far slot at 300 m, yaw %d: %s"), Yaw,
+			bFits ? TEXT("fits") : *FString::Join(FarErrors, TEXT(" / "))));
+	}
 	return true;
 }
 

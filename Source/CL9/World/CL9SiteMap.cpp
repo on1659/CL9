@@ -2,6 +2,8 @@
 
 #include "World/CL9SiteMap.h"
 #include "CL9.h"
+#include "CoreGlobals.h"
+#include "HAL/PlatformTime.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Data/CL9DefRegistry.h"
@@ -149,43 +151,10 @@ namespace
 		const UCL9PieceDef* Piece = Kind != nullptr ? Registry.FindPiece(Kind->Piece, Theme) : nullptr;
 		return (Piece != nullptr && Piece->Variants.Num() > 0) ? Piece->Variants[0].LoadSynchronous() : nullptr;
 	}
-}
 
-ACL9SiteMap::ACL9SiteMap()
-{
-	// 틱은 시설 조명의 정전 소등뿐이다 — 램프가 하나도 없으면 상태 비교 한 번으로 끝난다.
-	PrimaryActorTick.bCanEverTick = true;
-	bReplicates = false;
-
-	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	Root->SetMobility(EComponentMobility::Static);
-	SetRootComponent(Root);
-}
-
-ACL9SiteMap* ACL9SiteMap::Find(UWorld* World)
-{
-	if (World == nullptr)
+	/** 트럭 패드가 사이트의 기준점이다. 맨 레벨에서는 PlayerStart가 그 자리를 대신한다 */
+	FVector FindSiteAnchor(UWorld* World)
 	{
-		return nullptr;
-	}
-	for (TActorIterator<ACL9SiteMap> It(World); It; ++It)
-	{
-		return *It;
-	}
-	return nullptr;
-}
-
-ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day)
-{
-	if (World == nullptr)
-	{
-		return nullptr;
-	}
-
-	ACL9SiteMap* Map = Find(World);
-	if (Map == nullptr)
-	{
-		// 트럭 패드가 사이트의 기준점이다. 맨 레벨에서는 PlayerStart가 그 자리를 대신한다
 		FVector Anchor = FVector::ZeroVector;
 		bool bFound = false;
 		for (TActorIterator<ACL9TruckPad> It(World); It; ++It)
@@ -203,26 +172,219 @@ ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const 
 			}
 		}
 		Anchor.Z = 0.f;
+		return Anchor;
+	}
 
+	/** 사이트맵 액터 하나를 세운다 — 트랜지언트, 에디터 월드에서는 에디터 전용 */
+	ACL9SiteMap* SpawnSiteMap(UWorld* World, const FVector& Location, const FRotator& Rotation)
+	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.ObjectFlags |= RF_Transient;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		Map = World->SpawnActor<ACL9SiteMap>(Anchor, FRotator::ZeroRotator, SpawnParams);
+		ACL9SiteMap* Map = World->SpawnActor<ACL9SiteMap>(Location, Rotation, SpawnParams);
 		if (Map == nullptr)
 		{
 			UE_LOG(LogCL9, Error, TEXT("Site map: spawn failed."));
 			return nullptr;
 		}
 		Map->bIsEditorOnlyActor = World->WorldType == EWorldType::Editor;
+		return Map;
+	}
+}
+
+ACL9SiteMap::ACL9SiteMap()
+{
+	// 틱은 시설 조명의 정전 소등뿐이다 — 램프가 하나도 없으면 상태 비교 한 번으로 끝난다.
+	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = false;
+
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	Root->SetMobility(EComponentMobility::Static);
+	SetRootComponent(Root);
+}
+
+ACL9SiteMap* ACL9SiteMap::Find(UWorld* World)
+{
+	TArray<ACL9SiteMap*> Maps;
+	FindAll(World, Maps);
+	return Maps.Num() > 0 ? Maps[0] : nullptr;
+}
+
+void ACL9SiteMap::FindAll(UWorld* World, TArray<ACL9SiteMap*>& OutMaps)
+{
+	OutMaps.Reset();
+	if (World == nullptr)
+	{
+		return;
+	}
+	for (TActorIterator<ACL9SiteMap> It(World); It; ++It)
+	{
+		OutMaps.Add(*It);
+	}
+	// 구역 인덱스 순 — 단일 사이트(INDEX_NONE)는 혼자다
+	OutMaps.Sort([](const ACL9SiteMap& A, const ACL9SiteMap& B) { return A.DistrictIndex < B.DistrictIndex; });
+}
+
+bool ACL9SiteMap::IsBuildPending(UWorld* World)
+{
+	TArray<ACL9SiteMap*> Maps;
+	FindAll(World, Maps);
+	return Maps.ContainsByPredicate([](const ACL9SiteMap* Map) { return Map->bBuildPending; });
+}
+
+ACL9SiteMap* ACL9SiteMap::Rebuild(UWorld* World, const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day)
+{
+	if (World == nullptr)
+	{
+		return nullptr;
 	}
 
-	Map->Build(Site, Registry, Seed, Day);
-	return Map;
+	if (Site.Districts.Num() == 0)
+	{
+		// 단일 사이트 — 예전 경로 그대로. 구역 사이트가 깔려 있던 월드(치트로 사이트를 바꾼 경우)면 먼저 걷는다
+		ACL9SiteMap* Map = Find(World);
+		if (Map != nullptr && Map->DistrictIndex != INDEX_NONE)
+		{
+			Clear(World);
+			Map = nullptr;
+		}
+		if (Map == nullptr)
+		{
+			Map = SpawnSiteMap(World, FindSiteAnchor(World), FRotator::ZeroRotator);
+			if (Map == nullptr)
+			{
+				return nullptr;
+			}
+		}
+
+		Map->Build(Site, Registry, Seed, Day);
+		return Map;
+	}
+
+	// 구역 사이트 — 예전 판(단일이든 구역이든)은 통째로 걷고 구역마다 새 액터를 세운다. 액터 원점 = 트럭 패드 +
+	// 구역 Offset, 회전 = 구역 Yaw. 생성기는 회전을 모른다 — 인스턴스·컴포넌트·램프가 액터에 붙어 함께 돈다.
+	Clear(World);
+	const FVector Anchor = FindSiteAnchor(World);
+	TArray<ACL9SiteMap*> Maps;
+	for (int32 Index = 0; Index < Site.Districts.Num(); ++Index)
+	{
+		const FCL9SiteDistrict& District = Site.Districts[Index];
+		const FRotator Rotation(0.f, CL9SiteDistrict::QuarterTurns(District.Yaw) * 90.f, 0.f);
+		ACL9SiteMap* Map = SpawnSiteMap(World, Anchor + FVector(District.Offset.X, District.Offset.Y, 0.f), Rotation);
+		if (Map == nullptr)
+		{
+			continue;
+		}
+		Map->DistrictIndex = Index;
+		Map->bBuildPending = true;
+		// 행은 읽기만 한다 — UPROPERTY 로 붙드는 것은 GC 에 맞서기 위해서다(헤더 주석)
+		Map->PendingSite = const_cast<UCL9SiteDef*>(&Site);
+		Map->PendingRegistry = const_cast<UCL9DefRegistry*>(&Registry);
+		Map->PendingSeed = CL9SiteDistrict::SubSeed(Seed, Index);
+		Map->PendingDay = Day;
+		Maps.Add(Map);
+	}
+	if (Maps.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Site map: site '%s' has %d districts — building the first now and the rest one per frame (seed %u)."),
+		*Site.Alias.ToString(), Maps.Num(), Seed);
+
+	// 첫 구역은 이 호출에서, 나머지는 첫 구역이 거는 티커가 프레임마다 하나씩
+	ACL9SiteMap* Lead = Maps[0];
+	Lead->BuildPending();
+	Lead->LastDistrictBuildFrame = GFrameCounter;
+	if (Maps.Num() > 1)
+	{
+		// 코어 티커는 게임·에디터 월드 모두 엔진 프레임마다 돈다(일시 정지와도 무관) — 치트의 에디터 맵도 같은 길로 선다
+		TWeakObjectPtr<ACL9SiteMap> WeakLead(Lead);
+		Lead->DistrictTicker = FTSTicker::GetCoreTicker().AddTicker(TEXT("CL9SiteMapDistricts"), 0.f, [WeakLead](float)
+		{
+			ACL9SiteMap* LeadMap = WeakLead.Get();
+			return LeadMap != nullptr && LeadMap->BuildNextDistrict();
+		});
+	}
+	return Lead;
+}
+
+void ACL9SiteMap::BuildPending()
+{
+	if (!bBuildPending)
+	{
+		return;
+	}
+	if (PendingSite != nullptr && PendingRegistry != nullptr)
+	{
+		Build(*PendingSite, *PendingRegistry, PendingSeed, PendingDay);
+	}
+	bBuildPending = false;
+	PendingSite = nullptr;
+	PendingRegistry = nullptr;
+}
+
+bool ACL9SiteMap::BuildNextDistrict()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || IsActorBeingDestroyed())
+	{
+		DistrictTicker.Reset();
+		return false;
+	}
+
+	TArray<ACL9SiteMap*> Maps;
+	FindAll(World, Maps);
+
+	// 프레임당 하나 — Rebuild 가 첫 구역을 지은 그 프레임에 티커가 또 돌면 다음 프레임으로 미룬다
+	if (GFrameCounter != LastDistrictBuildFrame)
+	{
+		for (ACL9SiteMap* Map : Maps)
+		{
+			if (Map->bBuildPending)
+			{
+				Map->BuildPending();
+				LastDistrictBuildFrame = GFrameCounter;
+				break;
+			}
+		}
+	}
+
+	if (Maps.ContainsByPredicate([](const ACL9SiteMap* Map) { return Map->bBuildPending; }))
+	{
+		return true;
+	}
+	UE_LOG(LogCL9, Log, TEXT("Site map: all %d districts built."), Maps.Num());
+	DistrictTicker.Reset();
+	return false;
+}
+
+void ACL9SiteMap::StopDistrictTicker()
+{
+	if (DistrictTicker.IsValid())
+	{
+		FTSTicker::RemoveTicker(DistrictTicker);
+		DistrictTicker.Reset();
+	}
+}
+
+void ACL9SiteMap::Destroyed()
+{
+	StopDistrictTicker();
+	Super::Destroyed();
+}
+
+void ACL9SiteMap::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	StopDistrictTicker();
+	Super::EndPlay(EndPlayReason);
 }
 
 void ACL9SiteMap::Clear(UWorld* World)
 {
-	if (ACL9SiteMap* Map = Find(World))
+	TArray<ACL9SiteMap*> Maps;
+	FindAll(World, Maps);
+	for (ACL9SiteMap* Map : Maps)
 	{
 		Map->ClearBuilt();
 		Map->Destroy();
@@ -237,8 +399,9 @@ FVector ACL9SiteMap::PointToWorld(const FCL9LevelPoint& Point) const
 
 FVector ACL9SiteMap::SiteToWorld(const FVector2D& Local) const
 {
-	// 평면 좌표만 옮긴다 — 층 높이는 부르는 쪽이 얹는다 (PointToWorld)
-	return GetActorLocation() + FVector(Local.X, Local.Y, 0.f);
+	// 평면 좌표만 옮긴다 — 층 높이는 부르는 쪽이 얹는다 (PointToWorld). 액터 변환을 거쳐 구역의 회전이 들어간다.
+	// 단일 사이트는 회전 0·배율 1 이라 위치 + 로컬 그대로다.
+	return GetActorTransform().TransformPosition(FVector(Local.X, Local.Y, 0.f));
 }
 
 void ACL9SiteMap::ClearBuilt()
@@ -336,18 +499,25 @@ void ACL9SiteMap::MeasurePieces(const UCL9SiteDef& Site, const UCL9DefRegistry& 
 
 void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day)
 {
+	// 단계별 빌드 시간 — 구역 K 개를 프레임마다 나눠 지을 때 한 프레임이 얼마나 서는지 본다 (giant-stage.md)
+	const double BuildStarted = FPlatformTime::Seconds();
 	ClearBuilt();
+
+	// 구역이면 그 구역 행이 모듈 수와 깊이 구역을 준다 — 나머지 맵 열은 사이트 것을 그대로 쓴다
+	const FCL9SiteDistrict* District = Site.Districts.IsValidIndex(DistrictIndex) ? &Site.Districts[DistrictIndex] : nullptr;
+	Zones = (District != nullptr && District->Zones.Num() > 0) ? District->Zones : Site.Zones;
 
 	Params = FCL9SiteParams();
 	Params.Theme = Site.Theme;
 	Params.CellSize = FMath::Max(Site.CellSize, 1.f);
 	Params.EntryOffset = Site.EntryOffset;
 
-	// 한 판의 크기 = 사이트 기준값 × 일자 커브 (module.md 결정 5).
+	// 한 판의 크기 = 사이트(구역) 기준값 × 일자 커브 (module.md 결정 5).
 	// 커브가 비어 있으면 1.0이므로 기준값이 그대로 나온다.
 	const UCL9ProgressionDef* Progression = Registry.GetProgression();
 	const float SizeMult = Progression != nullptr ? Progression->SiteSizeAt(Day) : 1.f;
-	Params.ModuleCount = FMath::Max(2, FMath::RoundToInt(Site.BaseModuleCount * SizeMult));
+	const int32 BaseModules = District != nullptr ? District->ModuleCount : Site.BaseModuleCount;
+	Params.ModuleCount = FMath::Max(2, FMath::RoundToInt(BaseModules * SizeMult));
 
 	// 층은 일자와 무관하다 — 목적지가 몇 층짜리 건물인가는 그 목적지의 성질이다.
 	Params.MaxFloors = FMath::Clamp(Site.MaxFloors, 1, 8);
@@ -386,7 +556,9 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		Params.FloorHeight = FMath::Max(Tallest, 200.f) + Sandwich;
 	}
 
+	const double GenerateStarted = FPlatformTime::Seconds();
 	Layout = CL9SiteLayout::Generate(Params, ModuleDefs, Seed);
+	const double SegmentsStarted = FPlatformTime::Seconds();
 
 	TArray<FCL9SiteSeg> Segs;
 	CL9SiteLayout::BuildSegments(Params, Layout, Segs);
@@ -462,10 +634,16 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 			SpawnParams.Owner = this;
 			SpawnParams.ObjectFlags |= RF_Transient;
 			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			if (ACL9FlapIn* Flap = GetWorld()->SpawnActor<ACL9FlapIn>(GetActorLocation() + Spot, FRotator::ZeroRotator, SpawnParams))
+			// 구역의 회전은 여기서 직접 넣는다 — 비상구는 액터라 사이트맵에 안 붙는다. 비상구 액터는 회전 0 으로 세우고
+			// 상자 치수와 안쪽 방향을 월드로 돌려 준다: ACL9FlapIn::Setup 은 안쪽 방향을 월드 방향(통과 판정)과
+			// 자기 로컬 축(트리거 상자) 양쪽으로 쓰므로, 회전 0 일 때만 둘이 같다. 90° 배수라 치수는 X·Y 맞바꿈이다.
+			const int32 Quarter = CL9SiteDistrict::QuarterTurns(FMath::RoundToInt32(GetActorRotation().Yaw));
+			const FVector WorldExtent = (Quarter % 2 == 1) ? FVector(Extent.Y, Extent.X, Extent.Z) : Extent;
+			// 안쪽은 바깥 방향의 반대다 — 배치기가 어느 변에 달았는지 알려 준다
+			const FVector2D Inside = CL9SiteDistrict::Rotate(FVector2D(-Seg.Outward.X, -Seg.Outward.Y), Quarter);
+			if (ACL9FlapIn* Flap = GetWorld()->SpawnActor<ACL9FlapIn>(GetActorTransform().TransformPosition(Spot), FRotator::ZeroRotator, SpawnParams))
 			{
-				// 안쪽은 바깥 방향의 반대다 — 배치기가 어느 변에 달았는지 알려 준다
-				Flap->Setup(Extent, FVector(-Seg.Outward.X, -Seg.Outward.Y, 0.f), Mesh);
+				Flap->Setup(WorldExtent, FVector(Inside.X, Inside.Y, 0.f), Mesh);
 				Flap->bIsEditorOnlyActor = bIsEditorOnlyActor;
 				SpawnedActors.Add(Flap);
 				++Placed;
@@ -568,7 +746,9 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 		++Placed;
 	}
 
+	const double PropsStarted = FPlatformTime::Seconds();
 	const int32 PropsPlaced = PlaceProps(Segs, Components.Num());
+	const double RegisterStarted = FPlatformTime::Seconds();
 
 	for (UInstancedStaticMeshComponent* Component : KindComponents)
 	{
@@ -579,6 +759,19 @@ void ACL9SiteMap::Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry
 	{
 		Lamp->RegisterComponent();
 		AddInstanceComponent(Lamp);
+	}
+	const double RegisterDone = FPlatformTime::Seconds();
+
+	// 구역마다 한 줄 — 2인 PIE 에서 호스트·클라이언트의 hash 를 구역별로 맞대 보고, 단계 ms 로 프레임 하나의 무게를 본다
+	{
+		const FString Label = District != nullptr
+			? FString::Printf(TEXT("district %d of %d (seed %u)"), DistrictIndex, Site.Districts.Num(), Seed)
+			: FString::Printf(TEXT("single site (seed %u)"), Seed);
+		UE_LOG(LogCL9, Log, TEXT("Site map build %s — hash %08X, %d modules, %d instances in %d components, %d props, %d lamps (%d flicker); generate %.1f ms, segments %.1f ms, props+lamps %.1f ms, register %.1f ms, total %.1f ms."),
+			*Label, CL9SiteLayout::LayoutHash(Layout), Layout.Modules.Num(), Placed, KindComponents.Num(), PropsPlaced,
+			LampComponents.Num(), FlickerLamps.Num(),
+			(SegmentsStarted - GenerateStarted) * 1000.0, (PropsStarted - SegmentsStarted) * 1000.0,
+			(RegisterStarted - PropsStarted) * 1000.0, (RegisterDone - RegisterStarted) * 1000.0, (RegisterDone - BuildStarted) * 1000.0);
 	}
 
 	for (const FName& Kind : MissingKinds)

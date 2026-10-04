@@ -85,6 +85,11 @@ ACL9Monster::ACL9Monster()
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(SphereComponent);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// 안 보이는 몬스터는 포즈를 계산하지 않는다(몽타주만 돈다) — 큰 판에서 항상 깨어 있는 몬스터의 비용이다
+	// (docs/goal/giant-stage.md Monster cost). 다섯 종 모두 판정·AI·이동이 포즈에 기대지 않는다: 상태·판정은 C++ 시각이고,
+	// ABP 는 게터만 읽으며 노티파이·몽타주가 없다. 포즈를 읽는 것은 표현뿐이다(히트 퍼프의 spine 소켓, 처형 카메라 소켓 —
+	// 둘 다 보이는 순간에 쓰인다). AI·감각·이동은 그대로 매 틱 돈다 — 거리로 재우거나 늦추지 않는다(사용자 결정 4).
+	MeshComponent->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickMontagesWhenNotRendered;
 
 	// 처형 카메라 — 잠들어 있다가 Execute 에서만 켜진다(ApplyState). 소켓·오프셋은 행 값이라 여기서는 자리만 만든다
 	ExecuteCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ExecuteCamera"));

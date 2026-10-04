@@ -43,6 +43,7 @@ namespace
 		}
 		if (Args[0].Equals(TEXT("clear"), ESearchCase::IgnoreCase))
 		{
+			// 구역이 있는 사이트면 구역 액터 전부
 			ACL9SiteMap::Clear(World);
 			UE_LOG(LogCL9, Log, TEXT("cl9.seed: editor site map removed."));
 			return;
@@ -70,6 +71,8 @@ namespace
 		const uint32 Seed = static_cast<uint32>(FCString::Strtoui64(*Args[0], nullptr, 10));
 		// 일자는 한 판의 모듈 수만 바꾼다 (docs/plan/data/module.md 결정 5) — 안 적으면 1일차다
 		const int32 Day = Args.IsValidIndex(2) ? FMath::Max(1, FCString::Atoi(*Args[2])) : 1;
+		// 구역이 있는 사이트는 게임과 같은 길이다 — 첫 구역이 지금 서고 나머지는 에디터 프레임마다 하나씩.
+		// 독립 레지스트리는 루트가 없지만, 아직 안 지은 구역 액터가 행과 함께 붙들고 있다.
 		ACL9SiteMap::Rebuild(World, *Site, *Registry, Seed, Day);
 	}
 #endif

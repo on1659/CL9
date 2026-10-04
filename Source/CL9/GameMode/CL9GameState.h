@@ -253,7 +253,7 @@ protected:
 	UFUNCTION()
 	void OnRep_Money();
 
-	/** 로컬: 현재 사이트 행과 시드로 사이트 맵을 다시 만든다 — 시드가 0이면 껍데기만 */
+	/** 로컬: 현재 사이트 행과 시드로 사이트 맵을 다시 만든다(구역이 있으면 구역 전부) — 시드가 0이면 껍데기만 */
 	void RebuildSiteMap();
 
 	UPROPERTY(ReplicatedUsing=OnRep_Phase, BlueprintReadOnly, Category="Night")

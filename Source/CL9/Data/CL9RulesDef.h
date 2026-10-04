@@ -114,6 +114,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	float DawnLength = 0.f;
 
+	/**
+	 * 밤 시작에 큐로 모은 몬스터를 한 프레임에 몇 마리씩 스폰하는가 (마리/프레임, 1 이상). 한꺼번에 올리지 않는다
+	 * (docs/goal/giant-stage.md Gate answers). 기본값은 자리표시 — balance 가 정한다
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
+	int32 MonsterSpawnPerFrame = 4;
+
 	// -- 던지기와 소지 --
 
 	/** 퀵슬롯 칸 수 — 한 번에 들고 다닐 수 있는 아이템 수. 손에 실물로 들리는 것은 활성 칸 하나뿐이다 (docs/systems/inventory.md) */

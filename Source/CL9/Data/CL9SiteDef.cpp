@@ -51,14 +51,37 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 	};
 	CheckEntries(MonsterSpawns, TEXT("MonsterSpawns"));
 	CheckEntries(ItemSpawns, TEXT("ItemSpawns"));
-	for (const FCL9SiteZone& Zone : Zones)
+	auto CheckZones = [&OutErrors, &CheckEntries](const TArray<FCL9SiteZone>& ZoneRows, const FString& Prefix)
 	{
-		if (Zone.DepthMin < 0.f || Zone.DepthMax > 1.f || Zone.DepthMin >= Zone.DepthMax)
+		for (const FCL9SiteZone& Zone : ZoneRows)
 		{
-			OutErrors.Add(FString::Printf(TEXT("Zone '%s' needs 0 <= DepthMin < DepthMax <= 1."), *Zone.Name.ToString()));
+			if (Zone.DepthMin < 0.f || Zone.DepthMax > 1.f || Zone.DepthMin >= Zone.DepthMax)
+			{
+				OutErrors.Add(FString::Printf(TEXT("%sZone '%s' needs 0 <= DepthMin < DepthMax <= 1."), *Prefix, *Zone.Name.ToString()));
+			}
+			CheckEntries(Zone.MonsterSpawns, *FString::Printf(TEXT("%sZone '%s' MonsterSpawns"), *Prefix, *Zone.Name.ToString()));
+			CheckEntries(Zone.ItemSpawns, *FString::Printf(TEXT("%sZone '%s' ItemSpawns"), *Prefix, *Zone.Name.ToString()));
 		}
-		CheckEntries(Zone.MonsterSpawns, *FString::Printf(TEXT("Zone '%s' MonsterSpawns"), *Zone.Name.ToString()));
-		CheckEntries(Zone.ItemSpawns, *FString::Printf(TEXT("Zone '%s' ItemSpawns"), *Zone.Name.ToString()));
+	};
+	CheckZones(Zones, FString());
+
+	// 구역 — 회전은 90° 배수만(격자와 비상구가 축 정렬이어야 한다), 판마다 시작 모듈 + 갈 데 하나는 있어야 한다
+	if (Districts.Num() > 0 && Generator == ECL9Generator::None)
+	{
+		OutErrors.Add(TEXT("Districts need a Generator — a flat level has nothing to build per district."));
+	}
+	for (int32 Index = 0; Index < Districts.Num(); ++Index)
+	{
+		const FCL9SiteDistrict& District = Districts[Index];
+		if (District.Yaw != 0 && District.Yaw != 90 && District.Yaw != 180 && District.Yaw != 270)
+		{
+			OutErrors.Add(FString::Printf(TEXT("District %d Yaw must be 0, 90, 180 or 270 (got %d)."), Index, District.Yaw));
+		}
+		if (District.ModuleCount < 2)
+		{
+			OutErrors.Add(FString::Printf(TEXT("District %d ModuleCount must be at least 2 — one start module plus somewhere to go."), Index));
+		}
+		CheckZones(District.Zones, FString::Printf(TEXT("District %d "), Index));
 	}
 
 	// 덮어쓴 밤 시계끼리는 순서가 맞아야 한다 — 전역값과 섞인 조합은 규칙 행의 검사가 맡는다
@@ -122,4 +145,106 @@ void UCL9SiteDef::Validate(TArray<FString>& OutErrors) const
 			OutErrors.Add(TEXT("PassageShare and DeadEndShare must be non-negative and sum to at most 1 — the rest is the Normal share."));
 		}
 	}
+}
+
+namespace
+{
+	/**
+	 * 밤 길이 어림의 두 점 직선 (docs/systems/stage.md "밤 길이 어림": 양계장 본줄기 16모듈 · 245초, 대농장 60모듈 · 480초).
+	 * 게임 값이 아니라 슬롯 검사용 어림식의 계수다 — 플레이로 다시 맞추면 stage.md 와 함께 고친다.
+	 */
+	constexpr float NightFitBase = 160.f;
+	constexpr float NightFitPerMainModule = 5.3f;
+}
+
+uint32 CL9SiteDistrict::SubSeed(uint32 Seed, int32 Index)
+{
+	if (Seed == 0)
+	{
+		return 0;
+	}
+	const uint32 Sub = HashCombine(Seed, static_cast<uint32>(Index));
+	return Sub != 0 ? Sub : 1u;
+}
+
+int32 CL9SiteDistrict::QuarterTurns(int32 Yaw)
+{
+	const int32 Quarter = FMath::RoundToInt(static_cast<float>(Yaw) / 90.f);
+	return ((Quarter % 4) + 4) % 4;
+}
+
+FVector2D CL9SiteDistrict::Rotate(const FVector2D& Vector, int32 Quarter)
+{
+	// 정확히 90° 배수라 삼각함수를 안 쓴다 — 사각형 경계가 부동소수 오차 없이 맞닿는다
+	switch (((Quarter % 4) + 4) % 4)
+	{
+	case 1: return FVector2D(-Vector.Y, Vector.X);
+	case 2: return FVector2D(-Vector.X, -Vector.Y);
+	case 3: return FVector2D(Vector.Y, -Vector.X);
+	default: return Vector;
+	}
+}
+
+int32 CL9SiteDistrict::GridSpan(int32 ModuleCount)
+{
+	// CL9SiteLayout::Generate 와 같은 식 (상한 128 포함) — 바꾸려면 둘을 함께
+	return FMath::Clamp(FMath::CeilToInt(FMath::Sqrt(ModuleCount * 6.f)) * 2, 16, 128);
+}
+
+FBox2D CL9SiteDistrict::SpanRect(const FCL9SiteDistrict& District, int32 DayModuleCount, float CellSize, float EntryOffset)
+{
+	// 구역 로컬 격자 사각형 = 단일 사이트와 같다: X 는 EntryOffset 부터 한 변만큼, Y 는 0 을 가운데로
+	const float Side = GridSpan(DayModuleCount) * CellSize;
+	const int32 Quarter = QuarterTurns(District.Yaw);
+	const FVector2D A = District.Offset + Rotate(FVector2D(EntryOffset, -Side * 0.5f), Quarter);
+	const FVector2D B = District.Offset + Rotate(FVector2D(EntryOffset + Side, Side * 0.5f), Quarter);
+	return FBox2D(FVector2D(FMath::Min(A.X, B.X), FMath::Min(A.Y, B.Y)), FVector2D(FMath::Max(A.X, B.X), FMath::Max(A.Y, B.Y)));
+}
+
+float CL9SiteDistrict::GateDistance(const FCL9SiteDistrict& District, float EntryOffset)
+{
+	return static_cast<float>((District.Offset + Rotate(FVector2D(EntryOffset, 0.f), QuarterTurns(District.Yaw))).Size());
+}
+
+float CL9SiteDistrict::NightEstimate(int32 BaseModules, float YardDistance, float MainPathShare, float YardSpeed)
+{
+	return NightFitBase + NightFitPerMainModule * MainPathShare * BaseModules + 2.f * YardDistance / FMath::Max(YardSpeed, 1.f);
+}
+
+bool CL9SiteDistrict::CheckSlots(const TArray<FCL9SiteDistrict>& Districts, const FCL9DistrictSlotRules& Rules, TArray<FString>& OutErrors)
+{
+	const int32 ErrorsBefore = OutErrors.Num();
+
+	TArray<FBox2D> Rects;
+	for (const FCL9SiteDistrict& District : Districts)
+	{
+		const int32 DayCount = FMath::Max(2, FMath::RoundToInt(District.ModuleCount * Rules.SizeMult));
+		Rects.Add(SpanRect(District, DayCount, Rules.CellSize, Rules.EntryOffset));
+	}
+
+	for (int32 I = 0; I < Districts.Num(); ++I)
+	{
+		for (int32 J = I + 1; J < Districts.Num(); ++J)
+		{
+			// 맞닿기만 한 것은 겹침이 아니다 — 넓이가 있는 교집합만
+			const FBox2D& RectA = Rects[I];
+			const FBox2D& RectB = Rects[J];
+			const double OverlapX = FMath::Min(RectA.Max.X, RectB.Max.X) - FMath::Max(RectA.Min.X, RectB.Min.X);
+			const double OverlapY = FMath::Min(RectA.Max.Y, RectB.Max.Y) - FMath::Max(RectA.Min.Y, RectB.Min.Y);
+			if (OverlapX > 0.0 && OverlapY > 0.0)
+			{
+				OutErrors.Add(FString::Printf(TEXT("Districts %d and %d overlap by %.0f x %.0f cm at the size multiplier %.2f."),
+					I, J, OverlapX, OverlapY, Rules.SizeMult));
+			}
+		}
+
+		const float Gate = GateDistance(Districts[I], Rules.EntryOffset);
+		const float Night = NightEstimate(Districts[I].ModuleCount, Gate, Rules.MainPathShare, Rules.YardSpeed);
+		if (Night > Rules.NightLength)
+		{
+			OutErrors.Add(FString::Printf(TEXT("District %d (%d modules, gate %.0f m) needs about %.0f s of a %.0f s night."),
+				I, Districts[I].ModuleCount, Gate / 100.f, Night, Rules.NightLength));
+		}
+	}
+	return OutErrors.Num() == ErrorsBefore;
 }

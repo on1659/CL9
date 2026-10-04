@@ -24,6 +24,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "Monsters/CL9Monster.h"
+#include "NavigationSystem.h"
 #include "TimerManager.h"
 #include "World/CL9SiteMap.h"
 #include "World/CL9TruckPad.h"
@@ -167,6 +168,20 @@ void ACL9GameMode::StartNight()
 	if (CL9GameState == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Lobby)
 	{
 		UE_LOG(LogCL9, Warning, TEXT("StartNight: only the lobby can start a night."));
+		NightStartWaitBegan = -1.0;
+		return;
+	}
+
+	// 이미 미뤄 둔 시작이 다음 프레임에 다시 본다 — 두 번째 요청은 그것에 맡긴다
+	if (NightStartRetryHandle.IsValid())
+	{
+		UE_LOG(LogCL9, Log, TEXT("StartNight: already waiting for the site build / navigation."));
+		return;
+	}
+
+	// 구역은 프레임마다 하나씩 서고 내비는 그 뒤에 빌드된다 — 다 서기 전에는 지점도 길도 없다
+	if (DeferNightStartWhileBuilding())
+	{
 		return;
 	}
 
@@ -209,6 +224,11 @@ void ACL9GameMode::StartNight()
 	if (CL9GameState->GetMapSeed() == 0)
 	{
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
+		// 구역 사이트는 구역 0 만 지금 섰다 — 나머지를 기다린다. 다시 올 때는 시드가 있어 이 가지를 지나지 않는다
+		if (DeferNightStartWhileBuilding())
+		{
+			return;
+		}
 	}
 
 	CL9GameState->StartNightClock(NightLength, DarkBase, DarkMin, bNoBlackout);
@@ -222,6 +242,42 @@ void ACL9GameMode::StartNight()
 	{
 		SpawnNightPopulation(*Site, Progression, Day);
 	}
+}
+
+bool ACL9GameMode::DeferNightStartWhileBuilding()
+{
+	UWorld* World = GetWorld();
+	const bool bSitePending = ACL9SiteMap::IsBuildPending(World);
+	// 더러운 영역이 아직 생성기에 넘어가지 않은 프레임도 "진행 중"으로 본다 — 방금 선 구역의 콜리전이 그 사이에 있다
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(World);
+	const bool bNavBusy = NavSystem != nullptr && (NavSystem->IsNavigationBuildInProgress() || NavSystem->HasDirtyAreasQueued());
+
+	if (!bSitePending && !bNavBusy)
+	{
+		if (NightStartWaitBegan >= 0.0)
+		{
+			UE_LOG(LogCL9, Log, TEXT("StartNight: site build and navigation done after %.2fs of waiting — starting the night."),
+				World->GetRealTimeSeconds() - NightStartWaitBegan);
+			NightStartWaitBegan = -1.0;
+		}
+		return false;
+	}
+
+	if (NightStartWaitBegan < 0.0)
+	{
+		NightStartWaitBegan = World->GetRealTimeSeconds();
+		UE_LOG(LogCL9, Log, TEXT("StartNight: deferred — site build %s, navigation %s. Retrying every frame."),
+			bSitePending ? TEXT("pending") : TEXT("done"), bNavBusy ? TEXT("building") : TEXT("idle"));
+	}
+	NightStartRetryHandle = GetWorldTimerManager().SetTimerForNextTick(this, &ACL9GameMode::RetryStartNight);
+	return true;
+}
+
+void ACL9GameMode::RetryStartNight()
+{
+	// 실행 중인 타이머의 핸들은 아직 살아 있다 — 비워야 StartNight 의 "이미 기다리는 중" 검사를 지난다
+	NightStartRetryHandle.Invalidate();
+	StartNight();
 }
 
 void ACL9GameMode::EndNight()
@@ -498,25 +554,15 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
 	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
 
-	// 생성된 맵: 동물과 재료는 생성기가 내준 지점 위에 떨어진다
-	// (docs/plan/data/module.md 결정 4). 맵이 없으면 평지 레벨의 트럭 주변
-	// 원형 배치가 대신한다.
-	const ACL9SiteMap* SiteMap = ACL9SiteMap::Find(GetWorld());
-	const bool bUsePoints = SiteMap != nullptr && SiteMap->GetLayout().bBuilt;
-
-	TArray<int32> MonsterPoints;
-	TArray<int32> LootPoints;
-	TArray<int32> JarPoints;
-	if (bUsePoints)
-	{
-		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Monster, MonsterPoints);
-		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Loot, LootPoints);
-		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Jar, JarPoints);
-	}
+	// 지난 밤 큐가 남아 있으면 버린다(보통은 ClearNightPopulation 이 이미 비웠다)
+	GetWorldTimerManager().ClearTimer(MonsterSpawnHandle);
+	PendingMonsterSpawns.Reset();
+	NextPendingMonster = 0;
+	PendingMonstersSpawned = 0;
 
 	// 목록은 시작 모듈에서 먼 것부터다 — 앞쪽만 보게 하면 "깊이 들어갈수록
 	// 위험하다"가 스폰 규칙 하나 없이 배치만으로 성립한다.
-	auto FindPointSpot = [this, SiteMap](const TArray<int32>& Points, float DeepShare, FVector& OutLocation)
+	auto FindPointSpot = [this](const ACL9SiteMap& SiteMap, const TArray<int32>& Points, float DeepShare, FVector& OutLocation)
 	{
 		if (Points.Num() == 0)
 		{
@@ -524,11 +570,11 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		}
 		const int32 Limit = FMath::Clamp(FMath::RoundToInt(Points.Num() * DeepShare), 1, Points.Num());
 		// 칸 한복판에서 벽 쪽으로 조금 흔들되, 벽에 박히지는 않을 만큼만
-		const float Jitter = FMath::Max(SiteMap->GetParams().CellSize * 0.5f - 120.f, 0.f);
+		const float Jitter = FMath::Max(SiteMap.GetParams().CellSize * 0.5f - 120.f, 0.f);
 		for (int32 Attempt = 0; Attempt < 12; ++Attempt)
 		{
-			const FCL9LevelPoint& Point = SiteMap->GetPoints()[Points[FMath::RandRange(0, Limit - 1)]];
-			FVector Candidate = SiteMap->PointToWorld(Point);
+			const FCL9LevelPoint& Point = SiteMap.GetPoints()[Points[FMath::RandRange(0, Limit - 1)]];
+			FVector Candidate = SiteMap.PointToWorld(Point);
 			Candidate.X += FMath::FRandRange(-Jitter, Jitter);
 			Candidate.Y += FMath::FRandRange(-Jitter, Jitter);
 			if (!IsInsideCalmRadius(Candidate))
@@ -540,35 +586,34 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		return false;
 	};
 
-	// 한 무리(사이트 열 또는 구역 하나)를 주어진 지점 목록 위에 놓는다. Where는 로그에 남길 이름이다.
-	auto SpawnMonsters = [&](const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, float DeepShare, const TCHAR* Where)
+	// 한 무리(사이트 열 또는 구역 하나)의 자리를 주어진 지점 목록 위에 정해 큐에 넣는다 — 스폰은 SpawnPendingMonsters 가
+	// 프레임마다 나눠 한다. 자리·방향은 지금 정하므로 배치 규칙(지점·깊이 몫·조용한 반경)은 한 번에 스폰하던 때와 같다.
+	// SiteMap 이 없으면 트럭 주변 원환이다. Where는 로그에 남길 이름이다.
+	auto QueueMonsters = [&](const ACL9SiteMap* SiteMap, const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, float DeepShare, const TCHAR* Where)
 	{
 		for (const FCL9SpawnEntry& Entry : Entries)
 		{
 			const int32 Count = RollCount(Entry, MonsterMult);
 			const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(Entry.Alias) : nullptr;
 			const float Radius = Def ? Def->Radius : 50.f;
-			int32 Placed = 0;
+			int32 Queued = 0;
 			for (int32 Index = 0; Index < Count; ++Index)
 			{
 				FVector Location;
-				if (!(bUsePoints ? FindPointSpot(Points, DeepShare, Location) : FindSpawnPoint(900.f, 2400.f, Location)))
+				if (!(SiteMap ? FindPointSpot(*SiteMap, Points, DeepShare, Location) : FindSpawnPoint(900.f, 2400.f, Location)))
 				{
 					continue;
 				}
 				Location.Z += Radius;
-				if (ACL9Monster* Monster = SpawnMonster(Entry.Alias, NAME_None, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Location)))
-				{
-					NightSpawned.Add(Monster);
-					++Placed;
-				}
+				PendingMonsterSpawns.Add({ Entry.Alias, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Location) });
+				++Queued;
 			}
-			UE_LOG(LogCL9, Log, TEXT("Night %d%s: %s ×%d placed (base %d~%d × %.2f = %d)."),
-				Day, Where, *Entry.Alias.ToString(), Placed, Entry.MinCount, Entry.MaxCount, MonsterMult, Count);
+			UE_LOG(LogCL9, Log, TEXT("Night %d%s: %s ×%d queued (base %d~%d × %.2f = %d)."),
+				Day, Where, *Entry.Alias.ToString(), Queued, Entry.MinCount, Entry.MaxCount, MonsterMult, Count);
 		}
 	};
 
-	auto SpawnItems = [&](const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, const TCHAR* Where)
+	auto SpawnItems = [&](const ACL9SiteMap* SiteMap, const TArray<FCL9SpawnEntry>& Entries, const TArray<int32>& Points, const TCHAR* Where)
 	{
 		for (const FCL9SpawnEntry& Entry : Entries)
 		{
@@ -577,7 +622,7 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 			for (int32 Index = 0; Index < Count; ++Index)
 			{
 				FVector Location;
-				if (!(bUsePoints ? FindPointSpot(Points, 1.f, Location) : FindSpawnPoint(400.f, 1800.f, Location)))
+				if (!(SiteMap ? FindPointSpot(*SiteMap, Points, 1.f, Location) : FindSpawnPoint(400.f, 1800.f, Location)))
 				{
 					continue;
 				}
@@ -592,58 +637,138 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 		}
 	};
 
-	SpawnMonsters(Site.MonsterSpawns, MonsterPoints, 0.6f, TEXT(""));
-	SpawnItems(Site.ItemSpawns, LootPoints, TEXT(""));
-
-	// 깊이 구역: 구역마다 자기 띠의 지점에만 놓는다 (docs/plan/data/site.md 구역, 2026-10-03). 띠 안에서는
-	// 몬스터도 재료도 고르게 고른다 — 깊이에 따른 차이는 이미 구역의 행이 말하고 있다.
-	for (const FCL9SiteZone& Zone : Site.Zones)
+	// 맵 하나(단일 사이트 또는 구역 하나)의 몫. SiteMap 이 없으면 평지 레벨 — 사이트 열도 구역 몫도 트럭 주변 원환에 떨어진다.
+	// Prefix 는 로그의 "Night N" 뒤에 붙는다(단일 사이트·평지는 빈 문자열 — 로그가 예전과 같다).
+	auto SpawnForMap = [&](const ACL9SiteMap* SiteMap, const TArray<FCL9SiteZone>& Zones, const FString& Prefix)
 	{
-		TArray<int32> ZoneMonsterPoints;
-		TArray<int32> ZoneLootPoints;
-		if (bUsePoints)
+		TArray<int32> MonsterPoints;
+		TArray<int32> LootPoints;
+		TArray<int32> JarPoints;
+		if (SiteMap != nullptr)
 		{
-			CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Monster, Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints);
-			CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Loot, Zone.DepthMin, Zone.DepthMax, ZoneLootPoints);
+			CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Monster, MonsterPoints);
+			CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Loot, LootPoints);
+			CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Jar, JarPoints);
 		}
-		const FString Where = FString::Printf(TEXT(" zone %s (depth %.2f~%.2f, %d monster / %d loot points)"),
-			*Zone.Name.ToString(), Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints.Num(), ZoneLootPoints.Num());
-		SpawnMonsters(Zone.MonsterSpawns, ZoneMonsterPoints, 1.f, *Where);
-		SpawnItems(Zone.ItemSpawns, ZoneLootPoints, *Where);
-	}
 
-	// 반환용 항아리는 납품 방마다 하나다 — Jar 지점은 그 방의 칸마다 하나씩 나오므로
-	// 모듈당 첫 칸만 쓴다 (docs/plan/data/module.md 결정 4).
-	if (bUsePoints && JarPoints.Num() > 0)
-	{
-		if (JarClass == nullptr)
+		QueueMonsters(SiteMap, Site.MonsterSpawns, MonsterPoints, 0.6f, *Prefix);
+		SpawnItems(SiteMap, Site.ItemSpawns, LootPoints, *Prefix);
+
+		// 깊이 구역: 구역마다 자기 띠의 지점에만 놓는다 (docs/plan/data/site.md 구역, 2026-10-03). 띠 안에서는
+		// 몬스터도 재료도 고르게 고른다 — 깊이에 따른 차이는 이미 구역의 행이 말하고 있다. 깊이는 맵(레이아웃)마다 따로 잰다.
+		for (const FCL9SiteZone& Zone : Zones)
 		{
-			UE_LOG(LogCL9, Warning, TEXT("Night %d: no JarClass on the game mode — the delivery rooms stay empty (assign BP_CL9Jar in BP_CL9GameMode)."), Day);
-		}
-		else
-		{
-			TSet<int32> SeenModules;
-			int32 Jars = 0;
-			for (int32 Index : JarPoints)
+			TArray<int32> ZoneMonsterPoints;
+			TArray<int32> ZoneLootPoints;
+			if (SiteMap != nullptr)
 			{
-				const FCL9LevelPoint& Point = SiteMap->GetPoints()[Index];
-				bool bAlready = false;
-				SeenModules.Add(Point.Module, &bAlready);
-				if (bAlready)
-				{
-					continue;
-				}
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				if (AActor* Jar = GetWorld()->SpawnActor<ACL9Jar>(JarClass, SiteMap->PointToWorld(Point), FRotator::ZeroRotator, SpawnParams))
-				{
-					NightSpawned.Add(Jar);
-					++Jars;
-				}
+				CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Monster, Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints);
+				CL9SiteLayout::PointsInDepthBand(SiteMap->GetLayout(), ECL9PointPurpose::Loot, Zone.DepthMin, Zone.DepthMax, ZoneLootPoints);
 			}
-			UE_LOG(LogCL9, Log, TEXT("Night %d: %d jars placed in %d delivery rooms."), Day, Jars, SeenModules.Num());
+			const FString Where = Prefix + FString::Printf(TEXT(" zone %s (depth %.2f~%.2f, %d monster / %d loot points)"),
+				*Zone.Name.ToString(), Zone.DepthMin, Zone.DepthMax, ZoneMonsterPoints.Num(), ZoneLootPoints.Num());
+			QueueMonsters(SiteMap, Zone.MonsterSpawns, ZoneMonsterPoints, 1.f, *Where);
+			SpawnItems(SiteMap, Zone.ItemSpawns, ZoneLootPoints, *Where);
+		}
+
+		// 반환용 항아리는 납품 방마다 하나다 — Jar 지점은 그 방의 칸마다 하나씩 나오므로
+		// 모듈당 첫 칸만 쓴다 (docs/plan/data/module.md 결정 4). 모듈 번호는 레이아웃마다 따로라 집합도 맵마다 새로 만든다.
+		if (SiteMap != nullptr && JarPoints.Num() > 0)
+		{
+			if (JarClass == nullptr)
+			{
+				UE_LOG(LogCL9, Warning, TEXT("Night %d%s: no JarClass on the game mode — the delivery rooms stay empty (assign BP_CL9Jar in BP_CL9GameMode)."), Day, *Prefix);
+			}
+			else
+			{
+				TSet<int32> SeenModules;
+				int32 Jars = 0;
+				for (int32 Index : JarPoints)
+				{
+					const FCL9LevelPoint& Point = SiteMap->GetPoints()[Index];
+					bool bAlready = false;
+					SeenModules.Add(Point.Module, &bAlready);
+					if (bAlready)
+					{
+						continue;
+					}
+					FActorSpawnParameters SpawnParams;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					if (AActor* Jar = GetWorld()->SpawnActor<ACL9Jar>(JarClass, SiteMap->PointToWorld(Point), FRotator::ZeroRotator, SpawnParams))
+					{
+						NightSpawned.Add(Jar);
+						++Jars;
+					}
+				}
+				UE_LOG(LogCL9, Log, TEXT("Night %d%s: %d jars placed in %d delivery rooms."), Day, *Prefix, Jars, SeenModules.Num());
+			}
+		}
+	};
+
+	// 생성된 맵: 동물과 재료는 생성기가 내준 지점 위에 떨어진다 (docs/plan/data/module.md 결정 4). 구역 사이트는 구역마다
+	// 맵이 하나다(ACL9SiteMap::FindAll, 구역 순) — 맵마다 자기 지점·자기 구역 행(GetZones, 비면 사이트 Zones)을 쓴다.
+	// 아직 지어지지 않은 맵은 건너뛰고, 지어진 맵이 하나도 없으면 평지 레벨의 트럭 주변 원형 배치가 대신한다.
+	TArray<ACL9SiteMap*> SiteMaps;
+	ACL9SiteMap::FindAll(GetWorld(), SiteMaps);
+	SiteMaps.RemoveAll([](const ACL9SiteMap* SiteMap) { return SiteMap == nullptr || !SiteMap->GetLayout().bBuilt; });
+	if (SiteMaps.Num() == 0)
+	{
+		SpawnForMap(nullptr, Site.Zones, FString());
+	}
+	for (const ACL9SiteMap* SiteMap : SiteMaps)
+	{
+		const int32 District = SiteMap->GetDistrictIndex();
+		SpawnForMap(SiteMap, SiteMap->GetZones(), District == INDEX_NONE ? FString() : FString::Printf(TEXT(" district %d"), District));
+	}
+
+	// 몬스터는 한꺼번에 올리지 않는다 — 다음 프레임부터 MonsterSpawnPerFrame 마리씩 (docs/goal/giant-stage.md Gate answers)
+	if (PendingMonsterSpawns.Num() > 0)
+	{
+		PendingMonstersBegan = GetWorld()->GetRealTimeSeconds();
+		MonsterSpawnHandle = GetWorldTimerManager().SetTimerForNextTick(this, &ACL9GameMode::SpawnPendingMonsters);
+	}
+}
+
+void ACL9GameMode::SpawnPendingMonsters()
+{
+	MonsterSpawnHandle.Invalidate();
+
+	// 큐를 다 비우기 전에 밤이 끝났다 — 남은 몫은 버린다(이미 선 것은 로비가 치운다)
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const int32 Day = CL9GameState ? CL9GameState->GetCurrentDay() : 0;
+	if (CL9GameState == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Night)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Night %d: monster queue dropped — the night ended with %d of %d still waiting."),
+			Day, PendingMonsterSpawns.Num() - NextPendingMonster, PendingMonsterSpawns.Num());
+		PendingMonsterSpawns.Reset();
+		NextPendingMonster = 0;
+		return;
+	}
+
+	// 행이 없으면 남은 것을 이번 프레임에 다 — 밤은 규칙 행 없이 시작되지 않으므로 실제로는 오지 않는 길이다
+	const UCL9RulesDef* Rules = GetRules();
+	const int32 PerFrame = Rules ? Rules->MonsterSpawnPerFrame : PendingMonsterSpawns.Num();
+	const int32 End = FMath::Min(NextPendingMonster + PerFrame, PendingMonsterSpawns.Num());
+	for (; NextPendingMonster < End; ++NextPendingMonster)
+	{
+		const FCL9PendingMonsterSpawn& Pending = PendingMonsterSpawns[NextPendingMonster];
+		if (ACL9Monster* Monster = SpawnMonster(Pending.Alias, NAME_None, Pending.Transform))
+		{
+			NightSpawned.Add(Monster);
+			++PendingMonstersSpawned;
 		}
 	}
+
+	if (NextPendingMonster < PendingMonsterSpawns.Num())
+	{
+		MonsterSpawnHandle = GetWorldTimerManager().SetTimerForNextTick(this, &ACL9GameMode::SpawnPendingMonsters);
+		return;
+	}
+
+	UE_LOG(LogCL9, Log, TEXT("Night %d: %d of %d queued monsters spawned, %d per frame, %.2fs."),
+		Day, PendingMonstersSpawned, PendingMonsterSpawns.Num(), PerFrame, GetWorld()->GetRealTimeSeconds() - PendingMonstersBegan);
+	PendingMonsterSpawns.Reset();
+	NextPendingMonster = 0;
 }
 
 bool ACL9GameMode::IsInsideCalmRadius(const FVector& Location) const
@@ -667,6 +792,11 @@ void ACL9GameMode::ClearNightPopulation()
 	{
 		return;
 	}
+
+	// 아직 스폰하지 않은 밤 몬스터 큐도 밤과 함께 버린다
+	GetWorldTimerManager().ClearTimer(MonsterSpawnHandle);
+	PendingMonsterSpawns.Reset();
+	NextPendingMonster = 0;
 
 	// 처형 중·처형된 캐릭터를 몬스터가 사라지기 **전에** 풀어 준다 — 뷰 타깃이 곧 파괴될 몬스터를 가리키거나 ExecutedBy 가 죽은
 	// 참조로 남지 않게 (D9). 처형과 무관한 캐릭터에는 아무 일도 없다

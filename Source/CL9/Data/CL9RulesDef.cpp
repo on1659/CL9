@@ -47,6 +47,11 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("SwingBufferTime must be finite and non-negative (0 = no input buffer)."));
 	}
+	// 0 이하면 밤 몬스터 큐가 영영 비지 않는다
+	if (MonsterSpawnPerFrame < 1)
+	{
+		OutErrors.Add(TEXT("MonsterSpawnPerFrame must be at least 1 — the night monster queue would never drain."));
+	}
 	// 넉백 속도 = 거리 / 시간 — 0 이면 무한 속도(순간이동)라 값의 문제가 아니라 오류다
 	if (!(FMath::IsFinite(HitKnockbackTime) && HitKnockbackTime > 0.f))
 	{

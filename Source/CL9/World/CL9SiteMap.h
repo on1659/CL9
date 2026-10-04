@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Ticker.h"
+#include "Data/CL9SiteDef.h"
 #include "GameFramework/Actor.h"
 #include "World/CL9SiteLayout.h"
 #include "CL9SiteMap.generated.h"
@@ -13,12 +15,12 @@ class UInstancedStaticMeshComponent;
 class UPointLightComponent;
 
 /**
- * 생성된 사이트를 액터로 구현한 것(docs/systems/map.md 생성 흐름). 월드마다 하나씩만
- * 존재하며 절대 복제되지 않는다 — 모든 머신이 게임 스테이트의 시드로부터 각자
- * 다시 만들어내기 때문에, 벽 하나 전송하지 않고도 호스트와 클라이언트가 같은
- * 배치 안에 서게 된다. 박스는 seg kind 테이블에서 읽어온 대로 seg kind별 인스턴스
- * 메시로 그려지고, 일방향 여닫이문만 별도의 액터다. 트럭 패드를 기준점으로 삼고
- * 지면은 Z = 0이다.
+ * 생성된 사이트를 액터로 구현한 것(docs/systems/map.md 생성 흐름). 단일 사이트는 월드에 하나,
+ * 구역이 있는 사이트(UCL9SiteDef::Districts)는 구역마다 하나씩 존재하며 절대 복제되지 않는다 —
+ * 모든 머신이 게임 스테이트의 시드로부터 각자 다시 만들어내기 때문에, 벽 하나 전송하지 않고도
+ * 호스트와 클라이언트가 같은 배치 안에 서게 된다. 박스는 seg kind 테이블에서 읽어온 대로 seg kind별
+ * 인스턴스 메시로 그려지고, 일방향 여닫이문만 별도의 액터다. 트럭 패드를 기준점으로 삼고(구역은 거기에
+ * Offset·Yaw 를 더한다) 지면은 Z = 0이다.
  */
 UCLASS(NotBlueprintable, NotPlaceable)
 class ACL9SiteMap : public AActor
@@ -31,18 +33,34 @@ public:
 	/** 정전이면 시설 조명을 끈다 — 판정은 게임 스테이트, 여기는 표현만 (docs/systems/light.md 정전) */
 	virtual void Tick(float DeltaSeconds) override;
 
-	/** 이 월드의 사이트맵, 아직 처음 빌드되지 않았다면 null */
+	/** 파괴·판 종료 때 구역 나눠 짓기 티커를 내린다 */
+	virtual void Destroyed() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/** 이 월드의 사이트맵, 아직 처음 빌드되지 않았다면 null — 구역이 여럿이면 구역 0 */
 	static ACL9SiteMap* Find(UWorld* World);
+
+	/** 이 월드의 사이트맵 전부, 구역 인덱스 순. 단일 사이트면 하나다 */
+	static void FindAll(UWorld* World, TArray<ACL9SiteMap*>& OutMaps);
+
+	/**
+	 * 프레임 나눠 짓기가 아직 안 끝났으면 true — 구역이 여럿이면 Rebuild 가 프레임마다 하나씩 짓는다.
+	 * 밤 시작은 이것이 false 가 될 때까지 기다린다 (docs/goal/giant-stage.md Gate answers).
+	 */
+	static bool IsBuildPending(UWorld* World);
 
 	/**
 	 * 주어진 시드로 사이트를 빌드(또는 재빌드)한다 — 0이면 아무것도 짓지 않는다.
 	 * Day는 한 판의 모듈 수를 정하는 데만 쓰인다(docs/plan/data/module.md 결정 5).
 	 * 에디터 월드에서는 임시(transient)·에디터 전용 액터로 만들어서 맵이 레벨에
 	 * 저장되지 않도록 한다(build-order 5a 맵 배치 툴).
+	 *
+	 * 사이트에 구역이 있으면 구역마다 액터를 하나씩 세우고, **이 호출에서 구역 0 만 짓고 나머지는 프레임마다
+	 * 하나씩** 짓는다(사용자 결정 2026-10-04 "한꺼번에 짓지 않는다"). 돌려주는 것은 구역 0 이다.
 	 */
 	static ACL9SiteMap* Rebuild(UWorld* World, const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day);
 
-	/** 월드에서 사이트맵을 제거한다(있는 경우) */
+	/** 월드에서 사이트맵을 제거한다(있는 경우) — 구역이 여럿이면 전부 */
 	static void Clear(UWorld* World);
 
 	const FCL9SiteLayout& GetLayout() const { return Layout; }
@@ -51,15 +69,33 @@ public:
 	/** 스폰이 고를 수 있는 지점들 (docs/plan/data/module.md 결정 4) */
 	const TArray<FCL9LevelPoint>& GetPoints() const { return Layout.Points; }
 
+	/** 이 액터가 짓는 구역의 인덱스 (UCL9SiteDef::Districts) — 단일 사이트면 INDEX_NONE */
+	int32 GetDistrictIndex() const { return DistrictIndex; }
+
+	/** 이 판의 깊이 구역 — 구역에 Zones 가 있으면 그것, 비면 사이트의 Zones */
+	const TArray<FCL9SiteZone>& GetZones() const { return Zones; }
+
 	/** 지점 하나의 월드 좌표 — 그 모듈의 바닥 높이 위다 */
 	FVector PointToWorld(const FCL9LevelPoint& Point) const;
 
-	/** 사이트 로컬 XY 좌표를 월드 좌표로 변환한다 */
+	/** 사이트 로컬 XY 좌표를 월드 좌표로 변환한다 — 액터 변환(구역의 회전 포함)을 거친다 */
 	FVector SiteToWorld(const FVector2D& Local) const;
 
 private:
 	void Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day);
 	void ClearBuilt();
+
+	/** 대기 중인 구역 하나를 짓는다 — 맡겨 둔 사이트·레지스트리·시드·일자로 */
+	void BuildPending();
+
+	/**
+	 * 구역 0 이 티커에서 부른다 — 이번 프레임에 아직 아무 구역도 안 지었으면 대기 중인 구역 하나를 짓는다.
+	 * 더 지을 것이 남았으면 true (티커를 계속 둔다).
+	 */
+	bool BuildNextDistrict();
+
+	/** 나눠 짓기 티커를 내린다 (있으면) */
+	void StopDistrictTicker();
 
 	/**
 	 * 조각의 실측 치수를 파라미터에 채워 넣는다 — 벽 두께는 `barn` 조각의 얇은 축,
@@ -110,6 +146,33 @@ private:
 
 	/** 마지막으로 램프에 적용한 켜짐 상태 */
 	bool bLampsOn = true;
+
+	/** UCL9SiteDef::Districts 인덱스 — 단일 사이트면 INDEX_NONE */
+	int32 DistrictIndex = INDEX_NONE;
+
+	/** 이 판의 깊이 구역 사본 — 빌드 때 구역 Zones(비면 사이트 Zones)에서 복사한다 */
+	TArray<FCL9SiteZone> Zones;
+
+	// -- 프레임 나눠 짓기 (구역이 있는 사이트만). 맡겨 둔 행은 지을 때까지 붙들어야 한다 — 치트의 독립
+	//    레지스트리는 어디에도 루트가 없어서 다음 프레임 전에 GC 될 수 있다. 짓고 나면 놓는다.
+
+	/** 아직 안 지은 구역인가 */
+	bool bBuildPending = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UCL9SiteDef> PendingSite;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UCL9DefRegistry> PendingRegistry;
+
+	/** 이 구역의 하위 시드 (CL9SiteDistrict::SubSeed) */
+	uint32 PendingSeed = 0;
+
+	int32 PendingDay = 1;
+
+	/** 구역 0 만 쓴다 — 나눠 짓기 티커와 마지막으로 구역을 지은 프레임 */
+	FTSTicker::FDelegateHandle DistrictTicker;
+	uint64 LastDistrictBuildFrame = 0;
 
 	FCL9SiteParams Params;
 	FCL9SiteLayout Layout;

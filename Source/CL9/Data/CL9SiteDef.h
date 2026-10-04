@@ -116,6 +116,34 @@ struct FCL9SiteZone
 };
 
 /**
+ * 구역 하나 (docs/goal/giant-stage.md Design Decisions). 사이트 하나가 트럭 마당 둘레의 건물 여러 채로 설 때,
+ * 구역마다 `ACL9SiteMap` 액터 하나가 **고치지 않은 생성기**를 자기 하위 시드·모듈 수·월드 변환으로 돌린다.
+ * 구역 액터의 원점은 그 구역의 "트럭 패드 자리"다 — 단일 사이트와 똑같이 거기서 +X 로 `EntryOffset` 만큼
+ * 마당을 건너 입구(`yard_gate`)가 나고, 액터 회전(`Yaw`)이 그 전체를 돌린다.
+ */
+USTRUCT(BlueprintType)
+struct FCL9SiteDistrict
+{
+	GENERATED_BODY()
+
+	/** 구역 액터 원점의 위치 — 레벨의 트럭 패드 기준 cm (월드 축) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector2D Offset = FVector2D::ZeroVector;
+
+	/** 구역 액터의 회전 (도) — 0·90·180·270 만. 입구가 트럭을 보게 고른다 (0 이면 입구가 −X 쪽을 본다) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="0", ClampMax="270"))
+	int32 Yaw = 0;
+
+	/** 이 구역 한 판의 기준 모듈 수 — 사이트의 BaseModuleCount 대신 쓴다. 일자 배율(SiteSizeCurve)은 그대로 곱한다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(ClampMin="2"))
+	int32 ModuleCount = 200;
+
+	/** 이 구역의 깊이 구역 — 비면 사이트의 Zones 를 쓴다. 먼 구역에 무거운 행을 줄 때 채운다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FCL9SiteZone> Zones;
+};
+
+/**
  * 목적지 행 하나 (docs/plan/data/site.md). 사이트는 기준값을 준다 — 어떤
  * 동물과 재료가 몇 마리/몇 개 있는지 — 그리고 일자 커브(UCL9ProgressionDef)가
  * 밤이 시작될 때 그 값에 곱해진다. 맵 생성기를 위한 격자 컬럼들은
@@ -305,6 +333,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map", meta=(ClampMin="1", ClampMax="16"))
 	int32 SpecialCopies = 1;
 
+	/**
+	 * 구역 — 비어 있으면 지금처럼 트럭 패드에 한 판(BaseModuleCount)을 짓는다. 행이 있으면 구역마다 한 판씩,
+	 * 구역의 ModuleCount·Offset·Yaw 로 짓고 BaseModuleCount 는 쓰지 않는다. 나머지 맵 열(층·비율·SpecialCopies)은
+	 * 구역마다 그대로 적용된다 (docs/goal/giant-stage.md, 2026-10-04).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Map")
+	TArray<FCL9SiteDistrict> Districts;
+
 	// -- 조명 (docs/systems/light.md). 어둠은 사이트의 성격이다 — 축사의 밤과 다른 목적지의
 	//    밤이 다르게 보인다. 값은 레벨 라이트에 곱하는 배율이라 레벨을 바꿔도 그대로 쓴다.
 
@@ -320,3 +356,69 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Lighting")
 	FCL9LightingPhase BlackoutLighting;
 };
+
+/** 구역 슬롯 검사가 받는 값 — 전부 부르는 쪽이 사이트 행·진행 표에서 꺼내 준다 */
+struct FCL9DistrictSlotRules
+{
+	/** 격자 칸 크기 (cm) — UCL9SiteDef::CellSize */
+	float CellSize = 0.f;
+
+	/** 구역 원점에서 입구까지 (cm) — UCL9SiteDef::EntryOffset */
+	float EntryOffset = 0.f;
+
+	/** 검사할 날의 SiteSizeCurve 배율 — 슬롯은 10일차 판으로 잰다 */
+	float SizeMult = 0.f;
+
+	/** 밤 길이 (초) — UCL9SiteDef::NightLength */
+	float NightLength = 0.f;
+
+	/** 본줄기 비율 — UCL9SiteDef::MainPathShare */
+	float MainPathShare = 0.f;
+
+	/** 마당을 걷는 속도 (cm/s) — 왕복 마당 시간을 낸다 */
+	float YardSpeed = 0.f;
+};
+
+/**
+ * 구역의 순수 계산 (docs/goal/giant-stage.md). 엔진 상태를 안 건드리므로 테스트와 런타임이 같은 답을 낸다.
+ * 좌표는 레벨 트럭 패드 기준 cm, 월드 축이다.
+ */
+namespace CL9SiteDistrict
+{
+	/**
+	 * 구역 i 의 하위 시드 = HashCombine(Seed, i). 결과가 0 이면 1 로 바꾼다 — 생성기는 시드 0 이면 아무것도
+	 * 안 짓는다. 복제된 시드 자체가 0 이면("짓지 않음", cl9.seed 0) 하위 시드도 0 이다.
+	 */
+	uint32 SubSeed(uint32 Seed, int32 Index);
+
+	/** 0·90·180·270 을 반시계 4분의 1 회전 수(0~3)로 — 그 밖의 값은 가장 가까운 90° 배수로 붙인다 */
+	int32 QuarterTurns(int32 Yaw);
+
+	/** 평면 벡터를 4분의 1 회전 수만큼 돌린다 — FRotator(0, Yaw, 0) 의 회전과 같은 뜻(+X → +Y) */
+	FVector2D Rotate(const FVector2D& Vector, int32 Quarter);
+
+	/**
+	 * 모듈 수 하나의 격자 한 변 칸 수 — **CL9SiteLayout::Generate 의 식을 옮겨 적은 것이다**(생성기를 고치지 않으려고).
+	 * CL9.Map.Districts 가 실제 생성 결과의 GridSize 와 같은지 본다 — 생성기 식이 바뀌면 거기서 빨간불이 된다.
+	 */
+	int32 GridSpan(int32 ModuleCount);
+
+	/** 구역 판이 그 날 차지할 수 있는 격자 사각형 — 회전을 적용한 뒤의 축 정렬 사각형 */
+	FBox2D SpanRect(const FCL9SiteDistrict& District, int32 DayModuleCount, float CellSize, float EntryOffset);
+
+	/** 트럭 패드에서 구역 입구(격자 서쪽 변 한가운데)까지의 직선 거리 (cm) — 한 방향 마당 거리 */
+	float GateDistance(const FCL9SiteDistrict& District, float EntryOffset);
+
+	/**
+	 * 그 구역을 들어갔다 나오는 밤 어림 (초) = 양계장·대농장 두 점 직선(docs/systems/stage.md "밤 길이 어림")에
+	 * 마당 왕복을 더한 것: 160 + 5.3 × MainPathShare × N + 2 × 마당 거리 ÷ 마당 속도. 밤 600 · 본줄기 0.30 ·
+	 * 4.5 m/s 이면 명세의 `1.59·N + 0.444·L ≤ 440` 과 같다.
+	 */
+	float NightEstimate(int32 BaseModules, float YardDistance, float MainPathShare, float YardSpeed);
+
+	/**
+	 * 슬롯 검사 — 구역끼리 그 날(SizeMult)의 회전한 격자 사각형이 겹치지 않는가(맞닿기만 한 것은 괜찮다),
+	 * 구역마다 밤 어림이 NightLength 안인가. 어긴 것마다 한 줄씩 담고, 하나도 없으면 true.
+	 */
+	bool CheckSlots(const TArray<FCL9SiteDistrict>& Districts, const FCL9DistrictSlotRules& Rules, TArray<FString>& OutErrors);
+}
