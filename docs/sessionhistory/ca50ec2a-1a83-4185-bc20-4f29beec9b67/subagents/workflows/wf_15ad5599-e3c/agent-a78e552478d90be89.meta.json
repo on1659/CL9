@@ -1,0 +1,1 @@
+{"agentType":"workflow-subagent","description":"cross-exam","workflowPhase":"Cross-exam","spawnDepth":1,"requestShape":"foreground","requestNonInteractive":false,"model":"opus"}
