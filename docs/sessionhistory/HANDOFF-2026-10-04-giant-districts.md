@@ -51,7 +51,8 @@
 1. 저장소를 받는다: `git clone https://github.com/on1659/CL9.git` → `git checkout giant-districts-wip`.
    문서·스크립트에 절대 경로 `D:\Work\unreal\CL9` 가 많다 — 같은 경로에 두는 것이 가장 덜 고친다.
 2. UE 5.8 을 설치하고 `GenerateProjectFiles.bat` 10행의 엔진 경로(`D:\Program Files\Epic Games\UE_5.8`)를 그 컴퓨터에 맞춘다.
-3. `Content\DreamscapeSeries`(환경 팩)는 gitignore 대상이라 저장소에 없다 — 이 문서로는 옮길 수 없으니 팩을 다시 받거나 따로 복사한다.
+3. `Content\DreamscapeSeries`(Dreamscape Farmlands 팩)는 **필요 없다** — 2026-10-04 에 레벨 네 개에 놓여 있던 팩 닭 액터를 지우고 팩 폴더를 삭제했다.
+   옛 `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`(아무도 참조하지 않는 고아)만 사라진 팩 스켈레톤·애님을 가리킨 채 남아 있다. 새 엔진은 5.8.3 이어도 된다(이 PC 는 5.8.1).
 4. `.mcp.json` 의 uvx 경로(`C:/Users/user/.local/bin/uvx.exe`)를 그 컴퓨터의 사용자 이름에 맞춘다.
 5. 전역 규칙과 스킬을 되살린다(부록 E·F): `C:\Users\<사용자>\.claude\CLAUDE.md`, `C:\Users\<사용자>\.claude\skills\autogoal\SKILL.md`.
    `/cl9` 스킬과 역할 에이전트·훅은 저장소 `.claude/` 안에 있어 git 으로 따라온다.
