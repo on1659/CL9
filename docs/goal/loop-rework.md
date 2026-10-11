@@ -1,7 +1,7 @@
 # goal: loop-rework — 루프 개편 (회사 정산 · 외부 재화 · 임포스터 · 팀킬 · 중간 스폰)
 
 **상태**: 컨셉 명세 초안 (2026-10-11, 사용자 구술을 기존 문서와 대조해 정리). 미결이 열려 있어 구현 착수 전 게이트다.
-구현은 새 세션 `/autogoal`(HEAVY 예상) 또는 `/cl9 task`. 결정의 정본은 [../decisions.md](../decisions.md),
+제작 순서는 [../plan/build-order.md](../plan/build-order.md) **⑦ 루프 개편 7a~7k**(2026-10-12 사용자 확정) — 스텝 하나 = `/autogoal` 하나. 결정의 정본은 [../decisions.md](../decisions.md),
 현행 구현의 정본은 [../systems/](../systems/) — 이 문서와 다르면 그쪽이 맞다.
 
 ## 한 줄 목표
