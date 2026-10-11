@@ -5,6 +5,7 @@
 | 층 | 문서 | 언제 읽나 |
 |---|---|---|
 | 전체 구조 | [overview.md](overview.md) | 이 게임이 뭔지 처음 볼 때 |
+| 전체 구조 | [story.md](story.md) | 세계관·스토리 — 동물이 왜 괴물인지, 새 몬스터를 어떤 틀로 만드나 |
 | 전체 기획 | [loop.md](loop.md) | 게임 루프가 어떻게 도는지 알아야 할 때 |
 | 전체 기획 | [economy.md](economy.md) | 돈·가격·난이도 곡선·지켜야 할 부등식 |
 | 작업 순서 | [build-order.md](build-order.md) | **뭘 만들지 착수하기 전에 반드시** |
