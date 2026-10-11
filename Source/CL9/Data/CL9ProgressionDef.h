@@ -96,13 +96,13 @@ public:
 	UPROPERTY(EditAnywhere, Category="Orders")
 	int32 OrdersRequiredPerDay = 2;
 
-	/** 정산일의 목표 이더 — 첫 정산(2일차) 800에서 시작해 10일 이후에도 계속 오른다 (초안) */
+	/** 정산일의 목표 이더 — 첫 정산(3일차) 800에서 시작해 10일 이후에도 계속 오른다 (초안) */
 	UPROPERTY(EditAnywhere, Category="Settlement")
 	FRuntimeFloatCurve QuotaCurve;
 
-	/** 며칠에 한 번 정산하나 (초안 2) — 0 이하면 정산하지 않는다 */
+	/** 며칠에 한 번 정산하나 (2026-10-12 3 — "3판마다 회사에서 정산", 옛 초안 2) — 0 이하면 정산하지 않는다 */
 	UPROPERTY(EditAnywhere, Category="Settlement")
-	int32 SettlementIntervalDays = 2;
+	int32 SettlementIntervalDays = 3;
 
 private:
 	const FCL9DayOverride* FindOverride(int32 Day) const;
