@@ -14,6 +14,7 @@
 | [execute-sequence-pig.md](execute-sequence-pig.md) | 처형 시퀀스 — 스토커(너구리)의 등 뒤 처형·돼지의 잡히면 처형, 처형 카메라 | Run 1 완료(09-20)·종 재배치·데스캠; Run 2(2인 클립) 미착수 |
 | [game-feel.md](game-feel.md) | 타격감·사살감 1차 — 효과음·히트스톱·타격 퍼프·죽음 발사·드랍 호·발소리 | 1차 구현(09-18~20); 줍기 팔 클립·몬스터 HP 핍 미제작 |
 | [hit-feedback.md](hit-feedback.md) | 타격감·피격감 — 빨간 오버레이·공격자 킥·피격 셰이크·비네트 | 구현 완료(09-15); `CS_HitShake` 09-18 사인파로 번복 |
+| [loop-rework.md](loop-rework.md) | 루프 개편 — 3판마다 회사 정산·구매, 이더 + 개인 소유 외부 재화(치장만), 판마다 0~1명 임포스터, 팀킬·처치 보상, 전멸은 판만 끝내고 이더 n% 차감, 마당 무스폰, 판 중간 스폰, 부엌은 건물 안 랜덤 | 컨셉 명세 초안(10-11), 미결 11개 — 구현 전 게이트 |
 | [monster-catch-alarm-species.md](monster-catch-alarm-species.md) | 빌드 오더 ③ 3e~3g — 잡기·넘어짐·짐 흘림, 무리/사살 경보, 거위·너구리 행 | 완료(09-03); 너구리 값·Fox 대역은 폐기 |
 | [monster-pounce-hurt-readability.md](monster-pounce-hurt-readability.md) | 잡히는 순간을 보이게 — 잡기 예고(`Pounce`)·넘어짐 무적·피격 카메라·피격 방향 호·소리 | 구현 완료(09-20, 코드 미커밋) |
 | [session-orchestration.md](session-orchestration.md) | 세션 조율 시스템 — 역할 레지스트리·에디터/빌드 잠금·훅·`/cl9` (영문 계획 + 리뷰 기록) | 구현 완료(09-13 검증, `e0a44fc`); 현행 규약은 [../workflow/sessions.md](../workflow/sessions.md) |
