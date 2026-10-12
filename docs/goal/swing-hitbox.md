@@ -80,6 +80,8 @@ in by throwing only).
 
 ## Out-of-scope
 - Hitting other players (friendly fire) — monsters only.
+  **Reversed 2026-10-12** (user decision 2026-10-11, [loop-rework.md](loop-rework.md) decision 4): the swing now also hits other players —
+  [loop-7d-team-kill.md](loop-7d-team-kill.md). The monster sweep described here is unchanged; a second Pawn sweep was added beside it.
 - Hit feedback UI (hit marker, sound), monster hurt VFX.
 - Changing `SwingRecovery`, windup, cancel rules, throw, or the `Push`/`Hit`
   stun semantics on the monster side (`OnStrike` unchanged).
