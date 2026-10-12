@@ -76,5 +76,9 @@ A wipe ends only that round (dawn → lobby → everyone revived → next round)
 - **PIE listen 2 players** (`PIE_ListenServer`, 2 clients): money 1000, `cl9.damage 99 1` then `cl9.damage 99 0` → one penalty (1000 → 700), both `revived at the truck`, `Lobby — day 2`.
   Client world (`UEDPIE_1`): phase Lobby, day 2, local pawn alive, both players alive.
 - **Automation**: `CL9.Run.WipePenalty` — `Result={Success}`.
-- **Observed, not changed (pre-existing)**: in the 2-player run the dawn screen opened only on the host; the client had no dawn widget after the wipe. The 7a change only adds a line inside that screen; the open/close flow is untouched. Likely an order race between the client's spectate-screen close (revive) and `Client_OpenScreen(Dawn)` — not investigated.
+- **Observed, not changed (pre-existing)**: in the 2-player run the dawn screen opened only on the host; the client had no dawn widget after the wipe.
+  **Corrected 2026-10-12 (session 8dca39 investigated): a test artifact, not a game bug.** UFUNCTIONs called from editor Python run under `FEditorScriptExecutionGuard`
+  (PythonScriptPlugin `PyUtil.cpp` `InvokeFunctionCall`), and under that guard `AActor::GetFunctionCallspace` returns Local — so the cheat-driven
+  `EnterLobby` → `Client_OpenScreen(Dawn)` ran on the host's copy instead of reaching the client. Ending the night by the C++ expiry timer opens the dawn screen on the client
+  in the same frame. The same applies to `Multicast_Settled` in Python-driven tests (replicated properties are unaffected). The spectate-close race guessed here was wrong.
   Also, a dawn screen left open across a round (cheat-driven test, nobody pressed 계속) keeps its old title/settlement text while the appended lines refresh.
