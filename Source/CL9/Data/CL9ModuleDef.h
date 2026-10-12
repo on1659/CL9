@@ -6,6 +6,7 @@
 #include "Data/CL9DefBase.h"
 #include "CL9ModuleDef.generated.h"
 
+class AActor;
 class UStaticMesh;
 
 /** 모듈이 배치에서 맡는 자리 (docs/plan/data/module.md 표 컬럼) */
@@ -172,6 +173,29 @@ struct FCL9PropPlacement
 	float LightFlickerSpeed = 6.f;
 };
 
+/**
+ * 소품 세트 안의 고정물 하나 — **호스트가 판 시작에 스폰하는 복제 액터**다(조리대 등, docs/goal/loop-7c-kitchen-in-building.md).
+ * 소품(`FCL9PropPlacement`)은 모든 머신이 시드로 각자 그리는 메시라 상태를 가질 수 없어서, 상태가 있는 시설은 여기에 둔다.
+ * 좌표·요는 소품과 같은 회전 전 모듈 로컬이다 — 같은 세트가 뽑히므로 소품과 겹치지 않게 함께 짠다.
+ */
+USTRUCT(BlueprintType)
+struct FCL9FixturePlacement
+{
+	GENERATED_BODY()
+
+	/** 스폰할 액터 클래스(BP) — 애셋 경로는 C++ 에 없다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Fixture")
+	TSoftClassPtr<AActor> ActorClass;
+
+	/** 회전 전 모듈 로컬 위치 (cm) — 액터 원점이 그 자리에 놓인다. Z 는 그 층 바닥 판 윗면에서 잰다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Fixture")
+	FVector Local = FVector::ZeroVector;
+
+	/** 회전 전 요 (도). 모듈 회전이 여기에 더해진다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Fixture")
+	float Yaw = 0.f;
+};
+
 /** 한 모듈에 함께 깔리는 소품 한 벌 (module.md 결정 7). 인스턴스마다 이 중 하나가 뽑힌다 */
 USTRUCT(BlueprintType)
 struct FCL9PropSet
@@ -180,6 +204,10 @@ struct FCL9PropSet
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
 	TArray<FCL9PropPlacement> Props;
+
+	/** 이 세트가 뽑히면 호스트가 판 시작에 세우는 고정물 (2026-10-12 — 부엌 모듈의 조리대) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Prop")
+	TArray<FCL9FixturePlacement> Fixtures;
 };
 
 /**

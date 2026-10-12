@@ -47,6 +47,20 @@ void UCL9ModuleDef::Validate(TArray<FString>& OutErrors) const
 				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Props[%d] has a side rule but no Side to check."), SetIndex, PropIndex));
 			}
 		}
+		// 고정물도 같은 발자국 검사 — 클래스가 비면 호스트가 세울 것이 없다
+		for (int32 FixtureIndex = 0; FixtureIndex < PropSets[SetIndex].Fixtures.Num(); ++FixtureIndex)
+		{
+			const FCL9FixturePlacement& Fixture = PropSets[SetIndex].Fixtures[FixtureIndex];
+			if (Fixture.ActorClass.IsNull())
+			{
+				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Fixtures[%d] has no ActorClass."), SetIndex, FixtureIndex));
+			}
+			if (Fixture.Local.X < 0.f || Fixture.Local.Y < 0.f || Fixture.Local.X > Size.X * AssumedCell || Fixture.Local.Y > Size.Y * AssumedCell)
+			{
+				OutErrors.Add(FString::Printf(TEXT("PropSets[%d].Fixtures[%d] sits at (%.0f, %.0f), outside the %dx%d-cell footprint."),
+					SetIndex, FixtureIndex, Fixture.Local.X, Fixture.Local.Y, Size.X, Size.Y));
+			}
+		}
 	}
 }
 
