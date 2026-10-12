@@ -37,6 +37,10 @@ public:
 
 - 새벽마다 1회. 자동 저장뿐 — 수동 저장 없음 (밤은 통째로 치른다 — 추출 게임의 전제).
 - 정산 실패 → 새 판이 자동으로 열린다 — 실패한 판은 덮어쓰기 전에 기록만 남긴다 (아래).
+  - **2026-10-12 정정(7i)**: 정산 미달은 새 판을 열지 않는다 — 코인만 깎고 이어 간다([balance.md](balance.md)).
+- **레벨을 건너는 판(7i, [../goal/loop-7i-company.md](../goal/loop-7i-company.md))**: 회사로 가거나 회사에서 사이트로 갈 때 떠나기 전에 `SaveRun(1)`,
+  도착 레벨의 `StartPlay` 가 `LoadRun(1, 주문 다시 뽑지 않음)` — 일차·코인·기간 수입·받은 주문·장비(패드 옆에 다시 선다)가 건넌다.
+  "이어 간다" 표시는 게임 인스턴스(`SetRunCarry`/`ConsumeRunCarry`)에 있고 한 번만 쓰인다.
 
 ## 슬롯
 
@@ -69,9 +73,34 @@ public:
 - 갱신 시점: 판 실패(정산 미달)로 닫힐 때 + 새벽 저장 때 (현재 일차 > BestDay면).
 - 표시: 새벽/게임오버 화면과 타이틀 (미결 — UI 배치는 ui.md에서).
 
+## 지갑 — 바깥 재화 "이더" (2026-10-12, [../goal/loop-7f-out-game-currency.md](../goal/loop-7f-out-game-currency.md))
+
+판 세이브·기록과 달리 **모든 머신에 하나씩** 있는 개인 파일이다 — 바깥 재화는 플레이어의 것이라 호스트가 바뀌어도 따라가야 한다.
+
+```cpp
+UCLASS()
+class UCL9WalletSave : public USaveGame {   // 파일명 CL9Wallet — PIE 인스턴스 1 이상은 CL9Wallet_PIE<n>
+  UPROPERTY() int32 WalletVersion;
+  UPROPERTY() int32 Ether;                  // 보유 이더(바깥 재화), 0 이상
+};
+```
+
+- `UCL9WalletSubsystem`(GameInstanceSubsystem, `Source/CL9/GameMode/CL9Wallet.*`)이 시작할 때 읽고, 지급마다 더해 저장한다. "이번 판 지급"은 런타임 값이다.
+- **지급 경로**: 판 끝(`EndNight`)에 호스트가 **모든 플레이어에게** `Client_WalletGrant(N)` 을 한 번씩 보낸다 — 살아서 귀가했으면 판 수입 × `WalletIncomeRate`, 아니면 0.
+  각 머신이 자기 파일에 더한다. 새벽 화면 열기 RPC 보다 먼저, 같은 채널이다.
+- 한 PC 에서 PIE 호스트·클라를 같이 돌려도 파일이 섞이지 않게 PIE 인스턴스 1 이상은 이름에 번호가 붙는다. 같은 PC 의 독립 실행 창 둘은 같은 파일을 쓴다(시험 한계).
+- 로컬 파일이라 고칠 수 있다 — 치장 전용이라 받아들인다. Steam 클라우드·인벤토리는 범위 밖.
+- 치트 `cl9.wallet [delta]`(로컬).
+
+### 스킨 (2026-10-12, 7k — [../goal/loop-7k-skins.md](../goal/loop-7k-skins.md))
+
+- 지갑 파일 버전 2 — `OwnedSkins`(산 스킨, 기본 스킨은 적지 않는다)·`EquippedSkin`(None = 기본)을 더했다. 1 짜리 파일은 스킨 칸이 빈 채로 읽힌다.
+- `UCL9WalletSubsystem::BuySkin`(이더가 모자라면 거절, 사면 깎고 저장)·`EquipSkin`(저장)·`OwnsSkin`·`GetEquippedSkin`. 입은 스킨은 빙의 때 호스트에 알린다(`ACL9PlayerController::RequestSkin`).
+- 호스트는 보유를 확인하지 않는다(각자의 파일) — 치장 전용이라 받아들인다(이더 파일과 같다).
+
 ## 네트워크
 
-- 저장·로드는 **호스트 전용**이다. 클라는 세이브 파일을 갖지 않는다 — 접속하면 호스트의
+- 저장·로드는 **호스트 전용**이다(판 세이브·기록 — 지갑은 위 절대로 각자). 클라는 세이브 파일을 갖지 않는다 — 접속하면 호스트의
   판 상태가 GameState로 복제될 뿐이다.
 - 클라 화면의 [판] 정보(일차·자금)는 GameState에서 읽는다 — 세이브 파일 동기화 없음.
 

@@ -17,7 +17,8 @@ class UCL9WalletSave : public USaveGame
 	GENERATED_BODY()
 
 public:
-	static constexpr int32 CurrentVersion = 1;
+	/** 2 = 스킨(7k) — 1 짜리 파일은 스킨 칸이 비어 있는 채로 읽힌다 */
+	static constexpr int32 CurrentVersion = 2;
 
 	UPROPERTY()
 	int32 WalletVersion = CurrentVersion;
@@ -25,6 +26,14 @@ public:
 	/** 보유 이더(바깥 재화) — 0 아래로 내려가지 않는다 */
 	UPROPERTY()
 	int32 Ether = 0;
+
+	/** 산 스킨(기본 스킨은 적지 않는다, docs/goal/loop-7k-skins.md) */
+	UPROPERTY()
+	TArray<FName> OwnedSkins;
+
+	/** 입은 스킨 — None 이면 기본 */
+	UPROPERTY()
+	FName EquippedSkin;
 };
 
 /**
@@ -47,6 +56,20 @@ public:
 
 	int32 GetEther() const { return Ether; }
 
+	// -- 스킨 (docs/goal/loop-7k-skins.md) — 이 머신의 것, 호스트는 확인하지 않는다(치장 전용) --
+
+	/** 산 스킨인가(기본 스킨은 행의 bDefault 로 따로 본다) */
+	bool OwnsSkin(FName Alias) const { return OwnedSkins.Contains(Alias); }
+
+	/** 산다 — 이미 있으면 true, 이더가 모자라면 false. 사면 잔액을 깎고 저장한다 */
+	bool BuySkin(FName Alias, int32 Price);
+
+	/** 입는다(산 것이든 기본이든 — 확인은 부르는 쪽) — 저장한다 */
+	void EquipSkin(FName Alias);
+
+	/** 입은 스킨 — None 이면 기본 */
+	FName GetEquippedSkin() const { return EquippedSkin; }
+
 	/** 이번 판 끝에 받은 지급 — 런타임 값(파일에 없다). 아직 받은 적 없으면 0 */
 	int32 GetLastGrant() const { return LastGrant; }
 
@@ -61,4 +84,6 @@ private:
 
 	int32 Ether = 0;
 	int32 LastGrant = 0;
+	TArray<FName> OwnedSkins;
+	FName EquippedSkin;
 };

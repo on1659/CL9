@@ -86,6 +86,12 @@ public:
 		return MonsterDef;
 	}
 
+	/**
+	 * 호스트 전용(처치 기여, docs/goal/loop-7h-kill-contribution.md): 이 몬스터를 마지막으로 깨운 플레이어 — 그 깨움이 `Window` 초 안이고
+	 * 그 사람이 `Victim` 이 아니면 그 사람, 아니면 null. `Window` 가 0 이하면 늘 null(기여 끔)
+	 */
+	ACL9PlayerState* GetContributor(const ACL9PlayerState* Victim, float Window) const;
+
 	UFUNCTION(BlueprintPure, Category="CL9")
 	ECL9MonsterState GetState() const
 	{
@@ -164,14 +170,14 @@ public:
 	 * 개체는 깨고, 대기 중인 개체는 조사하러 간다. ChaseCooldown은 여전히
 	 * 이를 막는 문턱으로 작동한다(경보는 새 경계).
 	 */
-	void ReceivePackAlarm(const FVector& AlarmLocation);
+	void ReceivePackAlarm(const FVector& AlarmLocation, const ACL9Character* Cause = nullptr);
 
 	/**
 	 * 호스트 전용: KillAlarmRadius 안에서 들리는 죽음의 비명 — RageTime 동안의
 	 * 사냥 모드에 들어가며, 이는 ChaseCooldown이 절대 막지 못한다
 	 * (docs/systems/monster.md 경보).
 	 */
-	void ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds);
+	void ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds, const ACL9Character* Cause = nullptr);
 
 	/**
 	 * 호스트 전용: 플레이어(프라이팬)에게 떠밀렸을 때 — PushStun 경직과 함께
@@ -295,8 +301,11 @@ private:
 	 */
 	void HostTickProxNoise(float DeltaSeconds);
 
-	/** 호스트 전용: 시선이 붙잡고 있지 않는 한 WakeTelegraph를 거쳐 Asleep에서 벗어난다 */
-	void TryWake();
+	/**
+	 * 호스트 전용: 시선이 붙잡고 있지 않는 한 WakeTelegraph를 거쳐 Asleep에서 벗어난다. 깨면 깨운 사람을 적어 둔다(7h) — 경보로 깼으면
+	 * 경보의 원인(`PendingWaker`), 아니면 근처에서 걷거나 뛴 `Trigger`. `How` 는 로그용(walk·run·alarm)
+	 */
+	void TryWake(const ACL9Character* Trigger, const TCHAR* How);
 
 	/** WakeSightRadius 안의 플레이어가 이 몬스터를 시야가 트인 채로 조준하고 있는 동안 true */
 	bool IsHeldByGaze() const;
@@ -404,6 +413,13 @@ private:
 
 	TWeakObjectPtr<ACL9Character> SensedCharacter;
 	FVector LastSensedLocation = FVector::ZeroVector;
+
+	/** 호스트 전용(7h): 이 몬스터를 마지막으로 깨운 플레이어와 그 월드 시각 — `GetContributor` 가 읽는다 */
+	TWeakObjectPtr<ACL9PlayerState> WakerPlayer;
+	double WakeTime = 0.0;
+
+	/** 호스트 전용(7h): 잠든 동안 받은 경보의 원인 플레이어 — 그 경보로 깨면 `WakerPlayer` 가 된다 */
+	TWeakObjectPtr<ACL9PlayerState> PendingWaker;
 	bool bHadSight = false;
 	float SightGraceRemaining = 0.f;
 
