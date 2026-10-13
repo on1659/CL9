@@ -1,5 +1,20 @@
 # 전체 에셋 제작 목록
 
+게임 전체 모션의 재사용·신규 제작 우선순위는 [motion-plan.md](motion-plan.md)를 본다.
+클립별 상세와 검수 상태는 아래 모델별 정본에서 관리한다.
+
+## 새 외형·독립 제작 후보
+
+2026-10-12 확인. 아래는 기존 런타임 연결 자산과 구분한 사용자 요청 제작이다.
+이 표는 검색용 요약이며, 실제 최신 상태·입력·명령·검수는 연결된 모델별 인계서에서 관리한다.
+기존 행의 완료 수나 게임 데이터 등록 상태에 자동 합산하지 않는다.
+
+| ID | 구성 | 현재 요약 | 현재 제작 정본 |
+|---|---|---|---|
+| chicken_disguise | 봉제 닭 탈 + 내부 괴물 + 탈착 동작 | 2026-10-13: 승인된 외형의 입기·은폐 후 축소·작은 닭/괴물 걸음·벗기 게임 월드 프리뷰 검수. 최신 `animation_locomotion_v1`; GeometryCache/LevelSequence이며 새 SkeletalMesh·AnimBP·AI·멀티 게임 연결은 별도 작업 | [닭 생성·탈착 제작 인계 §21](monster/chicken_disguise-animation-handoff.md#21-원래-괴물과-작은-닭의-걸음-추가--2026-10-13) |
+
+## 기존 런타임 자산·조립 목록
+
 2026-09-11 최초 실측 목록. 같은 날 저녁 `docs/goal/wire-cl9art-assets.md`로 UE 연결을 일괄 진행했다 — `UE 연결` 컬럼 참조. 현재 행과 명시된 기획의 합집합이며, 새로 발견한 실제 자산은 보충한다(2026-09-21: `campfire`·`night_sky` 행 보충, 몬스터 클립 수·농부 클립·아이콘·수레 행을 디스크 실물에 맞춰 현행화).
 원자료: [UE5.8.1 MCP 실제 정의](evidence/initial-live-definitions.json).
 실제 데이터(2026-09-11 조회 당시): Item 12행, Monster 5행, Character 1행, Piece 5행, Module 17행, Site 2행, Equipment 1행. 같은 날 저녁 `pot`·`standing_lamp` 행이 신설돼 Item 은 14행이 됐고, 이후 표는 더 바뀌었다 — 현행 행 수는 에디터에서 확인한다(`.uasset`).

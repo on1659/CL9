@@ -15,6 +15,7 @@
 | [전체 제작 goal](../goal/asset-production-loop.md) | 전체 목록 기반 제작·검수·규격 갱신 반복 |
 | [production-progress.md](production-progress.md) | 장기 제작의 진행 기록과 다음 재개 지점 |
 | [catalog.md](catalog.md) | 전체 제작 목록 — 행마다 모델·리그·클립·UE 연결·QA 상태와 원본 경로 |
+| [motion-plan.md](motion-plan.md) | 게임에 필요한 모션 — 기존 재사용·닭 탈 괴물의 게임용 분리·신규 보강 우선순위 |
 | [brief-template.md](brief-template.md) | 개별 에셋 제작 카드 양식 |
 | [monster/README.md](monster/README.md) | 동물 모델·종별 스켈레톤·동작 목록 |
 | [item/README.md](item/README.md) | 운반물·요리 상태·피벗·현재 크기 보정 |
