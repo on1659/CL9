@@ -1,6 +1,6 @@
 {
   "name": "round_henhouse",
-  "about": "양계장 한 판 — 도착 → 전원 → 계란 줍기 → 조리 → 익은 계란 → 트럭 → 레버 두 번(귀가). 스테이지에는 납품 카운터가 없어 들고 돌아온다(2026-10-13 확인).",
+  "about": "양계장 한 판 — 도착 → 전원 → 계란 줍기 → 조리 → 익은 계란 → 트럭 창구 납품 → 트럭 → 레버 두 번(귀가). 트럭 옆 창구에 납품(docs/goal/truck-counter.md).",
   "level": "/Game/Maps/Lvl_Henhouse",
   "players": 1,
   "rules": {},
@@ -147,7 +147,45 @@
       "kind": "F",
       "speed": 3,
       "lines": [
-        "트럭으로 돌아간다 — 스테이지에는 납품 카운터가 없어 들고 간다"
+        "트럭 창구로 간다 — 창구는 트럭 옆면 바깥에 있다"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "class": "CL9Counter"
+      },
+      "within": 90,
+      "run": true,
+      "timeout": 60
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "창구에 E — 익은 계란이 계란후라이 주문을 채우고 코인이 들어온다"
+      ]
+    },
+    {
+      "do": "face",
+      "to": {
+        "last": true
+      }
+    },
+    {
+      "do": "press",
+      "expect": "Counter"
+    },
+    {
+      "do": "wait",
+      "seconds": 3.0
+    },
+    {
+      "do": "mark",
+      "kind": "F",
+      "speed": 3,
+      "lines": [
+        "트럭 짐칸으로 들어간다 — 판 끝에 짐칸 밖이면 남겨진다"
       ]
     },
     {

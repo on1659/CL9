@@ -167,7 +167,19 @@ def act_walk(s, to, within=60.0, run=False, timeout=40.0, pitch=-8.0):
     a, goal = resolve(to)
     pts, partial, length = path_info(goal)
     if not pts:
-        raise RuntimeError('no nav path to %s (navmesh missing here?)' % to)
+        # 목표가 내비메시 밖(트럭 옆 마당 등) — 목표에서 가장 가까운 내비 지점까지 경로로 가고 거기서 곧장 걷는다.
+        # 그 지점도 없으면 곧장 걷고, 벽에 막히면 아래 막힘 검사가 실패로 알린다
+        near = None
+        try:
+            near = NS.project_point_to_navigation(W, goal, None, None, unreal.Vector(900.0, 900.0, 400.0))
+        except Exception:
+            near = None
+        if isinstance(near, unreal.Vector):
+            pts = (path_info(near)[0] or []) + [goal]
+            say('goal off navmesh — path to nearest nav point, then straight')
+        else:
+            pts = [goal]
+            say('no nav path to %s — walking straight' % to)
     unreal.CL9FeelDebug.set_run_held(PAWN, bool(run))
     t = 0.0
     check_t, check_loc, replans = 0.0, PAWN.get_actor_location(), 0

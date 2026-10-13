@@ -91,6 +91,7 @@ struct FTransaction {
 - **가격식**: `ACL9GameMode::ComputeSellPrice(굴림값)` = 굴림값 × `UCL9SiteDef::ValueRate` ×
   `UCL9ProgressionDef::ValueAt(일자)`. 세 항이 전부 표에 있다 — 가격을 바꾸려면 C++이 아니라 표를 고친다.
 - **판매 경로**: 납품 창구(`ACL9Counter`)에 남은 보관분을 빈손 상호작용으로 판다
+  - 창구 자리(2026-10-13): 판 레벨은 트럭 옆면 바깥의 트럭 창구, 시험 레벨 Lvl_Flat 은 손으로 놓은 창구([../goal/truck-counter.md](../goal/truck-counter.md)).
   (`ACL9GameMode::SellStockAt`). 주문 보상은 이 식을 타지 않는다 — 수락 때 굴린 확정값 그대로다.
 - **구매**: 4f에서 들어왔다 — 장비 `Price`를 `Deduct`로 치른다([shop.md](shop.md) 구현 상태).
 - **정산 판정**: `PeriodIncome`을 읽는 쪽이 생겼다 — `ACL9GameMode::Settle()`이 정산일에

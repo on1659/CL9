@@ -2,7 +2,7 @@
 name: cl9film
 description: |
   CL9 게임플레이 영상 촬영 — 기능을 만든 뒤 봇이 PIE 에서 실제로 플레이하는 장면을 녹화해 자막을 얹은 MP4 로 보낸다.
-  한 판 흐름(도착 → 전원 → 재료 → 조리 → 귀가) 위에 이번 기능 장면을 끼워 넣는다. 정본 도구: Tools/Film/.
+  한 판 흐름(도착 → 전원 → 재료 → 조리 → 납품 → 귀가) 위에 이번 기능 장면을 끼워 넣는다. 정본 도구: Tools/Film/.
   Triggers: /cl9film, 게임플레이 영상, 플레이 영상 찍어, 영상 찍어서 올려줘(기능 시연)
 argument-hint: "[<보여줄 기능 설명> | round]"
 user-invocable: true
@@ -58,7 +58,7 @@ user-invocable: true
 
 대상 `to`: `{"class": "CL9Kitchen"}`(클래스 — 걸어서 닿는 가장 가까운 것) · `{"item": "egg", "sub": ""}`(바닥의 날것, `"cooked"` 면 익은 것)
 · `{"kitchen_item": true}`(조리대 위의 것) · `{"truck_inside": true}`(트럭 짐칸 가운데) · `{"loc": [x, y, z]}` · `{"last": true}`(직전 대상).
-고정물 클래스: `CL9PowerSwitch` `CL9Kitchen` `CL9DepartLever` `CL9Truck` `CL9Jar` `CL9DestinationBoard` `CL9SkinCloset` `CL9Counter`(Lvl_Flat 에만).
+고정물 클래스: `CL9PowerSwitch` `CL9Kitchen` `CL9DepartLever` `CL9Truck` `CL9Jar` `CL9DestinationBoard` `CL9SkinCloset` `CL9Counter`(판 레벨은 트럭 창구).
 
 ## 자막
 
@@ -70,7 +70,8 @@ user-invocable: true
 ## 알려진 함정 (2026-10-13 실측)
 
 - **양계장(Lvl_Henhouse)은 저장된 내비 범위가 건물보다 작다** — 조리대까지 경로가 없어 봇이 벽에 막힌다. 한 판 템플릿은 **대농장**.
-- **스테이지 레벨에는 납품 카운터가 없다**(`BP_CL9Counter` 는 Lvl_Flat 에만) — 요리를 들고 귀가하는 데서 끝난다. 납품 장면은 Lvl_Flat.
+- 납품은 **트럭 창구**(트럭 옆면 바깥의 `CL9Counter`, 2026-10-13 — `docs/goal/truck-counter.md`). 창구는 마당 내비메시 바깥이라
+  `walk` 가 목표에서 가장 가까운 내비 지점까지 경로로 간 뒤 곧장 걷는다(로그 `goal off navmesh`).
 - 대농장·돼지 농장은 사이트 행이 판 길이를 정해 `NightLength` 셀이 안 먹는다 — 판을 끝내려면 레버(트럭 안, 5초 안에 두 번) 또는 `cl9.night`.
 - 레버는 짐칸 가운데에서 손이 안 닿는다 — `walk` 로 레버 앞(within 90)까지 간 뒤 `face`·`press`.
 - 봇은 호스트만 움직인다. 2인 영상의 참가자는 서 있거나 `teleport who=client` 로만 옮긴다.
@@ -87,4 +88,4 @@ user-invocable: true
 | `Tools/Film/rec.py` · `grab.py` | PIE 창 실시간 녹화 · 한 장 |
 | `Tools/Film/compose.py` · `encode.py` · `blender_encode.py` | 자막 합성 · MP4(ffmpeg, 없으면 Blender 5.2) |
 | `Tools/Film/mcp.py` | 에디터 MCP 호출(StartPIE·StopPIE) |
-| `Tools/Film/shots/round_farm.json` | 한 판 템플릿(대농장). `round_henhouse.json` 은 내비 문제로 조리대에서 막힌다 |
+| `Tools/Film/shots/round_farm.json` | 한 판 템플릿(대농장) — 전원 → 계란 → 조리 → 트럭 창구 납품 → 레버. `round_henhouse.json` 은 내비 문제로 조리대에서 막힌다 |
