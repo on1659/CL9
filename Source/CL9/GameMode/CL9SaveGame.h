@@ -28,7 +28,7 @@ public:
 	}
 
 	/** 필드를 더할 때마다 올린다 — 낮은 버전은 기본값으로 채워 읽는다 */
-	static constexpr int32 CurrentVersion = 2;
+	static constexpr int32 CurrentVersion = 3;
 
 	UPROPERTY()
 	int32 SaveVersion = CurrentVersion;
@@ -53,6 +53,13 @@ public:
 	 */
 	UPROPERTY()
 	TArray<FName> OwnedEquipment;
+
+	/**
+	 * 목적지별 이번 판 최고 별 (docs/goal/loop-7l-stage-stars.md) — 판과 함께 레벨을 건너고 새 판에서 비워진다.
+	 * 버전 2 이하 세이브에는 없어 비어 있다(첫 목적지만 열린 판으로 읽힌다)
+	 */
+	UPROPERTY()
+	TArray<FCL9SiteStars> StageStars;
 };
 
 /**

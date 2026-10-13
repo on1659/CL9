@@ -12,7 +12,7 @@ class UCL9SaveGame : public USaveGame {   // Source/CL9/GameMode/CL9SaveGame.h
   GENERATED_BODY()
 public:
   static FString SlotName(int32 Slot);      // "CL9Save_<Slot>" — 지금은 1번만 쓰지만 슬롯 번호를 받는다
-  static constexpr int32 CurrentVersion = 2;// 필드를 더할 때마다 올린다 — 낮은 버전은 기본값으로 채워 읽는다
+  static constexpr int32 CurrentVersion = 3;// 필드를 더할 때마다 올린다 — 낮은 버전은 기본값으로 채워 읽는다
   UPROPERTY() int32 SaveVersion = CurrentVersion;
 
   UPROPERTY() int32 CurrentDay;             // 현재 일차
@@ -22,6 +22,8 @@ public:
   UPROPERTY() TArray<FName> OwnedEquipment; // 보유 장비 (Alias — 실물은 로드 시 트럭 옆에 재스폰, 같은 것이 둘이면 항목 둘).
                                             // 보존 판정: 새벽에 트럭 곁에 있던 실물만 남는다 — "두고 오면 잃는다"의
                                             // 경계는 트럭 존이다. 버전 1 세이브에는 없어 비어 있다
+  UPROPERTY() TArray<FCL9SiteStars> StageStars; // 목적지별 이번 판 최고 별(7l — [../goal/loop-7l-stage-stars.md](../goal/loop-7l-stage-stars.md)). 항목이 있으면 그 목적지는 열려 있다.
+                                            // 판과 함께 레벨을 건너고 새 판에서 비워진다. 버전 2 이하에는 없어 비어 있다
 };
 ```
 

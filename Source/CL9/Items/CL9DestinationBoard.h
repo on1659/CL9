@@ -11,6 +11,7 @@
  * 목적지 판 — 회사 레벨에서 다음에 갈 사이트를 고르는 자리다(docs/goal/loop-7i-company.md). 호스트가 누를 때마다
  * 방을 만들 수 있는 사이트(`UCL9GameInstance::GetHostableSites`)를 표 순서로 하나씩 넘기고, 고른 것은 복제되어 모두의 프롬프트에 뜬다.
  * 회사의 출발 레버(`ACL9GameMode::RequestDepart`)가 이 값을 읽어 그 사이트의 레벨로 간다. 처음 값은 트럭이 떠나온 사이트다.
+ * 스테이지 별(docs/goal/loop-7l-stage-stars.md)이 켜져 있으면 열린 사이트만 넘기고, 프롬프트에 그 사이트의 이번 판 별을 붙인다.
  * 메시는 배치된 인스턴스가 정한다(레벨 경로·메시 경로는 C++ 에 없다).
  */
 UCLASS()
@@ -42,8 +43,12 @@ protected:
 	/** 고른 사이트의 표시 이름(행의 DisplayName, 행이 없으면 alias) */
 	FText GetDestinationName() const;
 
-	/** 프롬프트는 매 틱 읽힌다 — 목적지·호스트 여부가 바뀔 때만 다시 서식한다(performance.md UI) */
+	/** 프롬프트는 매 틱 읽힌다 — 목적지·호스트 여부·그 목적지의 별이 바뀔 때만 다시 서식한다(performance.md UI) */
 	mutable FName CachedPromptFor;
 	mutable bool bCachedPromptHost = false;
+	mutable int32 CachedPromptStars = -2;
 	mutable FText CachedPrompt;
+
+	/** 고를 수 있는 사이트 — 스테이지 별이 켜져 있으면(7l) 열린 사이트만, 아니면 방을 만들 수 있는 사이트 전부(표 순서) */
+	TArray<FName> GetChoices() const;
 };
