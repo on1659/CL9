@@ -81,6 +81,21 @@ public:
 	/** 사이트 로컬 XY 좌표를 월드 좌표로 변환한다 — 액터 변환(구역의 회전 포함)을 거친다 */
 	FVector SiteToWorld(const FVector2D& Local) const;
 
+	/** 호스트가 판 시작에 세울 고정물 하나 — 클래스, 월드 변환, 그 모듈(로그용) */
+	struct FFixtureSpawn
+	{
+		TSoftClassPtr<AActor> ActorClass;
+		FTransform Transform;
+		int32 Module = INDEX_NONE;
+		FName ModuleAlias;
+	};
+
+	/**
+	 * 배치된 모듈마다 뽑힌 소품 세트의 고정물(`FCL9PropSet::Fixtures`)을 월드 변환으로 돌려준다 (docs/goal/loop-7c-kitchen-in-building.md).
+	 * 세트는 소품을 그릴 때와 **같은 함수**로 고른다 — 소품과 고정물이 서로 다른 세트를 보는 일이 없다. 판이 없으면 비어 있다
+	 */
+	void GetFixtureSpawns(TArray<FFixtureSpawn>& OutSpawns) const;
+
 private:
 	void Build(const UCL9SiteDef& Site, const UCL9DefRegistry& Registry, uint32 Seed, int32 Day);
 	void ClearBuilt();

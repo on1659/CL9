@@ -134,6 +134,19 @@ OnRep에서 각 머신이 `ACL9SiteMap::Rebuild(…, Seed, CurrentDay)`. 시드�
 목록의 앞쪽 60%에서, 재료는 전체에서 고른다. 항아리는 Jar 용도가 켜진 모듈마다 하나다.
 사이트에 **깊이 구역**(`Zones`)이 있으면 구역마다 `PointsInDepthBand()`로 자기 띠의 지점만 골라 놓는다
 (2026-10-03 — [../plan/data/site.md](../plan/data/site.md) 구역).
+**마당 무스폰 (2026-10-12, 7b — [../goal/loop-7b-yard-no-spawn.md](../goal/loop-7b-yard-no-spawn.md))**: 실외 모듈은 `yard_gate`(0x0)·`yard_open`(**0x8 = Patrol 만**,
+옛 0xB) — 마당 칸은 몬스터·재료 지점을 내지 않는다. 코드 변경 없이 모듈 표 한 칸이다(이 규칙의 주인은 표다). Patrol 은 남겨서 마당 지점이
+레이아웃에 남는다 — 깊이의 분모(판 전체 최대 홉)가 바뀌지 않아 구역 띠가 그대로다. 검증: 판에 나온 몬스터·아이템 아래로 쏜 바닥이
+`SM_Henhouse_YardGround_*` 인 것이 대농장·돼지 농장·양계장 여러 판에서 아이템 0(옛 값 0xB 로는 한 판에 2개) — 마당 위 몬스터는 배회(WANDER)로 걸어 들어간 것뿐이다.
+
+**고정물 — 호스트가 세우는 복제 액터 (2026-10-12, 7c — [../goal/loop-7c-kitchen-in-building.md](../goal/loop-7c-kitchen-in-building.md))**: 소품 세트(`FCL9PropSet`)에
+`Fixtures`(`FCL9FixturePlacement` — `ActorClass` 소프트 클래스·회전 전 모듈 로컬 `Local`·`Yaw`)가 있다. 소품은 모든 머신이 시드로 각자 그리는 메시라 상태를 못 가지므로,
+상태가 있는 시설(조리대)은 여기에 둔다. `ACL9SiteMap::GetFixtureSpawns()` 가 모듈마다 **소품과 같은 함수(`ChoosePropSet`, 자리 좌표 해시)로 뽑은 세트**의 고정물을
+월드 변환으로 돌려주고, 호스트(`ACL9GameMode::SpawnNightPopulation`)가 맵마다 **재료·몬스터보다 먼저** 세운다(그 둘은 겹치면 비켜 서는 스폰이라 조리대 속에 박히지 않는다).
+세운 것은 `NightSpawned` 에 들어가 밤 개체와 같이 치워진다. 로그 `Night N: K fixture(s) placed — <클래스> in module <i> (<별칭>) at <위치> yaw <요>`.
+지금 쓰는 곳은 `kitchen` 모듈의 두 세트뿐이다(작업대를 빼고 `BP_CL9Kitchen` — 세트 0 (250, 94) 요 90·남쪽 벽, 세트 1 (750, 1406) 요 −90·북쪽 벽).
+**인트로 카메라**는 목적지 모듈에 항아리가 없고 고정물이 있으면 그 고정물(원점 위 130 cm)을 본다 — 같은 계산이라 조리대 액터가 아직 복제되지 않은 클라도 같은 곳을 본다
+(로그 `look-at … (fixture)`, `ACL9PlayerController` 인트로 경로).
 
 **치수는 여전히 실측이다** — 벽 두께는 `barn` 조각의 얇은 축, 문 폭은 `door` 조각의 넓은 축에서
 읽는다 ([asset-swap.md](asset-swap.md)). 표에 옮겨 적은 숫자는 팩이 바뀌면 조용히 틀린 값이 된다.

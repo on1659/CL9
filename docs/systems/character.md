@@ -468,14 +468,23 @@ ABP가 대기 자세(`AN_Farmer_SwingWindup` 루프)를, `GetSwingElapsed()`로 
   `(Prev, Now]`와의 겹침 판정(2026-09-15 낮은 프레임률 안전)도 그대로. 매 틱 그 순간의 컨트롤 회전으로 선분을 다시 잡으므로
   구간 동안 시선을 돌리면 따라간다. 몬스터당 한 휘두르기 1회(`SwingHitMonsters`).
 - **가림**: 스윕에 걸린 살아 있는 몬스터마다 원점 → 몬스터 구 **중심** `ECC_Visibility` 선 트레이스(`ACL9Monster::TraceWorld`).
-  세상 지형이 먼저 막으면 제외. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 맞지도 가리지도 않는다). 열 없음, 항상 켜짐.
+  세상 지형이 먼저 막으면 제외. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 가리지 않는다). 열 없음, 항상 켜짐.
+- **사람도 맞는다 — 팀킬 (2026-10-12, 7d — [../goal/loop-7d-team-kill.md](../goal/loop-7d-team-kill.md), 2026-10-11 사용자 결정 "몬스터 타격 도구가 팀도 때린다")**:
+  위 몬스터 스윕은 그대로 두고, 같은 틱에 **같은 구로 `ECC_Pawn` 채널을 한 번 더 겹침 스윕**해 나 아닌 살아 있는 `ACL9Character` 를 고른다.
+  규칙은 몬스터와 같다 — 한 휘두르기에 한 사람 한 번(`SwingHitPlayers`), 원점 → 그 사람 위치 `TraceWorld` 가림(막히면 `occluded`), 첫 명중이면 카메라 킥·히트스톱,
+  `cl9.swinglog` 의 `tested`·`occluded` 에 함께 센다. 피해는 **든 아이템의 `HitDamage`**(프라이팬 2·고기 1, 새 칸 없음)를 사람이 받는 단일 문
+  `OnDamage(HitDamage, 공격자, HitKnockback)` 으로 넣는다 — 넘어짐 무적·인트로 무적·죽음의 흘림·데스캠·피격 사건(맞은 사람 카메라가 공격자를 본다)이 다 그대로다.
+  HP 3 이라 프라이팬은 한 대에 넘어뜨리고(3 → 1) 일어난 뒤 한 대에 죽인다. 넘어진 동안의 타격은 무시된다(맞힌 쪽 킥은 난다).
+  로그 동사는 사람이 때리면 `struck by`(몬스터는 `caught by`).
 - **표면음**: 같은 틱, 원점 → `Origin + Dir·SwingHitReach` **선** 트레이스(구가 아니다 — 손 높이에서 아래를 보면 구는 바닥에
   먼저 닿는다). 세상 지형에 막히고 그보다 가까운 몬스터 명중이 이번 휘두르기에 없으면 휘두르기당 한 번
   `SwingSurfaceHitServerTime`(Replicated, **조건 없음**)을 찍는다. 모든 머신이 `UpdateHitSounds`의 틱 비교로 `HitSurface` 행을
   **폰 자리**에서 튼다(충돌점은 복제하지 않는다). 카메라 킥·팔 히트스톱·소음 사건은 없다.
 - 규칙 열: `SwingHitReach`(cm, 헤더 0)·`SwingHitRadius`(cm, 헤더 0) — 둘 다 **헤더 0 = 미설정 = 로드 오류**, 옛 경로 폴백 없음.
   `Validate`: 유한·> 0·`Reach >= Radius`. 값은 [../plan/data/rules.md](../plan/data/rules.md).
-- 휘두르기당 트레이스 수 = 스윕 1 + 걸린 몬스터 수 + 표면 선 1 ([performance.md](performance.md)).
+- 휘두르기당 트레이스 수 = 스윕 1 + 걸린 몬스터 수 + 표면 선 1 ([performance.md](performance.md)). 2026-10-12 팀킬부터 틱마다 Pawn 스윕 1 + 걸린 사람 수가 더해진다.
+- **사망 원인 — `ACL9PlayerState::KilledByPlayer`** (호스트 전용, 복제 없음, 2026-10-12 7d): 죽는 타격(`HostApplyDamage` 에서 HP 0)의 출처가 플레이어 캐릭터면 그 사람의
+  PlayerState, 몬스터·남겨짐·치트면 null. 로그 `'<이름>' was killed by player '<이름>'.` `HostRevive` 가 지운다. 임포스터의 "직접 처치 = 실패" 판정(7g)이 읽는다.
 - 권한 전신 메시의 `AlwaysTickPoseAndRefreshBones`(`BeginPlay`)는 남는다 — 판정이 아니라 놓기(`Server_Drop`이 손 소켓에 붙은
   `HeldItem->GetActorLocation()`을 읽는다, [inventory.md](inventory.md) 놓기)가 쓴다.
 

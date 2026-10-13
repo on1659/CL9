@@ -13,6 +13,7 @@ class ACL9Item;
 class ACL9Jar;
 class ACL9Monster;
 class ACL9PlayerController;
+class ACL9PlayerState;
 class UCL9EquipmentDef;
 class UCL9ProgressionDef;
 class UCL9RulesDef;
@@ -149,12 +150,31 @@ public:
 
 	/**
 	 * 호스트 전용, 로비: 슬롯의 판을 불러온다 — 날짜·자금·진행 중 주문을 되돌리고 그 일차의
-	 * 주문 제시를 다시 뽑는다. 로비 [이어하기] UI가 생기기 전까지는 `cl9.load` 전용이다.
+	 * 주문 제시를 다시 뽑는다(`bOfferOrders`). 레벨을 건너 이어 온 판(7i)은 떠나기 전 로비에서 이미 그날 주문을 받았으므로 다시 뽑지 않는다.
+	 * 로비 [이어하기] UI가 생기기 전까지는 `cl9.load` 와 레벨 이동 전용이다.
 	 */
-	bool LoadRun(int32 Slot = 1);
+	bool LoadRun(int32 Slot = 1, bool bOfferOrders = true);
+
+	/** 회사 레벨(`CL9Rules.CompanyLevel`)이 정해져 있나 — 없으면 정산은 옛대로 로비에서 한다 (docs/goal/loop-7i-company.md) */
+	bool HasCompany() const;
+
+	/** 지금 레벨이 회사인가 */
+	bool IsCompanyLevel() const;
+
+	/** 회사에 갈 때인가 — 회사가 있고, 여기가 회사가 아니고, 로비이고, 오늘이 정산일이다. 출발 레버가 판 대신 회사로 간다 */
+	bool IsCompanyDue() const;
 
 	/** 다음 밤의 맵 시드를 고정한다(cl9.seed) — 0이면 다시 무작위로 굴린다 */
 	void SetForcedMapSeed(uint32 Seed) { ForcedMapSeed = Seed; }
+
+	/**
+	 * `cl9.imposter` (docs/goal/loop-7g-imposter.md): 플레이어 목록의 `Index` 번째를 임포스터로 — 판 중이면 지금 바꾸고, 로비면 다음 판에 쓴다.
+	 * -1 이면 판 중엔 임포스터를 거두고, 로비에선 다음 판을 "임포스터 없음"으로 정한다. 지금 상태를 로그로 남긴다
+	 */
+	void CheatSetImposter(int32 Index);
+
+	/** `cl9.imposter` 인자 없이: 지금 임포스터와 다음 판 지정을 로그로 남긴다 */
+	void LogImposter() const;
 
 protected:
 	virtual void StartPlay() override;
@@ -190,6 +210,15 @@ protected:
 	void SpawnPendingMonsters();
 
 	/**
+	 * 호스트 전용, 판 시작 스폰 직후 (docs/goal/loop-7e-mid-round-spawn.md): 판 중간 스폰 타이머를 건다 — 생성된 맵이 있고
+	 * `CL9Rules.MidSpawnInterval` > 0 이고 총량(판 시작 큐 수 × `MidSpawnCapRatio`, 반올림) > 0 일 때만. 종 풀은 사이트 행 + 지어진 맵의 구역 행
+	 */
+	void ArmMidSpawns(const UCL9SiteDef& Site, int32 Day);
+
+	/** 호스트 전용, 타이머 한 번: 종 하나를 비율로 뽑아 모든 산 사람에게 안 보이고 멀리 떨어진 `Monster` 지점 하나에 세운다. 총량이면 타이머를 멈춘다 */
+	void MidSpawnTick();
+
+	/**
 	 * 호스트 전용: 구역 짓기나 내비 빌드가 진행 중이면 다음 프레임에 `StartNight` 를 다시 부르도록 걸고 true.
 	 * 다 끝났으면 false — 기다렸던 경우 그 시간을 로그로 남긴다.
 	 */
@@ -209,6 +238,80 @@ protected:
 
 	/** 최장 생존 일차를 기록 파일에 남긴다 — 판과 수명이 다르므로 슬롯과 무관한 별도 파일이다 */
 	void RecordBestDay(int32 Day);
+
+	/**
+	 * 호스트 전용, `EndNight` 의 남겨짐 판정 뒤 (docs/goal/loop-7a-wipe-penalty.md): 산 사람이 없으면 전멸 패널티 —
+	 * 판의 누적 이더에서 `CL9Rules.WipePenaltyFor` 만큼 깎고(`Deduct`, 기간 수입은 그대로) 결과를 `SetWipePenalty` 로 싣는다.
+	 * 판 중 전멸(`HandlePlayerDeath` → `EndNight`)과 판 끝에 전원이 남겨진 경우가 모두 여기를 지난다. `bWipeEndsRun` 이 켜져 있으면
+	 * 판이 끝나 이 자리까지 오지 않는다
+	 */
+	void ApplyWipePenalty();
+
+	/**
+	 * 호스트 전용, `EndNight` 의 전멸 패널티 뒤 (docs/goal/loop-7f-out-game-currency.md): 이번 판 수입(`PeriodIncome` − 판 시작 값)에 대한
+	 * 귀가 보상(`CL9Rules.WalletIncomeFor`)을 살아 있는 사람에게, 0 을 나머지에게 — 모두에게 `Client_WalletGrant` 한 번씩
+	 */
+	void GrantRoundWallet();
+
+	/** 판이 열린 순간의 `PeriodIncome` — 판 수입 = 판 끝 값 − 이것(7f) */
+	int32 NightIncomeStart = 0;
+
+	/**
+	 * 호스트 전용 (docs/goal/loop-7i-company.md): 판을 저장하고(`SaveRun(1)`) 게임 인스턴스에 "이어 간다"를 표시한 뒤 모두를 `Level` 로 데려간다 —
+	 * 비심리스 `ServerTravel`(상대 이동, Shipping 이 아니면 `?listen`), 클라이언트는 따라와 다시 접속한다. `FromSite` 는 떠나는 사이트(회사의 목적지 판 처음 값)
+	 */
+	bool TravelForRun(const TSoftObjectPtr<UWorld>& Level, FName FromSite, const TCHAR* Why);
+
+	/** 회사에서 다음에 갈 사이트 — 목적지 판의 값, 판이 없으면 떠나온 사이트, 그것도 없으면 표의 첫 사이트 */
+	FName GetCompanyDestination() const;
+
+	/** `TravelForRun` 이 한 번 떠나면 켠다 — 레벨이 바뀌기 전 두 번째 출발을 막는다 */
+	bool bTravelling = false;
+
+	/** 이 레벨의 첫 판은 트럭 도착으로 연다(7j) — StartPlay 가 켜고 실제로 판이 열릴 때(`StartNight` 의 시계 뒤) 한 번 쓴다 */
+	bool bArrivalPending = false;
+
+	/**
+	 * 호스트 전용, `StartNight` 의 스폰 뒤 (docs/goal/loop-7g-imposter.md): 산 사람 수로 `CL9Rules.ImposterChanceFor` 를 굴려 0~1명을
+	 * 임포스터로 정한다(`ACL9PlayerState::HostSetImposter` — 본인 머신에만 복제). `cl9.imposter` 지정이 있으면 그것을 쓰고 지운다
+	 */
+	void AssignImposter();
+
+	/** 지금 임포스터인 플레이어 — 없으면 null. 역할은 PlayerState 의 플래그가 정본이다 */
+	ACL9PlayerState* FindImposter() const;
+
+	/**
+	 * 호스트 전용, `EndNight` 의 남겨짐 판정 **앞** (loop-7g): 이긴다 = 임포스터가 살아서 트럭 안, 다른 사람이 한 명 이상이고 모두 이미 죽었고,
+	 * 그 누구도 임포스터가 직접 죽이지 않았다. 남겨짐은 아직 일어나지 않았으니 트럭 밖에 산 사람이 있으면 진다(2026-10-12 사용자 "남겨짐은 승리로 치지 않는다").
+	 * 결과를 게임 스테이트(새벽 공개)와 `ImposterWinner`·`ImposterKiller`(보상)에 싣고 역할 플래그를 거둔다
+	 */
+	void JudgeImposter();
+
+	/** 이번 판 판정에서 이긴 임포스터 — `GrantRoundWallet` 이 귀가 보상 대신 성공 보상을 준다. 판 시작에 비운다 */
+	TWeakObjectPtr<ACL9PlayerState> ImposterWinner;
+
+	/** 이번 판 판정에서 임포스터를 죽인 사람 — `GrantRoundWallet` 이 처치 보상을 더한다. 판 시작에 비운다 */
+	TWeakObjectPtr<ACL9PlayerState> ImposterKiller;
+
+	/** 이번 판의 임포스터(판정이 역할 플래그를 거둔 뒤에도) — `GrantRoundWallet` 이 유도 보상(7h)을 센다. 판 시작에 비운다 */
+	TWeakObjectPtr<ACL9PlayerState> RoundImposter;
+
+	/**
+	 * 호스트 전용, `EndNight` 의 지갑 지급 앞 (docs/goal/loop-7h-kill-contribution.md): 판 동안 몬스터에게 죽은 사람 중 `InducedByPlayer` 가 있는 사람마다
+	 * 기여 한 건을 모아 게임 스테이트에 싣는다(새벽 화면). 남겨진 사람은 몬스터에게 죽지 않았으니 들어가지 않는다
+	 */
+	void PublishContributions();
+
+	/** `cl9.imposter` 의 다음 판 지정 — 플레이어 목록 번호, -1 = 임포스터 없음, `NoForcedImposter` = 지정 없음(굴린다) */
+	static constexpr int32 NoForcedImposter = -2;
+	int32 ForcedImposterIndex = NoForcedImposter;
+
+	/**
+	 * 호스트 전용, StartPlay(판 레벨): 트럭 옆면 바깥에 납품 창구를 하나 세운다(`CL9Rules.TruckCounterClass` × `TruckCounterOffset` × 트럭,
+	 * docs/goal/truck-counter.md). 트럭이 없거나, 클래스 셀이 비었거나, 레벨에 창구가 이미 있으면(Lvl_Flat) 세우지 않는다
+	 */
+	void SpawnTruckCounter();
+
 
 	/** 호스트 전용: 장비 하나의 실물을 트럭 옆에 내려놓는다 — 구매와 세이브 복원이 함께 쓴다 */
 	ACL9Item* SpawnEquipmentAtTruck(const UCL9EquipmentDef& Equip);
@@ -256,6 +359,13 @@ protected:
 	TArray<FCL9PendingMonsterSpawn> PendingMonsterSpawns;
 	int32 NextPendingMonster = 0;
 	int32 PendingMonstersSpawned = 0;
+
+	/** 판 중간 스폰 (7e) — 타이머, 이번 판의 총량·지금까지 수, 종 풀(별칭·무게), 판 일차(로그) */
+	FTimerHandle MidSpawnHandle;
+	int32 MidSpawnCap = 0;
+	int32 MidSpawnCount = 0;
+	TArray<TPair<FName, float>> MidSpawnPool;
+	int32 MidSpawnDay = 0;
 	double PendingMonstersBegan = 0.0;
 	FTimerHandle MonsterSpawnHandle;
 

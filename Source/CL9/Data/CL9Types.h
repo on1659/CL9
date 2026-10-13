@@ -135,6 +135,22 @@ enum class ECL9NoiseSource : uint8
 };
 
 /**
+ * 목적지 하나의 이번 판 최고 별 (docs/goal/loop-7l-stage-stars.md). 항목이 있으면 이번 판에 그 목적지를 정산한 적이 있다
+ * (별 0 이어도) — 그 목적지는 열려 있다. 판 저장본과 GameState 가 같은 배열을 든다
+ */
+USTRUCT(BlueprintType)
+struct FCL9SiteStars
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	FName Site;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Stars = 0;
+};
+
+/**
  * 마지막 정산의 결과 (docs/systems/balance.md). 신호(`OnSettled`)와 **같은 값을 복제로도** 들고 있는다 —
  * 새벽 화면이 신호보다 늦게 열려도(클라이언트에서는 화면 열기 RPC와 정산 멀티캐스트의 도착 순서가
  * 보장되지 않는다) 보여줄 숫자를 잃지 않게 하려는 것이다. Day가 0이면 아직 정산한 적이 없다.
@@ -155,6 +171,22 @@ struct FCL9SettlementResult
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bPassed = false;
+
+	/** 스테이지 별(7l) — 이번 정산의 별 수. -1 이면 별을 매기지 않았다(`CL9Rules.bStageStars` 꺼짐 또는 목적지를 모름) */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Stars = -1;
+
+	/** 이번 정산이 매긴 목적지(사이트 Alias) */
+	UPROPERTY(BlueprintReadOnly)
+	FName Site;
+
+	/** 이번 정산으로 새로 열린 다음 목적지 — 없으면 None */
+	UPROPERTY(BlueprintReadOnly)
+	FName OpenedSite;
+
+	/** 마지막 목적지를 별을 받고 마쳤다 — 판이 클리어로 끝난다 */
+	UPROPERTY(BlueprintReadOnly)
+	bool bCleared = false;
 };
 
 /**
@@ -175,6 +207,80 @@ enum class ECL9BuyResult : uint8
 	MaxOwned,
 	/** 잔액이 모자란다 — 채무는 없다 */
 	NotEnoughMoney
+};
+
+/**
+ * 전멸 패널티 — 전멸로 끝난 판에서 깎인 이더 (docs/goal/loop-7a-wipe-penalty.md). GameState 가 복제로 들고 있고
+ * 새벽 화면이 한 줄로 보여 준다. 다음 판이 시작될 때 지운다 — 남겨진 사람 목록과 같은 수명이다.
+ */
+USTRUCT(BlueprintType)
+struct FCL9WipePenalty
+{
+	GENERATED_BODY()
+
+	/** 이번 새벽이 전멸로 왔으면 true — 잔액이 0 이라 깎은 것이 없어도 true 다 */
+	UPROPERTY(BlueprintReadOnly)
+	bool bActive = false;
+
+	/** 실제로 빠져나간 이더 */
+	UPROPERTY(BlueprintReadOnly)
+	int32 Taken = 0;
+};
+
+/** 판 끝 임포스터 판정의 결과(docs/goal/loop-7g-imposter.md) */
+UENUM(BlueprintType)
+enum class ECL9ImposterOutcome : uint8
+{
+	/** 이긴 것 말고 전부 — 누가 살아 있다, 직접 때려 죽였다, 몬스터·남겨짐으로 죽었다, 트럭 밖이었다 */
+	Failed,
+	/** 다른 사람이 모두 (직접 때리지 않고, 남겨지지 않고) 죽었고 자기는 트럭 안에서 살아 판이 끝났다 */
+	Won,
+	/** 다른 플레이어에게 맞아 죽었다 — 그 사람이 처치 보상을 받는다 */
+	Killed,
+};
+
+/**
+ * 지난 판의 임포스터 결과 — 호스트가 판 끝에 판정해 게임 스테이트에 싣고, 새벽 화면이 모두에게 공개한다(2026-10-12 사용자).
+ * 판 동안에는 비어 있다 — 정체는 판이 끝나야 복제된다
+ */
+USTRUCT(BlueprintType)
+struct FCL9ImposterResult
+{
+	GENERATED_BODY()
+
+	/** 이번 판에 임포스터가 있었으면 true — 없던 판은 새벽 화면에 줄이 없다 */
+	UPROPERTY(BlueprintReadOnly)
+	bool bActive = false;
+
+	UPROPERTY(BlueprintReadOnly)
+	ECL9ImposterOutcome Outcome = ECL9ImposterOutcome::Failed;
+
+	/** 임포스터였던 사람의 이름 */
+	UPROPERTY(BlueprintReadOnly)
+	FString ImposterName;
+
+	/** `Killed` 일 때 임포스터를 죽인 사람의 이름, 아니면 빈 문자열 — 직접 때렸거나 그를 죽인 몬스터를 깨운 사람(7h) */
+	UPROPERTY(BlueprintReadOnly)
+	FString KillerName;
+};
+
+/** 처치 기여 한 건 — 깨운 몬스터에게 다른 플레이어가 죽었다(docs/goal/loop-7h-kill-contribution.md). 새벽 화면이 모두에게 보인다 */
+USTRUCT(BlueprintType)
+struct FCL9Contribution
+{
+	GENERATED_BODY()
+
+	/** 죽은 사람 */
+	UPROPERTY(BlueprintReadOnly)
+	FString VictimName;
+
+	/** 그 몬스터를 깨운 사람 */
+	UPROPERTY(BlueprintReadOnly)
+	FString WakerName;
+
+	/** 죽인 몬스터의 표시 이름(행의 DisplayName) */
+	UPROPERTY(BlueprintReadOnly)
+	FText MonsterName;
 };
 
 /**

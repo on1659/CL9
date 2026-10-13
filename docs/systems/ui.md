@@ -55,6 +55,10 @@
 | 첫 줍기 힌트 | 프롬프트 위 `HintText` — 설명이 필요한 종류를 **이 PC에서 처음** 손에 들었을 때만 "[LMB] 살짝 누르기 — 바로 휘두르기 / [LMB] 꾹 누르기 — …"가 `HintDuration`(4초) 떴다 사라진다. 종류별 한 번, 본 적 있음은 로컬 설정에 남는다. 구조는 아래 "첫 줍기 힌트" | input.md · settings.md |
 | 창구 재고 | 납품 창구를 바라보는 동안만, 프롬프트 위에 올려둔 것들을 보여준다: 같은 물건끼리 묶어 "익은 계란 ×2 · 340 이더" 한 줄씩 + 합계. 남이 올려도 바뀌므로 이벤트가 아니라 매 프레임 `ACL9Counter::GetStock()`을 읽는다(복제된다). 합계는 올릴 때 굴린 값의 합이고 실제 판매가는 목적지·일자 배율이 곱해진다 | order.md · economy.md |
 | 조리 게이지 | **익히는 중인 조리대 꼭대기 위**에 뜨는 바(`WBP_CookGauge`, UCL9CookGaugeWidget) — 조리대마다 하나씩 HUD의 `CookLayer`에 붙어 `ACL9Kitchen::GetTopLocation()`을 매 프레임 화면에 투영한다. 재료를 바라보지 않아도, 어느 쪽에서 봐도, 누구에게나 보인다(2026-09-10 사용자 — 라벨 안의 바는 그 재료를 자세히 봐야만 보여서 폐기). 열을 받는 동안만 보이고(`ACL9Item::IsOnHeat`), `GetCookProgress()` 0~1로 채우고, 다음 전이가 "탄 것"이면(`IsNextBurnt`) 주황에서 붉은색으로 바뀐다 = 지금 집으라는 신호. 이게 없으면 이름이 바뀌기 전에는 얼마나 익었는지 알 수 없어 태우지 않을 방법이 없다(2026-09-06) | cooking.md |
+| 임포스터 알림 | 판이 시작될 때 임포스터로 뽑힌 사람의 화면에만 장소 알림 자리(`PlaceText`)에 `Hud.ImposterAssigned`가 `ImposterNoticeDuration`(6초) 동안 뜬다 — 역할이 본인 머신에만 복제되므로 다른 사람 화면에는 아무것도 없다(7g, [../goal/loop-7g-imposter.md](../goal/loop-7g-imposter.md)) |
+| 목적지 판 프롬프트 | 회사의 목적지 판 — 호스트 `[E] 목적지: 이름`(`Prompt.Destination`), 다른 사람 `목적지: 이름 — 호스트가 고른다`(`Prompt.DestinationHostOnly`). 이름은 사이트 행의 `DisplayName` (7i). 스테이지 별(7l)이 켜져 있으면 이름 뒤에 이번 판의 별 `양계장 ★★☆`(`Stage.NameStars`, 별 글자 `Stage.StarOn`/`Stage.StarOff`)이 붙고 열린 사이트만 넘긴다 |
+| 오늘의 주문 카드 | 판이 열리면 트럭 도착이 끝난 뒤(레버로 연 판은 바로) 화면 가운데에 "오늘의 주문" + HUD 주문 줄 글이 `OrderCardDuration`(6초) 동안 뜨고 흐려진다(`Hud.OrderCardTitle`·`Hud.OrderCardNone`). WBP 를 바꾸지 않고 `CookLayer` 캔버스에 런타임으로 만든다(테두리 + 글, 글꼴은 주문 줄 것). 판으로 넘어가는 페이즈 변경(또는 판 도중 배선)에서 한 번 (7j, [../goal/loop-7j-round-start.md](../goal/loop-7j-round-start.md)) |
+| 옷장(스킨 상점·마이페이지) | 회사의 옷장(`ACL9SkinCloset`, 프롬프트 `[E] 옷장`)이 누른 사람의 화면에 연다 — UI 행 `SkinShop`, 위젯 `UCL9SkinShopWidget`(WBP 없이 C++ 이 트리를 짓는다). 제목·보유 이더·스킨마다 한 줄(`이름 — N 이더` 사기 / `— 보유` 입기 / `— 입는 중` 누를 수 없음)·모자랄 때 안내·닫기. 누르면 필요하면 사서 입고 호스트에 알린다 (7k, [../goal/loop-7k-skins.md](../goal/loop-7k-skins.md)) |
 | 아이템 라벨 | 아웃라인된 아이템 머리 위에 월드→2D 투영으로 붙는 라벨: 이름 · 개체별 실제 값(`ACL9Item::GetValue`, 호스트가 행 범위에서 굴려 복제) 이더 · 무게/품·손·수레/깨지기 쉬움 (2026-09-05 사용자 요청; 값을 범위가 아니라 개체 값으로 — 2026-09-06 사용자). 아이템(ACL9Item)만, 수레·항아리 같은 상호작용 액터는 프롬프트로 충분. 같은 액터의 행이 바뀌어도(요리) 다시 채운다 | item/common.md · economy.md |
 | 스캔 | **우클릭**: 화면 중앙에서 원형 파동이 퍼지고(`ScanDuration` 0.8s) **그 순간 화면에 실제로 보이는**(그 프레임에 렌더됐고 뷰포트 안에 투영되며 시야 트레이스도 통과하는 — 화면 밖·가려진 것 제외, 2026-09-06 사용자) 반경 `ScanRadius`(15m) 안의 놓인 아이템에 이름·가격 라벨이 파동 도착 순서로 붙는다. **라벨은 켜져 있는 동안만 자기 애니메이션을 재생하고 끝나면 스스로 숨는다** — `WBP_ScanLabel`에 `ShowAnim` 위젯 애니메이션을 만들면 그 길이가 수명이고, 없으면 C++ 페이드(인 `FadeInTime` 0.12s · 유지 · 아웃 `FadeOutTime` 0.5s, 총 `ScanLabelDuration` 3s)가 대신한다 (2026-09-06 사용자). **스캔 한 번 = UI 표 Popup 행 `Scan`의 `WBP_Scan`(UCL9ScanWidget) 하나** — 라벨은 그 위젯의 LabelLayer에 개별로 붙고 개수 제한이 없으며, 파동과 라벨이 다 끝나면 위젯이 스스로 닫히면서 라벨도 함께 사라진다. 다시 우클릭하면 이전 것을 닫고 새로 연다. **보이는 종류는 WBP_Scan의 `ScanKinds`(ECL9ActorKind 목록)로 고른다** — 기본은 아이템만, 몬스터를 더하면 몬스터에도 이름 라벨(값 줄 없음)이 붙는다 (2026-09-06 사용자). 값은 WBP_Scan·WBP_ScanLabel 프로퍼티. 리썰 컴퍼니 스캔 참고 (2026-09-06 사용자 요청) | ui_system.md |
 
@@ -187,6 +191,8 @@ WBP_HUD
 카운트다운은 없다 — 화면은 딜레이가 끝난 뒤 열린다. 메뉴가 이 화면을 대체했다가 닫히면
 관전 화면이 다시 열린다(PauseInput). 흐름 전체는 [character.md](character.md) 죽음 절.
 
+- **클리어 (2026-10-13, 7l — [../goal/loop-7l-stage-stars.md](../goal/loop-7l-stage-stars.md))**: 같은 화면의 다른 얼굴. `FCL9RunOver.bCleared` 면 제목 `클리어`(`GameOver.ClearTitle`), `N일차에 마지막 목적지까지 마쳤습니다`(`GameOver.ClearDay`),
+  목적지마다 `양계장 ★★☆` 한 줄씩(`FCL9RunOver.SiteStars`), 최고 기록, 같은 버튼. 회사에서 클리어가 나면 HUD 는 정산 화면(별)을 먼저 보이고, 그것이 닫힌 뒤에 이 화면을 연다.
 ### 새벽 결과 화면
 
 `WBP_Dawn`(UCL9DawnWidget, UI 표 `Dawn` 행, Screen 레이어). 밤이 끝날 때마다 게임 쪽이 연다
@@ -210,6 +216,21 @@ WBP_HUD
 도착 순서가 보장되지 않는다. 그래서 위젯은 붙는 순간 복제된 `GetLastSettlement()`를 한 번 읽고
 (그날 것이면 그대로 표시), 그 뒤에 오는 신호로 갱신한다 — 순서와 무관하게 같은 숫자가 뜬다.
 
+**전멸 줄 (2026-10-12, [loop-7a-wipe-penalty](../goal/loop-7a-wipe-penalty.md)).** 전멸로 온 새벽이면(`GameState->GetWipePenalty().bActive`)
+결과 줄 끝에 `전멸 — 이더 N 차감`(`Dawn.WipePenalty`, N = 실제로 깎인 이더 — 잔액이 0 이면 0)을 덧붙인다. 남겨진 사람 줄과 같은
+방식(복제 값을 직접 읽고 `OnWipePenaltyChanged`로 갱신)이고, 둘 다 있으면 남겨진 사람 줄 다음이다.
+2026-10-12 이름 바꿈(7f): 판 안 화폐의 화면 단위가 **코인**이라 이 줄도 `전멸 — 코인 N 차감`이다.
+
+**지갑 줄 — 바깥 재화 "이더" (2026-10-12, [loop-7f-out-game-currency](../goal/loop-7f-out-game-currency.md)).** 결과 줄 맨 끝에 늘 한 줄 —
+이 머신의 `UCL9WalletSubsystem` 을 읽어, 이번 판에 받았으면 `이더 +N (보유 M)`(`Dawn.Wallet`), 아니면 `보유 이더 M`(`Dawn.WalletBalance`).
+임포스터가 있던 판이면 누구였고 어떻게 끝났는지 한 줄을 모두에게 보인다(`GameState->GetImposterResult()`, 7g — [../goal/loop-7g-imposter.md](../goal/loop-7g-imposter.md)): `임포스터: 이름 — 성공`(`Dawn.ImposterWon`) / `… — 처치한 사람에게 처치됨`(`Dawn.ImposterKilled`) / `… — 실패`(`Dawn.ImposterFailed`). 임포스터가 없던 판은 줄이 없다.
+처치 기여가 있던 판이면 한 건마다 `거위에게 당한 이름 — 깨운 사람 이름`(`Dawn.Contribution`, `GameState->GetContributions()`, 7h — [../goal/loop-7h-kill-contribution.md](../goal/loop-7h-kill-contribution.md)).
+정산 미달(7i)이면 판정 줄이 `미달 — N일차 목표를 못 채웠다. 판은 이어진다`(`Dawn.Failed` ko 문구 변경, 닫기 `계속`)이고 `목표 미달 — 코인 N 차감`(`Dawn.QuotaPenalty`, `GameState->GetQuotaPenalty()`) 줄이 붙는다.
+정산일 로비(회사가 있을 때)면 `오늘은 정산일 — 출발 레버를 당기면 회사로 간다`(`Dawn.CompanyDue`, 페이즈가 바뀔 때도 다시 짠다). 회사 레벨에서는 HUD 가 도착 뒤 정산 화면을 한 번 연다(`CompanyScreenRow`, 7i — [../goal/loop-7i-company.md](../goal/loop-7i-company.md)).
+스테이지 별(7l — [../goal/loop-7l-stage-stars.md](../goal/loop-7l-stage-stars.md))을 매긴 정산이면 결과 줄 바로 아래에 `이번 목적지: 양계장 ★★☆`(`Dawn.StageStars`)와, 새로 열렸으면 `다음 목적지가 열렸다: 대농장 — 목적지 판에서 고른다`(`Dawn.StageOpened`). 복제된 지난 정산(`FCL9SettlementResult.Stars/Site/OpenedSite`)에서 읽는다.
+`OnWalletChanged` 로 갱신한다. 지급 RPC 가 화면 열기 RPC 보다 먼저 같은 채널로 오므로 화면이 서는 순간 숫자가 맞다.
+**타이틀**도 게임 이름 아래에 `보유 이더 M`(`Title.Wallet`)을 한 줄 띄운다(빌드할 때 한 번 읽는다).
+판 안 화폐를 보여 주는 ko 문구 11개(HUD 돈·주문·창구, 스캔 라벨 값, 상점 돈·가격, 주문 카드, 새벽 기간·정산, 전멸 줄)는 "이더" → **"코인"**(en 열은 번역 때).
 ### 트럭 패널 (구매 화면)
 
 `WBP_Shop`(UCL9ShopWidget, UI 표 `Shop` 행, Screen 레이어). 품목 기준·가격식은

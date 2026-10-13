@@ -12,6 +12,7 @@
 #include "GameMode/CL9PlayerState.h"
 #include "GameMode/CL9SaveGame.h"
 #include "Items/CL9Counter.h"
+#include "Items/CL9DestinationBoard.h"
 #include "Items/CL9Item.h"
 #include "Items/CL9Jar.h"
 #include "Components/CapsuleComponent.h"
@@ -26,6 +27,7 @@
 #include "Monsters/CL9Monster.h"
 #include "NavigationSystem.h"
 #include "TimerManager.h"
+#include "World/CL9SiteLayout.h"
 #include "World/CL9SiteMap.h"
 #include "World/CL9TruckPad.h"
 
@@ -231,7 +233,24 @@ void ACL9GameMode::StartNight()
 		}
 	}
 
+	CL9GameState->SetWipePenalty(FCL9WipePenalty());
+	// 지난 판의 임포스터 공개도 걷는다 — 판 동안에는 정체가 복제되지 않는다(7g)
+	CL9GameState->SetImposterResult(FCL9ImposterResult());
+	CL9GameState->SetContributions(TArray<FCL9Contribution>());
+	CL9GameState->SetQuotaPenalty(FCL9WipePenalty());
+	ImposterWinner.Reset();
+	ImposterKiller.Reset();
+	RoundImposter.Reset();
+	// 판 수입의 기준점(7f) — 판 끝의 기간 수입에서 이 값을 빼면 이번 판에 번 것이다(정산은 판 끝 뒤 EnterLobby 에서야 기간을 되돌린다)
+	NightIncomeStart = CL9GameState->GetPeriodIncome();
 	CL9GameState->StartNightClock(NightLength, DarkBase, DarkMin, bNoBlackout);
+	// 레벨의 첫 판은 트럭이 들어와 서면서 연다(7j) — 판 시계는 도착부터 흐른다. 레버로 연 판은 트럭이 이미 서 있다
+	if (bArrivalPending)
+	{
+		bArrivalPending = false;
+		CL9GameState->SetArrival();
+		UE_LOG(LogCL9, Log, TEXT("Arrival: the truck backs in — %.1fs, the round clock is already running."), Rules->ArrivalTime);
+	}
 	CL9GameState->SetPhase(ECL9NightPhase::Night);
 	GetWorldTimerManager().SetTimer(NightExpiryHandle, this, &ACL9GameMode::EndNight, NightLength);
 
@@ -241,7 +260,10 @@ void ACL9GameMode::StartNight()
 	if (Site != nullptr)
 	{
 		SpawnNightPopulation(*Site, Progression, Day);
+		ArmMidSpawns(*Site, Day);
 	}
+	// 임포스터(7g) — 판이 열린 뒤 산 사람 수로 굴린다. 본인 머신에만 알려진다
+	AssignImposter();
 }
 
 bool ACL9GameMode::DeferNightStartWhileBuilding()
@@ -293,6 +315,15 @@ void ACL9GameMode::EndNight()
 	CL9GameState->SetPhase(ECL9NightPhase::Dawn);
 	UE_LOG(LogCL9, Log, TEXT("Night %d over — dawn."), CL9GameState->GetCurrentDay());
 
+	// 임포스터 판정은 남겨짐보다 먼저다(7g) — 트럭 밖의 산 사람은 아직 "산 사람"이라 임포스터가 이길 수 없다(남겨짐은 승리로 치지 않는다)
+	JudgeImposter();
+	// 판이 끝나지 않은 전멸(bWipeEndsRun 꺼짐) — 다음 판으로 가는 대신 이더를 깎는다. 새벽 화면·저장보다 먼저다(EnterLobby)
+	ApplyWipePenalty();
+	// 처치 기여 목록(7h) — 새벽 화면이 보인다
+	PublishContributions();
+	// 바깥 재화 귀가 보상(7f) — 새벽 화면을 여는 RPC 보다 먼저 보내야 각 머신의 화면이 이번 판 숫자를 안다
+	GrantRoundWallet();
+
 	// DawnLength는 아직 정해지지 않았다(0) — 값이 정해지기 전까지 새벽은 그냥 곧바로 지나간다.
 	const UCL9RulesDef* Rules = GetRules();
 	const float DawnLength = Rules ? Rules->DawnLength : 0.f;
@@ -331,8 +362,12 @@ void ACL9GameMode::EnterLobby()
 	// 새벽 화면을 **정산보다 먼저** 연다 — 화면이 먼저 서 있어야 OnSettled를 놓치지 않는다
 	// (놓쳐도 GameState.GetLastSettlement()로 읽을 수 있게 해 뒀지만, 순서가 맞으면 그럴 일이 없다)
 	OpenDawnScreen();
-	// 새벽 처리: 정산이 먼저다 — 판이 끝나면 새 판 상태를 저장해야 하기 때문이다
-	Settle();
+	// 새벽 처리: 정산이 먼저다 — 판이 끝나면 새 판 상태를 저장해야 하기 때문이다. 회사가 있으면 정산은 회사에서 한다(7i) —
+	// 정산일 로비의 출발 레버가 판 대신 회사로 간다
+	if (!HasCompany())
+	{
+		Settle();
+	}
 	RecordBestDay(CL9GameState->GetCurrentDay());
 	// 새벽마다 한 번 — 밤을 통째로 치른 뒤에 저장한다(docs/systems/save.md 저장 시점)
 	SaveRun();
@@ -651,6 +686,35 @@ void ACL9GameMode::SpawnNightPopulation(const UCL9SiteDef& Site, const UCL9Progr
 			CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Jar, JarPoints);
 		}
 
+		// 고정물(부엌 모듈의 조리대 등)은 뽑힌 소품 세트가 정한 자리에 호스트가 세운다 (docs/goal/loop-7c-kitchen-in-building.md).
+		// 재료·몬스터보다 먼저다 — 그 둘은 겹치면 비켜 서는 스폰이라, 조리대 자리에 떨어질 재료가 조리대 속에 박히지 않는다
+		if (SiteMap != nullptr)
+		{
+			TArray<ACL9SiteMap::FFixtureSpawn> Fixtures;
+			SiteMap->GetFixtureSpawns(Fixtures);
+			TArray<FString> Placed;
+			for (const ACL9SiteMap::FFixtureSpawn& Fixture : Fixtures)
+			{
+				UClass* FixtureClass = Fixture.ActorClass.LoadSynchronous();
+				if (FixtureClass == nullptr)
+				{
+					UE_LOG(LogCL9, Warning, TEXT("Night %d%s: fixture class '%s' of module %d (%s) failed to load — skipped (ModuleTable PropSets.Fixtures)."),
+						Day, *Prefix, *Fixture.ActorClass.ToString(), Fixture.Module, *Fixture.ModuleAlias.ToString());
+					continue;
+				}
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				if (AActor* Spawned = GetWorld()->SpawnActor<AActor>(FixtureClass, Fixture.Transform, SpawnParams))
+				{
+					NightSpawned.Add(Spawned);
+					Placed.Add(FString::Printf(TEXT("%s in module %d (%s) at %s yaw %.0f"), *FixtureClass->GetName(), Fixture.Module,
+						*Fixture.ModuleAlias.ToString(), *Fixture.Transform.GetLocation().ToCompactString(), Fixture.Transform.Rotator().Yaw));
+				}
+			}
+			UE_LOG(LogCL9, Log, TEXT("Night %d%s: %d fixture(s) placed%s%s."), Day, *Prefix, Placed.Num(),
+				Placed.Num() > 0 ? TEXT(" — ") : TEXT(""), *FString::Join(Placed, TEXT("; ")));
+		}
+
 		QueueMonsters(SiteMap, Site.MonsterSpawns, MonsterPoints, 0.6f, *Prefix);
 		SpawnItems(SiteMap, Site.ItemSpawns, LootPoints, *Prefix);
 
@@ -769,6 +833,176 @@ void ACL9GameMode::SpawnPendingMonsters()
 		Day, PendingMonstersSpawned, PendingMonsterSpawns.Num(), PerFrame, GetWorld()->GetRealTimeSeconds() - PendingMonstersBegan);
 	PendingMonsterSpawns.Reset();
 	NextPendingMonster = 0;
+}
+
+void ACL9GameMode::ArmMidSpawns(const UCL9SiteDef& Site, int32 Day)
+{
+	GetWorldTimerManager().ClearTimer(MidSpawnHandle);
+	MidSpawnCount = 0;
+	MidSpawnCap = 0;
+	MidSpawnPool.Reset();
+	MidSpawnDay = Day;
+
+	// 판 중간 스폰은 생성된 맵(건물 안 Monster 지점)에서만 — 평지 레벨은 끈다 (docs/goal/loop-7e-mid-round-spawn.md)
+	const UCL9RulesDef* Rules = GetRules();
+	TArray<ACL9SiteMap*> SiteMaps;
+	ACL9SiteMap::FindAll(GetWorld(), SiteMaps);
+	SiteMaps.RemoveAll([](const ACL9SiteMap* SiteMap) { return SiteMap == nullptr || !SiteMap->GetLayout().bBuilt; });
+	if (!HasAuthority() || Rules == nullptr || Rules->MidSpawnInterval <= 0.f || SiteMaps.Num() == 0)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawns off (%s)."), Day,
+			SiteMaps.Num() == 0 ? TEXT("no generated map") : TEXT("MidSpawnInterval 0"));
+		return;
+	}
+
+	// 종 풀 — 이 판의 시작 스폰 표(사이트 행 + 지어진 맵의 구역 행) 엔트리마다 무게 Min+Max. 같은 종이 여러 엔트리에 있으면 무게가 더해지는 셈이다
+	auto AddEntries = [this](const TArray<FCL9SpawnEntry>& Entries)
+	{
+		for (const FCL9SpawnEntry& Entry : Entries)
+		{
+			const float Weight = static_cast<float>(Entry.MinCount + Entry.MaxCount);
+			if (Weight > 0.f)
+			{
+				MidSpawnPool.Emplace(Entry.Alias, Weight);
+			}
+		}
+	};
+	AddEntries(Site.MonsterSpawns);
+	for (const ACL9SiteMap* SiteMap : SiteMaps)
+	{
+		for (const FCL9SiteZone& Zone : SiteMap->GetZones())
+		{
+			AddEntries(Zone.MonsterSpawns);
+		}
+	}
+
+	// 총량 — 판 시작 큐(일차 배율이 이미 들어간 수)에 비율. 큐는 다음 프레임부터 비워지므로 지금은 아직 다 들어 있다
+	const int32 StartCount = PendingMonsterSpawns.Entries.Num();
+	MidSpawnCap = FMath::RoundToInt(StartCount * Rules->MidSpawnCapRatio);
+	if (MidSpawnCap <= 0 || MidSpawnPool.Num() == 0)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawns off (cap %d from %d at start × %.2f, %d species entries)."),
+			Day, MidSpawnCap, StartCount, Rules->MidSpawnCapRatio, MidSpawnPool.Num());
+		return;
+	}
+	GetWorldTimerManager().SetTimer(MidSpawnHandle, this, &ACL9GameMode::MidSpawnTick, Rules->MidSpawnInterval, true);
+	UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawns armed — every %.0fs, cap %d (%d at start × %.2f), %d species entries."),
+		Day, Rules->MidSpawnInterval, MidSpawnCap, StartCount, Rules->MidSpawnCapRatio, MidSpawnPool.Num());
+}
+
+void ACL9GameMode::MidSpawnTick()
+{
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9RulesDef* Rules = GetRules();
+	if (!HasAuthority() || CL9GameState == nullptr || Rules == nullptr || CL9GameState->GetPhase() != ECL9NightPhase::Night
+		|| MidSpawnCount >= MidSpawnCap || MidSpawnPool.Num() == 0)
+	{
+		GetWorldTimerManager().ClearTimer(MidSpawnHandle);
+		return;
+	}
+
+	// 종 — 풀의 무게 비율로 하나
+	float Total = 0.f;
+	for (const TPair<FName, float>& Entry : MidSpawnPool)
+	{
+		Total += Entry.Value;
+	}
+	float Roll = FMath::FRandRange(0.f, Total);
+	FName Alias = MidSpawnPool.Last().Key;
+	for (const TPair<FName, float>& Entry : MidSpawnPool)
+	{
+		if (Roll < Entry.Value)
+		{
+			Alias = Entry.Key;
+			break;
+		}
+		Roll -= Entry.Value;
+	}
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9MonsterDef* Def = Registry ? Registry->FindMonster(Alias) : nullptr;
+	const float Radius = Def ? Def->Radius : 50.f;
+
+	// 살아 있는 사람들 — 그 누구의 눈에서도 자리가 보이면 안 되고, 누구에게서든 최소 거리 밖이어야 한다
+	TArray<const ACL9Character*> Living;
+	for (const APlayerState* PlayerState : CL9GameState->PlayerArray)
+	{
+		const ACL9Character* Character = PlayerState ? Cast<ACL9Character>(PlayerState->GetPawn()) : nullptr;
+		if (Character != nullptr && !Character->IsDead())
+		{
+			Living.Add(Character);
+		}
+	}
+	if (Living.IsEmpty())
+	{
+		return;
+	}
+
+	// 후보 — 지어진 맵들의 Monster 지점(마당은 7b 로 지점이 없다)을 무작위 순서로, 많아야 64개만 본다(트레이스 수 상한)
+	TArray<TPair<const ACL9SiteMap*, int32>> Candidates;
+	TArray<ACL9SiteMap*> SiteMaps;
+	ACL9SiteMap::FindAll(GetWorld(), SiteMaps);
+	for (const ACL9SiteMap* SiteMap : SiteMaps)
+	{
+		if (SiteMap == nullptr || !SiteMap->GetLayout().bBuilt)
+		{
+			continue;
+		}
+		TArray<int32> Points;
+		CL9SiteLayout::PointsOfPurpose(SiteMap->GetLayout(), ECL9PointPurpose::Monster, Points);
+		for (const int32 Point : Points)
+		{
+			Candidates.Emplace(SiteMap, Point);
+		}
+	}
+	for (int32 Index = Candidates.Num() - 1; Index > 0; --Index)
+	{
+		Candidates.Swap(Index, FMath::RandRange(0, Index));
+	}
+	constexpr int32 MaxChecks = 64;
+	const int32 Checks = FMath::Min(Candidates.Num(), MaxChecks);
+	for (int32 Index = 0; Index < Checks; ++Index)
+	{
+		const ACL9SiteMap* SiteMap = Candidates[Index].Key;
+		const FVector Spot = SiteMap->PointToWorld(SiteMap->GetPoints()[Candidates[Index].Value]) + FVector(0.f, 0.f, 5.f + Radius);
+		float Nearest = TNumericLimits<float>::Max();
+		bool bAccepted = true;
+		for (const ACL9Character* Character : Living)
+		{
+			const float Distance = FVector::Dist(Character->GetActorLocation(), Spot);
+			Nearest = FMath::Min(Nearest, Distance);
+			FHitResult Block;
+			// 지형이 눈과 자리 사이를 막지 않으면 보이는 자리다(바라보는 방향과 무관 — 돌아보면 보이는 곳도 안 된다)
+			if (Distance < Rules->MidSpawnMinDistance
+				|| !ACL9Monster::TraceWorld(GetWorld(), Character, Character->GetPawnViewLocation(), Spot, Block, nullptr))
+			{
+				bAccepted = false;
+				break;
+			}
+		}
+		if (!bAccepted)
+		{
+			continue;
+		}
+
+		ACL9Monster* Monster = SpawnMonster(Alias, NAME_None, FTransform(FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f), Spot));
+		if (!IsValid(Monster))
+		{
+			return;
+		}
+		NightSpawned.Add(Monster);
+		++MidSpawnCount;
+		UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawn %d/%d — %s at %s, nearest player %.0f cm, hidden from %d player(s)."),
+			MidSpawnDay, MidSpawnCount, MidSpawnCap, *Alias.ToString(), *Spot.ToCompactString(), Nearest, Living.Num());
+		if (MidSpawnCount >= MidSpawnCap)
+		{
+			GetWorldTimerManager().ClearTimer(MidSpawnHandle);
+			UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawn cap %d reached — no more this round."), MidSpawnDay, MidSpawnCap);
+		}
+		return;
+	}
+	UE_LOG(LogCL9, Log, TEXT("Night %d: mid-round spawn skipped — no hidden spot %.0f cm from everyone among %d checked (%s)."),
+		MidSpawnDay, Rules->MidSpawnMinDistance, Checks, *Alias.ToString());
 }
 
 bool ACL9GameMode::IsInsideCalmRadius(const FVector& Location) const
@@ -895,16 +1129,473 @@ void ACL9GameMode::StartPlay()
 {
 	Super::StartPlay();
 
+	// 레벨을 건너온 판(7i) — 떠나기 전에 저장한 판을 여기서 되돌린다. 표시는 한 번만 쓴다
+	UCL9GameInstance* CarryInstance = GetGameInstance<UCL9GameInstance>();
+	const bool bResume = CarryInstance != nullptr && CarryInstance->ConsumeRunCarry();
+
+	// 회사(7i) — 판이 열리지 않는 레벨이다: 부지도 판도 없이 트럭·레버만 세우고, 이어 온 판을 되돌린 뒤 이번 기간을 정산한다.
+	// 정산 화면은 각 머신의 HUD 가 복제된 지난 정산에서 파생해 연다 — 클라이언트는 이동 뒤 다시 접속하므로 여기서 RPC 로 열면 놓친다
+	if (IsCompanyLevel())
+	{
+		ActiveSiteAlias = NAME_None;
+		SpawnTruck();
+		SpawnDepartLever();
+		if (bResume)
+		{
+			LoadRun(1, false);
+		}
+		UE_LOG(LogCL9, Log, TEXT("Company: arrived from '%s'%s — settling the period."),
+			CarryInstance != nullptr ? *CarryInstance->GetRunCarryFromSite().ToString() : TEXT("?"), bResume ? TEXT(" with the run") : TEXT(" (no carried run)"));
+		Settle();
+		return;
+	}
+
 	// 오늘 밤의 미로는 첫 로비에서부터 세워진다 — 정차 지점이 밤이 향할 곳을 보여준다
 	ActiveSiteAlias = ResolveSiteAlias();
+	// 이어 온 판은 미로보다 먼저 되돌린다 — 일차가 부지 크기를 정한다(docs/plan/data/module.md 결정 5). 장비는 패드 옆에 선다
+	if (bResume)
+	{
+		LoadRun(1, false);
+	}
 	if (ACL9GameState* CL9GameState = GetGameState<ACL9GameState>())
 	{
 		CL9GameState->SetSiteAndDanger(ActiveSiteAlias, 1.f);
 		CL9GameState->SetSiteMap(RollMapSeed(ForcedMapSeed));
 	}
 
-	// 첫 로비도 offer가 필요하다 — 이후 로비들은 EnterLobby에서 뽑는다
-	OfferOrders();
+	SpawnTruckCounter();
+
+	// 첫 판의 주문 — OfferOrders 가 끝에서 시스템이 고른 주문을 바로 확정한다(K1). 이후 판은 EnterLobby 에서 뽑는다.
+	// 레벨을 건너 이어 온 판(7i)은 떠나기 전 로비에서 이미 받은 주문을 저장과 함께 들고 왔다(위에서 되돌림) — 다시 뽑지 않는다
+	if (!bResume)
+	{
+		OfferOrders();
+	}
+
+	bArrivalPending = true;
+}
+
+void ACL9GameMode::SpawnTruckCounter()
+{
+	const UCL9RulesDef* Rules = GetRules();
+	const ACL9Truck* Truck = GetTruck();
+	if (!HasAuthority() || Rules == nullptr || Truck == nullptr)
+	{
+		return;
+	}
+	if (Rules->TruckCounterClass.IsNull())
+	{
+		UE_LOG(LogCL9, Log, TEXT("Truck counter: CL9Rules.TruckCounterClass is empty — no delivery window on the truck."));
+		return;
+	}
+	// 시험 레벨처럼 창구를 손으로 놓아 둔 레벨에는 하나만 — 두 창구가 재고를 나눠 갖지 않게
+	for (TActorIterator<ACL9Counter> It(GetWorld()); It; ++It)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Truck counter: '%s' is already placed in this level — none on the truck."), *GetNameSafe(*It));
+		return;
+	}
+	UClass* CounterClass = Rules->TruckCounterClass.LoadSynchronous();
+	if (CounterClass == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("Truck counter: class '%s' did not load."), *Rules->TruckCounterClass.ToString());
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const FTransform CounterTransform = Rules->TruckCounterOffset * Truck->GetActorTransform();
+	const ACL9Counter* Counter = GetWorld()->SpawnActor<ACL9Counter>(CounterClass, CounterTransform, SpawnParams);
+	if (Counter == nullptr)
+	{
+		UE_LOG(LogCL9, Error, TEXT("Truck counter: spawn failed beside '%s'."), *GetNameSafe(Truck));
+		return;
+	}
+	UE_LOG(LogCL9, Log, TEXT("Truck counter: '%s' spawned at %s beside '%s'."), *GetNameSafe(Counter),
+		*Counter->GetActorLocation().ToCompactString(), *GetNameSafe(Truck));
+}
+
+
+void ACL9GameMode::ApplyWipePenalty()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9RulesDef* Rules = GetRules();
+	if (!HasAuthority() || CL9GameState == nullptr || Rules == nullptr || FindLivingPawn(nullptr, nullptr) != nullptr)
+	{
+		return;
+	}
+
+	// 판의 누적 이더만 깎는다 — 정산 판정은 기간 수입이라 건드리지 않는다(docs/goal/loop-7a-wipe-penalty.md)
+	const int32 Before = CL9GameState->GetSharedMoney();
+	FCL9WipePenalty Penalty;
+	Penalty.bActive = true;
+	Penalty.Taken = CL9GameState->Deduct(Rules->WipePenaltyFor(Before));
+	UE_LOG(LogCL9, Log, TEXT("Wipe penalty: %.0f%% of %d ether — %d taken. Money %d -> %d."),
+		Rules->WipePenaltyRate * 100.f, Before, Penalty.Taken, Before, CL9GameState->GetSharedMoney());
+	CL9GameState->SetWipePenalty(Penalty);
+}
+
+void ACL9GameMode::GrantRoundWallet()
+{
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9RulesDef* Rules = GetRules();
+	if (!HasAuthority() || CL9GameState == nullptr || Rules == nullptr)
+	{
+		return;
+	}
+
+	// 바깥 재화는 판 수입에 비례한다(2026-10-12 사용자) — 판 수입은 코인이 판 동안 늘어난 만큼이고, 살아서 트럭으로 돌아온 사람만 받는다.
+	// 모두에게 한 번씩 보낸다(죽었으면 0) — 각 머신의 "이번 판 지급"이 늘 이번 판 값이 되게
+	const int32 RoundIncome = FMath::Max(CL9GameState->GetPeriodIncome() - NightIncomeStart, 0);
+	const int32 Reward = Rules->WalletIncomeFor(RoundIncome);
+	for (APlayerState* PlayerState : CL9GameState->PlayerArray)
+	{
+		ACL9PlayerController* Controller = PlayerState ? Cast<ACL9PlayerController>(PlayerState->GetPlayerController()) : nullptr;
+		const ACL9Character* Character = PlayerState ? Cast<ACL9Character>(PlayerState->GetPawn()) : nullptr;
+		if (Controller == nullptr)
+		{
+			continue;
+		}
+		const bool bSurvived = Character != nullptr && !Character->IsDead();
+		int32 Amount = bSurvived ? Reward : 0;
+		// 임포스터 보상(7g)은 같은 한 번의 지급에 접는다 — 이긴 임포스터는 귀가 보상 대신 성공 보상, 임포스터를 죽인 사람은 처치 보상을 더 받는다
+		FString Extra;
+		if (PlayerState == ImposterWinner.Get())
+		{
+			Extra += FString::Printf(TEXT(" — imposter won: %d instead of %d"), Rules->ImposterWinReward, Amount);
+			Amount = Rules->ImposterWinReward;
+		}
+		if (PlayerState == ImposterKiller.Get())
+		{
+			Amount += Rules->ImposterKillReward;
+			Extra += FString::Printf(TEXT(" — +%d for killing the imposter"), Rules->ImposterKillReward);
+		}
+		if (PlayerState == RoundImposter.Get())
+		{
+			// 유도 보상(7h) — 임포스터가 깨운 몬스터에게 죽은 사람 수만큼(이겼든 졌든)
+			int32 Induced = 0;
+			for (const APlayerState* Other : CL9GameState->PlayerArray)
+			{
+				const ACL9PlayerState* OtherState = Cast<ACL9PlayerState>(Other);
+				Induced += (OtherState != nullptr && OtherState != PlayerState && OtherState->InducedByPlayer.Get() == PlayerState) ? 1 : 0;
+			}
+			if (Induced > 0)
+			{
+				Amount += Induced * Rules->ImposterAssistReward;
+				Extra += FString::Printf(TEXT(" — +%d × %d induced death(s)"), Rules->ImposterAssistReward, Induced);
+			}
+		}
+		Controller->Client_WalletGrant(Amount);
+		UE_LOG(LogCL9, Log, TEXT("Wallet grant: '%s' %s — round income %d coins × %.4f -> %d ether%s."),
+			*PlayerState->GetPlayerName(), bSurvived ? TEXT("came home") : TEXT("did not survive"), RoundIncome, Rules->WalletIncomeRate, Amount, *Extra);
+	}
+}
+
+void ACL9GameMode::AssignImposter()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9RulesDef* Rules = GetRules();
+	if (!HasAuthority() || CL9GameState == nullptr || Rules == nullptr)
+	{
+		return;
+	}
+
+	// 남아 있는 역할을 먼저 거둔다(판정 없이 끝난 판 — 판 종료 박자 등). 후보는 판을 시작할 때 살아 있는 사람이다
+	TArray<ACL9PlayerState*> Candidates;
+	for (APlayerState* PlayerState : CL9GameState->PlayerArray)
+	{
+		ACL9PlayerState* CL9PlayerState = Cast<ACL9PlayerState>(PlayerState);
+		if (CL9PlayerState == nullptr)
+		{
+			continue;
+		}
+		CL9PlayerState->HostSetImposter(false);
+		const ACL9Character* Character = Cast<ACL9Character>(CL9PlayerState->GetPawn());
+		if (Character != nullptr && !Character->IsDead())
+		{
+			Candidates.Add(CL9PlayerState);
+		}
+	}
+
+	const float Chance = Rules->ImposterChanceFor(Candidates.Num());
+	ACL9PlayerState* Picked = nullptr;
+	FString How;
+	if (ForcedImposterIndex != NoForcedImposter)
+	{
+		// cl9.imposter 의 지정은 한 판만 쓴다 — -1 은 "이번엔 없음"
+		Picked = CL9GameState->PlayerArray.IsValidIndex(ForcedImposterIndex) ? Cast<ACL9PlayerState>(CL9GameState->PlayerArray[ForcedImposterIndex]) : nullptr;
+		if (Picked != nullptr && !Candidates.Contains(Picked))
+		{
+			Picked = nullptr;
+		}
+		How = FString::Printf(TEXT("forced by cl9.imposter %d"), ForcedImposterIndex);
+		ForcedImposterIndex = NoForcedImposter;
+	}
+	else
+	{
+		How = FString::Printf(TEXT("chance %.0f%% for %d player(s)"), Chance * 100.f, Candidates.Num());
+		if (Candidates.Num() > 0 && FMath::FRand() < Chance)
+		{
+			Picked = Candidates[FMath::RandRange(0, Candidates.Num() - 1)];
+		}
+	}
+
+	// 이 로그는 호스트 머신에만 남는다 — 다른 사람에게는 본인 머신의 알림 말고는 아무것도 가지 않는다
+	if (Picked != nullptr)
+	{
+		Picked->HostSetImposter(true);
+		UE_LOG(LogCL9, Log, TEXT("Imposter: '%s' this round (%s)."), *Picked->GetPlayerName(), *How);
+	}
+	else
+	{
+		UE_LOG(LogCL9, Log, TEXT("Imposter: none this round (%s)."), *How);
+	}
+}
+
+ACL9PlayerState* ACL9GameMode::FindImposter() const
+{
+	const AGameStateBase* State = GameState;
+	if (State == nullptr)
+	{
+		return nullptr;
+	}
+	for (APlayerState* PlayerState : State->PlayerArray)
+	{
+		ACL9PlayerState* CL9PlayerState = Cast<ACL9PlayerState>(PlayerState);
+		if (CL9PlayerState != nullptr && CL9PlayerState->IsImposter())
+		{
+			return CL9PlayerState;
+		}
+	}
+	return nullptr;
+}
+
+void ACL9GameMode::JudgeImposter()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	ACL9PlayerState* Imposter = FindImposter();
+	if (!HasAuthority() || CL9GameState == nullptr || Imposter == nullptr)
+	{
+		return;   // 임포스터가 없던 판 — 결과는 판 시작에 비워 둔 그대로다
+	}
+
+	FCL9ImposterResult Result;
+	Result.bActive = true;
+	Result.ImposterName = Imposter->GetPlayerName();
+	FString Reason;
+
+	RoundImposter = Imposter;
+	const ACL9Character* ImposterCharacter = Cast<ACL9Character>(Imposter->GetPawn());
+	if (ImposterCharacter == nullptr || ImposterCharacter->IsDead())
+	{
+		// 죽은 임포스터는 진다 — 플레이어가 죽였으면 그 사람이 처치 보상을 받는다(사용자 결정 4). 그를 죽인 몬스터를 깨운 사람도
+		// 처치로 친다(7h, 2026-10-12 사용자 "임포스터 처치에도 인정")
+		ACL9PlayerState* Killer = Imposter->KilledByPlayer != nullptr ? Imposter->KilledByPlayer.Get() : Imposter->InducedByPlayer.Get();
+		if (Killer != nullptr)
+		{
+			Result.Outcome = ECL9ImposterOutcome::Killed;
+			Result.KillerName = Killer->GetPlayerName();
+			ImposterKiller = Killer;
+			Reason = Imposter->KilledByPlayer != nullptr ? TEXT("struck") : TEXT("woke the monster");
+		}
+		else
+		{
+			Reason = TEXT("dead (not by a player)");
+		}
+	}
+	else
+	{
+		int32 Others = 0;
+		bool bSomeoneAlive = false;
+		FString StruckName;
+		for (APlayerState* PlayerState : CL9GameState->PlayerArray)
+		{
+			const ACL9PlayerState* Other = Cast<ACL9PlayerState>(PlayerState);
+			if (Other == nullptr || Other == Imposter)
+			{
+				continue;
+			}
+			++Others;
+			const ACL9Character* OtherCharacter = Cast<ACL9Character>(Other->GetPawn());
+			bSomeoneAlive |= OtherCharacter != nullptr && !OtherCharacter->IsDead();
+			if (Other->KilledByPlayer == Imposter)
+			{
+				StruckName = Other->GetPlayerName();
+			}
+		}
+
+		// 트럭이 없는 레벨은 남겨짐 경계가 없다(LeaveBehindOutsideTruck 과 같다) — 안에 있는 것으로 본다
+		const ACL9Truck* Truck = GetTruck();
+		if (!StruckName.IsEmpty())
+		{
+			// 직접 때려 죽이면 무조건 실패(결정 3)
+			Reason = FString::Printf(TEXT("struck '%s' directly"), *StruckName);
+		}
+		else if (Others == 0)
+		{
+			Reason = TEXT("nobody else was in the round");
+		}
+		else if (bSomeoneAlive)
+		{
+			Reason = TEXT("someone else is still alive (left behind does not count)");
+		}
+		else if (Truck != nullptr && !Truck->IsInside(ImposterCharacter->GetActorLocation()))
+		{
+			Reason = TEXT("not inside the truck");
+		}
+		else
+		{
+			Result.Outcome = ECL9ImposterOutcome::Won;
+			ImposterWinner = Imposter;
+		}
+	}
+
+	if (Result.Outcome == ECL9ImposterOutcome::Won)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Imposter: '%s' won — everyone else is down and the imposter left in the truck."), *Result.ImposterName);
+	}
+	else if (Result.Outcome == ECL9ImposterOutcome::Killed)
+	{
+		UE_LOG(LogCL9, Log, TEXT("Imposter: '%s' was killed by '%s' (%s)."), *Result.ImposterName, *Result.KillerName, *Reason);
+	}
+	else
+	{
+		UE_LOG(LogCL9, Log, TEXT("Imposter: '%s' failed — %s."), *Result.ImposterName, *Reason);
+	}
+
+	// 새벽 화면이 모두에게 공개한다. 역할은 여기서 거둔다 — 다음 판에 같은 사람이 다시 뽑혀도 알림이 다시 뜨게
+	CL9GameState->SetImposterResult(Result);
+	Imposter->HostSetImposter(false);
+}
+
+bool ACL9GameMode::HasCompany() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	return Rules != nullptr && !Rules->CompanyLevel.IsNull();
+}
+
+bool ACL9GameMode::IsCompanyLevel() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	return Rules != nullptr && Rules->IsCompanyWorld(GetWorld());
+}
+
+bool ACL9GameMode::IsCompanyDue() const
+{
+	const ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	const UCL9ProgressionDef* Progression = GetProgression();
+	return HasCompany() && !IsCompanyLevel() && CL9GameState != nullptr && Progression != nullptr
+		&& CL9GameState->GetPhase() == ECL9NightPhase::Lobby && Progression->IsSettlementDay(CL9GameState->GetCurrentDay());
+}
+
+bool ACL9GameMode::TravelForRun(const TSoftObjectPtr<UWorld>& Level, FName FromSite, const TCHAR* Why)
+{
+	UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	if (!HasAuthority() || GameInstance == nullptr || Level.IsNull() || bTravelling)
+	{
+		return false;
+	}
+	// 판은 저장으로 건넌다 — 일차·코인·기간 수입·받은 주문·장비(세계에 있는 장비 전부)
+	if (!SaveRun(1))
+	{
+		return false;
+	}
+	GameInstance->SetRunCarry(FromSite);
+
+	FString URL = Level.ToSoftObjectPath().GetLongPackageName();
+#if !UE_BUILD_SHIPPING
+	// 리슨으로 다시 열어야 클라이언트가 따라온다 — HostGame 과 같은 규칙(Shipping 에는 리슨이 없다)
+	URL += TEXT("?listen");
+#endif
+	bTravelling = true;
+	UE_LOG(LogCL9, Log, TEXT("Travel (%s): '%s' — run saved, %d player(s) follow."), Why, *URL, GetNumPlayers());
+	// 다음 틱에 떠난다 — 레버·치트의 호출 스택 안에서 월드를 내리지 않는다(세션 API 와 같은 규칙). 클라이언트에게 가는 ClientTravel 도
+	// 그 틱에 나간다
+	GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this, URL]()
+	{
+		GetWorld()->ServerTravel(URL, false);
+	}));
+	return true;
+}
+
+FName ACL9GameMode::GetCompanyDestination() const
+{
+	for (TActorIterator<ACL9DestinationBoard> It(GetWorld()); It; ++It)
+	{
+		if (!It->GetDestination().IsNone())
+		{
+			return It->GetDestination();
+		}
+	}
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const TArray<FName> Sites = GameInstance != nullptr ? GameInstance->GetHostableSites() : TArray<FName>();
+	const FName From = GameInstance != nullptr ? GameInstance->GetRunCarryFromSite() : NAME_None;
+	return Sites.Contains(From) ? From : (Sites.Num() > 0 ? Sites[0] : NAME_None);
+}
+
+void ACL9GameMode::PublishContributions()
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return;
+	}
+
+	TArray<FCL9Contribution> List;
+	for (APlayerState* PlayerState : CL9GameState->PlayerArray)
+	{
+		const ACL9PlayerState* Victim = Cast<ACL9PlayerState>(PlayerState);
+		if (Victim == nullptr || Victim->InducedByPlayer == nullptr || !Victim->IsDead())
+		{
+			continue;
+		}
+		FCL9Contribution& Entry = List.AddDefaulted_GetRef();
+		Entry.VictimName = Victim->GetPlayerName();
+		Entry.WakerName = Victim->InducedByPlayer->GetPlayerName();
+		Entry.MonsterName = Victim->InducedByMonsterName;
+		UE_LOG(LogCL9, Log, TEXT("Contribution: '%s' died to a monster woken by '%s'."), *Entry.VictimName, *Entry.WakerName);
+	}
+	CL9GameState->SetContributions(List);
+}
+
+void ACL9GameMode::CheatSetImposter(int32 Index)
+{
+	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
+	if (!HasAuthority() || CL9GameState == nullptr)
+	{
+		return;
+	}
+
+	if (CL9GameState->GetPhase() != ECL9NightPhase::Night)
+	{
+		ForcedImposterIndex = Index < 0 ? -1 : Index;
+		UE_LOG(LogCL9, Log, TEXT("cl9.imposter: next round %s."), ForcedImposterIndex < 0
+			? TEXT("has no imposter") : *FString::Printf(TEXT("makes player %d the imposter"), ForcedImposterIndex));
+		return;
+	}
+
+	ACL9PlayerState* Target = (Index >= 0 && CL9GameState->PlayerArray.IsValidIndex(Index)) ? Cast<ACL9PlayerState>(CL9GameState->PlayerArray[Index]) : nullptr;
+	for (APlayerState* PlayerState : CL9GameState->PlayerArray)
+	{
+		ACL9PlayerState* CL9PlayerState = Cast<ACL9PlayerState>(PlayerState);
+		if (CL9PlayerState != nullptr && CL9PlayerState != Target)
+		{
+			CL9PlayerState->HostSetImposter(false);
+		}
+	}
+	if (Target != nullptr)
+	{
+		Target->HostSetImposter(true);
+	}
+	UE_LOG(LogCL9, Log, TEXT("cl9.imposter: %s."), Target != nullptr
+		? *FString::Printf(TEXT("'%s' is the imposter now"), *Target->GetPlayerName()) : TEXT("no imposter this round"));
+}
+
+void ACL9GameMode::LogImposter() const
+{
+	const ACL9PlayerState* Imposter = FindImposter();
+	UE_LOG(LogCL9, Log, TEXT("cl9.imposter: now %s, next round %s."),
+		Imposter != nullptr ? *FString::Printf(TEXT("'%s'"), *Imposter->GetPlayerName()) : TEXT("none"),
+		ForcedImposterIndex == NoForcedImposter ? TEXT("rolled") : *FString::Printf(TEXT("forced to %d"), ForcedImposterIndex));
 }
 
 void ACL9GameMode::OfferOrders()
@@ -990,6 +1681,7 @@ bool ACL9GameMode::SaveRun(int32 Slot)
 	Save->PeriodIncome = CL9GameState->GetPeriodIncome();
 	Save->ActiveOrders = CL9GameState->AcceptedOrders;
 	ListOwnedEquipment(Save->OwnedEquipment);
+	Save->StageStars = CL9GameState->GetStageStars();
 
 	const FString SlotName = UCL9SaveGame::SlotName(Slot);
 	if (!UGameplayStatics::SaveGameToSlot(Save, SlotName, 0))
@@ -1003,7 +1695,7 @@ bool ACL9GameMode::SaveRun(int32 Slot)
 	return true;
 }
 
-bool ACL9GameMode::LoadRun(int32 Slot)
+bool ACL9GameMode::LoadRun(int32 Slot, bool bOfferOrders)
 {
 	ACL9GameState* CL9GameState = GetGameState<ACL9GameState>();
 	if (!HasAuthority() || CL9GameState == nullptr)
@@ -1046,6 +1738,18 @@ bool ACL9GameMode::LoadRun(int32 Slot)
 	}
 
 	CL9GameState->RestoreRun(Save->CurrentDay, Save->SharedMoney, Save->PeriodIncome, Restored);
+	// 스테이지 별(7l) — 판과 함께 건너온 목적지별 별. 표에서 사라진 사이트는 버린다
+	TArray<FCL9SiteStars> Stars;
+	for (const FCL9SiteStars& Entry : Save->StageStars)
+	{
+		if (Registry != nullptr && Registry->FindSite(Entry.Site) == nullptr)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("Load: site '%s' has no row any more — its stars are dropped."), *Entry.Site.ToString());
+			continue;
+		}
+		Stars.Add(Entry);
+	}
+	CL9GameState->SetStageStars(Stars);
 
 	// 장비는 실물이다 — 저장된 alias만큼 트럭 옆에 다시 세운다
 	int32 Respawned = 0;
@@ -1066,8 +1770,11 @@ bool ACL9GameMode::LoadRun(int32 Slot)
 	UE_LOG(LogCL9, Log, TEXT("Loaded '%s' — day %d, %d ether, %d order(s) in progress."),
 		*SlotName, CL9GameState->GetCurrentDay(), CL9GameState->GetSharedMoney(), Restored.Num());
 
-	// 제시는 저장하지 않는다 — 불러온 일차 기준으로 다시 뽑는다
-	OfferOrders();
+	// 제시는 저장하지 않는다 — 불러온 일차 기준으로 다시 뽑는다. 레벨을 건너 이어 온 판은 그날 주문을 이미 들고 있다(7i)
+	if (bOfferOrders)
+	{
+		OfferOrders();
+	}
 	return true;
 }
 
@@ -1358,14 +2065,62 @@ bool ACL9GameMode::Settle()
 	const int32 Earned = CL9GameState->GetPeriodIncome();
 	const bool bPassed = Earned >= Target;
 
-	// **상태를 되돌리기 전에** 알린다 — 통과하면 기간 수입이 0이 되고 미달하면 1일차로 돌아가므로,
+	// 스테이지 별(7l) — 이 기간의 목적지에 별을 매기고, 별이 모자라지 않으면 다음 목적지를 열거나(표 순서) 마지막이면 클리어.
+	// 미달 판정·패널티는 아래에서 옛대로 돈다
+	const UCL9RulesDef* StageRules = GetRules();
+	bool bCleared = false;
+	if (StageRules != nullptr && StageRules->bStageStars)
+	{
+		const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+		const TArray<FName> Order = GameInstance != nullptr ? GameInstance->GetHostableSites() : TArray<FName>();
+		// 회사에서는 트럭이 떠나온 사이트, 회사가 없으면 이 레벨의 사이트가 이 기간의 목적지다
+		const FName Site = IsCompanyLevel() ? (GameInstance != nullptr ? GameInstance->GetRunCarryFromSite() : NAME_None) : ActiveSiteAlias;
+		const int32 Index = Order.IndexOfByKey(Site);
+		if (Index == INDEX_NONE)
+		{
+			UE_LOG(LogCL9, Warning, TEXT("Stage: the period's site '%s' is not a hostable site — no stars this settlement."), *Site.ToString());
+		}
+		else
+		{
+			const int32 Stars = StageRules->StageStarsFor(Earned, Target);
+			const FName Next = Order.IsValidIndex(Index + 1) ? Order[Index + 1] : NAME_None;
+			const bool bNextWasOpen = !Next.IsNone() && CL9GameState->IsStageOpen(Next, Order, StageRules->StageUnlockStars);
+			CL9GameState->RecordSiteStars(Site, Stars);
+			const bool bEnough = Stars >= StageRules->StageUnlockStars;
+			bCleared = bEnough && Next.IsNone();
+			const FName Opened = (bEnough && !bNextWasOpen && !Next.IsNone()) ? Next : NAME_None;
+			CL9GameState->SetSettlementStage(Stars, Site, Opened, bCleared);
+			UE_LOG(LogCL9, Log, TEXT("Stage: '%s' settled with %d star(s) (%d / %d)%s%s."), *Site.ToString(), Stars, Earned, Target,
+				Opened.IsNone() ? TEXT("") : *FString::Printf(TEXT(" — '%s' opens"), *Opened.ToString()),
+				bCleared ? TEXT(" — the last destination: the run is cleared") : TEXT(""));
+		}
+	}
+
+	// **상태를 되돌리기 전에** 알린다 — 통과하든 미달하든 기간 수입이 0이 되므로,
 	// 이 뒤에는 새벽 화면이 보여줄 숫자를 어디서도 구할 수 없다
 	CL9GameState->Multicast_Settled(Day, Earned, Target, bPassed);
 
+	if (bCleared)
+	{
+		// 클리어(7l) — 판이 끝난다. 화면은 게임 오버와 같은 자리(HUD 가 판 종료 상태에서 파생), 레버는 판 종료면 막힌다
+		CL9GameState->ResetPeriodIncome();
+		CL9GameState->SetRunCleared(Day, RecordBestDay(Day));
+		return true;
+	}
+
 	if (!bPassed)
 	{
-		UE_LOG(LogCL9, Log, TEXT("Settlement failed on day %d: earned %d < %d — the run ends here."), Day, Earned, Target);
-		StartNewRun();
+		// 미달은 판을 끝내지 않는다(2026-10-12 사용자 "게임 오버 대신 패널티 후 계속", 7i) — 판의 코인에서 깎고 다음 기간으로 이어 간다.
+		// 1일차로 되돌리는 StartNewRun 은 `cl9.settle force` 에만 남는다
+		const UCL9RulesDef* Rules = GetRules();
+		const int32 Before = CL9GameState->GetSharedMoney();
+		FCL9WipePenalty Penalty;
+		Penalty.bActive = true;
+		Penalty.Taken = Rules != nullptr ? CL9GameState->Deduct(Rules->QuotaMissPenaltyFor(Before)) : 0;
+		CL9GameState->SetQuotaPenalty(Penalty);
+		CL9GameState->ResetPeriodIncome();
+		UE_LOG(LogCL9, Log, TEXT("Settlement failed on day %d: earned %d < %d — %d coins taken, the run goes on. Money %d -> %d."),
+			Day, Earned, Target, Penalty.Taken, Before, CL9GameState->GetSharedMoney());
 		return true;
 	}
 
@@ -1403,6 +2158,7 @@ void ACL9GameMode::StartNewRun()
 	}
 
 	CL9GameState->RestoreRun(1, 0, 0, TArray<FCL9AcceptedOrder>());
+	CL9GameState->SetStageStars(TArray<FCL9SiteStars>());
 	UE_LOG(LogCL9, Log, TEXT("A new run opens at day 1 — nothing carries over."));
 }
 

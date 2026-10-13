@@ -47,6 +47,8 @@
 
 ## 납품 판정
 
+> **2026-10-13 — 판 레벨의 창구는 트럭 옆면 바깥에 있다**: `ACL9GameMode::SpawnTruckCounter` 가 StartPlay 에서 트럭 옆에 `BP_CL9Counter` 를 세운다(셀 `CL9Rules.TruckCounterClass`·`TruckCounterOffset`). 그 전에는 창구가 Lvl_Flat 에만 있어 판 레벨에서 납품할 곳이 없었다([../goal/truck-counter.md](../goal/truck-counter.md)).
+
 ```cpp
 // 호스트 전용 — 창구에 올린 실물과 주문 대조
 if (!HasAuthority()) return;

@@ -153,6 +153,8 @@ void UCL9HUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	RefreshHurtDirection();
 	// 양보했던 선택 화면을 다시 열 때가 됐는지 본다 — 화면이 닫혔다는 이벤트가 없어서 틱에서 본다
 	DeriveOrderScreen();
+	DeriveCompanyScreen();
+	TickOrderCard(InDeltaTime);
 }
 
 void UCL9HUDWidget::TryWire()
@@ -171,6 +173,7 @@ void UCL9HUDWidget::TryWire()
 	GameState->OnNightPhaseChanged.AddDynamic(this, &UCL9HUDWidget::HandlePhaseChanged);
 	GameState->OnOrdersChanged.AddDynamic(this, &UCL9HUDWidget::HandleOrdersChanged);
 	GameState->OnMoneyChanged.AddDynamic(this, &UCL9HUDWidget::HandleMoneyChanged);
+	PlayerState->OnImposterChanged.AddUObject(this, &UCL9HUDWidget::HandleImposterChanged);
 
 	GetWorld()->GetTimerManager().SetTimer(ClockTimer, this, &UCL9HUDWidget::RefreshClock, 0.25f, true);
 
@@ -182,6 +185,10 @@ void UCL9HUDWidget::TryWire()
 	RefreshMoney();
 	RefreshPeriod();
 	DeriveOrderScreen();
+	// 배선 전에 이미 임포스터로 뽑혔으면(복제가 HUD 보다 먼저 옴) 지금 알린다
+	HandleImposterChanged();
+	// 판 도중에 배선됐으면(늦게 접속) 카드도 한 번 띄운다
+	bOrderCardPending = GameState->GetPhase() == ECL9NightPhase::Night;
 }
 
 void UCL9HUDWidget::WireCharacter()
@@ -220,6 +227,8 @@ void UCL9HUDWidget::HandleCarryChanged()
 
 void UCL9HUDWidget::HandlePhaseChanged(ECL9NightPhase NewPhase)
 {
+	// 판이 열렸다 — 도착이 끝나면 "오늘의 주문" 카드를 띄운다(7j)
+	bOrderCardPending = NewPhase == ECL9NightPhase::Night;
 	RefreshClock();
 	RefreshPeriod();   // 날이 넘어가면 목표액과 남은 날이 함께 바뀐다
 }
@@ -239,6 +248,17 @@ void UCL9HUDWidget::HandleMoneyChanged()
 {
 	RefreshMoney();
 	RefreshPeriod();   // 판 자금이 움직였다는 건 기간 수입도 움직였다는 뜻이다
+}
+
+void UCL9HUDWidget::HandleImposterChanged()
+{
+	const ACL9PlayerState* PlayerState = GetOwnPlayerState();
+	if (PlayerState == nullptr || !PlayerState->IsImposter())
+	{
+		return;   // 거둔 것(판 끝)은 알리지 않는다 — 결과는 새벽 화면이 모두에게 공개한다
+	}
+	UE_LOG(LogCL9, Log, TEXT("HUD: imposter notice (PlaceText %s)."), (PlaceText != nullptr) ? TEXT("bound") : TEXT("missing"));
+	ShowPlaceNotice(LOCTABLE("CL9", "Hud.ImposterAssigned"), ImposterNoticeDuration);
 }
 
 void UCL9HUDWidget::RefreshHp()
@@ -878,6 +898,99 @@ void UCL9HUDWidget::RefreshMoney()
 
 	// 판 전체가 지갑 하나를 쓴다 — 호스트가 지급·차감하면 OnMoneyChanged가 모든 머신에서 발동한다
 	MoneyText->SetText(FText::Format(LOCTABLE("CL9", "Hud.Money"), GameState->GetSharedMoney()));
+}
+
+void UCL9HUDWidget::TickOrderCard(float InDeltaTime)
+{
+	const ACL9GameState* GameState = GetCL9GameState();
+	if (GameState == nullptr)
+	{
+		return;
+	}
+
+	// 판마다 한 번 — 도착이 있으면 끝난 뒤, 없으면(레버로 연 판) 바로
+	const float Arrival = GameState->GetArrivalAlpha();
+	if (bOrderCardPending && GameState->GetPhase() == ECL9NightPhase::Night && (Arrival < 0.f || Arrival >= 1.f))
+	{
+		bOrderCardPending = false;
+		ShowOrderCard();
+	}
+
+	if (OrderCardElapsed < 0.f || OrderCard == nullptr)
+	{
+		return;
+	}
+	OrderCardElapsed += InDeltaTime;
+	if (OrderCardElapsed >= OrderCardDuration || GameState->GetPhase() != ECL9NightPhase::Night)
+	{
+		OrderCard->SetVisibility(ESlateVisibility::Collapsed);
+		OrderCardElapsed = -1.f;
+		return;
+	}
+	const float Fade = FMath::Min(0.4f, OrderCardDuration * 0.5f);
+	const float Alpha = Fade > KINDA_SMALL_NUMBER ? FMath::Min(OrderCardElapsed, OrderCardDuration - OrderCardElapsed) / Fade : 1.f;
+	OrderCard->SetRenderOpacity(FMath::Clamp(Alpha, 0.f, 1.f));
+}
+
+void UCL9HUDWidget::ShowOrderCard()
+{
+	if (CookLayer == nullptr || OrdersText == nullptr || WidgetTree == nullptr)
+	{
+		return;
+	}
+	if (OrderCard == nullptr)
+	{
+		// 가운데 카드 — 어두운 반투명 바탕에 글 한 덩이. 글꼴은 HUD 주문 줄의 것(한글 글리프가 있는 글꼴)에서 크기만 바꾼다
+		OrderCard = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
+		OrderCard->SetBrushColor(FLinearColor(0.f, 0.f, 0.f, 0.65f));
+		OrderCard->SetPadding(FMargin(28.f, 18.f));
+		OrderCardText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+		FSlateFontInfo Font = OrdersText->GetFont();
+		Font.Size = OrderCardTextSize;
+		OrderCardText->SetFont(Font);
+		OrderCardText->SetJustification(ETextJustify::Center);
+		OrderCardText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		OrderCard->SetContent(OrderCardText);
+		if (UCanvasPanelSlot* CardSlot = CookLayer->AddChildToCanvas(OrderCard))
+		{
+			CardSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			CardSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			CardSlot->SetAutoSize(true);
+			CardSlot->SetPosition(FVector2D(0.f, -120.f));
+			CardSlot->SetZOrder(100);
+		}
+	}
+
+	const FText Orders = OrdersText->GetText();
+	OrderCardText->SetText(FText::Join(FText::FromString(TEXT("\n")),
+		TArray<FText>{ LOCTABLE("CL9", "Hud.OrderCardTitle"), Orders.IsEmpty() ? LOCTABLE("CL9", "Hud.OrderCardNone") : Orders }));
+	OrderCard->SetRenderOpacity(0.f);
+	OrderCard->SetVisibility(ESlateVisibility::HitTestInvisible);
+	OrderCardElapsed = 0.f;
+	UE_LOG(LogCL9, Log, TEXT("HUD: order card shown (%d chars of orders)."), Orders.ToString().Len());
+}
+
+void UCL9HUDWidget::DeriveCompanyScreen()
+{
+	if (bCompanyScreenShown)
+	{
+		return;
+	}
+	const ACL9GameState* GameState = GetCL9GameState();
+	const UCL9GameInstance* GameInstance = Cast<UCL9GameInstance>(GetGameInstance());
+	const UCL9DefRegistry* Registry = GameInstance != nullptr ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9RulesDef* Rules = Registry != nullptr ? Registry->GetRules() : nullptr;
+	UCL9UIManager* UIManager = UCL9UIManager::Get(this);
+	if (GameState == nullptr || Rules == nullptr || UIManager == nullptr || !Rules->IsCompanyWorld(GetWorld())
+		|| GameState->GetLastSettlement().Day <= 0)
+	{
+		return;
+	}
+
+	// 한 번만 — 닫으면 회사를 걸어 다닌다
+	bCompanyScreenShown = true;
+	UIManager->OpenWidget(CompanyScreenRow);
+	UE_LOG(LogCL9, Log, TEXT("HUD: company — settlement screen '%s' opened (day %d)."), *CompanyScreenRow.ToString(), GameState->GetLastSettlement().Day);
 }
 
 void UCL9HUDWidget::DeriveOrderScreen()

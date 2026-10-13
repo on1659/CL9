@@ -23,6 +23,7 @@ CL9 — 동물이 주인인 장소에서 재료를 훔쳐다 푸드트럭에서 
 | UE 설계 규약 | [docs/conventions.md](docs/conventions.md) |
 | UE 시스템 설계 — 무엇을 어디서 고치나 (문자열·옵션·화면·치트…) | [docs/systems/README.md](docs/systems/README.md) |
 | 모델·애니메이션 제작 | [docs/asset/README.md](docs/asset/README.md) |
+| 기능을 만든 뒤 게임플레이 영상 촬영 (봇 플레이, `/cl9film`) | [.claude/skills/cl9film/SKILL.md](.claude/skills/cl9film/SKILL.md) |
 | 세션 여러 개가 에디터·빌드·PIE를 나눠 쓰는 규약 (`/cl9`), 서브에이전트 모델 배분 | [docs/workflow/sessions.md](docs/workflow/sessions.md) |
 | 결정의 변경·번복 | [docs/decisions.md](docs/decisions.md) |
 

@@ -6,8 +6,15 @@
 #include "Data/CL9DefBase.h"
 #include "CL9RulesDef.generated.h"
 
+class UWorld;
+class UStaticMesh;
+class USkeletalMesh;
+class UAnimationAsset;
+class UMaterialInterface;
+
 class UMaterialInterface;
 class UNiagaraSystem;
+class ACL9Counter;
 
 /**
  * 유일한 전역 규칙 애셋 — 어떤 캐릭터도 다르게 가질 수 없는 값들이다: 소음,
@@ -120,6 +127,197 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night")
 	int32 MonsterSpawnPerFrame = 4;
+
+	// -- 판 중간 스폰 (docs/goal/loop-7e-mid-round-spawn.md, 2026-10-12 사용자 — 값은 초안, 밸런스는 나중) --
+
+	/** 판 중간 스폰 간격, 초 — 판이 열린 뒤 이 간격마다 한 마리(첫 번째는 +간격). 0 이면 판 중간 스폰이 없다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0", UIMin="0"))
+	float MidSpawnInterval = 60.f;
+
+	/** 판 중간 스폰 자리가 살아 있는 모든 플레이어에게서 떨어져야 하는 최소 거리, cm (3D) — 눈앞에서 튀어나오지 않게 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0", UIMin="0"))
+	float MidSpawnMinDistance = 1500.f;
+
+	/** 한 판의 판 중간 스폰 총량 = 판 시작에 큐에 든 몬스터 수 × 이 비율(반올림). 0 이면 없다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Night", meta=(ClampMin="0", UIMin="0"))
+	float MidSpawnCapRatio = 0.5f;
+
+
+	/**
+	 * 전멸 패널티 — 전멸로 판이 끝나면(`bWipeEndsRun` false) 판의 누적 이더(`SharedMoney`)에서 이 비율만큼 깎는다(0~1, 2026-10-12 사용자 30%).
+	 * 정수 이더라 내림, 잔액은 0 아래로 내려가지 않는다. 기간 수입(정산 판정 대상)은 건드리지 않는다. 범위 밖·NaN 은 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Run", meta=(ClampMin="0", ClampMax="1", UIMin="0", UIMax="1"))
+	float WipePenaltyRate = 0.3f;
+
+	/** 누적 이더 `Money` 에서 전멸 패널티로 깎을 액수 — floor(Money × WipePenaltyRate), 음수 잔액·범위 밖 비율은 0~잔액으로 자른다 */
+	int32 WipePenaltyFor(int32 Money) const;
+
+	/**
+	 * 바깥 재화(화면 이름 "이더") 귀가 보상 비율 — 판 끝에 살아 있는 사람이 그 판 수입(코인)의 이 비율을 받는다(0~1, 2026-10-12 사용자
+	 * "판 수입 비율에 따라 다르게", 초안 0.01 = 100 코인당 1). 임포스터 성공·처치 보상(7g)은 이보다 커야 한다. 범위 밖·NaN 은 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Run", meta=(ClampMin="0", ClampMax="1", UIMin="0", UIMax="1"))
+	float WalletIncomeRate = 0.01f;
+
+	/** 판 수입 `Income` 에 대한 귀가 보상 — floor(Income × WalletIncomeRate), 만분율 정수 계산(WipePenaltyFor 와 같다) */
+	int32 WalletIncomeFor(int32 Income) const;
+
+	/**
+	 * 임포스터 배정 확률 — 판을 시작할 때 살아 있는 사람 수로 고른다(번호 = 사람 수 − 1, 배열 끝을 넘으면 마지막 값).
+	 * 2026-10-12 사용자 "3인 이상일 때 10%, 4인일 때 25%" — 1·2인은 0(docs/goal/loop-7g-imposter.md). 각 값은 0~1, 범위 밖·NaN 은 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Imposter")
+	TArray<float> ImposterChanceByPlayers = { 0.f, 0.f, 0.1f, 0.25f };
+
+	/** 사람 수 `Players` 일 때의 임포스터 배정 확률(0~1로 자른다) — 표가 비었거나 0명 이하면 0 */
+	float ImposterChanceFor(int32 Players) const;
+
+	/**
+	 * 임포스터 성공 보상(이더) — 이긴 임포스터는 귀가 보상 **대신** 이것을 받는다. 귀가 보상(판당 보통 3~10)보다 커야 한다(7f 사용자 답).
+	 * 초안 30 — "밸런스는 표에서 조절 가능하게 하고 넘기자"(2026-10-12). 음수는 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Imposter", meta=(ClampMin="0"))
+	int32 ImposterWinReward = 30;
+
+	/** 임포스터 처치 보상(이더) — 임포스터를 죽인 사람이 귀가 보상에 **더해** 받는다(살았든 죽었든). 초안 20, 음수는 로드 오류 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Imposter", meta=(ClampMin="0"))
+	int32 ImposterKillReward = 20;
+
+	/**
+	 * 처치 기여 인정 시간, 초(docs/goal/loop-7h-kill-contribution.md) — 몬스터를 깨운 뒤 이 안에 그 몬스터가 다른 플레이어를 죽이면 깨운 사람의 기여다.
+	 * 2026-10-12 사용자 "몬스터를 깨운 사람으로 한정, 인정 시간은 셀"(초안 30). 0 = 기여 끔, 음수·NaN 은 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Imposter", meta=(ClampMin="0"))
+	float ContributionWindow = 30.f;
+
+	/** 임포스터 유도 보상(이더) — 판의 임포스터가 깨운 몬스터에게 죽은 사람 하나마다(이겼든 졌든) 더 받는다. 초안 10, 음수는 로드 오류 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Imposter", meta=(ClampMin="0"))
+	int32 ImposterAssistReward = 10;
+
+	/**
+	 * 회사 레벨(docs/goal/loop-7i-company.md) — 정산일 로비에서 출발 레버를 당기면 판을 싣고 이 레벨로 간다(정산·장비 구매·다음 목적지).
+	 * 비어 있으면 회사가 없고 정산은 옛대로 로비에서 한다. 레벨 경로는 C++ 에 없다(conventions § 5)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Company")
+	TSoftObjectPtr<UWorld> CompanyLevel;
+
+	/** 회사 레벨이 정해져 있고 `World` 가 그 레벨이면 true — PIE 접두사를 떼고 패키지 이름으로 비교한다(사이트 판별과 같다) */
+	bool IsCompanyWorld(const UWorld* World) const;
+
+	/**
+	 * 정산 미달 패널티 — 목표에 못 미치면 판이 끝나는 대신 판의 코인에서 이 비율만큼 깎고 다음 기간으로 이어 간다
+	 * (2026-10-12 사용자 "게임 오버 대신 패널티 후 계속", 초안 0.3). 0~1, 범위 밖·NaN 은 로드 오류
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Company", meta=(ClampMin="0", ClampMax="1", UIMin="0", UIMax="1"))
+	float QuotaMissPenaltyRate = 0.3f;
+
+	/** 코인 `Money` 에서 정산 미달로 깎을 액수 — floor(Money × QuotaMissPenaltyRate), 전멸 패널티와 같은 만분율 정수 계산 */
+	int32 QuotaMissPenaltyFor(int32 Money) const;
+
+	// -- 스테이지 별 (docs/goal/loop-7l-stage-stars.md) --
+
+	/**
+	 * 정산 기간 하나(목적지 하나 + 3판 + 회사 정산)를 스테이지로 보고 별을 매긴다 — 별로 다음 목적지가 열리고, 마지막 목적지를
+	 * 별을 받고 마치면 판이 클리어로 끝난다(2026-10-13 사용자). 끄면 7i 그대로(별 없음·목적지 전부 열림·클리어 없음)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stage")
+	bool bStageStars = true;
+
+	/**
+	 * 별 기준 — 별 n 개는 기간 수입이 목표 × StageStarRatios[n-1] 이상. 오름차순 양수, 개수가 별의 최대 수다(초안 1.0·1.5·2.0).
+	 * 별 0 은 정산 미달과 같은 뜻이 되도록 첫 값을 1.0 으로 둔다(미달 판정·패널티는 따로 그대로 돈다)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stage")
+	TArray<float> StageStarRatios = { 1.f, 1.5f, 2.f };
+
+	/** 다음 목적지가 열리고, 마지막 목적지면 클리어가 되는 별 수(초안 1). 1 이상 StageStarRatios 개수 이하 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Stage", meta=(ClampMin="1"))
+	int32 StageUnlockStars = 1;
+
+	/** 기간 수입 `Earned` 와 목표 `Target` 으로 별 수(0..StageStarRatios 개수). 목표가 0 이하면 모든 기준을 넘은 것으로 본다 */
+	int32 StageStarsFor(int32 Earned, int32 Target) const;
+
+	// -- 판 시작 연출 (docs/goal/loop-7j-round-start.md) --
+
+	/** 트럭 도착 길이(초) — 레벨이 서고 여는 첫 판에 트럭이 후진해 서는 동안 카메라가 보고 조작이 잠긴다. 0 = 도착 없음. 초안 5 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Arrival", meta=(ClampMin="0"))
+	float ArrivalTime = 5.f;
+
+	/** 도착 시작 때 트럭이 제자리에서 앞쪽(트럭 +X)으로 떨어져 있는 거리(cm) — 메시만 옮긴다(판정용 트럭은 제자리). 초안 2500 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Arrival", meta=(ClampMin="0"))
+	float ArrivalDistance = 2500.f;
+
+	/** 도착 카메라 자리 — 트럭 패드 공간(cm). 트럭 몸체를 바라본다. 초안 (700, −900, 260) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Arrival")
+	FVector ArrivalCameraOffset = FVector(700.f, -900.f, 260.f);
+
+	/** 전원을 켜기 전(첫 어둠) 안개 밀도 배율 — 사이트 행의 밤 안개에 곱한다. 마당을 건너는 길을 무겁게(2026-10-12 사용자 "낮게 깔린 안개"). 초안 2, 1 = 그대로 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float PrePowerFogScale = 2.f;
+
+	/** 마당 → 건물 문 바깥 위에 거는 작업등 메시 — 비면 빛만 건다. 경로는 C++ 에 없다 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard")
+	TSoftObjectPtr<UStaticMesh> YardLampMesh;
+
+	/** 작업등 높이(cm, 문 바닥에서) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float YardLampHeight = 330.f;
+
+	/** 작업등 밝기(칸델라) — 0 이면 등을 걸지 않는다. 끊기듯 깜박인다. 초안 10 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float YardLampIntensity = 10.f;
+
+	/** 작업등 감쇠 반경(cm) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float YardLampRadius = 900.f;
+
+	/** 마당에 있는 동안(전원 전) 건물 안에서 나는 울음의 간격(초) 최솟값·최댓값 — 최댓값 0 = 끔. 초안 8~16 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float YardCryIntervalMin = 8.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float YardCryIntervalMax = 16.f;
+
+	/** 문간을 가로지르는 실루엣의 몸(보이기만, 판정 없음) — 비면 실루엣 없음 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard")
+	TSoftObjectPtr<USkeletalMesh> SilhouetteMesh;
+
+	/** 실루엣이 걷는 애님(반복) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard")
+	TSoftObjectPtr<UAnimationAsset> SilhouetteAnim;
+
+	/** 실루엣의 모든 재질 칸을 덮는 어두운 재질 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard")
+	TSoftObjectPtr<UMaterialInterface> SilhouetteMaterial;
+
+	/** 실루엣 배율·걷는 속도(cm/s)·보이는 거리(cm, 0 = 끔)·뒤에서 비추는 빛(칸델라) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float SilhouetteScale = 1.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float SilhouetteSpeed = 260.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float SilhouetteRange = 2500.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Yard", meta=(ClampMin="0"))
+	float SilhouetteBackLight = 20.f;
+
+	/**
+	 * 트럭 창구 — 납품 창구(`ACL9Counter`) 블루프린트(docs/goal/truck-counter.md). 트럭이 서는 판 레벨마다 트럭 옆면 바깥에 하나 세운다
+	 * (2026-10-13 사용자 "트럭 창구에서 납품", 옆면 바깥). 레벨에 창구가 이미 놓여 있으면(시험 레벨 Lvl_Flat) 세우지 않는다.
+	 * 비어 있으면 트럭 창구가 없다 — 경로는 C++ 에 없다(conventions § 5)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Truck")
+	TSoftClassPtr<ACL9Counter> TruckCounterClass;
+
+	/**
+	 * 트럭 창구 자리 — 트럭 공간 상대 변환(cm, 도). 헤더 기본 (350, −267, 0) = 짐칸 가운데 옆, B 트럭 몸체 반폭 212 바깥에
+	 * 창구 반폭 50 과 틈 5 를 둔 지면. 트럭 몸체에 창을 뚫으면 그 앵커로 옮긴다 — 자리표시
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Truck")
+	FTransform TruckCounterOffset = FTransform(FRotator::ZeroRotator, FVector(350.f, -267.f, 0.f));
 
 	// -- 던지기와 소지 --
 

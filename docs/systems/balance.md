@@ -10,7 +10,7 @@
 - **"스테이지"는 난이도 단계가 아니라 목적지다.** 난이도는 일자 곡선이 만든다.
 - **기준값 × 곡선**: 목적지가 기준값(닭 8~12)을 주고, 일자 곡선이 배율(3일차 0.8)을 곱한다.
 - **밤 하나의 시계는 `NightLength` 하나뿐이다** (기본 245초). 페이즈 분할 시계는 없다 (현재 설계).
-- **정산은 이틀 주기**(`SettlementIntervalDays`), 판정 대상은 **기간 수입**이지 보유 잔액이 아니다.
+- **정산은 사흘 주기**(`SettlementIntervalDays` 3 — 2026-10-12 7a, 옛 2), 판정 대상은 **기간 수입**이지 보유 잔액이 아니다.
 - **무한 진행** (`FinalDay` 0). 클리어는 없고 며칠까지 버텼는지가 기록이다.
 
 ## 설정 에셋 구성
@@ -49,10 +49,10 @@ plan이 정의한 세 에셋을 그대로 쓴다 — 별도의 "스테이지 설
 
 ```cpp
 // 1. 밤 만료 — NightLength 초과 = 새벽 실패
-// 2. 전멸 — 전원 사망 시 트럭이 일행을 두고 떠난다
+// 2. 전멸 — 전원 사망 시 트럭이 일행을 두고 떠난다 (2026-10-12부터 판만 끝나고 누적 이더 WipePenaltyRate 차감 — 아래)
 // 3. 정산 미달 — 정산일에 기간 수입 < QuotaCurve(일차)
 
-// 정산 판정 (이틀 주기, 기간 수입 기준)
+// 정산 판정 (사흘 주기 — 2026-10-12, 기간 수입 기준)
 if (Day % SettlementIntervalDays == 0) {
   if (PeriodIncome < QuotaCurve->GetFloatValue(Day)) {
     // 그날로 실패. 유예 없음. 새 판이 자동으로 열린다
@@ -62,6 +62,18 @@ if (Day % SettlementIntervalDays == 0) {
 ```
 
 **보유 잔액이 아니라 기간 수입이다** — 장비를 사도 정산이 불리해지지 않는다.
+
+**전멸 패널티 (2026-10-12, [../goal/loop-7a-wipe-penalty.md](../goal/loop-7a-wipe-penalty.md))** — `CL9Rules.bWipeEndsRun` 이 꺼져 있으면(의도값)
+전멸은 실패가 아니라 비용이다. `ACL9GameMode::EndNight` 가 남겨짐 판정 뒤 산 사람이 없으면 `ApplyWipePenalty()` 를 부른다:
+
+```cpp
+Taken = GameState.Deduct(Rules.WipePenaltyFor(SharedMoney));  // floor(잔액 × WipePenaltyRate), 0.30 — 잔액 하한 0
+// PeriodIncome 은 그대로 — 위 정산 판정은 영향을 받지 않는다
+```
+
+판 중 전멸(`HandlePlayerDeath` → `EndNight`)과 판 끝에 전원이 남겨진 경우가 같은 자리를 지나 **한 번** 깎는다. 새벽 화면·정산·저장(`EnterLobby`)보다
+먼저라 깎인 잔액이 그날 세이브에 들어간다. 결과는 `ACL9GameState::WipePenalty`(`FCL9WipePenalty{bActive, Taken}`, 복제)로 싣고 새벽 화면이
+한 줄로 보여 준다(다음 `StartNight` 가 지운다). 로그 `Wipe penalty: 30% of <전> ether — <N> taken. Money <전> -> <후>.`
 
 ## 난이도 곡선 적용
 
@@ -123,7 +135,8 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
 
 ## 구현 상태 (정산 — 2026-09-07)
 
-- **곡선·주기**: `UCL9ProgressionDef`에 `QuotaCurve`(정산일 목표 이더)와 `SettlementIntervalDays`(초안 2).
+- **곡선·주기**: `UCL9ProgressionDef`에 `QuotaCurve`(정산일 목표 이더)와 `SettlementIntervalDays`(초안 2 → **2026-10-12 3**, 에셋·헤더 모두.
+  `QuotaCurve` 첫 키도 2일차 → 3일차, 값 800 그대로 — 7a).
   `QuotaAt(일차)`는 **빈 커브를 0으로 읽는다** — 다른 커브와 달리 배율이 아니라 목표액이라, 곡선을 안 그린
   상태에서 판이 갑자기 실패하지 않게 했다(다른 커브의 "빈 값 = 1.0"과 일부러 다르다).
   `IsSettlementDay(일차)`는 `일차 % 주기 == 0`이며, 주기가 0 이하면 정산이 없다.
@@ -133,6 +146,9 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
   장비를 사도 정산이 불리해지지 않는다.
 - **판 실패**: `StartNewRun()` — 기록을 먼저 남기고(아래), 월드의 장비 실물을 전부 없앤 뒤
   `GameState.RestoreRun(1, 0, 0, {})`로 1일차 빈손 상태를 연다. 그 상태가 그대로 새벽 저장에 덮어써진다.
+- **2026-10-12 정정(7i, [../goal/loop-7i-company.md](../goal/loop-7i-company.md))**: 회사 레벨(`CL9Rules.CompanyLevel`)이 있으면 정산은 **회사에 도착할 때** 한다(로비의 `Settle` 은 건너뛴다).
+  미달은 판을 끝내지 않는다 — 판의 코인에서 `CL9Rules.QuotaMissPenaltyFor`(초안 30%)를 깎고(`Deduct`) 기간 수입을 0 으로, 결과는 `GameState.QuotaPenalty`(복제, 새벽 화면 줄).
+  `StartNewRun()` 은 `cl9.settle force` 에만 남는다. 그래서 지금 규칙에서 정산으로 판이 끝나는 일은 없다.
 - **신호**: `ACL9GameState::OnSettled(Day, Earned, Target, bPassed)` — 통과·미달 **둘 다** 발동하고,
   **상태를 되돌리기 전에** 보낸다. 통과하면 기간 수입이 0이 되고 미달하면 1일차로 돌아가므로 그 뒤에는
   새벽 화면이 보여줄 숫자가 남지 않기 때문이다. `bPassed=false`는 그 판이 끝났다는 뜻이다 —

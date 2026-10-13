@@ -87,6 +87,37 @@ public:
 	int32 MaxHp = 0;
 
 	/**
+	 * 호스트 전용: 이 사람을 죽인 플레이어(팀킬 휘두르기, docs/goal/loop-7d-team-kill.md) — 죽는 타격의 출처가 플레이어 캐릭터일 때만 채워지고,
+	 * 몬스터·남겨짐·치트로 죽으면 비워지며, 부활에서 지운다. 복제하지 않는다 — 임포스터의 "직접 처치" 판정(7g)은 호스트가 한다
+	 */
+	UPROPERTY()
+	TObjectPtr<ACL9PlayerState> KilledByPlayer;
+
+	/**
+	 * 호스트 전용(처치 기여, docs/goal/loop-7h-kill-contribution.md): 이 사람을 죽인 몬스터를 `CL9Rules.ContributionWindow` 안에 깨운 다른 플레이어 —
+	 * 몬스터에게 죽었을 때만 채워지고 부활에서 지운다. `InducedByMonsterName` 은 그 몬스터의 표시 이름(새벽 화면용). 복제하지 않는다
+	 */
+	UPROPERTY()
+	TObjectPtr<ACL9PlayerState> InducedByPlayer;
+
+	FText InducedByMonsterName;
+
+	/**
+	 * 이번 판의 임포스터인지(docs/goal/loop-7g-imposter.md) — **본인 머신에만** 복제된다(COND_OwnerOnly). 다른 머신은 판이 끝나
+	 * 새벽 화면이 공개할 때까지 모른다. 호스트만 `HostSetImposter` 로 쓴다
+	 */
+	bool IsImposter() const
+	{
+		return bImposter;
+	}
+
+	/** 호스트 전용: 임포스터 역할을 주거나 거둔다 — 값이 바뀔 때만 복제하고 호스트 쪽 훅(`OnImposterChanged`)을 직접 발동한다 */
+	void HostSetImposter(bool bInImposter);
+
+	/** 임포스터 역할이 바뀌었다 — 본인 머신의 HUD 가 알림을 띄운다(다른 머신에서는 뜨지 않는다) */
+	FSimpleMulticastDelegate OnImposterChanged;
+
+	/**
 	 * 퀵슬롯 칸들 — 크기는 CL9Rules.QuickSlots(호스트가 BeginPlay에서 맞춘다). 활성 칸은 캐릭터
 	 * HeldItem 액터의 미러이고, 비활성 칸은 액터 없이 데이터(Alias·SubAlias·Value)만 든다.
 	 * 빈 칸은 ItemAlias가 None이다.
@@ -105,6 +136,13 @@ public:
 protected:
 	UFUNCTION()
 	void OnRep_Hp();
+
+	/** `IsImposter` 의 값 — `HostSetImposter` 로만 쓴다 */
+	UPROPERTY(ReplicatedUsing=OnRep_Imposter)
+	bool bImposter = false;
+
+	UFUNCTION()
+	void OnRep_Imposter();
 
 	UFUNCTION()
 	void OnRep_Slots();

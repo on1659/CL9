@@ -26,6 +26,29 @@ class UCL9GameInstance : public UGameInstance
 public:
 	virtual void Init() override;
 
+	// -- 레벨을 건너는 판 (docs/goal/loop-7i-company.md) --
+
+	/** 호스트 전용: 다음 레벨이 판을 이어 가게 표시한다 — 판은 게임 모드가 이미 저장했다(`SaveRun`). `FromSite` = 떠나는 사이트(회사 목적지 판의 처음 값) */
+	void SetRunCarry(FName FromSite)
+	{
+		bRunCarry = true;
+		RunCarryFromSite = FromSite.IsNone() ? RunCarryFromSite : FromSite;
+	}
+
+	/** 새 레벨의 StartPlay 가 한 번 부른다 — 이어 갈 판이 있었으면 true 이고 표시는 지운다(떠나온 사이트는 남긴다) */
+	bool ConsumeRunCarry()
+	{
+		const bool bWasCarrying = bRunCarry;
+		bRunCarry = false;
+		return bWasCarrying;
+	}
+
+	/** 마지막으로 판을 싣고 떠나온 사이트 — 없으면 None */
+	FName GetRunCarryFromSite() const
+	{
+		return RunCarryFromSite;
+	}
+
 	UCL9DefRegistry* GetDefRegistry() const
 	{
 		return DefRegistry;
@@ -95,6 +118,10 @@ protected:
 	TSoftObjectPtr<UCL9SettingsTable> SettingsTableAsset;
 
 private:
+	/** `SetRunCarry` 의 표시 — 레벨이 바뀌어도 게임 인스턴스는 남는다 */
+	bool bRunCarry = false;
+	FName RunCarryFromSite;
+
 	UPROPERTY()
 	TObjectPtr<UCL9DefRegistry> DefRegistry;
 

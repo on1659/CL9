@@ -2,6 +2,11 @@
 
 #include "GameMode/CL9PlayerController.h"
 #include "CL9.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
+#include "Character/CL9Character.h"
+#include "Data/CL9DefRegistry.h"
+#include "Data/CL9RulesDef.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
@@ -9,12 +14,17 @@
 #include "GameMode/CL9CheatManager.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9GameState.h"
 #include "GameMode/CL9GameUserSettings.h"
+#include "GameMode/CL9Wallet.h"
 #include "InputMappingContext.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/CL9UIManager.h"
 #include "UI/CL9UITable.h"
 #include "UserSettings/EnhancedInputUserSettings.h"
+#include "World/CL9TruckPad.h"
+#include "World/CL9YardTension.h"
+#include "EngineUtils.h"
 
 ACL9PlayerController::ACL9PlayerController()
 {
@@ -43,6 +53,20 @@ void ACL9PlayerController::BeginPlay()
 
 	if (IsLocalPlayerController())
 	{
+		// 마당의 긴장(7j) — 머신마다 로컬로 하나. 시작 레벨·회사에서는 문이 없어 아무것도 하지 않는다
+		bool bHasYard = false;
+		for (TActorIterator<ACL9YardTension> It(GetWorld()); It; ++It)
+		{
+			bHasYard = true;
+			break;
+		}
+		if (!bHasYard)
+		{
+			FActorSpawnParameters YardParams;
+			YardParams.ObjectFlags |= RF_Transient;
+			GetWorld()->SpawnActor<ACL9YardTension>(ACL9YardTension::StaticClass(), FTransform::Identity, YardParams);
+		}
+
 		if (UCL9UIManager* UIManager = UCL9UIManager::Get(this))
 		{
 			UIManager->InitForPlayer(this);
@@ -286,6 +310,15 @@ void ACL9PlayerController::Client_OpenScreen_Implementation(FName UIName)
 	}
 }
 
+void ACL9PlayerController::Client_WalletGrant_Implementation(int32 Amount)
+{
+	// 바깥 재화는 각자의 것이다 — 이 머신의 지갑에 더한다(7f)
+	if (UCL9WalletSubsystem* Wallet = GetGameInstance() ? GetGameInstance()->GetSubsystem<UCL9WalletSubsystem>() : nullptr)
+	{
+		Wallet->ApplyGrant(Amount);
+	}
+}
+
 void ACL9PlayerController::Server_AcceptOrders_Implementation(const TArray<int32>& OfferedIndices)
 {
 	// 호스트가 선택을 확정한다(docs/systems/order.md 주문 흐름) — 클라이언트의 요청은 거부된다
@@ -297,5 +330,155 @@ void ACL9PlayerController::Server_AcceptOrders_Implementation(const TArray<int32
 	if (ACL9GameMode* GameMode = GetWorld()->GetAuthGameMode<ACL9GameMode>())
 	{
 		GameMode->AcceptOrders(OfferedIndices);
+	}
+}
+void ACL9PlayerController::TickArrivalCamera(float DeltaTime)
+{
+	UWorld* World = GetWorld();
+	const ACL9GameState* CL9GameState = World != nullptr ? World->GetGameState<ACL9GameState>() : nullptr;
+	const UCL9RulesDef* Rules = IntroCamRules(*this);
+	if (CL9GameState == nullptr || Rules == nullptr || PlayerCameraManager == nullptr)
+	{
+		return;
+	}
+
+	const float Alpha = CL9GameState->GetArrivalAlpha();
+	const bool bRunning = Alpha >= 0.f && Alpha < 1.f;
+	if (ArrivalCamera == nullptr)
+	{
+		if (!bRunning || CL9GameState->GetArrivalSeq() == ArrivalHandledSeq || IntroCamera != nullptr)
+		{
+			return;
+		}
+		ArrivalHandledSeq = CL9GameState->GetArrivalSeq();
+		const ACL9TruckPad* Pad = nullptr;
+		for (TActorIterator<ACL9TruckPad> It(World); It; ++It)
+		{
+			Pad = *It;
+			break;
+		}
+		if (Pad == nullptr)
+		{
+			return;
+		}
+		const FVector CameraLocation = FTransform(Pad->GetActorQuat(), Pad->GetActorLocation()).TransformPosition(Rules->ArrivalCameraOffset);
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.ObjectFlags |= RF_Transient;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		ArrivalCamera = World->SpawnActor<ACameraActor>(CameraLocation, FRotator::ZeroRotator, Params);
+		if (ArrivalCamera == nullptr)
+		{
+			return;
+		}
+		ArrivalCamera->GetCameraComponent()->SetConstraintAspectRatio(false);
+		SetViewTarget(ArrivalCamera);
+		SetArrivalCharactersHidden(true);
+		UE_LOG(LogCL9, Log, TEXT("Arrival camera: start at %s (%.0f%% in)."), *CameraLocation.ToCompactString(), Alpha * 100.f);
+	}
+
+	if (!bRunning)
+	{
+		EndArrivalCamera(TEXT("arrived"));
+		return;
+	}
+	if (GetViewTarget() != ArrivalCamera.Get())
+	{
+		// 접속·빙의 직후 서버가 뷰 타깃을 내 폰으로 돌려놓는다(클라이언트는 도착 중에 들어온다) — 도착 중이면 다시 잡는다.
+		// 다른 것(데스캠·관전·처형)이 가져갔으면 놓는다
+		if (GetViewTarget() == GetPawn())
+		{
+			SetViewTarget(ArrivalCamera);
+		}
+		else
+		{
+			EndArrivalCamera(TEXT("view target taken"));
+			return;
+		}
+	}
+	// 도착 중에 나타난 캐릭터(늦게 접속한 사람)도 숨긴다 — 몇 명뿐이라 매 틱 걸어도 싸다
+	SetArrivalCharactersHidden(true);
+	if (const ACL9Truck* Truck = ACL9Truck::Find(World))
+	{
+		const FVector Target = Truck->GetBodyLocation() + FVector(0.f, 0.f, 150.f);
+		ArrivalCamera->SetActorRotation((Target - ArrivalCamera->GetActorLocation()).Rotation());
+	}
+}
+
+void ACL9PlayerController::EndArrivalCamera(const TCHAR* Why)
+{
+	if (ArrivalCamera == nullptr)
+	{
+		return;
+	}
+	if (GetViewTarget() == ArrivalCamera.Get() && GetPawn() != nullptr)
+	{
+		SetViewTargetWithBlend(GetPawn(), 0.6f);
+	}
+	// 바로 지우지 않는다 — 블렌드가 이 카메라에서 나가는 중이다
+	ArrivalCamera->SetLifeSpan(1.f);
+	ArrivalCamera = nullptr;
+	SetArrivalCharactersHidden(false);
+	UE_LOG(LogCL9, Log, TEXT("Arrival camera: end (%s)."), Why);
+}
+
+void ACL9PlayerController::SetArrivalCharactersHidden(bool bHideCharacters)
+{
+	for (TActorIterator<ACL9Character> It(GetWorld()); It; ++It)
+	{
+		It->SetActorHiddenInGame(bHideCharacters);
+	}
+}
+
+
+void ACL9PlayerController::Server_SetSkin_Implementation(FName SkinAlias)
+{
+	ACL9Character* SkinCharacter = Cast<ACL9Character>(GetPawn());
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance != nullptr ? GameInstance->GetDefRegistry() : nullptr;
+	if (SkinCharacter == nullptr || Registry == nullptr)
+	{
+		return;
+	}
+	// 없는 행이면 기본으로 — 파일이 지난 빌드의 스킨을 들고 있을 수 있다
+	const FName Applied = (!SkinAlias.IsNone() && Registry->FindSkin(SkinAlias) == nullptr) ? NAME_None : SkinAlias;
+	SkinCharacter->HostSetSkin(Applied);
+	UE_LOG(LogCL9, Log, TEXT("Skin: '%s' wears '%s'%s."), *GetNameSafe(this), *Applied.ToString(), Applied != SkinAlias ? TEXT(" (requested row missing)") : TEXT(""));
+}
+
+void ACL9PlayerController::RequestSkin(FName SkinAlias)
+{
+	if (HasAuthority())
+	{
+		Server_SetSkin_Implementation(SkinAlias);
+	}
+	else
+	{
+		Server_SetSkin(SkinAlias);
+	}
+}
+
+void ACL9PlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	// 호스트 자신(리슨 서버의 로컬 컨트롤러)은 지갑을 이 머신에서 바로 읽는다. 원격 클라이언트는 AcknowledgePossession 에서 스스로 알린다
+	if (IsLocalController())
+	{
+		if (const UCL9WalletSubsystem* Wallet = GetGameInstance() ? GetGameInstance()->GetSubsystem<UCL9WalletSubsystem>() : nullptr)
+		{
+			RequestSkin(Wallet->GetEquippedSkin());
+		}
+	}
+}
+
+void ACL9PlayerController::AcknowledgePossession(APawn* P)
+{
+	Super::AcknowledgePossession(P);
+	if (!HasAuthority() && IsLocalController())
+	{
+		if (const UCL9WalletSubsystem* Wallet = GetGameInstance() ? GetGameInstance()->GetSubsystem<UCL9WalletSubsystem>() : nullptr)
+		{
+			RequestSkin(Wallet->GetEquippedSkin());
+		}
 	}
 }

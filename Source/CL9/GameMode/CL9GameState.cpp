@@ -34,6 +34,162 @@ void ACL9GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ACL9GameState, SharedMoney);
 	DOREPLIFETIME(ACL9GameState, PeriodIncome);
 	DOREPLIFETIME(ACL9GameState, LastSettlement);
+	DOREPLIFETIME(ACL9GameState, StageStars);
+	DOREPLIFETIME(ACL9GameState, WipePenalty);
+	DOREPLIFETIME(ACL9GameState, ImposterResult);
+	DOREPLIFETIME(ACL9GameState, Contributions);
+	DOREPLIFETIME(ACL9GameState, QuotaPenalty);
+	DOREPLIFETIME(ACL9GameState, ArrivalServerTime);
+	DOREPLIFETIME(ACL9GameState, bArrivalThisRound);
+	DOREPLIFETIME(ACL9GameState, ArrivalSeq);
+}
+
+void ACL9GameState::SetWipePenalty(const FCL9WipePenalty& Penalty)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	WipePenalty = Penalty;
+	ForceNetUpdate();
+	// 리슨 호스트에서는 OnRep 이 뜨지 않는다 — 로컬 훅을 직접 발동한다
+	OnRep_WipePenalty();
+}
+
+void ACL9GameState::OnRep_WipePenalty()
+{
+	OnWipePenaltyChanged.Broadcast();
+}
+
+void ACL9GameState::SetImposterResult(const FCL9ImposterResult& Result)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	ImposterResult = Result;
+	ForceNetUpdate();
+	// 리슨 호스트에서는 OnRep 이 뜨지 않는다 — 로컬 훅을 직접 발동한다
+	OnRep_ImposterResult();
+}
+
+void ACL9GameState::OnRep_ImposterResult()
+{
+	OnImposterResultChanged.Broadcast();
+}
+
+void ACL9GameState::SetContributions(const TArray<FCL9Contribution>& InContributions)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	Contributions = InContributions;
+	ForceNetUpdate();
+	// 리슨 호스트에서는 OnRep 이 뜨지 않는다 — 로컬 훅을 직접 발동한다
+	OnRep_Contributions();
+}
+
+void ACL9GameState::OnRep_Contributions()
+{
+	OnContributionsChanged.Broadcast();
+}
+
+void ACL9GameState::SetQuotaPenalty(const FCL9WipePenalty& Penalty)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	QuotaPenalty = Penalty;
+	ForceNetUpdate();
+	// 리슨 호스트에서는 OnRep 이 뜨지 않는다 — 로컬 훅을 직접 발동한다
+	OnRep_QuotaPenalty();
+}
+
+void ACL9GameState::OnRep_QuotaPenalty()
+{
+	OnQuotaPenaltyChanged.Broadcast();
+}
+
+void ACL9GameState::SetRunCleared(int32 Day, int32 BestDay)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	RunOver.bActive = true;
+	RunOver.bCleared = true;
+	RunOver.Day = Day;
+	RunOver.BestDay = BestDay;
+	RunOver.SiteStars = StageStars;
+	ForceNetUpdate();
+	UE_LOG(LogCL9, Log, TEXT("Run cleared — the last destination was settled on day %d (best day %d, %d destination(s))."),
+		Day, BestDay, StageStars.Num());
+}
+
+int32 ACL9GameState::GetSiteStars(FName Site) const
+{
+	const FCL9SiteStars* Found = StageStars.FindByPredicate([Site](const FCL9SiteStars& Entry) { return Entry.Site == Site; });
+	return Found != nullptr ? Found->Stars : -1;
+}
+
+void ACL9GameState::RecordSiteStars(FName Site, int32 Stars)
+{
+	if (!HasAuthority() || Site.IsNone())
+	{
+		return;
+	}
+
+	FCL9SiteStars* Found = StageStars.FindByPredicate([Site](const FCL9SiteStars& Entry) { return Entry.Site == Site; });
+	if (Found == nullptr)
+	{
+		FCL9SiteStars& Entry = StageStars.AddDefaulted_GetRef();
+		Entry.Site = Site;
+		Entry.Stars = FMath::Max(Stars, 0);
+	}
+	else
+	{
+		Found->Stars = FMath::Max(Found->Stars, Stars);
+	}
+	ForceNetUpdate();
+}
+
+void ACL9GameState::SetStageStars(const TArray<FCL9SiteStars>& Stars)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	StageStars = Stars;
+	ForceNetUpdate();
+}
+
+bool ACL9GameState::IsStageOpen(FName Site, const TArray<FName>& Order, int32 UnlockStars) const
+{
+	const int32 Index = Order.IndexOfByKey(Site);
+	if (Index == INDEX_NONE)
+	{
+		return false;
+	}
+	return Index == 0 || GetSiteStars(Site) >= 0 || GetSiteStars(Order[Index - 1]) >= UnlockStars;
+}
+
+void ACL9GameState::SetSettlementStage(int32 Stars, FName Site, FName OpenedSite, bool bCleared)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	LastSettlement.Stars = Stars;
+	LastSettlement.Site = Site;
+	LastSettlement.OpenedSite = OpenedSite;
+	LastSettlement.bCleared = bCleared;
 }
 
 void ACL9GameState::HostReportNoise(ECL9NoiseSource Source, const FVector& Location, float Radius, AActor* NoiseInstigator)
@@ -294,6 +450,30 @@ void ACL9GameState::StartNightClock(float NightLength, float DarkBase, float Dar
 	// 0이면 밤 내내 IsBlackout이 false로 유지된다; 그래도 ForceBlackout(cl9.blackout)으로 걸 수는 있다
 	BlackoutServerTime = bNoBlackout ? 0.f : NightStartServerTime + DarkBase;
 	NightDarkMin = DarkMin;
+	ArrivalServerTime = 0.f;
+	bArrivalThisRound = false;
+}
+
+void ACL9GameState::SetArrival()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+	ArrivalServerTime = NightStartServerTime;
+	bArrivalThisRound = true;
+	++ArrivalSeq;
+	ForceNetUpdate();
+}
+
+float ACL9GameState::GetArrivalAlpha() const
+{
+	const UCL9RulesDef* Rules = GetRules();
+	if (!bArrivalThisRound || Phase != ECL9NightPhase::Night || Rules == nullptr || Rules->ArrivalTime <= 0.f)
+	{
+		return -1.f;
+	}
+	return FMath::Max(0.f, static_cast<float>(GetServerWorldTimeSeconds()) - ArrivalServerTime) / Rules->ArrivalTime;
 }
 
 void ACL9GameState::SetDay(int32 NewDay)
@@ -327,6 +507,8 @@ void ACL9GameState::ClearNightClock()
 	NightStartServerTime = 0.f;
 	NightEndServerTime = 0.f;
 	BlackoutServerTime = 0.f;
+	ArrivalServerTime = 0.f;
+	bArrivalThisRound = false;
 	ReturnedItems.Reset();
 }
 

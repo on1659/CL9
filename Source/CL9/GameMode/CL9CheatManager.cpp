@@ -129,6 +129,10 @@ void UCL9CheatManager::HandleCommand(const FString& CommandLine)
 	{
 		GripLive(Tokens);
 	}
+	else if (Command == TEXT("imposter"))
+	{
+		Imposter(Tokens);
+	}
 	else
 	{
 		UE_LOG(LogCL9, Warning, TEXT("cl9.%s: unknown cheat."), *Command);
@@ -847,4 +851,20 @@ void UCL9CheatManager::Seed(const TArray<FString>& Args)
 	UE_LOG(LogCL9, Log, TEXT("cl9.seed: site rebuilt with seed %u%s%s."), Seed,
 		Seed == 0 ? TEXT(" (shell only)") : TEXT(" — the next night uses it too"),
 		CL9GameState->GetPhase() == ECL9NightPhase::Night ? TEXT("; animals already out may now stand inside walls") : TEXT(""));
+}
+
+void UCL9CheatManager::Imposter(const TArray<FString>& Args)
+{
+	ACL9GameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<ACL9GameMode>() : nullptr;
+	if (GameMode == nullptr)
+	{
+		UE_LOG(LogCL9, Warning, TEXT("cl9.imposter: host only (cl9.imposter [player index | -1])."));
+		return;
+	}
+	if (!Args.IsValidIndex(0))
+	{
+		GameMode->LogImposter();
+		return;
+	}
+	GameMode->CheatSetImposter(FCString::Atoi(*Args[0]));
 }

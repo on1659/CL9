@@ -185,6 +185,14 @@ static FAutoConsoleCommandWithWorldAndArgs GCL9CheatNight(
 		RouteCL9Cheat(TEXT("night"), Args, World, false);
 	}));
 
+static FAutoConsoleCommandWithWorldAndArgs GCL9CheatImposter(
+	TEXT("cl9.imposter"),
+	TEXT("cl9.imposter [player index | -1] — no argument logs the current imposter and the next round's pick; an index makes that player the imposter now (round running) or next round (lobby); -1 = none (host ruling)."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		RouteCL9Cheat(TEXT("imposter"), Args, World, false);
+	}));
+
 static FAutoConsoleCommandWithWorldAndArgs GCL9CheatBlackout(
 	TEXT("cl9.blackout"),
 	TEXT("cl9.blackout — pulls the blackout to now during the night (host ruling)."),

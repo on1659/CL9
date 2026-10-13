@@ -59,6 +59,10 @@ void ACL9Kitchen::TickCooking(float Now) {
   ([../plan/data/equipment.md](../plan/data/equipment.md)).
 - 조리대는 지금 레벨에 손으로 놓는다. **나중에는 던전 안에 맵 생성기가 배치한다**
   ([map.md](map.md)) — 요리하는 자리가 원정지 안에 있다는 뜻이다.
+  **2026-10-12 구현(7c, [../goal/loop-7c-kitchen-in-building.md](../goal/loop-7c-kitchen-in-building.md))**: 생성된 맵의 `kitchen` 모듈마다 조리대 **하나**를
+  호스트가 판 시작에 세운다(모듈 표 `PropSets[].Fixtures` — 작업대 자리, 벽에 등을 대고 방 안을 본다). 판이 끝나면 밤 개체와 함께 없어지고,
+  스테이지 레벨의 로비에는 조리대가 없다 — 부엌을 찾아야 요리할 수 있다. 손으로 놓는 조리대는 생성기가 없는 시험 레벨 `Lvl_Flat` 의 3개뿐이다.
+  양계장 1·돼지 농장 2·대농장 4개(사이트 `SpecialCopies`).
 
 ## 네트워크 동기화
 

@@ -183,6 +183,22 @@ protected:
 	UPROPERTY(EditAnywhere, Category="HUD")
 	float CookGaugeLift = 60.f;
 
+	/** 임포스터 알림(본인에게만, docs/goal/loop-7g-imposter.md)이 장소 알림 자리에 머무는 총 시간, 초 — 장소 이름보다 글이 길어 더 오래 둔다 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float ImposterNoticeDuration = 6.f;
+
+	/** 회사에 도착하면 한 번 여는 화면(정산 결과, 7i) — UI 표의 행 이름(데이터) */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	FName CompanyScreenRow = FName("Dawn");
+
+	/** 판을 여는 "오늘의 주문" 카드(7j)가 화면 가운데에 머무는 총 시간(초, 페이드 포함) — 그 뒤엔 HUD 주문 줄만 남는다 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	float OrderCardDuration = 6.f;
+
+	/** 주문 카드 글자 크기 */
+	UPROPERTY(EditAnywhere, Category="HUD")
+	int32 OrderCardTextSize = 22;
+
 	/** 이번 기간 수입과 정산까지 남은 날 — 압박이 숫자로 읽히게 한다(docs/systems/economy.md 정산) */
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> PeriodText;
@@ -237,6 +253,9 @@ private:
 
 	UFUNCTION()
 	void HandleMoneyChanged();
+
+	/** 내 임포스터 역할이 바뀌었다(본인 머신에만 복제) — 켜졌으면 장소 알림 자리에 임포스터 알림을 띄운다 */
+	void HandleImposterChanged();
 
 	UFUNCTION()
 
@@ -317,6 +336,34 @@ private:
 
 	/** 주문 화면은 offer 상태에서 파생된다: GameState.OfferedOrders가 서 있는 동안 열리고, 선택이 이를 비우면 닫힌다 */
 	void DeriveOrderScreen();
+
+	/**
+	 * 회사(7i, docs/goal/loop-7i-company.md)에 도착하면 정산 결과 화면(`CompanyScreenRow`)을 한 번 연다 — 복제된 지난 정산(`LastSettlement.Day > 0`)에서 파생한다.
+	 * 접속 순간(PostLogin)에는 UI 매니저가 아직 없어 RPC 로 열 수 없다(클라이언트는 이동 뒤 다시 접속한다)
+	 */
+	void DeriveCompanyScreen();
+
+	/** `DeriveCompanyScreen` 이 이 레벨에서 이미 열었나 */
+	bool bCompanyScreenShown = false;
+
+	/**
+	 * "오늘의 주문" 카드(7j, docs/goal/loop-7j-round-start.md) — 판이 열리고 트럭 도착이 끝나면(레버로 연 판은 바로) 한 번, 가운데에 띄운 뒤 흐려진다.
+	 * WBP 를 바꾸지 않고 `CookLayer` 캔버스에 런타임으로 만든다. 글은 제목 + 지금 HUD 주문 줄
+	 */
+	void TickOrderCard(float InDeltaTime);
+	void ShowOrderCard();
+
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> OrderCard;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> OrderCardText;
+
+	/** 판으로 넘어왔고 아직 카드를 띄우지 않았다 — 페이즈가 판이 될 때(또는 배선 때 이미 판이면) 선다. 시작 시각은 레벨의 첫 판이면 0 이라 쓰지 않는다 */
+	bool bOrderCardPending = false;
+
+	/** 카드가 뜬 뒤 흐른 시간, 음수 = 쉬는 중 */
+	float OrderCardElapsed = -1.f;
 
 	/** 아이템 테이블 행의 표시 이름, 없으면 alias로 대체 */
 	FText ItemLabel(const FCL9CarriedItem& Item) const;

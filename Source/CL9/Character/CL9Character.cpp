@@ -50,6 +50,8 @@
 #include "Items/CL9Item.h"
 #include "Items/CL9FlashItem.h"
 #include "Monsters/CL9Monster.h"
+#include "Data/CL9SkinDef.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 namespace
 {
@@ -203,6 +205,7 @@ void ACL9Character::SetCharacterAlias(FName NewAlias)
 
 	CharacterAlias = NewAlias;
 	ApplyCharacterDef();
+	ApplySkin();
 
 	// 개인의 HP는 호스트에서 한 번만 굴려진다 (docs/systems/character.md —
 	// HP는 항상 PlayerState에 있고 캐릭터에는 없다).
@@ -225,6 +228,7 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACL9Character, CharacterAlias);
+	DOREPLIFETIME(ACL9Character, SkinAlias);
 	DOREPLIFETIME(ACL9Character, HeldItem);
 	DOREPLIFETIME(ACL9Character, PullingCart);
 	DOREPLIFETIME(ACL9Character, SwingStartServerTime);
@@ -250,6 +254,63 @@ void ACL9Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 void ACL9Character::OnRep_CharacterAlias()
 {
 	ApplyCharacterDef();
+	// 행이 몸을 다시 입혔다 — 입은 스킨을 그 위에 다시 건다(7k)
+	ApplySkin();
+}
+
+void ACL9Character::OnRep_SkinAlias()
+{
+	ApplySkin();
+}
+
+void ACL9Character::HostSetSkin(FName NewSkin)
+{
+	if (!HasAuthority() || NewSkin == SkinAlias)
+	{
+		return;
+	}
+	SkinAlias = NewSkin;
+	ForceNetUpdate();
+	ApplySkin();
+}
+
+void ACL9Character::ApplySkin()
+{
+	const UCL9GameInstance* GameInstance = GetGameInstance<UCL9GameInstance>();
+	const UCL9DefRegistry* Registry = GameInstance ? GameInstance->GetDefRegistry() : nullptr;
+	const UCL9SkinDef* Skin = (Registry != nullptr && !SkinAlias.IsNone()) ? Registry->FindSkin(SkinAlias) : nullptr;
+	if (CharacterDef == nullptr)
+	{
+		return;   // 행이 아직 없다 — 행이 오면(OnRep_CharacterAlias) 다시 부른다
+	}
+
+	// 몸 — 스킨이 몸 전체를 바꾸면 그것, 아니면 캐릭터 행의 몸(다른 스킨에서 돌아올 때)
+	USkeletalMesh* Body = (Skin != nullptr && !Skin->BodyMesh.IsNull()) ? Skin->BodyMesh.LoadSynchronous() : CharacterDef->SkeletalMesh.LoadSynchronous();
+	if (Body != nullptr && GetMesh()->GetSkeletalMeshAsset() != Body)
+	{
+		GetMesh()->SetSkeletalMesh(Body);
+	}
+
+	// 재질 — 지난 스킨의 색을 걷고, 대역 스킨이면 옷 칸에 색을 칠한다(몸·팔 둘 다, 칸이 없는 메시는 지나간다)
+	GetMesh()->EmptyOverrideMaterials();
+	FirstPersonMesh->EmptyOverrideMaterials();
+	if (Skin != nullptr && Skin->Tint.A > 0.f)
+	{
+		for (USkeletalMeshComponent* SkinMesh : { GetMesh(), FirstPersonMesh.Get() })
+		{
+			const int32 Slot = SkinMesh != nullptr ? SkinMesh->GetMaterialIndex(Skin->TintSlot) : INDEX_NONE;
+			if (Slot == INDEX_NONE)
+			{
+				continue;
+			}
+			if (UMaterialInstanceDynamic* Dynamic = SkinMesh->CreateDynamicMaterialInstance(Slot))
+			{
+				Dynamic->SetVectorParameterValue(Skin->TintParameter, Skin->Tint);
+			}
+		}
+	}
+	UE_LOG(LogCL9, Log, TEXT("'%s' wears skin '%s'%s."), *GetNameSafe(this), SkinAlias.IsNone() ? TEXT("default") : *SkinAlias.ToString(),
+		Skin == nullptr && !SkinAlias.IsNone() ? TEXT(" (no such row — default look)") : TEXT(""));
 }
 
 void ACL9Character::ApplyCharacterDef()
@@ -1372,6 +1433,7 @@ void ACL9Character::HostSwing()
 	// 같은 몬스터를 다시 맞힐 수 있게 하고, 이전 틱 경과는 "아직 없음"으로 둔다. 표면음·로그 계수도 휘두르기 단위다
 	SwingHitItem = HeldItem;
 	SwingHitMonsters.Reset();
+	SwingHitPlayers.Reset();
 	SwingHitPrevElapsed = -1.f;
 	SwingNearestStruckDist = TNumericLimits<float>::Max();
 	bSwingSurfaceStamped = false;
@@ -1432,12 +1494,12 @@ void ACL9Character::HostTickSwingHit()
 			FCollisionShape::MakeSphere(Radius), Params, ResponseParams);
 
 		// 이번 휘두르기에서 아직 아무것도 못 맞혔는가 — 카메라 킥을 한 휘두르기에 한 번만 내기 위한 기준이다
-		const bool bFirstConnect = SwingHitMonsters.IsEmpty();
+		const bool bFirstConnect = SwingHitMonsters.IsEmpty() && SwingHitPlayers.IsEmpty();
 
 		int32 Struck = 0;
 		for (const FHitResult& Hit : Hits)
 		{
-			// 대상은 몬스터뿐이다 — 사람은 맞지 않는다(플레이어끼리의 타격은 없다)
+			// 이 스윕의 대상은 몬스터다 — 사람은 아래 Pawn 스윕이 따로 고른다(팀킬, 2026-10-12)
 			ACL9Monster* Monster = Cast<ACL9Monster>(Hit.GetActor());
 			if (Monster == nullptr || SwingHitMonsters.Contains(Monster))
 			{
@@ -1451,7 +1513,7 @@ void ACL9Character::HostTickSwingHit()
 			++SwingTestedCount;
 
 			// 가림: 원점 → 몬스터 구 **중심**(ImpactPoint 는 시작 관통이면 길이 0 이다)으로 Visibility 선 트레이스. 세상 지형이 먼저
-			// 막으면 벽 너머다. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 맞지도 가리지도 않는다). 열 없음, 항상 켜짐
+			// 막으면 벽 너머다. 폰·아이템·다른 몬스터는 가리지 않는다(사람은 가리지 않는다 — 사람을 맞히는 것은 아래 Pawn 스윕). 열 없음, 항상 켜짐
 			FHitResult Block;
 			if (ACL9Monster::TraceWorld(GetWorld(), this, Origin, Monster->GetActorLocation(), Block, Item))
 			{
@@ -1461,6 +1523,35 @@ void ACL9Character::HostTickSwingHit()
 			SwingHitMonsters.Add(Monster);
 			SwingNearestStruckDist = FMath::Min(SwingNearestStruckDist, FVector::Dist(Origin, Monster->GetActorLocation()));
 			Monster->OnStrike(Def->HitDamage, Def->HitStun, Def->HitKnockback, this);
+			++Struck;
+		}
+
+		// 팀킬 (docs/goal/loop-7d-team-kill.md, 2026-10-11 사용자) — 사람도 맞는다. 위 몬스터 스윕은 그대로 두고(폰은 그 결과에 없다)
+		// 같은 구로 Pawn 채널을 한 번 더 겹침 스윕해 나 아닌 플레이어만 고른다. 한 휘두르기에 한 사람 한 번·벽 가림은 몬스터와 같은 규칙이고,
+		// 피해는 아이템의 HitDamage 를 사람이 받는 단일 문(OnDamage — 넘어짐·인트로 무적, 죽음의 흘림·데스캠)으로 넣는다
+		FCollisionResponseParams PawnResponse(ECR_Ignore);
+		PawnResponse.CollisionResponse.SetResponse(ECC_Pawn, ECR_Overlap);
+		TArray<FHitResult> PawnHits;
+		GetWorld()->SweepMultiByChannel(PawnHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn,
+			FCollisionShape::MakeSphere(Radius), Params, PawnResponse);
+		for (const FHitResult& Hit : PawnHits)
+		{
+			ACL9Character* Victim = Cast<ACL9Character>(Hit.GetActor());
+			if (Victim == nullptr || Victim == this || Victim->IsDead() || SwingHitPlayers.Contains(Victim))
+			{
+				continue;
+			}
+			++SwingTestedCount;
+
+			FHitResult Block;
+			if (ACL9Monster::TraceWorld(GetWorld(), this, Origin, Victim->GetActorLocation(), Block, Item))
+			{
+				++SwingOccludedCount;
+				continue;
+			}
+			SwingHitPlayers.Add(Victim);
+			SwingNearestStruckDist = FMath::Min(SwingNearestStruckDist, FVector::Dist(Origin, Victim->GetActorLocation()));
+			Victim->OnDamage(Def->HitDamage, this, Def->HitKnockback);
 			++Struck;
 		}
 
@@ -2097,6 +2188,7 @@ void ACL9Character::OnDamage(int32 Amount, AActor* Source, float /*Knockback*/)
 			*GetNameSafe(this), *GetNameSafe(Source));
 		return;
 	}
+	// 사람이 때렸으면(팀킬 휘두르기) 동사가 다르다 — 로그에서 몬스터에게 잡힌 것과 갈린다
 
 	HostApplyDamage(Amount, Source, TEXT("caught by"));
 }
@@ -2155,6 +2247,26 @@ void ACL9Character::HostApplyDamage(int32 Amount, AActor* Source, const TCHAR* V
 
 	if (CL9PlayerState->Hp <= 0)
 	{
+		// 사망 원인 — 플레이어가 죽였으면 그 사람을 남긴다(팀킬 7d, 임포스터의 "직접 처치" 판정 7g 가 읽는다). 몬스터·남겨짐·치트면 비운다
+		const ACL9Character* Killer = Cast<ACL9Character>(Source);
+		CL9PlayerState->KilledByPlayer = Killer != nullptr ? Killer->GetCL9PlayerState() : nullptr;
+		if (CL9PlayerState->KilledByPlayer != nullptr)
+		{
+			UE_LOG(LogCL9, Log, TEXT("'%s' was killed by player '%s'."), *CL9PlayerState->GetPlayerName(), *CL9PlayerState->KilledByPlayer->GetPlayerName());
+		}
+		// 처치 기여(7h) — 몬스터에게 죽었으면 그 몬스터를 창 안에 깨운 다른 사람을 남긴다(임포스터 처치·유도 보상·새벽 목록이 읽는다)
+		const ACL9Monster* Monster = Cast<ACL9Monster>(Source);
+		const UCL9RulesDef* ContributionRules = GetRules();
+		CL9PlayerState->InducedByPlayer = (Monster != nullptr && ContributionRules != nullptr)
+			? Monster->GetContributor(CL9PlayerState, ContributionRules->ContributionWindow) : nullptr;
+		CL9PlayerState->InducedByMonsterName = (CL9PlayerState->InducedByPlayer != nullptr && Monster->GetMonsterDef() != nullptr)
+			? Monster->GetMonsterDef()->DisplayName : FText::GetEmpty();
+		if (CL9PlayerState->InducedByPlayer != nullptr)
+		{
+			UE_LOG(LogCL9, Log, TEXT("'%s' was caught by '%s', woken by '%s' — contribution."), *CL9PlayerState->GetPlayerName(),
+				*GetNameSafe(Monster), *CL9PlayerState->InducedByPlayer->GetPlayerName());
+		}
+
 		// 데스캠 — 죽은 순간부터(처형 즉사·보통 사망 공통) 자기 시체를 본다. 호스트 자기 폰은 바로 적용하고, 클라는 HP 복제로
 		// 따라온다(PlayerState 를 지금 보내 뷰 타깃 RPC 와 같은 틱에 가게). 처형 중이었으면 몬스터 카메라에서 데스캠으로 블렌드
 		// (HostBeginExecuted 의 SetViewTargetWithBlend(Executioner) 짝 — D6 의 "죽은 폰으로 되돌리지 않는다" 번복, 2026-09-20 밤).
@@ -2200,6 +2312,13 @@ void ACL9Character::HostRevive()
 	}
 
 	HostHealFull();
+	if (ACL9PlayerState* CL9PlayerState = GetCL9PlayerState())
+	{
+		// 지난 죽음의 원인은 부활과 함께 지운다 — 다음 판에 옛 처치자가 남지 않게
+		CL9PlayerState->KilledByPlayer = nullptr;
+		CL9PlayerState->InducedByPlayer = nullptr;
+		CL9PlayerState->InducedByMonsterName = FText::GetEmpty();
+	}
 	KnockdownEndServerTime = 0.f;
 	// 데스캠을 끄고 1인칭·팔을 되돌린다 — 뷰 타깃은 이미 자기 폰(관전 중이었으면 ReviveDead 가 되돌린다)
 	ApplyDeathCamera();

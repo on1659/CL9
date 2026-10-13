@@ -44,6 +44,8 @@ void ACL9PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ACL9PlayerState, Slots);
 	DOREPLIFETIME(ACL9PlayerState, ActiveSlot);
 	DOREPLIFETIME(ACL9PlayerState, HeadItem);
+	// 임포스터 정체는 본인만 안다 — 다른 머신에는 새벽 공개(게임 스테이트의 결과)까지 오지 않는다 (loop-7g)
+	DOREPLIFETIME_CONDITION(ACL9PlayerState, bImposter, COND_OwnerOnly);
 }
 
 int32 ACL9PlayerState::FindEmptySlot() const
@@ -86,6 +88,24 @@ FLinearColor ACL9PlayerState::GetSlotColor(const FLinearColor& Fallback) const
 void ACL9PlayerState::OnRep_Hp()
 {
 	OnHpChanged.Broadcast();
+}
+
+void ACL9PlayerState::HostSetImposter(bool bInImposter)
+{
+	if (!HasAuthority() || bImposter == bInImposter)
+	{
+		return;
+	}
+
+	bImposter = bInImposter;
+	ForceNetUpdate();
+	// 리슨 호스트 자기 플레이어에게는 OnRep 이 뜨지 않는다 — 로컬 훅을 직접 발동한다
+	OnRep_Imposter();
+}
+
+void ACL9PlayerState::OnRep_Imposter()
+{
+	OnImposterChanged.Broadcast();
 }
 
 void ACL9PlayerState::OnRep_Slots()

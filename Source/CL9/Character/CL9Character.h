@@ -83,6 +83,9 @@ public:
 	 */
 	void SetCharacterAlias(FName NewAlias);
 
+	/** 호스트 전용(7k): 입은 스킨을 바꾼다 — 행이 있어야 한다(None = 기본). 바로 입히고 복제한다 */
+	void HostSetSkin(FName NewSkin);
+
 	/** 현재 적용된 테이블 행 — alias가 도착하기 전까지는 null */
 	const UCL9CharacterDef* GetCharacterDef() const
 	{
@@ -566,6 +569,12 @@ protected:
 	UFUNCTION()
 	void OnRep_CharacterAlias();
 
+	UFUNCTION()
+	void OnRep_SkinAlias();
+
+	/** 입은 스킨(7k)을 몸·팔에 입힌다 — 몸은 스킨 행의 것 또는 캐릭터 행의 것, 재질 덮어쓰기를 걷은 뒤 대역 색을 칠한다. 모든 머신에서 */
+	void ApplySkin();
+
 	/** 로컬 레지스트리에서 행을 읽어와 판정용 수치와 표시를 적용한다 */
 	void ApplyCharacterDef();
 
@@ -823,6 +832,10 @@ private:
 	UPROPERTY(ReplicatedUsing=OnRep_CharacterAlias)
 	FName CharacterAlias;
 
+	/** 입은 스킨 행(7k) — None 이면 기본. 주인이 자기 지갑에서 골라 호스트에 알리고(`HostSetSkin`) 모든 머신에 복제된다 */
+	UPROPERTY(ReplicatedUsing=OnRep_SkinAlias)
+	FName SkinAlias;
+
 	/** alias가 가리키는 캐시된 행 (레지스트리가 살아있게 유지하며, 빠른 읽기를 위해 캐시한다) */
 	UPROPERTY()
 	TObjectPtr<const UCL9CharacterDef> CharacterDef;
@@ -873,6 +886,9 @@ private:
 
 	/** 호스트 전용: 이번 휘두르기에서 이미 맞은 몬스터들 — 한 번 휘두를 때 같은 몬스터는 한 번만 맞는다. 휘두르기 시작에 비운다 */
 	TSet<TWeakObjectPtr<ACL9Monster>> SwingHitMonsters;
+
+	/** 호스트 전용: 이번 휘두르기에서 이미 맞은 다른 플레이어들(팀킬, docs/goal/loop-7d-team-kill.md) — 몬스터와 같은 규칙. 휘두르기 시작에 비운다 */
+	TSet<TWeakObjectPtr<ACL9Character>> SwingHitPlayers;
 
 	/** 호스트 전용: 직전 틱의 SwingElapsed, 음수면 이번이 이 휘두르기의 첫 틱이다 — 틱이 덮는 구간 (Prev, Now] 와 히트 구간의 겹침 판정용 */
 	float SwingHitPrevElapsed = -1.f;

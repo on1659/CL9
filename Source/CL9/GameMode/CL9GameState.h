@@ -27,6 +27,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCL9MoneyChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FCL9Settled, int32, Day, int32, Earned, int32, Target, bool, bPassed);
 
 /**
+ * 전멸 패널티 결과가 바뀌었다 — 모든 머신에서 발동한다(클라이언트는 OnRep, 호스트는 setter 가 직접).
+ * 새벽 화면이 구독한다 (docs/goal/loop-7a-wipe-penalty.md).
+ */
+DECLARE_MULTICAST_DELEGATE(FCL9OnWipePenaltyChanged);
+DECLARE_MULTICAST_DELEGATE(FCL9OnImposterResultChanged);
+DECLARE_MULTICAST_DELEGATE(FCL9OnContributionsChanged);
+DECLARE_MULTICAST_DELEGATE(FCL9OnQuotaPenaltyChanged);
+
+/**
  * 모든 머신이 어느 사이트 맵 위에 서 있는지를 나타낸다(docs/systems/map.md 생성 흐름). 전달되는
  * 것은 시드뿐이며, Build는 설정할 때마다 증가시켜 같은 시드가 두 번 깔릴 때도
  * 알림이 발동하게 한다(처음 합류할 때는 시드 0이 기본값과 같다).
@@ -240,7 +249,117 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
 	TArray<FCL9CarriedItem> ReturnedItems;
 
+
+	/** 호스트 전용(7l): 판이 클리어로 끝났다 — 마지막 목적지를 별을 받고 마쳤다. 화면은 게임 오버와 같은 자리에서 파생한다 */
+	void SetRunCleared(int32 Day, int32 BestDay);
+
+	// -- 스테이지 별 (docs/goal/loop-7l-stage-stars.md) — 이번 판의 것, 판 저장본으로 레벨을 건넌다 --
+
+	/** 목적지별 이번 판 최고 별 */
+	const TArray<FCL9SiteStars>& GetStageStars() const { return StageStars; }
+
+	/** 목적지 `Site` 의 이번 판 최고 별 — 정산한 적이 없으면 -1 */
+	int32 GetSiteStars(FName Site) const;
+
+	/** 호스트 전용: 목적지 `Site` 를 별 `Stars` 로 정산했다 — 더 높을 때만 바꾼다. 처음이면 항목을 만든다(별 0 이어도 열린 목적지) */
+	void RecordSiteStars(FName Site, int32 Stars);
+
+	/** 호스트 전용: 판 저장본에서 되돌리거나(빈 배열이면) 새 판으로 지운다 */
+	void SetStageStars(const TArray<FCL9SiteStars>& Stars);
+
+	/**
+	 * 목적지 `Site` 가 열려 있나 — `Order`(사이트 표 순서) 의 첫 목적지이거나, 이번 판에 정산한 적이 있거나,
+	 * 바로 앞 목적지가 `UnlockStars` 이상을 받았으면. `Order` 에 없으면 false
+	 */
+	bool IsStageOpen(FName Site, const TArray<FName>& Order, int32 UnlockStars) const;
+
+	/** 호스트 전용: 이번 정산의 스테이지 결과를 지난 정산 복제본에 싣는다 — `Multicast_Settled` 보다 먼저 부른다 */
+	void SetSettlementStage(int32 Stars, FName Site, FName OpenedSite, bool bCleared);
+
+
+	/** 호스트 전용(7j): 이번 판이 트럭 도착으로 열린다 — 도착 시작 = 판 시작 시각. `StartNightClock` 뒤에 부른다 */
+	void SetArrival();
+
+	/** 트럭 도착 진행(0~1, 1 이상 = 끝) — 이번 판에 도착이 없거나 판이 아니면 −1 (docs/goal/loop-7j-round-start.md) */
+	float GetArrivalAlpha() const;
+
+	/**
+	 * 도착 순번 — 도착을 열 때마다 하나 오른다(0 = 아직 한 번도 없음). 로컬 카메라가 같은 도착을 두 번 시작하지 않게 견준다.
+	 * 레벨이 서자마자 여는 첫 판은 서버 시각이 0 이라 시각으로는 "없음"과 가를 수 없다
+	 */
+	int32 GetArrivalSeq() const { return ArrivalSeq; }
+
+
+
+	/** 호스트 전용: 전멸 패널티 결과를 싣는다(지울 때는 빈 값) — 호스트에서는 `OnWipePenaltyChanged` 를 직접 발동한다 */
+	void SetWipePenalty(const FCL9WipePenalty& Penalty);
+
+	/** 지난 판이 전멸로 끝났을 때 깎인 이더 — 새벽 화면이 읽는다. 다음 판이 시작될 때 비워진다 */
+	const FCL9WipePenalty& GetWipePenalty() const { return WipePenalty; }
+
+	/** 로컬 표현용 훅 — 전멸 패널티 결과가 바뀌면(모든 머신) */
+	FCL9OnWipePenaltyChanged OnWipePenaltyChanged;
+
+	/** 호스트 전용: 판 끝 임포스터 판정 결과를 싣는다(판 시작에 빈 값으로 지운다) — 호스트에서는 `OnImposterResultChanged` 를 직접 발동한다 */
+	void SetImposterResult(const FCL9ImposterResult& Result);
+
+	/** 지난 판의 임포스터 결과 — 새벽 화면이 모두에게 공개한다(loop-7g). 판 동안에는 비어 있다 */
+	const FCL9ImposterResult& GetImposterResult() const { return ImposterResult; }
+
+	/** 로컬 표현용 훅 — 임포스터 결과가 바뀌면(모든 머신) */
+	FCL9OnImposterResultChanged OnImposterResultChanged;
+
+	/** 호스트 전용: 지난 판의 처치 기여 목록을 싣는다(판 시작에 빈 목록으로 지운다) — 호스트에서는 `OnContributionsChanged` 를 직접 발동한다 */
+	void SetContributions(const TArray<FCL9Contribution>& InContributions);
+
+	/** 지난 판의 처치 기여 — 새벽 화면이 한 줄씩 보인다(7h) */
+	const TArray<FCL9Contribution>& GetContributions() const { return Contributions; }
+
+	/** 로컬 표현용 훅 — 처치 기여 목록이 바뀌면(모든 머신) */
+	FCL9OnContributionsChanged OnContributionsChanged;
+
+	/** 호스트 전용: 정산 미달 패널티 결과를 싣는다(판 시작에 빈 값으로 지운다, 7i) — 호스트에서는 `OnQuotaPenaltyChanged` 를 직접 발동한다 */
+	void SetQuotaPenalty(const FCL9WipePenalty& Penalty);
+
+	/** 지난 정산이 미달로 깎은 코인 — 새벽(정산) 화면이 읽는다. 모양은 전멸 패널티와 같다(있었나 + 깎은 양) */
+	const FCL9WipePenalty& GetQuotaPenalty() const { return QuotaPenalty; }
+
+	/** 로컬 표현용 훅 — 정산 미달 패널티가 바뀌면(모든 머신) */
+	FCL9OnQuotaPenaltyChanged OnQuotaPenaltyChanged;
+
 protected:
+	/** 지난 판의 전멸 패널티 — `SetWipePenalty` 로만 쓴다 */
+	UPROPERTY(ReplicatedUsing=OnRep_WipePenalty)
+	FCL9WipePenalty WipePenalty;
+
+	UFUNCTION()
+	void OnRep_WipePenalty();
+
+	/** 지난 판의 임포스터 결과 — `SetImposterResult` 로만 쓴다 */
+	UPROPERTY(ReplicatedUsing=OnRep_ImposterResult)
+	FCL9ImposterResult ImposterResult;
+
+	UFUNCTION()
+	void OnRep_ImposterResult();
+
+	/** 지난 판의 처치 기여 — `SetContributions` 로만 쓴다 */
+	UPROPERTY(ReplicatedUsing=OnRep_Contributions)
+	TArray<FCL9Contribution> Contributions;
+
+	UFUNCTION()
+	void OnRep_Contributions();
+
+	/** 지난 정산의 미달 패널티 — `SetQuotaPenalty` 로만 쓴다 */
+	UPROPERTY(ReplicatedUsing=OnRep_QuotaPenalty)
+	FCL9WipePenalty QuotaPenalty;
+
+	UFUNCTION()
+	void OnRep_QuotaPenalty();
+
+	/** 목적지별 이번 판 최고 별(7l) — 목적지 판의 프롬프트가 모든 머신에서 읽는다 */
+	UPROPERTY(Replicated)
+	TArray<FCL9SiteStars> StageStars;
+
 	UFUNCTION()
 	void OnRep_Phase();
 
@@ -282,6 +401,18 @@ protected:
 	/** 밤이 시작된 서버 시각(밤이 아니면 0) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")
 	float NightStartServerTime = 0.f;
+
+	/** 트럭 도착 시작 서버 시각(7j) — `SetArrival` 로만 쓴다. 레벨의 첫 판이면 0 일 수 있다(그래서 아래 표시로 가른다) */
+	UPROPERTY(Replicated)
+	float ArrivalServerTime = 0.f;
+
+	/** 이번 판이 도착으로 열렸나 — 판 시계를 열 때·걷을 때 지운다 */
+	UPROPERTY(Replicated)
+	bool bArrivalThisRound = false;
+
+	/** `GetArrivalSeq` */
+	UPROPERTY(Replicated)
+	int32 ArrivalSeq = 0;
 
 	/** 밤이 끝나는 서버 시각(밤이 아니면 0) */
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="Night")

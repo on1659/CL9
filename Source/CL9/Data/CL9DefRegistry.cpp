@@ -5,6 +5,7 @@
 #include "Data/CL9BuffDef.h"
 #include "Data/CL9CharacterDef.h"
 #include "Data/CL9EquipmentDef.h"
+#include "Data/CL9SkinDef.h"
 #include "Data/CL9ItemDef.h"
 #include "Data/CL9ModuleDef.h"
 #include "Data/CL9MonsterDef.h"
@@ -223,6 +224,16 @@ void UCL9DefRegistry::RegisterDef(const UCL9DefBase* Def)
 		Equipment.Add(Def->Alias, EquipmentDef);
 		OrderedEquipment.Add(EquipmentDef);
 	}
+	else if (const UCL9SkinDef* SkinDef = Cast<UCL9SkinDef>(Def))
+	{
+		if (Skins.Contains(Def->Alias))
+		{
+			UE_LOG(LogCL9, Error, TEXT("%s: duplicate skin key '%s' — the first row stays."), *Def->GetName(), *Def->Alias.ToString());
+			return;
+		}
+		Skins.Add(Def->Alias, SkinDef);
+		OrderedSkins.Add(SkinDef);
+	}
 	else if (const UCL9SegKindDef* SegKindDef = Cast<UCL9SegKindDef>(Def))
 	{
 		if (SegKinds.Contains(Def->Alias))
@@ -339,6 +350,12 @@ void UCL9DefRegistry::CheckOrderReferences() const
 const UCL9EquipmentDef* UCL9DefRegistry::FindEquipment(FName Alias) const
 {
 	const UCL9EquipmentDef* const* Found = Equipment.Find(Alias);
+	return Found ? *Found : nullptr;
+}
+
+const UCL9SkinDef* UCL9DefRegistry::FindSkin(FName Alias) const
+{
+	const UCL9SkinDef* const* Found = Skins.Find(Alias);
 	return Found ? *Found : nullptr;
 }
 

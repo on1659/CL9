@@ -10,6 +10,7 @@ class UCL9BuffDef;
 class UCL9CharacterDef;
 class UCL9DefBase;
 class UCL9EquipmentDef;
+class UCL9SkinDef;
 class UCL9ItemDef;
 class UCL9ModuleDef;
 class UCL9MonsterDef;
@@ -129,6 +130,15 @@ public:
 		return OrderedEquipment;
 	}
 
+	/** 별칭의 스킨 행 — 없거나 깨졌으면 null (docs/goal/loop-7k-skins.md) */
+	const UCL9SkinDef* FindSkin(FName Alias) const;
+
+	/** 표 순서대로의 스킨 행 — 옷장 화면이 이 순서로 뜬다 */
+	const TArray<TObjectPtr<const UCL9SkinDef>>& GetSkins() const
+	{
+		return OrderedSkins;
+	}
+
 	/** 별칭에 해당하는 사용 가능한 맵 조각 행을 반환한다. 없거나 깨졌으면 null (docs/plan/data/segkind.md) */
 	const UCL9SegKindDef* FindSegKind(FName Alias) const;
 
@@ -243,6 +253,11 @@ private:
 	TArray<TObjectPtr<const UCL9EquipmentDef>> OrderedEquipment;
 
 	TMap<FName, const UCL9EquipmentDef*> Equipment;
+
+	UPROPERTY()
+	TArray<TObjectPtr<const UCL9SkinDef>> OrderedSkins;
+
+	TMap<FName, const UCL9SkinDef*> Skins;
 
 	UPROPERTY()
 	TArray<TObjectPtr<const UCL9SegKindDef>> OrderedSegKinds;

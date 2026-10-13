@@ -77,6 +77,9 @@ namespace CL9SoundNames
 	 * 링과 같은 박자로 튼다(시각 게이트 앞이라 링이 안 그려져도 난다). C++ 에는 재생 지점이 따로 없다 — 이름만 여기 둔다
 	 */
 	inline const FName MonsterNear(TEXT("MonsterNear"));
+	/** 마당에 있는 동안(전원 전) 건물 안쪽에서 가끔 나는 울음 — 로컬 연출, 판정 없음(7j, `ACL9YardTension`) */
+	inline const FName YardCry(TEXT("YardCry"));
+
 }
 
 namespace CL9Sound

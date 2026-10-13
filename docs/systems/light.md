@@ -75,6 +75,16 @@ ToggleLight·ShouldLightBeVisible·Tick)은 `IsWorn()`이면 건너뛴다. 미�
 `bNoBlackout`(`UCL9ProgressionDef::IsBlackoutDisabled` → `StartNightClock`) 구현됨. 테스트는 `cl9.blackout` 치트로
 정전을 즉시 트리거. 정전 예고 연출과 `SightDark` 전환(`UCL9MonsterDef::SightDark` 열만 있고 소비처 없음)은 아직 미구현.
 
+## 마당을 건너는 길 (2026-10-12, 7j — [../goal/loop-7j-round-start.md](../goal/loop-7j-round-start.md))
+
+- **안개**: 전원을 켜기 전(첫 어둠) `ACL9NightLighting::SelectTarget` 이 사이트 밤 안개 밀도에 `CL9Rules.PrePowerFogScale`(초안 2)을 곱한다 — 켜면 판의 행으로 돌아간다(실측 0.10 → 0.05).
+- **문 위 작업등**: `ACL9YardTension`(머신마다 로컬, 복제 없음)이 판마다 생성된 배치에서 마당(실외 모듈·격자 밖)과 실내 모듈 사이의 문(1층 `Door` 변)을 찾아
+  문 바깥 위 `YardLampHeight` 에 `YardLampMesh` 와 점광(`YardLampIntensity` cd, 그림자 없음)을 건다. 판 동안만 켜지고 끊기듯 깜박인다(노이즈가 −0.25 아래면 거의 꺼짐).
+  마당 모듈에는 등 기둥이 없다(모닥불뿐) — 문마다 거는 쪽이 배치에 상관없이 맞는다.
+- **보이기만 하는 기척**: 전원 전, 로컬 플레이어가 마당에서 문을 바라보면(거리 600 ~ `SilhouetteRange`, 시선 내적 ≥ 0.9) 문마다 판에 한 번 어두운 실루엣(`Silhouette*` — 몸·걷기 애님·검은 재질)이
+  문 안쪽 260 cm 를 문 폭 방향으로 700 cm 건넌다. 뒤에서 비추는 빛(`SilhouetteBackLight`)이 윤곽을 만든다. **창문이 키트에 없어 문간이다**(사용자 답의 "창문"에 가장 가까운 자리).
+- **울음**: 전원 전 마당에 있는 동안 `YardCryInterval*` 초마다 가까운 문 안쪽 7~13 m 에서 소리 행 `YardCry`(S_MonsterNear) — 로컬, 판정 없음. 도착 카메라 동안은 울음·실루엣을 시작하지 않는다.
+
 ## 렌더 세팅 (어둠 톤 유지)
 
 **구현: `ACL9NightLighting`** (5c 앞당김, 커밋 7dd22c3 · `Source/CL9/World/`). 레벨에 1개

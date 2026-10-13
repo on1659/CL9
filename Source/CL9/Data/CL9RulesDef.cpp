@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Data/CL9RulesDef.h"
+#include "Engine/World.h"
 
 void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 {
@@ -80,4 +81,118 @@ void UCL9RulesDef::Validate(TArray<FString>& OutErrors) const
 	{
 		OutErrors.Add(TEXT("DeathCameraOffset and DeathCameraLookAtZ must be finite, DeathCameraBlend finite and non-negative (offset (0,0,0) = no death camera)."));
 	}
+	// 판 중간 스폰: 음수·NaN 이면 타이머 간격·거리·총량이 정해지지 않는다(0 = 끔)
+	if (!(FMath::IsFinite(MidSpawnInterval) && MidSpawnInterval >= 0.f && FMath::IsFinite(MidSpawnMinDistance) && MidSpawnMinDistance >= 0.f
+		&& FMath::IsFinite(MidSpawnCapRatio) && MidSpawnCapRatio >= 0.f))
+	{
+		OutErrors.Add(TEXT("MidSpawnInterval, MidSpawnMinDistance and MidSpawnCapRatio must be finite and non-negative (0 interval or ratio = no mid-round spawns)."));
+	}
+	// 귀가 보상(바깥 재화): 비율이라 0~1
+	if (!(FMath::IsFinite(WalletIncomeRate) && WalletIncomeRate >= 0.f && WalletIncomeRate <= 1.f))
+	{
+		OutErrors.Add(TEXT("WalletIncomeRate must be within 0..1 (share of the round's income paid out as out-game currency)."));
+	}
+	// 임포스터: 확률은 0~1, 보상은 음수가 아니다
+	bool bImposterChancesValid = true;
+	for (const float Chance : ImposterChanceByPlayers)
+	{
+		bImposterChancesValid &= FMath::IsFinite(Chance) && Chance >= 0.f && Chance <= 1.f;
+	}
+	if (!bImposterChancesValid || ImposterWinReward < 0 || ImposterKillReward < 0)
+	{
+		OutErrors.Add(TEXT("ImposterChanceByPlayers entries must be within 0..1 and ImposterWinReward/ImposterKillReward non-negative."));
+	}
+	// 판 시작 연출·마당: 시간·거리·밝기는 음수가 아니고, 울음 간격은 최솟값 ≤ 최댓값
+	const bool bArrivalValid = FMath::IsFinite(ArrivalTime) && ArrivalTime >= 0.f && FMath::IsFinite(ArrivalDistance) && ArrivalDistance >= 0.f
+		&& !ArrivalCameraOffset.ContainsNaN();
+	const bool bYardValid = FMath::IsFinite(PrePowerFogScale) && PrePowerFogScale >= 0.f && YardLampHeight >= 0.f && YardLampIntensity >= 0.f
+		&& YardLampRadius >= 0.f && YardCryIntervalMin >= 0.f && YardCryIntervalMax >= YardCryIntervalMin
+		&& SilhouetteScale >= 0.f && SilhouetteSpeed >= 0.f && SilhouetteRange >= 0.f && SilhouetteBackLight >= 0.f;
+	if (!bArrivalValid || !bYardValid)
+	{
+		OutErrors.Add(TEXT("Arrival*/Yard*/Silhouette*/PrePowerFogScale must be finite and non-negative, with YardCryIntervalMin <= YardCryIntervalMax."));
+	}
+	// 회사: 정산 미달 패널티는 비율이라 0~1
+	if (!(FMath::IsFinite(QuotaMissPenaltyRate) && QuotaMissPenaltyRate >= 0.f && QuotaMissPenaltyRate <= 1.f))
+	{
+		OutErrors.Add(TEXT("QuotaMissPenaltyRate must be within 0..1 (share of the run's coins taken when a settlement misses its target)."));
+	}
+	// 스테이지 별: 기준은 오름차순 양수(아니면 별 2 개가 별 1 개보다 쉬워진다), 여는 별 수는 1..기준 개수(넘으면 아무것도 안 열린다)
+	bool bStarsValid = !StageStarRatios.IsEmpty();
+	for (int32 Index = 0; Index < StageStarRatios.Num(); ++Index)
+	{
+		const float Ratio = StageStarRatios[Index];
+		bStarsValid &= FMath::IsFinite(Ratio) && Ratio > 0.f && (Index == 0 || Ratio >= StageStarRatios[Index - 1]);
+	}
+	if (!bStarsValid || StageUnlockStars < 1 || StageUnlockStars > StageStarRatios.Num())
+	{
+		OutErrors.Add(TEXT("StageStarRatios must be a non-empty ascending list of positive numbers and StageUnlockStars within 1..its length."));
+	}
+	// 처치 기여: 시간은 0 이상(0 = 끔), 유도 보상은 음수가 아니다
+	if (!(FMath::IsFinite(ContributionWindow) && ContributionWindow >= 0.f) || ImposterAssistReward < 0)
+	{
+		OutErrors.Add(TEXT("ContributionWindow must be finite and non-negative (0 = off) and ImposterAssistReward non-negative."));
+	}
+	// 전멸 패널티: 비율이라 0~1 — 1 을 넘으면 없는 돈을 깎으려 하고, NaN 이면 차감액이 정해지지 않는다
+	if (!(FMath::IsFinite(WipePenaltyRate) && WipePenaltyRate >= 0.f && WipePenaltyRate <= 1.f))
+	{
+		OutErrors.Add(TEXT("WipePenaltyRate must be within 0..1 (share of the run's ether taken on a wipe)."));
+	}
+}
+
+int32 UCL9RulesDef::WipePenaltyFor(int32 Money) const
+{
+	// 이더는 정수다 — 내림(2026-10-12 사용자). 비율을 만분율 정수로 반올림한 뒤 정수로 곱하고 나눈다:
+	// float 0.7 은 0.69999999 라 그대로 곱해 내리면 10 이더의 70% 가 6 이 되고, 0.3 은 0.30000001 이라 큰 잔액에서 1 이더씩 넘친다
+	const int64 Basis = FMath::RoundToInt64(FMath::Clamp(static_cast<double>(WipePenaltyRate), 0.0, 1.0) * 10000.0);
+	return static_cast<int32>(static_cast<int64>(FMath::Max(Money, 0)) * Basis / 10000);
+}
+
+int32 UCL9RulesDef::WalletIncomeFor(int32 Income) const
+{
+	// 전멸 패널티와 같은 계산 — 비율을 만분율 정수로 반올림한 뒤 정수로 곱하고 내린다
+	const int64 Basis = FMath::RoundToInt64(FMath::Clamp(static_cast<double>(WalletIncomeRate), 0.0, 1.0) * 10000.0);
+	return static_cast<int32>(static_cast<int64>(FMath::Max(Income, 0)) * Basis / 10000);
+}
+
+float UCL9RulesDef::ImposterChanceFor(int32 Players) const
+{
+	if (Players <= 0 || ImposterChanceByPlayers.IsEmpty())
+	{
+		return 0.f;
+	}
+	const int32 Index = FMath::Min(Players, ImposterChanceByPlayers.Num()) - 1;
+	return FMath::Clamp(ImposterChanceByPlayers[Index], 0.f, 1.f);
+}
+
+int32 UCL9RulesDef::QuotaMissPenaltyFor(int32 Money) const
+{
+	// 전멸 패널티와 같은 계산 — 비율을 만분율 정수로 반올림한 뒤 정수로 곱하고 내린다
+	const int64 Basis = FMath::RoundToInt64(FMath::Clamp(static_cast<double>(QuotaMissPenaltyRate), 0.0, 1.0) * 10000.0);
+	return static_cast<int32>(static_cast<int64>(FMath::Max(Money, 0)) * Basis / 10000);
+}
+
+int32 UCL9RulesDef::StageStarsFor(int32 Earned, int32 Target) const
+{
+	// 코인은 정수다 — 기준을 만분율 정수로 반올림해 정수로 견준다(1.5 × 800 = 1200 이 float 오차로 1199.99 가 되지 않게)
+	int32 Stars = 0;
+	for (const float Ratio : StageStarRatios)
+	{
+		const int64 Basis = FMath::RoundToInt64(FMath::Max(static_cast<double>(Ratio), 0.0) * 10000.0);
+		if (static_cast<int64>(Earned) * 10000 < static_cast<int64>(FMath::Max(Target, 0)) * Basis)
+		{
+			break;
+		}
+		++Stars;
+	}
+	return Stars;
+}
+
+bool UCL9RulesDef::IsCompanyWorld(const UWorld* World) const
+{
+	if (World == nullptr || CompanyLevel.IsNull())
+	{
+		return false;
+	}
+	return UWorld::RemovePIEPrefix(World->GetOutermost()->GetName()) == CompanyLevel.ToSoftObjectPath().GetLongPackageName();
 }

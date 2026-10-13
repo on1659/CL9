@@ -100,6 +100,12 @@ public:
 	/** cl9.griplive [0|1] — 켜져 있으면 손에 든 아이템이 매 틱 GripOffset/GripRotation을 다시 읽는다 — ItemTable 값을 PIE 중 튜닝할 때 다시 줍지 않아도 바로 보인다. 인자 없으면 토글 */
 	void GripLive(const TArray<FString>& Args);
 
+	/**
+	 * cl9.imposter [번호] — 호스트 전용(docs/goal/loop-7g-imposter.md). 인자 없이: 지금 임포스터와 다음 판 지정을 찍는다.
+	 * 번호(플레이어 목록 순서): 판 중이면 그 사람을 지금 임포스터로, 로비면 다음 판에. -1 = 없음
+	 */
+	void Imposter(const TArray<FString>& Args);
+
 private:
 	/** cl9.swingtaps 의 타이머 한 틱 — 탭 하나를 넣고 결과를 세며, N 번째 뒤에 합계를 찍고 타이머를 멈춘다 */
 	void SwingTapTick();

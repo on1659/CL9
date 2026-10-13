@@ -59,6 +59,24 @@ namespace
 	}
 
 	/**
+	 * 배치된 모듈 하나에 깔릴 소품 세트 — 세트가 없으면 null. 소품 그리기와 고정물 스폰(`GetFixtureSpawns`)이 함께 쓴다:
+	 * 두 곳이 따로 고르면 소품과 조리대가 서로 다른 세트를 보고 겹칠 수 있다. 자리 좌표 해시라 모든 머신에서 같다
+	 */
+	const FCL9PropSet* ChoosePropSet(const FCL9SiteParams& Params, const FCL9SiteLayout& Layout, const FCL9ModulePlacement& Module, float FloorZ)
+	{
+		const UCL9ModuleDef* Def = Module.Def;
+		if (Def == nullptr || Def->PropSets.Num() == 0)
+		{
+			return nullptr;
+		}
+		const FBox2D Rect(
+			Layout.Origin + FVector2D(Module.Origin.X * Params.CellSize, Module.Origin.Y * Params.CellSize),
+			Layout.Origin + FVector2D((Module.Origin.X + Module.Size.X) * Params.CellSize, (Module.Origin.Y + Module.Size.Y) * Params.CellSize));
+		const FVector2D Center = Rect.GetCenter();
+		return &Def->PropSets[PickVariant(FVector(Center.X, Center.Y, FloorZ), Def->PropSets.Num())];
+	}
+
+	/**
 	 * 발자국을 조각 자연 크기로 채우는 칸들을 만든다 — 긴 축으로 늘어놓고 높이
 	 * 축으로 쌓는다. 나머지 길이는 장수로 나눠 흡수하고, 남는 높이는 맨 윗단이
 	 * 받는다(눈이 가는 아래쪽 비율을 지키는 편이 전체를 눌러 놓는 것보다 낫다).
@@ -402,6 +420,38 @@ FVector ACL9SiteMap::SiteToWorld(const FVector2D& Local) const
 	// 평면 좌표만 옮긴다 — 층 높이는 부르는 쪽이 얹는다 (PointToWorld). 액터 변환을 거쳐 구역의 회전이 들어간다.
 	// 단일 사이트는 회전 0·배율 1 이라 위치 + 로컬 그대로다.
 	return GetActorTransform().TransformPosition(FVector(Local.X, Local.Y, 0.f));
+}
+
+void ACL9SiteMap::GetFixtureSpawns(TArray<FFixtureSpawn>& OutSpawns) const
+{
+	OutSpawns.Reset();
+	if (!Layout.bBuilt)
+	{
+		return;
+	}
+
+	// 소품과 같은 높이·회전 규칙(BuildProps) — 사이트 로컬 변환을 만든 뒤 액터 변환(구역의 회전)을 거쳐 월드로
+	const float Storey = FMath::Max(Params.FloorHeight, 1.f);
+	for (int32 ModuleIndex = 0; ModuleIndex < Layout.Modules.Num(); ++ModuleIndex)
+	{
+		const FCL9ModulePlacement& Module = Layout.Modules[ModuleIndex];
+		const float FloorZ = Module.Floor * Storey;
+		const FCL9PropSet* Set = ChoosePropSet(Params, Layout, Module, FloorZ);
+		if (Set == nullptr)
+		{
+			continue;
+		}
+		for (const FCL9FixturePlacement& Fixture : Set->Fixtures)
+		{
+			const FVector2D Site = CL9SiteLayout::ModuleLocalToSite(Params, Layout, Module, FVector2D(Fixture.Local.X, Fixture.Local.Y));
+			const FTransform SiteLocal(FRotator(0.f, Fixture.Yaw + Module.Rotation * 90.f, 0.f), FVector(Site.X, Site.Y, FloorZ + Fixture.Local.Z));
+			FFixtureSpawn& Spawn = OutSpawns.AddDefaulted_GetRef();
+			Spawn.ActorClass = Fixture.ActorClass;
+			Spawn.Transform = SiteLocal * GetActorTransform();
+			Spawn.Module = ModuleIndex;
+			Spawn.ModuleAlias = Module.Def->Alias;
+		}
+	}
 }
 
 void ACL9SiteMap::ClearBuilt()
@@ -886,15 +936,11 @@ int32 ACL9SiteMap::PlaceProps(const TArray<FCL9SiteSeg>& Segs, int32 FirstCompon
 			continue;
 		}
 
-		const FBox2D Rect(
-			Layout.Origin + FVector2D(Module.Origin.X * Params.CellSize, Module.Origin.Y * Params.CellSize),
-			Layout.Origin + FVector2D((Module.Origin.X + Module.Size.X) * Params.CellSize, (Module.Origin.Y + Module.Size.Y) * Params.CellSize));
 		const float FloorZ = Module.Floor * Storey;
 
-		// 세트는 자리 좌표 해시로 뽑는다 — 변형 고르기와 같은 이유로 난수 스트림을 쓰지 않는다
-		const FVector2D Center = Rect.GetCenter();
-		const int32 SetIndex = PickVariant(FVector(Center.X, Center.Y, FloorZ), Def->PropSets.Num());
-		const FCL9PropSet& Set = Def->PropSets[SetIndex];
+		// 세트는 자리 좌표 해시로 뽑는다 — 변형 고르기와 같은 이유로 난수 스트림을 쓰지 않는다. 고정물 스폰과 같은 함수다
+		const FCL9PropSet& Set = *ChoosePropSet(Params, Layout, Module, FloorZ);
+		const int32 SetIndex = static_cast<int32>(&Set - Def->PropSets.GetData());
 
 		for (const FCL9PropPlacement& Prop : Set.Props)
 		{

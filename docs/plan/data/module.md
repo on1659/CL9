@@ -50,11 +50,11 @@
 | `Size` | `FIntPoint` | 격자 칸 단위 W × H |
 | `Sockets` | 4비트 마스크 | 어느 변이 열리나 — N/S/E/W (회전 전 기준). 열린 변의 경계 칸이 전부 문 후보다 |
 | `Rarity` | int 1~3 | 뽑힐 가중치 (REPO `ModuleRarity1/2/3`) |
-| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다. 소품의 `LightIntensity`(cd, 0이면 빛 없음)·`LightRadius`·`LightColor`·`LightOffset`이 있으면 **시설 조명**이 된다 — 인스턴스마다 포인트 라이트가 붙고 정전이면 꺼진다(2026-09-16, light.md). `LightScattering`(안개 후광, 기본 1)·`LightFlicker`(깜박임 진폭 0~1)·`LightFlickerSpeed`(Hz, 기본 6)는 2026-09-17 — 작업등 10cd·산란 1·깜박임 0, 모닥불 12cd·산란 4·깜박임 0.35/5 |
+| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다. 소품의 `LightIntensity`(cd, 0이면 빛 없음)·`LightRadius`·`LightColor`·`LightOffset`이 있으면 **시설 조명**이 된다 — 인스턴스마다 포인트 라이트가 붙고 정전이면 꺼진다(2026-09-16, light.md). `LightScattering`(안개 후광, 기본 1)·`LightFlicker`(깜박임 진폭 0~1)·`LightFlickerSpeed`(Hz, 기본 6)는 2026-09-17 — 작업등 10cd·산란 1·깜박임 0, 모닥불 12cd·산란 4·깜박임 0.35/5. **세트마다 `Fixtures`**(2026-10-12, 7c): 그 세트가 뽑히면 호스트가 판 시작에 세우는 복제 액터 — `ActorClass`·`Local`·`Yaw`(소품과 같은 좌표계). `kitchen` 은 두 세트 모두 작업대 대신 조리대(`BP_CL9Kitchen`) 하나 |
 | `Height` | float | 천장 높이 (모듈마다 다를 수 있다) |
 | `bStairs` | bool | 모듈 **안에서** 오르내리는 높이차가 있는가 — 바깥으로 전파되지 않는다 |
 | `bOutdoor` | bool | 야외 모듈인가 (마당) — 천장을 안 씌우고 벽 대신 울타리를 세운다 |
-| `PointPurposes` | 4비트 마스크 | 이 모듈의 칸이 어떤 스폰 지점이 되나 — `Monster`·`Loot`·`Jar`·`Patrol` |
+| `PointPurposes` | 4비트 마스크 | 이 모듈의 칸이 어떤 스폰 지점이 되나 — `Monster`·`Loot`·`Jar`·`Patrol`. **실외(`bOutdoor`) 모듈은 Monster·Loot 를 켜지 않는다**(2026-10-12 사용자 "마당에는 아이템·몬스터가 없다" — `yard_gate` 0x0, `yard_open` 0x8 = Patrol 만, [../../goal/loop-7b-yard-no-spawn.md](../../goal/loop-7b-yard-no-spawn.md)) |
 
 **치수를 손으로 적지 않는다는 원칙은 그대로다** — 조각 크기·피벗은 메시 바운드에서 읽는다
 (asset-swap.md). 이 표가 정하는 건 "몇 칸짜리 방이고 어디가 뚫리나"까지다. 벽 두께는
@@ -88,7 +88,7 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 | 13 | `office` | DeadEnd | 2×2 | 사무실 | `RectangularTable` · `Shelf_01` · `Cupboard` · `ChestBox` · `Poster` |
 | 14 | `coop_small` | DeadEnd | 2×2 | 작은 닭장 | `SM_Chicken_Coop` · 건초 |
 | 15 | `delivery` | Special | 2×2 | 반납 항아리 방 | 항아리 |
-| 16 | `kitchen` | Special | 2×3 | 조리대 방 | 조리대 · 냄비 · 선반 |
+| 16 | `kitchen` | Special | 2×3 | 조리대 방 | 조리대 · 냄비 · 선반 — **조리대는 2026-10-12부터 고정물(`Fixtures`)로 실제로 선다**(세트마다 하나, 간판 옆 벽, [../../goal/loop-7c-kitchen-in-building.md](../../goal/loop-7c-kitchen-in-building.md)) |
 | 17 | `stair_up` | Stair | 2×2 | 위층으로 올라가는 계단실 (2026-09-10) | 난간 · 자루 |
 | 18 | `corridor_3` | Passage | 1×3 | 곧은 긴 복도 (2026-09-15) | 〃 (아직 비움) |
 | 19 | `corridor_4` | Passage | 1×4 | 곧은 더 긴 복도 (2026-09-15) | 〃 (아직 비움) |

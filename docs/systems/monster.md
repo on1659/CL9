@@ -318,6 +318,30 @@
 진입 시 예산), `DetectRateNear/Far`(게이지 상승), `SightIn/SightOut`(시야 거리). 로드 검사 A1/A2는
 배율 없는 표 값으로 돈다.
 
+## 깨운 사람 기억 — 처치 기여 (2026-10-12, 7h — [../goal/loop-7h-kill-contribution.md](../goal/loop-7h-kill-contribution.md))
+
+- 잠든 몬스터가 실제로 깰 때(`TryWake` 가 Asleep → WakeTelegraph 로 넘길 때 — 시선에 붙잡혀 다시 미루면 아니다) **깨운 플레이어와 월드 시각**을 적는다(`WakerPlayer`·`WakeTime`, 호스트 전용).
+  깨운 사람 = 경보로 깼으면 경보의 원인, 아니면 `WakeRadius` 안에서 걷거나 `HearRunRadius` 안에서 뛴 그 사람. 로그 `'몬스터' woken by '이름' (walk|run|alarm).`
+- 경보는 원인을 실어 나른다: 울음(`FirePackAlarm`)은 그 개체가 감지한 플레이어(`SensedCharacter`), 죽음의 비명(`Die`)은 그 개체를 죽인 플레이어(몬스터·치트가 죽였으면 없음).
+  잠든 개체가 경보를 받으면 `PendingWaker` 에 두었다가 그 경보로 깰 때 깨운 사람이 된다. 한 번만 넘긴다 — 경보로 깬 개체가 나중에 울어도 자기 깨운 사람을 다시 넘기지 않는다.
+- 이 몬스터가 플레이어를 죽이면(잡기 → `OnDamage`, 처형 → `HostKill`) 캐릭터의 죽음 처리가 `GetContributor(피해자, CL9Rules.ContributionWindow)` 를 묻는다 —
+  깨운 사람이 있고, 피해자가 아니고, 깨운 지 창(초안 30초) 안이면 그 사람이 `ACL9PlayerState::InducedByPlayer`(+ 몬스터 표시 이름)에 남는다. 로그 `… woken by '이름' — contribution.`
+  쓰는 곳: 새벽 목록, 임포스터 처치 인정, 임포스터 유도 보상([session.md](session.md) 임포스터).
+
+## 판 중간 스폰 (2026-10-12, 7e — [../goal/loop-7e-mid-round-spawn.md](../goal/loop-7e-mid-round-spawn.md))
+
+전에는 스폰이 판 시작 한 번(`StartNight` → `SpawnNightPopulation` 의 큐)뿐이었다. 이제 판이 흐르는 동안 **예고 없이** 한 마리씩 더 나온다
+(사용자 결정 2026-10-11 "언제 나올지 모른다는 건 플레이어 기준", 조건·위치·수는 2026-10-12 사용자 답).
+
+- **무장** `ACL9GameMode::ArmMidSpawns` — `SpawnNightPopulation` 바로 뒤. 생성된 맵이 있고 `CL9Rules.MidSpawnInterval` > 0 이고
+  총량 = round(판 시작 큐 수 × `MidSpawnCapRatio`) > 0 일 때만 `MidSpawnInterval` 반복 타이머를 건다. 종 풀 = 사이트 행 `MonsterSpawns` + 지어진 맵의 구역 행,
+  엔트리마다 무게 Min+Max. 로그 `Night N: mid-round spawns armed — every Ts, cap C (S at start × R), E species entries.` / `… off (…)`.
+- **한 번** `MidSpawnTick` — 종을 무게로 하나 뽑고, 지어진 맵들의 `Monster` 지점(마당은 7b 로 없음)을 무작위 순서로 **최대 64개** 본다. 살아 있는 **모든** 플레이어에게서
+  `MidSpawnMinDistance` 이상이고, 각자의 눈(`GetPawnViewLocation`)에서 그 자리까지 `TraceWorld` 가 지형에 막히는(= 안 보이는) 첫 지점에 `SpawnMonster`(판 시작과 같은 함수·조정 스폰),
+  `NightSpawned` 에 넣는다. 없으면 이번은 건너뛴다(다음 간격에 다시). 로그 `mid-round spawn k/C — <종> at <자리>, nearest player <cm>, hidden from N player(s).`
+- **멈춤** — 총량에 닿으면 스스로, 판이 끝나는 모든 길은 `CancelNightWork` 가 타이머를 지운다(귀가·만료·전멸·판 종료·새 판). 다음 판은 자기 총량으로 다시 무장한다.
+- 값은 전부 초안이다(밸런스 나중) — [../plan/data/rules.md](../plan/data/rules.md) `MidSpawn*`.
+
 ## 종별 차이를 다루는 규칙
 
 1. **1순위 — 표의 값.** 닭과 거위의 차이 대부분은 같은 컬럼의 다른 값이다

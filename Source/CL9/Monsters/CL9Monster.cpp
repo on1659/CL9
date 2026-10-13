@@ -30,6 +30,7 @@
 #include "Items/CL9Item.h"
 #include "GameMode/CL9GameInstance.h"
 #include "GameMode/CL9GameMode.h"
+#include "GameMode/CL9PlayerState.h"
 #include "GameMode/CL9GameState.h"
 #include "GameMode/CL9PlayerController.h"
 
@@ -283,7 +284,7 @@ bool ACL9Monster::TraceWorld(const UWorld* World, const AActor* Self, const FVec
 		Params.AddIgnoredActor(AlsoIgnore);
 	}
 	// 앞을 가린 폰·아이템·몬스터를 하나씩 무시 목록에 넣고 다시 긋는다 — 시체가 사람 몸이나 계란 위에서 멈추지 않고, 동료 폰이
-	// 휘두르기를 가리지 않는다. 사람은 맞지도 가리지도 않는다
+	// 휘두르기를 가리지 않는다. 사람은 가리지 않는다(휘두르기가 사람을 맞히는 것은 따로 — 팀킬, docs/goal/loop-7d-team-kill.md)
 	for (int32 Retry = 0; Retry < 4; ++Retry)
 	{
 		if (!World->LineTraceSingleByChannel(OutHit, From, To, ECC_Visibility, Params))
@@ -503,6 +504,9 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 		// 기상 트리거: WakeRadius 안에서 걷는 것(걷기는 조용하다는 예외 규칙),
 		// HearRunRadius 안에서 달리는 것, 혹은 대기 중인 경보 지점.
 		bool bTriggered = PendingInvestigateSpot.IsSet();
+		// 깨운 사람(7h) — 경보가 아니면 걸리게 한 그 사람
+		const ACL9Character* Trigger = nullptr;
+		const TCHAR* How = TEXT("alarm");
 		for (TActorIterator<ACL9Character> It(GetWorld()); !bTriggered && It; ++It)
 		{
 			const ACL9Character* Candidate = *It;
@@ -516,12 +520,17 @@ void ACL9Monster::HostTickAI(float DeltaSeconds)
 			const bool bRunWake = MonsterDef->HearRunRadius > 0.f && Distance <= MonsterDef->HearRunRadius
 				&& Candidate->GetCL9CharacterMovement()->IsRunning();
 			bTriggered = bWalkWake || bRunWake;
+			if (bTriggered)
+			{
+				Trigger = Candidate;
+				How = bRunWake ? TEXT("run") : TEXT("walk");
+			}
 		}
 
 		WakeRetryRemaining = FMath::Max(WakeRetryRemaining - DeltaSeconds, 0.f);
 		if (bTriggered && WakeRetryRemaining <= 0.f)
 		{
-			TryWake();
+			TryWake(Trigger, How);
 		}
 		break;
 	}
@@ -1540,6 +1549,8 @@ void ACL9Monster::Die(AActor* Source)
 		}
 	}
 
+	// 죽음의 비명을 부른 플레이어(7h — 그 비명으로 깬 몬스터의 깨운 사람). 몬스터·치트가 죽였으면 없다
+	const ACL9Character* Killer = Cast<ACL9Character>(Source);
 	// 죽음의 비명: 직접 들은 개체는 자신의 RageTime만큼 분노하고, 그 분노는
 	// RevengeRadius/RevengeTime을 통해 한 번 더 퍼져 나간다. 구역 판정은 맵에
 	// 구역이 생기면(⑤) 함께 들어온다 — 지금의 평지 맵은 구역이 하나뿐이다.
@@ -1558,7 +1569,7 @@ void ACL9Monster::Die(AActor* Source)
 	}
 	for (ACL9Monster* Hearer : Hearers)
 	{
-		Hearer->ReceiveKillAlarm(GetActorLocation(), Hearer->MonsterDef->RageTime);
+		Hearer->ReceiveKillAlarm(GetActorLocation(), Hearer->MonsterDef->RageTime, Killer);
 	}
 	for (TActorIterator<ACL9Monster> It(GetWorld()); It; ++It)
 	{
@@ -1571,7 +1582,7 @@ void ACL9Monster::Die(AActor* Source)
 		{
 			if (FVector::Dist2D(Hearer->GetActorLocation(), Other->GetActorLocation()) <= Hearer->MonsterDef->RevengeRadius)
 			{
-				Other->ReceiveKillAlarm(GetActorLocation(), Other->MonsterDef->RevengeTime);
+				Other->ReceiveKillAlarm(GetActorLocation(), Other->MonsterDef->RevengeTime, Killer);
 				break;
 			}
 		}
@@ -1651,12 +1662,12 @@ void ACL9Monster::FirePackAlarm()
 		}
 		if (FVector::Dist2D(GetActorLocation(), Other->GetActorLocation()) <= MonsterDef->PackAlarmRadius)
 		{
-			Other->ReceivePackAlarm(AlarmSpot);
+			Other->ReceivePackAlarm(AlarmSpot, SensedCharacter.Get());
 		}
 	}
 }
 
-void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
+void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation, const ACL9Character* Cause)
 {
 	if (!HasAuthority() || MonsterDef == nullptr)
 	{
@@ -1667,6 +1678,7 @@ void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
 	{
 	case ECL9MonsterState::Asleep:
 		PendingInvestigateSpot = AlarmLocation;
+		PendingWaker = Cause != nullptr ? Cause->GetPlayerState<ACL9PlayerState>() : nullptr;
 		break;
 	case ECL9MonsterState::Wander:
 	case ECL9MonsterState::Patrol:
@@ -1687,7 +1699,7 @@ void ACL9Monster::ReceivePackAlarm(const FVector& AlarmLocation)
 	}
 }
 
-void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds)
+void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSeconds, const ACL9Character* Cause)
 {
 	if (!HasAuthority() || MonsterDef == nullptr || State == ECL9MonsterState::Dead)
 	{
@@ -1702,6 +1714,7 @@ void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSecon
 	{
 	case ECL9MonsterState::Asleep:
 		PendingInvestigateSpot = DeathLocation;
+		PendingWaker = Cause != nullptr ? Cause->GetPlayerState<ACL9PlayerState>() : nullptr;
 		break;
 	case ECL9MonsterState::Wander:
 	case ECL9MonsterState::Patrol:
@@ -1720,7 +1733,7 @@ void ACL9Monster::ReceiveKillAlarm(const FVector& DeathLocation, float HuntSecon
 	}
 }
 
-void ACL9Monster::TryWake()
+void ACL9Monster::TryWake(const ACL9Character* Trigger, const TCHAR* How)
 {
 	// 누군가 지켜보고 있는 잠든 개체는 계속 잠들어 있는다 — 플레이어의 시선
 	// 안에서는 깨어나지 않는다 (WakeSightRadius, WakeRetryTime마다 재시도).
@@ -1729,7 +1742,26 @@ void ACL9Monster::TryWake()
 		WakeRetryRemaining = MonsterDef->WakeRetryTime;
 		return;
 	}
+
+	// 깨운 사람(7h) — 경보로 깼으면 경보의 원인, 아니면 근처에서 걷거나 뛴 사람. 둘 다 없으면(원인 없는 경보) 비운다
+	WakerPlayer = PendingInvestigateSpot.IsSet() ? PendingWaker : TWeakObjectPtr<ACL9PlayerState>(Trigger != nullptr ? Trigger->GetPlayerState<ACL9PlayerState>() : nullptr);
+	PendingWaker.Reset();
+	WakeTime = GetWorld()->GetTimeSeconds();
+	if (const ACL9PlayerState* Waker = WakerPlayer.Get())
+	{
+		UE_LOG(LogCL9, Log, TEXT("'%s' woken by '%s' (%s)."), *GetNameSafe(this), *Waker->GetPlayerName(), How);
+	}
 	EnterState(ECL9MonsterState::WakeTelegraph);
+}
+
+ACL9PlayerState* ACL9Monster::GetContributor(const ACL9PlayerState* Victim, float Window) const
+{
+	ACL9PlayerState* Waker = WakerPlayer.Get();
+	if (Waker == nullptr || Waker == Victim || Window <= 0.f)
+	{
+		return nullptr;
+	}
+	return GetWorld()->GetTimeSeconds() - WakeTime <= Window ? Waker : nullptr;
 }
 
 bool ACL9Monster::IsHeldByGaze() const
