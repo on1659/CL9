@@ -1,0 +1,198 @@
+{
+  "name": "round_farm",
+  "about": "대농장 한 판 — 도착 → 전원 → 계란 줍기 → 조리 → 익은 계란 → 트럭 → 레버 두 번(귀가). 스테이지에는 납품 카운터가 없어 들고 돌아온다(2026-10-13 확인). 양계장은 저장된 내비 범위가 건물보다 작아 조리대까지 길이 없다 — 한 판 촬영은 대농장으로.",
+  "level": "/Game/Maps/Lvl_Farm",
+  "players": 1,
+  "rules": {},
+  "title": "CL9 — 한 판 (대농장)",
+  "subtitle": "봇 플레이 · 실시간 녹화",
+  "steps": [
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "한 판 — 트럭이 후진해 들어와 서면 판이 열린다 (도착하는 동안 조작은 잠긴다)",
+        "플레이는 봇: 이동·시선은 스틱 입력, 줍기·조리·레버는 실제 조작 함수"
+      ]
+    },
+    {
+      "do": "wait_move"
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "건물은 캄캄하다 — 첫 방의 전원 스위치를 찾아간다"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "class": "CL9PowerSwitch"
+      },
+      "within": 90,
+      "run": true
+    },
+    {
+      "do": "face",
+      "to": {
+        "last": true
+      }
+    },
+    {
+      "do": "press",
+      "expect": "PowerSwitch"
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "전원을 켜면 불이 하나씩 들어온다 (전원 인트로 동안 조작이 잠긴다)"
+      ]
+    },
+    {
+      "do": "wait",
+      "seconds": 1.0
+    },
+    {
+      "do": "wait_move",
+      "timeout": 20
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "재료 줍기 — 가까운 계란을 찾아 E 로 줍는다"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "item": "egg",
+        "sub": ""
+      },
+      "within": 55,
+      "run": true
+    },
+    {
+      "do": "face",
+      "to": {
+        "last": true
+      }
+    },
+    {
+      "do": "press"
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "조리대로 — 날계란을 G 로 올리면 익기 시작한다 (12초, 더 두면 탄다)"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "class": "CL9Kitchen"
+      },
+      "within": 95,
+      "run": true
+    },
+    {
+      "do": "face",
+      "to": {
+        "last": true
+      }
+    },
+    {
+      "do": "drop"
+    },
+    {
+      "do": "mark",
+      "kind": "F",
+      "speed": 4,
+      "lines": [
+        "익기를 기다린다"
+      ]
+    },
+    {
+      "do": "wait_cooked"
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "익은 계란을 다시 E 로 집는다"
+      ]
+    },
+    {
+      "do": "face",
+      "to": {
+        "kitchen_item": true
+      }
+    },
+    {
+      "do": "press"
+    },
+    {
+      "do": "wait",
+      "seconds": 0.8
+    },
+    {
+      "do": "mark",
+      "kind": "F",
+      "speed": 3,
+      "lines": [
+        "트럭으로 돌아간다 — 스테이지에는 납품 카운터가 없어 들고 간다"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "truck_inside": true
+      },
+      "within": 60,
+      "run": true,
+      "timeout": 60
+    },
+    {
+      "do": "mark",
+      "kind": "S",
+      "lines": [
+        "트럭 안 출발 레버를 5초 안에 두 번 누르면 귀가 — 판이 끝난다"
+      ]
+    },
+    {
+      "do": "walk",
+      "to": {
+        "class": "CL9DepartLever"
+      },
+      "within": 90,
+      "timeout": 15
+    },
+    {
+      "do": "face",
+      "to": {
+        "last": true
+      }
+    },
+    {
+      "do": "press",
+      "expect": "DepartLever",
+      "times": 2,
+      "gap": 1.0
+    },
+    {
+      "do": "wait",
+      "seconds": 4.0
+    },
+    {
+      "do": "mark",
+      "kind": "E"
+    }
+  ]
+}
