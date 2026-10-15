@@ -177,9 +177,11 @@ py -3 .claude/hooks/render_roles.py --list
 5. 에셋 요청(표 행·WBP·레벨): 에디터가 켜져 있으면 MCP 로 적용(표 행은 `CL9_ROWS_REPORT=<report> CL9_ROWS_APPLY=1` 환경으로
    `Tools/Unreal/apply_table_rows.py` 를 콘솔 py 로), 꺼져 있으면 `acquire commandlet --pid` 아래 `UnrealEditor-Cmd … -script="Tools/Unreal/apply_table_rows.py <report> apply"`.
    적용 뒤 `verify` 로 다시 읽어 보고서와 비교 — 불일치는 balance 에 문서 갱신 요청(눈으로 바꾼 값 포함).
-6. C++ 가 바뀌었으면 `docs/workflow/sessions.md#잠금` 의 빌드 절차 그대로: `acquire build --pid` → `cl9_run.py state <slug> BUILDING` →
-   save_assets → 동료 통지 → taskkill → 분리 빌드 → 재기동 → `release`. 빌드 실패는 **바꾼 파일의 역할 에이전트**에 오류 줄을 보내 고치게 한다
-   (리드가 직접 고치지 않는다) → 다시 audit → 빌드.
+6. C++ 가 바뀌었으면 save_assets(경로 명시) → `cl9_run.py state <slug> BUILDING` → **빌드 브로커에 요청**:
+   `py -3 Tools/Build/build_request.py --kind build --reason "…"`(Bash timeout 600000 — 정본 `docs/workflow/sessions.md#빌드-브로커`).
+   동료 통지·잠금·taskkill·재기동은 브로커가 한다. 브로커를 못 쓸 때만 같은 문서의 수동 절차(`acquire build --pid` …).
+   빌드 실패는 결과의 **파일 주인 역할**의 에이전트에 오류 줄을 보내 고치게 한다(리드가 직접 고치지 않는다) → 다시 audit → 다시 요청.
+   `needs_user`(같은 오류 연속 실패)면 멈추고 사용자에게 알린다.
 7. PIE: `acquire pie` → `state <slug> PIE` → 보고서들의 'PIE 확인 항목' 합집합을 `docs/testing/pie-scenarios.md` 절 문자대로 MCP + `cl9.*` 치트로
    확인 → `release`. 밸런스 표 행의 "PIE 관찰" 도 여기서 본다.
 8. 마무리: 'decisions.md에 남길 결정' 항목을 `docs/decisions.md` 끝에 붙인다(밸런스 값은 PIE 관찰 전이면 `초안` 표시), `memory/work-progress.md`

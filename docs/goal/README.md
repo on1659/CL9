@@ -7,6 +7,7 @@
 | 문서 | 한 줄 | 상태(2026-09-21) |
 |---|---|---|
 | [asset-production-loop.md](asset-production-loop.md) | 아이템·몬스터·캐릭터 모델·애니메이션과 재사용 맵 파츠를 만들어 UE 에서 검수하는 아트 제작 루프(2026-09-11 범위 축소 — 맵 조립은 UE 작업으로) | 진행 기록은 [../asset/production-progress.md](../asset/production-progress.md) |
+| [build-broker.md](build-broker.md) | 빌드 브로커 — 세션은 `build_request.py` 로 요청만, 큐·묶음·실행·오류 주인 분류·기록은 로컬 데몬이, 대기·시작 시각은 사용자가 제어, 아무 일 없으면 꺼짐 | 구현·단위 테스트 23개 + 실제 `compile` UBT 검증 통과(10-15), 정식 `build`(에디터 종료)는 미검증 |
 | [doc-audit-closeout.md](doc-audit-closeout.md) | 2026-09-09 문서 감사 종결 — reference 주장 검증·`StaminaMinResume` 헤더 정정·HEAD 컴파일 복구 | 완료(09-09); 09-21 감사에서 8항 중 6항 확인 |
 | [giant-stage.md](giant-stage.md) | 대농장의 5~10배 판(1000~2000모듈, 한 변 약 1.1km) — 생성기·내비·성능·밤 흐름 재설계 | 명세 초안(10-04), 미결 5개 — 새 세션 `/autogoal`(HEAVY 예상) |
 | [outdoor-backdrop.md](outdoor-backdrop.md) | 맵 격자 밖 배경 레벨 — 공용 배경 서브레벨 + 판 둘레 자동 배치, 모델 배분 포함 | 명세 초안(10-04), 미결 6개 — 새 세션 `/autogoal` 대기 |
