@@ -1,0 +1,4 @@
+[submodule "Plugins/RadarUMGDiff"]
+	path = Plugins/RadarUMGDiff
+	url = https://github.com/on1659/RadarUMGDiff.git
+	branch = 5.8
