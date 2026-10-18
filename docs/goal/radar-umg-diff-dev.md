@@ -166,7 +166,7 @@ Plugins/RadarUMGDiff/
 
 ### 3.3 `RadarEngineCompat.h` — 엔진 차이를 한 파일에
 
-아래 네 가지만 갈린다. 다른 곳에 `#if ENGINE_*`를 쓰지 않는다.
+아래 표는 M5 전에 소스로 확인한 핵심 넷이다. **M5 실측(스파이크 8)으로 갈리는 곳은 더 많다 — 전체 목록은 §19 M5 표.** 다른 곳에 `#if ENGINE_*`를 쓰지 않는다(판정 매크로 `RADAR_UE51`).
 
 | 항목 | ue5.8 | ue5.1 |
 |---|---|---|
@@ -176,7 +176,7 @@ Plugins/RadarUMGDiff/
 | 미리보기 파기 | `FWidgetBlueprintEditorUtils::DestroyUserWidget(UUserWidget*)`: `MarkAsGarbage()` + `ReleaseSlateResources(true)` + 약참조 소멸 ensure | 함수 없음. 5.1 `DestroyPreview()`가 같은 두 호출을 한다. RadarCompat::DestroyPreviewWidget 으로 동일 구현 |
 | SZoomPan | `UMGEditor/Public/Designer/SZoomPan.h`, UMGEDITOR_API. `SLATE_ATTRIBUTE(FVector2D, ViewOffset)`, `SLATE_ATTRIBUTE(float, ZoomAmount)`, `SetContent` | `UMGEditor/Private/Designer/SZoomPan.h` — **Private**이라 플러그인에서 못 쓴다. 같은 API(ViewOffset·ZoomAmount 속성, OnArrangeChildren에서 `GetRelativeLayoutScale`)의 `SRadarZoomPan`을 플러그인 안에 둔다. 두 브랜치 모두 `SRadarZoomPan`을 쓰면 분기가 사라지므로 **그렇게 한다** |
 
-공통으로 쓸 수 있다고 확인된 것: `SDesignSurface`(두 엔진 모두 Public, UMGEDITOR_API; `GetZoomAmount`, `ZoomToFit`, `OnPaintBackground`, `PaintBackgroundAsLines`), `SDPIScaler`(Slate 공용), `EWidgetDesignFlags`(5.8 `Runtime/UMG/Public/Components/Widget.h:175`, 5.1 같은 파일 `:166`, 값 `Designing=1, ShowOutline=2, ExecutePreConstruct=4, Previewing=8`), `SBlueprintDiff::CreateDiffWindow(FText, const UBlueprint*, const UBlueprint*, const FRevisionInfo&, const FRevisionInfo&)`(5.1은 non-const `UBlueprint*`), `FDetailsDiff(const UObject*, bool bScrollbarOnLeft)` + `DetailsWidget()` + `HighlightProperty` + `GetDisplayedProperties`(`Kismet/Public/DetailsDiff.h`), `UWidgetBlueprint::FindDiffs`, `FPackagePath::FromLocalPath`, Content Browser 메뉴 이름 `ContentBrowser.AssetContextMenu.<클래스이름>`(`ContentBrowser/Private/ContentBrowserMenuContexts.cpp:115`이 `"ContentBrowser.AssetContextMenu." + 클래스 이름`으로 만든다. 우리는 `ContentBrowser.AssetContextMenu.WidgetBlueprint`를 `UToolMenus::Get()->ExtendMenu`로 확장).
+공통으로 쓸 수 있다고 확인된 것: `SDesignSurface`(두 엔진 모두 Public, UMGEDITOR_API; `GetZoomAmount`, `ZoomToFit`, `OnPaintBackground`, `PaintBackgroundAsLines`), `SDPIScaler`(Slate 공용), `EWidgetDesignFlags`(5.8 `Runtime/UMG/Public/Components/Widget.h:175`, 5.1 같은 파일 `:166`, 값 `Designing=1, ShowOutline=2, ExecutePreConstruct=4, Previewing=8`), `SBlueprintDiff::CreateDiffWindow(FText, const UBlueprint*, const UBlueprint*, const FRevisionInfo&, const FRevisionInfo&)`(5.1은 non-const `UBlueprint*`), `FDetailsDiff` + `DetailsWidget()` + `HighlightProperty` + `GetDisplayedProperties`(`Kismet/Public/DetailsDiff.h`; 생성자는 5.8 `(const UObject*, bool bScrollbarOnLeft)`, 5.1 `(const UObject*, FOnDisplayedPropertiesChanged)` — M5 정정), `UWidgetBlueprint::FindDiffs`, `FPackagePath::FromLocalPath`, Content Browser 메뉴 이름 `ContentBrowser.AssetContextMenu.<클래스이름>`(`ContentBrowser/Private/ContentBrowserMenuContexts.cpp:115`이 `"ContentBrowser.AssetContextMenu." + 클래스 이름`으로 만든다. 우리는 `ContentBrowser.AssetContextMenu.WidgetBlueprint`를 `UToolMenus::Get()->ExtendMenu`로 확장).
 
 ---
 
@@ -616,7 +616,7 @@ UnrealEditor-Cmd.exe <Project.uproject> -run=RadarUMGDiffDump -asset=/Game/UI/WB
 
 ### 10.2 `-run=RadarStructKinds`
 
-`UScriptStruct` 전체를 돌며 `{ "<StructName>": "tagged|native|immutable", ... }`와 `"engine": "5.1.1"`, `"fileVersionUE5": 1008`을 `Saved/RadarUMGDiff/struct_kinds.json`에 쓴다. 판정은 §11.6. 결과를 `Content/Python/radar_umgdiff/data/struct_kinds_<engine>.json`에 복사해 커밋한다. 5.1에서 PythonScriptPlugin이 `StructFlags`를 노출하지 않음을 확인했으므로(`Plugins/Experimental/PythonScriptPlugin/Source`에 `StructFlags`/`HasSerializer`/`UseNativeSerialization` 참조 없음) **커맨드릿이 유일한 길**이다.
+`UScriptStruct` 전체를 돌며 `{ "<StructName>": "tagged|native|immutable", ... }`와 `"engine": "5.1.1"`, `"fileVersionUE5": 1008`을 `Saved/RadarUMGDiff/struct_kinds.json`에 쓴다(`-out=` 로 바꿀 수 있음). M5 에서 `containers`(네이티브 클래스·구조체의 집합·맵 속성 → 원소 구조체 이름, 상속 포함)와 `conflicts` 를 더했다 — 옛 형식 집합·맵 태그에는 원소 구조체 이름이 없기 때문(§19 M5). 판정은 §11.6. 결과를 `Content/Python/radar_umgdiff/data/struct_kinds_<engine>.json`에 복사해 커밋한다. 5.1에서 PythonScriptPlugin이 `StructFlags`를 노출하지 않음을 확인했으므로(`Plugins/Experimental/PythonScriptPlugin/Source`에 `StructFlags`/`HasSerializer`/`UseNativeSerialization` 참조 없음) **커맨드릿이 유일한 길**이다.
 
 ### 10.3 에디터 안 CLI 액션
 
@@ -877,6 +877,7 @@ FSoftObjectPath(`SoftObjectPath.cpp` `SerializePathWithoutFixup`):
 | UEdGraphNode | `FBlueprintsObjectVersion >= EdGraphPinOptimized`면 `UEdGraphPin::SerializeAsOwningNode` 핀 배열 | 5.1 `EdGraphNode.cpp`, `EdGraphPin.cpp:853`; 5.8 `:993` |
 | UK2Node_EditablePinBase | `TArray<FUserPinInfo>` | `K2Node_EditablePinBase.cpp` 5.1 `:259` 근처 `Ar << SerializedItems` |
 | UMovieSceneSection | 커스텀 버전 등록 + `FSequencerObjectVersion < FloatToIntConversion` 옛 업그레이드만. 현재 저장본에 추가 바이트 없음 | 5.1·5.8 `MovieSceneSection.cpp` UMovieSceneSection::Serialize |
+| UMetaData (FileVersionUE5 < 1014 에서만 익스포트) | `TMap<FWeakObjectPtr(i32 패키지 인덱스), TMap<FName, FString>>` ObjectMetaDataMap + `FEditorObjectVersion >= RootMetaDataSupport` 이면 `TMap<FName, FString>` RootMetaDataMap — M5 구현 | 5.1 `CoreUObject/Private/UObject/MetaData.cpp` UMetaData::Serialize |
 
 ### 11.10 상태 덤프·diff·일치 `state.py`, `diff.py`, `conform.py`
 
@@ -934,7 +935,7 @@ umgdiff_cli.py summary <diff.json>                                   → 요약 
 
 ## 13. 픽스처 `Content/Test/`
 
-CL9 WBP 15개에는 애니메이션이 없고 그래프도 거의 비어 있으므로(앞 세션 확인) 아래를 직접 만든다. 각각 3~6개의 "의도적으로 다른" 버전을 남긴다 — M4 정정: git 커밋이 아니라 생성기 `RadarUMGDiff.BuildFixtures` 가 버전마다 앞 버전을 고쳐 저장하고 `Test/Fixtures/<이름>/v<N>/` 에 복사한다(§19 M4). `5.1` 브랜치에서는 같은 명령을 5.1 에디터로 돌려 그 엔진 저장본을 만든다. 회사 콘텐츠는 필요 없다.
+CL9 WBP 15개에는 애니메이션이 없고 그래프도 거의 비어 있으므로(앞 세션 확인) 아래를 직접 만든다. 각각 3~6개의 "의도적으로 다른" 버전을 남긴다 — M4 정정: git 커밋이 아니라 생성기 `RadarUMGDiff.BuildFixtures` 가 버전마다 앞 버전을 고쳐 저장하고 `Test/Fixtures/<이름>/v<N>/` 에 복사한다(§19 M4). `5.1` 브랜치에서는 같은 명령을 5.1 에디터로 돌려 그 엔진 저장본을 만든다. 회사 콘텐츠는 필요 없다. M5 에서 Layout(+Child) 도 생성기 항목이 됐다(`RadarUMGDiff.BuildFixtures Layout`) — 5.8 의 두 저장본은 M2 손 픽스처 그대로다.
 
 | 픽스처 | 담는 것 | 버전 간 변화 |
 |---|---|---|
@@ -1011,7 +1012,7 @@ CL9 WBP 15개에는 애니메이션이 없고 그래프도 거의 비어 있으�
 | 5 | 5.1 FileVersionUE5 | **완료**: 1008 |
 | 6 | 5.1 UObject::Serialize 접두·접미, 클래스별 접미부 | **완료**: 접두 없음, 접미 bool(+guid), §11.9 표 |
 | 7 | 구조체 종류 덤프 경로 | **완료**: Python 노출 없음 → 커맨드릿 §10.2 |
-| 8 | 5.8 코드를 5.1에서 빌드한 오류 목록 | 미완 → M5-1. API 존재 여부는 §3.3에 선확인 |
+| 8 | 5.8 코드를 5.1에서 빌드한 오류 목록 | **완료** 2026-10-18 (M5, §19 표 — 70줄·열 가지 + 링크 둘) |
 
 ---
 
@@ -1221,3 +1222,45 @@ UE 에디터 플러그인(C++)과 .uasset 을 직접 읽는 Python 분석기다.
 - **커맨드릿 실행 기록**: `UnrealEditor-Cmd` 종료 코드는 1 이었으나 커맨드릿 결과는 0 이다 — 프로젝트의 GameFeatureData 애셋 매니저 설정 오류(LoadErrors)가 종료 코드를 올린다(이 플러그인과 무관). 잠금 도구는 `acquire commandlet --pid <UnrealEditor-Cmd>` 를 "에디터가 떠 있다"로 거부해서 `compile` 잠금을 잡은 채 실행했다.
 - 브로커가 다시 뜬 직후 한 번, 빌드 전 에디터 종료가 되지 않아 UBT 가 "Live Coding is active"로 거부했다 — `compile` 잠금 + 수동 종료 후 다시 요청해 통과.
 - 피커의 Git 프로바이더 "CL" 칸에는 프로바이더가 돌려주는 숫자 체크인 id 가 나온다(git 에는 체인지리스트 개념이 없다).
+
+### M5 (2026-10-18, 5.1.1) — 회사 엔진 5.1
+
+환경: 플러그인 저장소에 `5.1` 브랜치(5.8 에서 갈라짐)를 만들고 `git worktree` 로 `C:\Work\RadarUMGDiff51\Plugins\RadarUMGDiff` 에 체크아웃했다(CL9 의 `Plugins/RadarUMGDiff` 는 `5.8` 그대로). 5.1 빌드·실행은 CL9 가 아니라 빈 C++ 프로젝트 `C:\Work\RadarUMGDiff51\RadarHost51.uproject`(게임 모듈 하나 + 이 플러그인)에서 한다. 런처 설치 5.1 은 `Build.bat` 이 `GetDotnetPath.bat` 을 건너뛰어(InstalledBuild) 시스템 .NET 8/10 을 잡고 "framework 6.0.0 없음"으로 실패한다 — 번들 `Engine\Binaries\ThirdParty\DotNet\6.0.302\windows` 를 `PATH`·`DOTNET_ROOT` 로 직접 잡아야 한다(`DOTNET_MULTILEVEL_LOOKUP=0`). 컴파일러는 VS 18 MSVC 14.51 로 문제없었다. 커맨드릿 인자는 `cmd.exe` 를 거치면 `-run=X` 의 `=` 가 잘려 커맨드릿이 아니라 에디터가 뜬다 — 프로세스 인자 목록으로 직접 띄운다.
+
+**스파이크 8 (5.8 코드를 5.1 에서 빌드한 오류 목록) — 완료.** 1차 빌드 오류 70줄, 묶으면 열 가지, 그다음 링크 오류 둘:
+
+| 오류 | 5.1 사실 (엔진 소스) | 대응 (`RadarCompat::`) |
+|---|---|---|
+| `FWidgetBlueprintEditorUtils::CreateUserWidgetFromBlueprint`·`FCreateWidgetFromBlueprintParams`·`DestroyUserWidget` 없음 | §3.3 확인대로 | `CreatePreviewWidget` 5.1 = 5.8 본문 이식(`FMakeClassSpawnableOnScope` — 5.1 `UnrealEd/Public/Kismet2/BlueprintEditorUtils.h:1938`, 최신 트리는 5.1 `UpdatePreview` 규칙 `GetWidgetTreeOwningClass`), `DestroyPreviewWidget` = `MarkAsGarbage`+`ReleaseSlateResources(true)` |
+| `EGetObjectsFlags` 없음 | `ForEachObjectWithPackage(…, bool bIncludeNestedObjects)` (`UObjectHash.h:168`) | `ForEachObjectInPackage` |
+| `UMovieScene::GetTracks` 없음 | `GetMasterTracks` (`MovieScene.h:686`) | `GetRootTracks` |
+| `FProperty::GetElementSize` 없음 | 공개 멤버 `ElementSize` (`UnrealType.h:226`) | `ElementSizeOf` |
+| `FScriptSetHelper/MapHelper::GetElementPtr/GetKeyPtr(FIterator)` 없음 | 반복자 `operator*` 가 내부 인덱스, `GetKeyPtr(int32)` (`UnrealType.h` 5060~) | `ContainerIndex(It)` |
+| `FDetailsDiff::CreateDetailsView` 없음 | 5.1 `FDetailsDiff` 는 생성자에서 디테일을 만든다(`DetailsDiff.cpp` 14~40; 생성자 인자도 `(const UObject*, FOnDisplayedPropertiesChanged)` 로 §3.3 "공통" 표기와 다름) | `CreateReadOnlyDetailsView` = 같은 설정(이름 칸 숨김·편집 불가·고급 속성 표시) |
+| `UE::ContentBrowser::ExtendToolMenu_AssetContextMenu` 없음 | 메뉴 이름은 같다 — `AssetContextMenu.cpp` 340~ `RegisterMenuHierarchy` 가 `JoinMenuPaths("ContentBrowser.AssetContextMenu", 클래스 이름)`, 섹션 `GetAssetActions`(:378), 컨텍스트의 `SelectedAssets` 있음 | `ExtendWidgetBlueprintAssetMenu` = `UToolMenus::ExtendMenu` |
+| `FSlateDrawElement::MakeDashedLines` 없음, `FGeometry::ToPaintGeometry(FVector2f, …)` 없음 | `DrawElements.h` 에 점선 없음, `Geometry.h:320` 은 `FVector2D` 인자 | `MakeDashedLines` 5.1 = 변마다 실선 조각, `PaintGeometry(Geo, 크기, 위치)` |
+| `UWidgetDesignerSettings::DefaultPreviewResolution` 없음 | 디자이너는 에디터 프로젝트별 ini `[UMGEditor.Designer] PreviewWidth/PreviewHeight`, 없으면 1280×720 (`SDesignerView.cpp` 217~219, 873~891) | `DefaultPreviewResolution` |
+| (픽스처 생성기) `UWidgetBlueprint::OnVariableAdded`, `FText::AsLocalizable_Advanced`, `FStringTable::SetSourceString` 3인자 없음 | 5.1 UMGEditor 에는 `WidgetVariableNameToGuidMap` 자체가 없다. `FText::ChangeKey`(`Text.h:715`), `SetSourceString(키, 원문)`(`StringTableCore.h:117`) | `NotifyWidgetVariableAdded/Renamed/Removed`(5.1 은 할 일 없음), `MakeLocalizedText`, `SetStringTableSource` |
+| C4458 `WeakThis` 가 멤버를 가림 | 5.1 경고 수준 | 지역 변수 이름 `WeakSelf` (분기 없음) |
+| `TCondensedJsonPrintPolicy` 미정의 | 헤더가 간접으로 안 들어옴 | `Policies/CondensedJsonPrintPolicy.h` 포함 (분기 없음) |
+| 링크: `GetWidgetPreviewAreaAndSize`·`GetWidgetPreviewDPIScale` | 5.1 에도 있지만 `class FWidgetBlueprintEditorUtils` 가 `UMGEDITOR_API` 가 아니다(`WidgetBlueprintEditorUtils.h:21`) | `WidgetPreviewAreaAndSize`·`WidgetPreviewDPIScale` 5.1 = 본문 이식(`.cpp` 2068~2129) |
+
+`FRevisionInfo`(5.1 `AssetTools`), `LoadPackageForDiff`(§3.3 대로 공통 본문), `SRadarZoomPan`, `SDesignSurface`, `SBlueprintDiff::CreateDiffWindow`, `UWidgetAnimation::GetBindings`(5.1 `WidgetAnimation.h:112`)는 오류 없이 그대로 됐다. 판정 매크로는 `RADAR_UE51` 하나, `#if` 는 여전히 `RadarEngineCompat.h` 에만 있다. 5.8 쪽 분기는 원래 호출을 그대로 둔다.
+
+구현:
+- 커맨드릿 `-run=RadarStructKinds`(`Commandlet/RadarStructKindsCommandlet`): `/Script/` 구조체마다 `STRUCT_SerializeNative` → native, 아니면 `STRUCT_Immutable` → immutable, 나머지 tagged(5.1 `Class.cpp` 2735~ `UseBinarySerialization`/`SerializeItem`). 같은 짧은 이름이 다른 종류면 `conflicts`. **추가로 `containers`**: 네이티브 클래스·구조체(상속 포함)의 집합·맵 속성마다 원소 구조체 이름 — 옛 형식의 집합·맵 태그에는 원소 구조체 이름이 없고 내부 태그는 배열에만 있다(5.1 `PropertyArray.cpp` 210 "TODO: Should work for maps + sets too"). 결과 `data/struct_kinds_ue5.1.json`: 5.1.1 · 1008 · 구조체 3,667(tagged 3,531 · native 128 · immutable 8) · 충돌 0 · 집합·맵 속성 344. 참고로 5.1 에서 `Vector2D` 는 native, `FrameRate`·`UserPinInfo` 는 tagged 다.
+- Python: `tags.py` B 형식 머리(`read_legacy_tag_header` — A 형식과 같은 TypeNode·Flags 로 바꿔 값 리더 한 벌), 배열 내부 태그(원소 0개여도 있음), 집합·맵 원소 구조체는 `containers["<소유자>.<속성>"]`, 표에 없는 구조체는 태그 스트림으로 읽어 보고 실패하거나 크기가 맞지 않으면 그 태그만 raw(`(struct-kind-unknown:…)`). `structkinds.py`(그 파일 버전으로 만든 표만 쓰고 없으면 거부 4). `exports.py` **`MetaData` 익스포트 접미부**: 1014 미만에서는 패키지 메타데이터가 익스포트다 — 5.1 `MetaData.cpp` `UMetaData::Serialize` = `TMap<FWeakObjectPtr, TMap<FName,FString>>`(약참조 = 패키지 인덱스 i32) + `FEditorObjectVersion >= RootMetaDataSupport`(3) 이면 `TMap<FName,FString>`. 게이트는 `tools/gen_version_gates.py` 로 엔진 소스에서 생성. 단위 테스트 6개 추가(총 27).
+- 픽스처 생성기에 `Layout` 항목(WBP_Fix_Child + WBP_Fix_Layout v1·v2): M2 의 손 픽스처와 같은 위젯·위치·텍스트·변화(5.8 저장본을 Python 으로 덤프해 옮겼다). 5.8 의 기존 손 저장본은 그대로 둔다.
+- §11.8 의 5.1 분기(DevNotes 없음, SoftObjectPath FString 서브 경로)와 §11.5 의 1010·1011 미만(Script 오프셋·접두 바이트 없음)은 M3/M4 코드가 이미 버전 게이트로 처리하고 있었다 — 5.1 저장본에서 그대로 맞았다.
+
+검증 (5.1.1):
+- 5.1 빌드: `RadarHost51Editor` 성공(경고는 엔진 헤더 C4996 하나).
+- 픽스처: 5.1 에디터에서 `RadarUMGDiff.BuildFixtures All -force` → 21개 저장(FileVersionUE5 1008), ensure·컴파일 경고 없음.
+- Python `dump`: 21개 모두 옛 태그를 표로 읽음. 커버리지 범위 안 **1.0000**, 전체 0.9464(남은 것은 `(struct-data:WidgetBlueprintGeneratedClass)` 13,845 · `(struct-data:Function)` 4,116 — §11.9 범위 밖). 표·MetaData 를 넣기 전은 0.81 이었다(`MetaData` 59,619 · `PropertyGuids` 맵 688).
+- 일치: 5.1 커맨드릿 `-run=RadarUMGDiffDump -old=file: -new=file:` 15쌍 vs Python → 판정 불일치 **0**, 보류 0 (`Test/accuracy_report.md`, 5.1 브랜치). 네이티브 diff 는 빈 것이 아니다(Layout 삭제 3·변경 1·이동 1·이름 변경 1·슬롯 1 등).
+- 5.8 회귀: 바뀐 Python 으로 5.8 픽스처 15쌍의 diff.json·양쪽 state.json 이 수정 전과 같다(producer·file 칸 제외, 다른 쌍 0/15). 단위 테스트 27개 3.9.7·3.11.8·3.14.7 OK.
+- 뷰어(5.1 에디터, `RadarUMGDiff.Open … file:v1 file:v2`): WBP_Fix_Layout 나란히 — 요약 띠·계층(이름 변경?·이동 전 유령 행·삭제 취소선)·미리보기·오버레이(빗금 빨간 상자, 비활성 페이지 칩 "× PageBText", 이동 화살표)·상세(색 칩 FFFFFFFF → FFCB7CFF, DisplayLabel) 가 5.8 과 같다(`m5_layout_side_by_side.png`). data-only: 5.8 CLI(Python, 1018) diff.json 을 `RadarUMGDiff.OpenJson` 으로 5.1 뷰어에 — 미리보기 자리에 안내, 나머지 패널 동일(`m5_data_only_58json.png`). 스크린샷은 `C:\Work\RadarUMGDiff51\Saved\m5\shots\`.
+- 5.8 쪽: 공통 커밋을 `5.8` 에 체리픽한 뒤 브로커 정식 빌드(`CL9Editor`) 성공, 경고 0 (`.claude/runs/build-broker/logs/build-20261018-181358.log`).
+- 5.1 에디터 첫 실행 때 Windows 방화벽 허용 창이 떴다 — 보안 설정이라 세션이 누르지 않았다(뷰어 동작과 무관).
+
+브랜치 정리: 공통 커밋(소스·Python·README)은 `5.8` 에 체리픽해 두 브랜치의 차이는 `data/struct_kinds_ue5.1.json`·픽스처 저장본·`Test/accuracy_report.md` 뿐이다. 5.1 브랜치는 GitHub 공개 때 다시 쓴 `5.8` 의 M0~M4 커밋(`dc1488e`)+README(`f36cd47`) 위로 옮겼다. push 는 하지 않았다(외부 공개 — 사용자 확인).

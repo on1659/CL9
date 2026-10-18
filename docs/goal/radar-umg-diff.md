@@ -275,7 +275,9 @@ Track: **HEAVY** (new system; design settled by a 4-perspective panel + cross-ex
   - **M4** Python graph/pins + FUserPinInfo + MovieScene channels + per-key animation diff +
     schema dump; fixture WBPs; accuracy mode report.
   - **Status 2026-10-18:** M0–M4 done and verified on UE 5.8.3 (dev document §19, accuracy report
-    `Plugins/RadarUMGDiff/Test/accuracy_report.md`). M5 not started.
+    `Plugins/RadarUMGDiff/Test/accuracy_report.md`). M5 done and verified on UE 5.1.1 the same day
+    (branch `5.1`, dev document §19 M5: 5.1 build, struct-kind table, legacy tags, 5.1-saved fixtures,
+    5.1 commandlet vs Python 15 pairs 0 disagreements, viewer + data-only screenshots).
   - **M5** company engine 5.1: branch `ue5.1` of the plugin repo builds against UE 5.1
     (`#if` for moved APIs — FRevisionInfo lives elsewhere before 5.2, check
     `CreateUserWidgetFromBlueprint`, `SDesignSurface`, `SZoomPan`, `LoadPackageForDiff`,
@@ -390,11 +392,19 @@ Track: **HEAVY** (new system; design settled by a 4-perspective panel + cross-ex
 - [x] Plugin builds with `CL9Editor` and contains no reference to CL9 game modules.
       — verified 2026-10-18 (M4): broker builds OK, warnings 0; "CL9" occurs 0 times in
       the plugin's Source, Build.cs and .uplugin.
-- [ ] (M5) The `ue5.1` branch builds against UE 5.1 and shows the same viewer (previews,
+- [x] (M5) The `ue5.1` branch builds against UE 5.1 and shows the same viewer (previews,
       overlays, hierarchy, details) on 5.1-saved Widget Blueprints.
-- [ ] (M5) `umgdiff_cli.py dump` on a 5.1-saved fixture reads the legacy tags via the
+      — verified 2026-10-18 (M5, UE 5.1.1): branch `5.1` builds (`RadarHost51Editor`, a blank 5.1 C++
+      project); every 5.1 compile/link error is an `#if` in `RadarEngineCompat.h` (dev §19 M5 table).
+      WBP_Fix_Layout v1↔v2 saved by the 5.1 editor opens with previews, overlays (hatched removed boxes,
+      inactive-page chip, move arrow), hierarchy and details as on 5.8 (`m5_layout_side_by_side`); a 5.8 CLI
+      `diff.json` opens in the 5.1 viewer in data-only mode (`m5_data_only_58json`).
+- [x] (M5) `umgdiff_cli.py dump` on a 5.1-saved fixture reads the legacy tags via the
       struct-kind table, reports coverage %, and the conformance test against the `ue5.1`
       native commandlet reports zero verdict disagreements for widgets, slots and CDO.
+      — verified 2026-10-18 (M5): `data/struct_kinds_ue5.1.json` from `-run=RadarStructKinds` (3,667 structs,
+      344 set/map properties); all 21 fixtures saved by the 5.1 editor (FileVersionUE5 1008) parse, coverage
+      in scope 1.0000 (total 0.9464); 5.1 commandlet vs Python over 15 fixture pairs: 0 disagreements, 0 deferred.
 - [x] `diff.json` from every producer carries the `producer` block; the viewer greys out
       kinds the producer declares it cannot emit, and runs in data-only mode when the current
       editor cannot load one of the two revisions.
