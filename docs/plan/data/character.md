@@ -28,10 +28,13 @@
 채널이다.
 
 > **이 두 열은 아직 `UCL9CharacterDef`에 없다.** 소리 자체는 있다 — `SoundTable`(`Content/Data`) 행
-> 10개(`CL9SoundNames`: Pickup·Place·Swing·Hit·Hurt·MonsterDeath·Footstep·MonsterPounce·MonsterCatch·MonsterNear,
-> 2026-09-18~20, [../../systems/sound.md](../../systems/sound.md)) — 그러나 **종별 음성·발소리 세트 열은 없다.**
-> 발소리는 종 공통 `Footstep` 행 하나를 `CL9Rules.FootstepStrideRun/Walk` 공용 보폭(거리 누적기)으로 낸다
-> (2026-09-18, 종별 보폭 열은 다음에). 종별 열은 소비처가 생길 때 넣고, 그때 이 두 줄이 명세가 된다.
+> 11개(`CL9SoundNames`: Pickup·Place·Swing·Hit·Hurt·MonsterDeath·Footstep·MonsterPounce·MonsterCatch·MonsterNear·HitSurface,
+> 2026-09-18~22, [../../systems/sound.md](../../systems/sound.md))에 control-feel(2026-10-05)이 몸 동작 소리 8행
+> (Jump·LandSoft·LandHard·SlotSwitch·LightToggle·Eat·Exhausted·CartGrab — 소유자에게만 들린다)을 더한다 — 그러나
+> **종별 음성·발소리 세트 열은 없다.** 발소리는 종 공통 `Footstep` 행 하나를 `CL9Rules.FootstepStrideRun/Walk` 공용
+> 보폭으로 낸다(2026-09-18, 종별 보폭 열은 다음에). control-feel 부터는 거리 누적기 대신 정규화 걸음 위상(`StepPhase`)이다 —
+> 보폭이 걷기 150 cm ↔ 달리기 196 cm 사이에서 속도에 따라 보간되고, 1인칭 카메라 보브와 같은 시계를 쓴다
+> (docs/goal/control-feel.md C10). 종별 열은 소비처가 생길 때 넣고, 그때 이 두 줄이 명세가 된다.
 
 ---
 
@@ -48,6 +51,46 @@
 | `EyeHeight` | 눈높이 (cm) — **시점은 1인칭이다** (2026-09-01 확정), 카메라가 여기 붙는다 | 156 | `EyeHeightU 52` |
 | `JumpVelocity` | 점프 초속 (cm/s) — 정점 156cm (= 780²/(2×1950), 2026-09-02 재계산 정정) | 780 | `JumpVelocityU 260` |
 | `JumpGravity` | 점프 중력 (cm/s²) | 1950 | `JumpGravityU 650` |
+
+`RunSpeed`는 누르는 즉시가 아니라 아래 질주 램프를 따라 0.85초에 걸쳐 도달한다 — 최고 속도 자체는 그대로다.
+
+## 이동 감각 — 가속·제동·질주 램프·공중 제어 (Category `Movement`)
+
+조작 손맛(docs/goal/control-feel.md C1·C3~C7·C13)의 열이다. 2026-10-05 전까지는 이 값들이 전부 엔진 기본값이었다
+(가속·제동 2048, 마찰 8, 공중 제어 0.05 — 달리다 멈추는 데 0.11초, 질주를 놓으면 0.025초라 무게가 없었다).
+**아래 기본값은 전부 초안(2026-10-05, PIE 관찰 전)이다** — 레퍼런스(Lethal Company·R.E.P.O.)에서 띠를 정하고 파이썬
+모사(30~240 Hz)로 고른 값이며, Gate A 의 PIE 측정(`Tools/Unreal/qa_control_feel.py`)과 사람의 손으로 아직 확인하지 않았다.
+헤더 기본값이 곧 의도한 값이다 — `CharacterTable`의 `farmer_a` 행에 셀이 없으면 이 기본값을 받는다. 값은 `ACL9Character::ApplyCharacterDef`가
+`MaxWalkSpeed` 옆에서 CMC 멤버로 넣는다.
+
+| 컬럼 | 뜻 | 기본값 | 구 CCL8 상수 |
+|---|---|---|---|
+| `Accel` | 입력 가속 (cm/s²) → CMC `MaxAcceleration`. 0에서 걷기 90 %까지 0.183초 | 2000 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `BrakingDecel` | 입력을 놓았을 때의 제동 감속 (cm/s²) → `BrakingDecelerationWalking` | 1300 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `BrakingFriction` | 제동 마찰 (1/s) → `BrakingFriction` (`bUseSeparateBrakingFriction` 켬, `BrakingFrictionFactor` 1) | 3.5 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `GroundFriction` | 걷기 조향 마찰 (1/s) → `GroundFriction`. 걷기 속도의 방향 전환은 오늘과 같다 | 8 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `SprintTurnFriction` | 전력 질주 중 조향 마찰 (1/s) — 무브마다 실제 마찰 = Lerp(`GroundFriction`, 이 값, 질주 램프) | 5.0 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `SprintRampUpTime` | 질주 램프 0→1 시간 (초, ease-out quad). 속도 상한 = 걷기 + (달리기 − 걷기) × 램프 | 0.85 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `SprintRampDownTime` | 질주를 놓았을 때 램프 1→0 시간 (초, 선형) | 0.25 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+| `AirControl` | 공중 제어 (0~1) → `AirControl`. `Accel` × 0.32 = 가로 640 cm/s² | 0.32 — 초안(2026-10-05, PIE 관찰 전) | **신규** |
+
+**기대하는 움직임(60 Hz 모사값 — Gate A 가 PIE 에서 다시 잰다):** 걷다 멈춤 0.200초·31.8 cm, 전력 질주에서 멈춤
+0.283초·71.4 cm, 걷기 중 질주를 누르면 늘어날 속도의 90 %(628 cm/s)까지 0.583초, 앞을 쥔 채 질주를 놓으면 0.250초에 걷기 속도,
+전력 질주 중 90도 꺾기는 0.25초에 새 방향으로 정렬되고 옛 방향으로 103 cm 밀린다. 점프 정점 156 cm 와 달리기 점프 거리는 그대로이고,
+선 채로 점프하며 앞을 쥐면 약 205~225 cm 를 간다(공중 제어 0.05 → 0.32 의 결과).
+
+- **공중에서는 제동 마찰을 쓰지 않는다** — `BrakingFriction`을 따로 켜면 엔진이 공중에도 넘기므로 CMC 가 낙하 중에는
+  `FallingLateralFriction`만 쓰게 되돌린다(C3). 그래서 질주 점프의 가로 속도는 착지까지 유지된다.
+- **질주 램프는 예측 상태다** — 스태미나처럼 CMC 무브 안에서 적분하고 저장 무브가 스냅샷을 들고 합칠 때 되돌린다(C1·C2).
+  `IsRunning()`은 그대로 플래그 기준이다(스태미나 소모 조건·애니메이션이 읽는다).
+- **끄는 법(데이터만):** 램프 시간 0 이면 즉시(옛 동작에 가깝다). 제동 둘·마찰·공중 제어도 셀 값으로 되돌릴 수 있다 — 빌드가 필요 없다.
+- **검증 조건(`Validate`):** `Accel` > 0, `GroundFriction` > 0, 0 < `SprintTurnFriction` ≤ `GroundFriction`, 제동 둘 ≥ 0,
+  램프 시간 ≥ 0, `AirControl` ∈ [0, 1]. "제동이 떨어지는 상한을 따라잡나"(1300 + 3.5 v ≥ 1032)는 행을 빼지 않고 Warning 로그만 낸다.
+- **스태미나 산수(C7):** 소모 규칙은 그대로다(질주 중 움직이면 이진 소모). 램프 때문에 질주 거리가 조금 줄고 놓을 때 조금 는다 —
+  램프 손실 `(Run−Walk)×SprintRampUpTime/3` = 73.1 cm, 놓을 때 이득 `(Run−Walk)×SprintRampDownTime/2` = 32.3 cm,
+  질주 예산 `Run×Drain − 램프 손실` = 3851 cm, 지친 지속 속도 `(Run×Drain + Walk×Regen − 램프 손실 + 놓을 때 이득)/(Drain+Regen)`
+  = 503.7 cm/s. `CL9DefRegistry::CheckCharacterRelations`가 이 식으로 행마다 검사하고, 부등식은 뒤집히지 않는다.
+- 조건부 열 `CoyoteTime`(0.12초)·`JumpBufferTime`(0.15초)은 스트레치 S1 이 들어올 때만 생긴다 — 0 이면 꺼진다.
 
 ## 체력
 
@@ -69,8 +112,8 @@
 | `StaminaMinResume` | 탈진 후 재개 문턱 (스태미나는 0~1 정규화 — 1.0 = 만충까지 잠금) | 1.0 | `StamMinResume` |
 
 **세 조항이 전부 있어야 한다** — 탈진 래치 · 재개 히스테리시스 · 실이동 조건.
-하나라도 빠지면 탈출 보증의 산수 전제가 무너진다. 지친 빈손 지속 속도 506이 "질주 1.5초 +
-걷기 2.0초 사이클"에서 나온 값이기 때문이다.
+하나라도 빠지면 탈출 보증의 산수 전제가 무너진다. 지친 빈손 지속 속도 506(질주 램프 반영 뒤 503.7 — 위 "이동 감각")이
+"질주 1.5초 + 걷기 2.0초 사이클"에서 나온 값이기 때문이다.
 
 ## 스탯 enum — `ECL9Stat`
 
@@ -92,10 +135,11 @@
 ## ★ 로드 검사가 캐릭터 행마다 돈다
 
 ```
-지친 빈손 지속 속도 506  >  닭 추격 396
+지친 빈손 지속 속도 503.7 (질주 램프 반영 — 램프 전 506)  >  닭 추격 396
 ```
 
-이 506은 `RunSpeed`·`WalkSpeed`·스태미나 3종에서 **계산되어 나오는 파생값**이다.
+이 값은 `RunSpeed`·`WalkSpeed`·스태미나 3종과 질주 램프 두 열(`SprintRampUpTime`·`SprintRampDownTime`)에서
+**계산되어 나오는 파생값**이다 — 식은 위 "이동 감각" 절.
 캐릭터마다 값이 다르면 부등식도 캐릭터마다 달라지므로, 검사는 전역 한 번이 아니라
 **행마다** 돈다.
 

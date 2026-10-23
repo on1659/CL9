@@ -196,7 +196,7 @@ valueLost = Mathf.Clamp(valueLost, 0f, valuableObject.dollarValueCurrent);
 
 ## 잡기·운반 물리
 
-**잡기 거리**(`PhysGrabber`, 코드 기본값): `grabRange = 4f`(탐지 최대 거리), `maxDistanceFromPlayer = 2.5f` / `minDistanceFromPlayer = 1f`(유지 거리 범위), `grabReleaseDistance = Max(grabRange * 2f, 10f)`(초과 시 강제로 손을 놓음). `grabRange`는 `StatsManager.instance.playerUpgradeRange` 상점 업그레이드로 레벨당 `+1f`씩 늘어난다.
+**잡기 거리**(`PhysGrabber`, 코드 기본값): `grabRange = 4f`(탐지 최대 거리), `maxDistanceFromPlayer = 2.5f` / `minDistanceFromPlayer = 1f`(유지 거리 범위), `grabReleaseDistance = Max(grabRange * 2f, 10f)`(초과 시 강제로 손을 놓음). `grabRange`는 `StatsManager.instance.playerUpgradeRange` 상점 업그레이드로 레벨당 `+1f`씩 늘어난다. (2026-10-05 정정 — 위 수치는 코드 기본값이다. 프리팹 직렬화 실값은 `grabRange = 2.5`(250 cm)이고, `maxDistanceFromPlayer`는 6이지만 실효 유지 거리 상한은 `min(grabRange, 6)` = 2.5다. [repo-control-feel.md](repo-control-feel.md) 0절·5.1절.)
 
 **잡는 힘 — 스프링·댐퍼**: 실제 힘 계산은 `PhysGrabBeam`(순수 시각 빔 이펙트, `[RequireComponent(typeof(LineRenderer))]`)이 아니라 `PhysGrabObject.PhysicsGrabbingManipulation()`에서 이뤄진다.
 ```csharp
@@ -204,9 +204,9 @@ Vector3 vector = Vector3.ClampMagnitude(physGrabPointPullerPosition - item.physG
 Vector3 pointVelocity = rb.GetPointVelocity(item.physGrabPoint.position);
 Vector3 vector2 = Vector3.ClampMagnitude(vector * item.springConstant - pointVelocity * item.dampingConstant, num) * 2f / mass;
 ```
-목표 지점과의 변위에 `springConstant`(코드 기본값 0.9)를 곱하고 현재 속도에 `dampingConstant`(0.5)를 곱해 뺀 전형적인 스프링-댐퍼 공식이며, `AddForceAtPosition(..., ForceMode.Acceleration)`로 **잡은 지점(손 위치)**에 적용된다. `forceConstant`/`forceMax`는 각각 코드 기본값 4f.
+목표 지점과의 변위에 `springConstant`(코드 기본값 0.9)를 곱하고 현재 속도에 `dampingConstant`(0.5)를 곱해 뺀 전형적인 스프링-댐퍼 공식이며, `AddForceAtPosition(..., ForceMode.Acceleration)`로 **잡은 지점(손 위치)**에 적용된다. `forceConstant`/`forceMax`는 각각 코드 기본값 4f. (2026-10-05 정정 — 프리팹 실값은 `springConstant` 0.6, `dampingConstant` 0.3, `forceConstant` 5, `forceMax` 6이다.)
 
-**질량과 여러 명이 함께 들 때 힘 합산 — 핵심**: `playerGrabbing`은 `List<PhysGrabber>`이며, 힘 계산 루프가 각 플레이어의 잡은 지점마다 독립적으로 스프링-댐퍼 힘을 계산해 각각 `AddForceAtPosition`으로 적용한다. 즉 힘의 "합산"은 명시적 덧셈 공식이 아니라 **리지드바디 물리 엔진이 여러 지점에 걸린 여러 힘을 자연스럽게 합성**하는 방식이다(읽은 사실). 힘 자체가 `2f / mass`로 질량에 반비례해 가속도 형태로 적용되므로, 질량이 클수록 동일한 변위 오차에서 나오는 가속도가 작아진다. 여기에 더해 `grabStrength`(코드 기본값 1f, 상점 업그레이드로 레벨당 `+0.2f`)는 질량 구간별 문턱값(`num8`)에 따라 `Lerp`로 완만하게 감쇠된다 — 질량이 커질수록 업그레이드로 얻은 초과 힘이 깎여, 업그레이드로 무한정 강해지는 것을 막는다. 개인당 힘은 `forceMax`(기본 4f)로도 클램프된다. 종합하면 "혼자 못 드는" 것은 하드코딩된 인원수 제한이 아니라 **질량 대비 가속도 부족 + 개인 힘 상한**의 결과다(읽은 사실 기반 종합). 카트에 실린 물체를 직접 밀 때는 그랩 지점이 카트 표면에 거의 닿아 있으면 개인 힘 상한이 1/4로 추가 감쇠된다.
+**질량과 여러 명이 함께 들 때 힘 합산 — 핵심**: `playerGrabbing`은 `List<PhysGrabber>`이며, 힘 계산 루프가 각 플레이어의 잡은 지점마다 독립적으로 스프링-댐퍼 힘을 계산해 각각 `AddForceAtPosition`으로 적용한다. 즉 힘의 "합산"은 명시적 덧셈 공식이 아니라 **리지드바디 물리 엔진이 여러 지점에 걸린 여러 힘을 자연스럽게 합성**하는 방식이다(읽은 사실). 힘 자체가 `2f / mass`로 질량에 반비례해 가속도 형태로 적용되므로, 질량이 클수록 동일한 변위 오차에서 나오는 가속도가 작아진다. 여기에 더해 `grabStrength`(코드 기본값 1f, 상점 업그레이드로 레벨당 `+0.2f`)는 질량 구간별 문턱값(`num8`)에 따라 `Lerp`로 완만하게 감쇠된다 — 질량이 커질수록 업그레이드로 얻은 초과 힘이 깎여, 업그레이드로 무한정 강해지는 것을 막는다. 개인당 힘은 `forceMax`(기본 4f)로도 클램프된다 (2026-10-05 정정 — 실값은 6). 종합하면 "혼자 못 드는" 것은 하드코딩된 인원수 제한이 아니라 **질량 대비 가속도 부족 + 개인 힘 상한**의 결과다(읽은 사실 기반 종합). 카트에 실린 물체를 직접 밀 때는 그랩 지점이 카트 표면에 거의 닿아 있으면 개인 힘 상한이 1/4로 추가 감쇠된다.
 
 **던지기**: 손을 놓는 순간(`Throw(PhysGrabber player)`) 호출된다.
 ```csharp
@@ -309,10 +309,10 @@ private int CalculateSurplus() { int num = haulCurrent - haulGoal; return Mathf.
 
 | 항목 | 값/공식 | 출처 |
 |---|---|---|
-| 잡기 탐지 거리 | `grabRange = 4f`(코드 기본값), 업그레이드당 `+1f` | `PhysGrabber` |
-| 잡은 물체 유지 거리 | `1f`(최소) ~ `2.5f`(최대) | `PhysGrabber` |
+| 잡기 탐지 거리 | `grabRange = 4f`(코드 기본값), 업그레이드당 `+1f` (2026-10-05 정정 — 실값 2.5) | `PhysGrabber` |
+| 잡은 물체 유지 거리 | `1f`(최소) ~ `2.5f`(최대) (2026-10-05 정정 — `maxDistanceFromPlayer` 실값은 6이나 실효 상한은 `min(grabRange, 6)` = 2.5) | `PhysGrabber` |
 | 강제 놓음 거리 | `Max(grabRange*2, 10f)` = 10 | `PhysGrabber` |
-| 잡기 스프링/댐핑 계수 | `springConstant=0.9`, `dampingConstant=0.5`, `forceMax=4` | `PhysGrabber`/`PhysGrabObject` |
+| 잡기 스프링/댐핑 계수 | `springConstant=0.9`, `dampingConstant=0.5`, `forceMax=4` (2026-10-05 정정 — 코드 기본값. 실값은 `springConstant` 0.6, `dampingConstant` 0.3, `forceConstant` 5, `forceMax` 6) | `PhysGrabber`/`PhysGrabObject` |
 | 힘-질량 관계 | `힘 ∝ 1/mass`(가속도 모드) + `grabStrength`의 질량구간별 완만한 감쇠 | `PhysGrabObject` |
 | 던지기 임펄스 | `Max(mass*1.5, 1) * clamp(당김벡터, forceMax) * (0.5+throwStrength)` | `PhysGrabObject` |
 | 개당 가치 랜덤 범위 | `Random.Range(valueMin, valueMax)`(종류별 프리셋), 100 단위 반올림 | `ValuableObject` |

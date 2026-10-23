@@ -52,7 +52,7 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 
 **구현 (4b, 2026-09-05)**: 위 두 스폰 모두 `ACL9GameMode::SpawnNightPopulation` — 목적지 행
 (`MapTable` henhouse)의 기준값 × `CL9Progression` 곡선. 좌표는 생성기가 없어 평지
-스탠드인(트럭 패드 앵커 원환, 몬스터 900~2400cm · 재료 400~1800cm, `ThreatActMinRadius` 안 회피).
+스탠드인(트럭 패드 앵커 원환, 몬스터 `CL9Rules.FlatMonsterMinDistance`~`FlatMonsterMaxDistance` 4000~7000cm(2026-10-21, 옛 900~2400) · 재료 400~1800cm, `ThreatActMinRadius` 안 회피).
 밤 스폰분은 로비 복귀 때 철거된다(들고 나온 것은 남는다). 상세 [balance.md](balance.md).
 
 **스테이지와 구역 (2026-10-03)**: 게임 모드는 `StartPlay`에서 지금 레벨을 `Level` 열에 가진 사이트 행을 고른다
@@ -65,8 +65,14 @@ for (const FCL9SpawnEntry& Entry : Site->ItemSpawns) {
 중복 제거 집합. 사이트 열(`MonsterSpawns`·`ItemSpawns`)도 맵마다 더해진다. 단일 사이트는 맵이 하나라 예전과 같고, 로그에만
 구역이면 `Night N district i …` 가 붙는다. 재료·항아리는 밤 시작에 바로 놓고, **몬스터는 밤 시작에 자리·방향까지 정해 큐에 넣은 뒤
 다음 프레임부터 `CL9Rules.MonsterSpawnPerFrame` 마리씩 스폰한다** — 로그 `… ×P queued (…)` 와 큐가 빈 뒤 `Night N: S of Q queued monsters
-spawned, F per frame, T s.` 밤 시작은 호스트에서 구역 짓기(`ACL9SiteMap::IsBuildPending`)나 내비 빌드(더러운 영역 포함)가 진행 중이면
+spawned, F per frame, T s.` 실제 프레임 번호로 상한을 지키며, 큐가 있는 동안에만 GameMode 틱이 켜진다. 상한은 성공 수가 아니라
+큐 소비/스폰 시도 수다. 기다리는 동안 플레이어가 후보 위치의 조용한 반경 안으로 들어오면 후보를 버린다(다시 추첨하지 않는다).
+위치·방향은 FIFO 순서로 보존하고 충돌 처리는 기존 `AdjustIfPossibleButAlwaysSpawn`을 쓴다. 아이템·항아리가 먼저 존재하므로 충돌 보정 결과와
+몬스터 개체 초기화의 전역 랜덤 소비 순서는 일괄 스폰 때와 달라질 수 있다. 지점·깊이·개수 분포 규칙은 유지하며 동일 시드의 완전히 같은 개체 배치를 보장하지 않는다.
+밤 시작은 호스트에서 구역 짓기(`ACL9SiteMap::IsBuildPending`)나 내비 빌드(더러운 영역 포함)가 진행 중이면
 다음 프레임으로 미뤄지고(여전히 로비), 기다린 시간이 `StartNight: … done after T s of waiting` 로 남는다.
+중복 시작 요청은 대기 하나를 공유한다. 로비 복귀·새벽·새 판·로드·월드 종료는 시작 대기와 남은 큐를 취소하며, 큐 도중 맵 시드나 일차가
+바뀌면 이전 위치는 버린다. 규칙 행이 사라지거나 상한이 1 미만이면 남은 큐를 취소하고 오류를 기록한다.
 
 ## 소리 규칙
 

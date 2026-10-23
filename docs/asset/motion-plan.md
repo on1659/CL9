@@ -17,6 +17,30 @@
 위협은 공격 전에 읽혀야 하고, 잡힌 플레이어의 넘어짐은 동료 화면에서도 보여야 한다.
 스토리 방향은 [story.md](../plan/story.md), 승인된 닭 외형·동작은 [현재 인계서](monster/chicken_disguise-animation-handoff.md)가 정본이다.
 
+## 2026-10-17 공격 컨셉 논의안
+
+**최신 재작업:** 직접 제작 v04의 공격 연출은 사용자 거절로 보존. 구매 모션 9개 비교 후 소는 AttackInPlace03 몸통·어깨 기반 돌진/지지 보정, 닭은 AttackForward01 도약·양팔 기반 전방 도달/이족 착지 보정. [소 약 3.8초](../../ArtSource/monster/motion_library_20261017/attack_pack_v06/cow/review/cow_attack_flat_1x.mp4), [닭 약 3.1초](../../ArtSource/monster/motion_library_20261017/attack_pack_v06/chicken/review/chicken_attack_flat_1x.mp4), 둘 다 실제 Lvl_Flat 1배속. 기술 검수와 사용자 자연스러움 승인은 분리하며 상세는 현재 제작 카드 상단.
+
+
+사용자 요청: 소 AI 배회·발견·추격을 Lvl_Flat에서 확인하고 종별 공격 컨셉을 논의한다.
+**후속 사용자 승인·실행:** 소 어깨 돌진과 닭 짧은 덮침은 승인되어 Lvl_Flat 공유 AI/AnimBP에 연결했다. 예고→공격→빗나감 복귀→재추격의 [소 영상](../../ArtSource/monster/motion_library_20261017/attack_v04/cow/review/cow_attack_flat_1x.mp4), [닭 영상](../../ArtSource/monster/motion_library_20261017/attack_v04/chicken/review/chicken_attack_flat_1x.mp4), 원속도·저장 재열기 검수 완료. 상세는 [현재 제작 카드](monster/disguise-trio-next-production.md). 소 독립 행과 닭 새 본체 개발용 sub-alias만 적용했으며 일반 닭/다른 종 판정은 유지한다. **나머지 5종은 제안 초안**, 피해량·전체 밸런스 확정이나 의상/격분 트리거 구현 완료가 아니다.
+
+**이동 연결 완료:** 소는 공유 BP_CL9Monster·시야/배회/추격과 신규 AnimBP·네 발 고정 IK를 연결해 Lvl_Flat에 저장했다. [실제 AI 1배속 영상](../../ArtSource/monster/motion_library_20261017/ai_runtime_v01/review/cow_native_ai_flat_fixed_1x.mp4), [현재 소 카드](monster/disguise-trio-next-production.md). 닭 새 본체의 v07 영상은 이동 테스트 상태이며 기존 닭 AI/시퀀스 연결을 이번 소 작업으로 바꾸지 않았다.
+
+| 대상 | 현재 근거/유지할 규칙 | 제안하는 공격과 예고 | 피하는 방법 / 헛친 뒤 모습 |
+|---|---|---|---|
+| 소 | story.md: 송아지처럼 감싼 짚 꾸러미에 손대면 문짝이 부서질 만큼 거칠게 나온다. 현재 드러난 본체에는 뿔이 없다 | **어깨·몸통 돌진**. 앞다리를 벌리고 머리/어깨를 낮춰 무게를 싣고 짧게 밀고 들어온다. 전방 팔로 크게 쓸어 붙잡는 마무리는 후속 후보 | 예고 후 옆으로 피한다. 헛치면 앞손으로 바닥을 짚고 무거운 몸을 다시 돌린다. 닭처럼 즉시 재도약하지 않는다 |
+| 닭 | 기존 Pounce 예고→덮침→잡기, 예고 0.6초 등 현재 수치는 유지 | **낮게 웅크린 뒤 짧은 덮치기**. 목/고개를 목표에 고정하고 팔을 벌려 붙잡는다. 새 외형에서 기존 공격의 읽힘부터 만든다 | 기존 후퇴/회피 판정을 따른다. 헛친 뒤 짧게 착지·자세 복귀; 별도 연타 판정은 추가하지 않는다 |
+| 돼지 | story.md: 탈을 쓴 채로도 먹는다. 현재 잡기 성공 시 Execute, 구출 규칙 유지 | **벌어진 입으로 붙잡아 삼키기**. 걸음을 멈추고 몸통/입을 크게 열어 삼킬 방향을 먼저 드러낸다 | 접촉 전에 거리를 벌린다. 잡힌 뒤 구출 가능으로 바꾸지 않는다. 헛치면 입과 몸통이 늦게 닫히는 무게감 |
+| 다람쥐 | story.md: 세는 중 물건을 가져가면 격분. 다족 본체/최종 리그 미확정 | **여러 팔다리로 붙잡아 끌어오기** 후보. 두 앞팔부터 뻗고 나머지가 연속으로 따라온다. 팔다리 수는 승인 외형 후 확정 | 뻗기 전 손/어깨 예고를 보고 거리 확보. 헛친 손들을 차례로 회수. 순간이동/통로 봉쇄 판정은 아직 제안하지 않음 |
+| 벌 | story.md: 불을 오래 비추면 여러 마리로 흩어진다. 본체/리그 미확정 | **분산한 무리가 한 번에 모여 덮치기** 후보. 윙윙거림이 모이고 공격 방향이 정해진 뒤 짧은 집중 공격 | 경고 구간에 집중 지점 밖으로 이동. 빗나가면 무리가 흩어져 재집결. 상시 접촉 피해/불빛 무력화 규칙은 미확정 |
+| 거위 | 기존 경보형, CatchRadius=0. 수면/각성/경보 연결을 유지 | **목을 치켜들고 크게 울어 주변을 깨우기**. 공격 역할은 무리 호출과 압박이며 직접 물기 피해를 새로 넣지 않음 | 경보 준비 전에 시야/거리 관리. 경보 후 숨 고르기. 기존 경보 판정 변경은 별도 논의 |
+| 너구리 | 기존 보이면 멈춤·가까우면 후퇴·안 보면 등 뒤 접근/처형 | **등 뒤에서 조용히 낚아채기**. 정면 근접 난타로 바꾸지 않고, 시선·접근·처형의 기존 규칙을 표현 | 짧게 돌아봐 접근을 끊는다. 장시간 응시 격분은 기존 규칙. 기존 처형/구출 조건 유지 |
+
+추천 제작 순서: **닭의 기존 덮침 표현 → 소 어깨 돌진 2~3초 비교 → 돼지 삼키기 → 너구리/거위의 기존 역할 연출**.
+다람쥐·벌은 외형/리그 확정 후 시험한다. 양은 현재 종 목록에서 제외된 상태를 유지한다.
+근거: [스토리](../plan/story.md), [공통 몬스터 데이터](../plan/data/monster/common.md), 각 종 데이터 문서.
+
 ## 우선순위
 
 | 순서 | 묶음 | 목표 |
@@ -146,6 +170,26 @@ GeometryCache/LevelSequence 게임 월드 프리뷰다. 영상과 실제 PIE 검
 동료를 일으켜 세우는 구조 모션, 총기·재장전·벽점프도 현재 제작 목록에 자동 추가하지 않는다.
 보유 템플릿 파일에 그런 동작이 있다는 사실은 해당 게임 기능이 있다는 뜻이 아니다.
 
+## 2026-10-17 전체 몬스터 모션 제작 재개
+
+사용자 범위: 전체 몬스터 목록 기준. 소 옷 탈착은 현 결과를 보존하고 중단한다. 기존 체형·리그를 유지하며 보유/다운로드 애니메이션을 종별로 적용한다. 최신 기획에 따라 **양은 제외**하고 거위·너구리에 탈착/광폭화를 추가하지 않는다.
+
+| 대상 | 재사용할 모션 | 적용 준비 상태 |
+|---|---|---|
+| 닭 동물 / 드러난 괴물 | 기존 ChickenA 종별 클립 / 무료 Mixamo Creature NPC 이동·기상 | 동물 리그 있음; 괴물 정본 ContactBackV2 보존, 두발 리타깃 시험 대상 |
+| 소 동물 / 드러난 괴물 | 기존 WornWalk / 구매한 Crawling Ghoul Idle·Crawl·Start·Stop·Turn | v20 리그 있음; Ghoul 짧은 네발 리타깃 우선 |
+| 돼지 | 기존 PigA 이동·처형·반응 | 동물 리그 있음; 새 괴물 외형은 최종 리그 미준비 |
+| 다람쥐 | 지상 이동·도약, 괴물 다족 이동 | 초안만 있음; 최종 리그 미준비, 사람 모션 그대로 적용 금지 |
+| 벌 | 비행 대기·이동·회전·공격 | 초안만 있음; 최종 리그 미준비, 지상 기기 모션 적용 금지 |
+| 거위 | 기존 GooseA Walk·Run·Sleep·AlertWindup·Honk | 기존 종별 리그/클립 재사용; Catch 추가 안 함 |
+| 너구리 | 기존 RaccoonA 이동·Execute·반응; 보유 Fox는 보조 참고 | 기존 종별 리그/클립 재사용 |
+
+- 원본 자료: 무료 Mixamo 관련 모션 65개와 구매한 Crawling Ghoul. 추가 결제 없음. 2026-10-17 UE5.8.3에서 소유 팩과 기존 종별 에셋 141개를 읽고 Ghoul 9클립을 새 ArtSource 폴더로 FBX 추출했다. 기존 Content는 저장/수정하지 않았다.
+- 실행·증거: `ArtSource/monster/motion_library_20261017/{engine_source_inventory,rig_inventory,source_samples,probe_exports,video_manifest}.json`. 기존 4종의 41클립 확인. 원본 리그/메시와 기존 엔진 콘텐츠 보존.
+- **첫 적용 시험:** [소 Ghoul 기기 · 3초·1배속](../../ArtSource/monster/motion_library_20261017/cow_ghoul_probe/review/cow_ghoul_probe_1x.mp4), [닭 Mixamo 걷기 · 3초·1배속](../../ArtSource/monster/motion_library_20261017/chicken_mixamo_probe/review/chicken_mixamo_probe_1x.mp4). 사선·측면, 실제 제작 방식 워터마크. 90프레임·30fps, 시간 배율 1. 원본 본체 정점/53·40뼈 바인드 동일, 전 프레임 바닥 아래 침범 없음. 소는 매 프레임 최소 한 발바닥이 바닥 5cm 이내. 닭은 최초 시험 보존 후 발별 IK/디딤 XY 고정 보강. 두 FBX 별도 export 저장.
+- **최신 v07:** 소·닭의 기존 체형을 유지해 대기→걷기→달리기→회전→걷기→대기를 연결하고 새 `/Game/Monsters/MotionReview20261017/V07/QA_CowChicken_Locomotion`에 Native SkeletalMesh/AnimSequence로 적용했다. 저장 후 재열기와 실제 PIE 재생 확인. [소 15.7초·1배속](../../ArtSource/monster/motion_library_20261017/runtime_v07/cow/review/cow_idle_walk_run_turn_ue_1x.mp4), [닭 15.1초·1배속](../../ArtSource/monster/motion_library_20261017/runtime_v07/chicken/review/chicken_idle_walk_run_turn_ue_1x.mp4). [갤러리](../../ArtSource/model-gallery.html) 상단에 추가하고 재생 확인. 상세/한계는 소·닭의 기존 카드 및 `runtime_v07/delivery_manifest.json`.
+- **미완료 범위:** 테스트 레벨 시연이며 AI/AnimBP/전투/내비게이션/멀티 연결 완료는 아니다. 기존 41클립 재제작 없음. 돼지 새 괴물형·다람쥐·벌의 최종 리그 미준비 유지. 옷 탈착 재개 없음. 전체 자연스러움 사용자 승인은 미확인.
+
 ## 6. 제작·검수 결과를 이어서 남기는 방법
 
 각 묶음 작업은 모델별 현재 카드/인계서에만 상세 기록하고 이 문서는 우선순위/링크만 갱신한다.
@@ -160,4 +204,4 @@ GeometryCache/LevelSequence 게임 월드 프리뷰다. 영상과 실제 PIE 검
 6. `제작됨 → Blender 검수됨 → UE 임포트 검수됨 → 게임 연결 검수됨`을 따로 기록한다.
    원본·영상·manifest·QA·다음 행동은 해당 `ArtSource/` 버전과 기존 카드로 연결한다.
 
-이번 정리는 문서·파일·코드 대조다. 기존 에셋 재임포트, 새 동작 제작, AI 변경, 에디터 실행은 하지 않았다.
+2026-10-16 최초 정리는 문서·파일·코드 대조만 수행했다. 2026-10-17 제작 재개 결과는 위 별도 절과 각 모델의 기존 카드에 기록한다.

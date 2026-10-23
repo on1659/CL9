@@ -1,5 +1,7 @@
 # Pig A — 큰 몸통과 짧은 다리
 
+> 2026-10-19 새 컨셉의 평상시·정체 모델 초안은 [pig_hollow.md](pig_hollow.md)의 `model_pair_v03`에서 함께 관리한다. 사용자 지정 첫 두 시안을 기준으로 직접 저작했고 기존 이 문서의 게임 연결 원본은 보존했다. 현재 새 모델은 외형 검토 전이며 아래 기존 리그·클립의 검증을 승계하지 않는다.
+
 상태: 게임 연결 검수됨 — 2026-09-11 `MonsterTable.pig` → SK/`ABP_Pig_A`, Lvl_Flat PIE; 09-15 PushReact; 09-20 처형 Run 1 이 `AN_Pig_Catch` 평가기를 재사용(PIE C-처형-돼지); **09-21 Execute 2.0초 제작(Run 2 — FBX·manifest 완료, UE 임포트·ABP 교체·PIE 는 리드 대기)**. 클립 9개 + Execute(`Content/Monsters/PigA/`), 재질 슬롯 배정 09-20. 2인 PIE·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
 
 2026-09-11 · 현행 테스트 종 pig의 구매 팩 임시 외형을 교체하는 신규 제작물.

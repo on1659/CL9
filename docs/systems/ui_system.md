@@ -9,7 +9,7 @@
 
 ```
 WBP_Main (UCL9MainWidget)        ← 뷰포트에 붙는 유일한 위젯 (로컬 전용)
-  ├─ HUD 레이어                   디자이너에 직접 배치 — 항상 표시
+  ├─ HUD 레이어                   디자이너에 직접 배치 — 배선(TryWire)된 뒤로 항상 표시
   │                               (밤 시계 · 이더 · 퀵슬롯 · 주문 · 상호작용 프롬프트)
   ├─ Layer_Screen (CanvasPanel)   전면 화면 — **배타** (하나 열면 이전 것이 닫힌다)
   └─ Layer_Popup  (CanvasPanel)   중첩 허용 (확인 대화상자·토스트가 생기면 여기)
@@ -17,6 +17,7 @@ WBP_Main (UCL9MainWidget)        ← 뷰포트에 붙는 유일한 위젯 (로�
 UCL9UIManager (GameInstanceSubsystem — 싱글턴 접근 Get())
   ├─ UI 표: UCL9UITable (FName → {위젯 클래스, 레이어}) — BP_CL9GameInstance가 주입
   ├─ OpenWidget(Name) / CloseWidget(Name) / IsOpen(Name) / GetOpenScreen()
+  ├─ OpenRootScreen(Name) / IsRootScreen(Name) — 닫히지 않는 바닥 화면(타이틀·게임 오버)
   └─ 입력 모드 · IMC_UI 전환 — "Screen 레이어가 비었는가" 하나로 판단
 
 UCL9Widget : UUserWidget          ← 모든 CL9 위젯의 베이스 (UIName + CloseSelf)
@@ -37,12 +38,30 @@ class UCL9UIManager : public UGameInstanceSubsystem {
 public:
   static UCL9UIManager* Get(const UObject* WorldContext);   // 싱글턴 접근
 
-  UCL9Widget* OpenWidget(FName UIName);   // 표에서 클래스·레이어 조회 → 생성 → 부착
-  void CloseWidget(FName UIName);
+  void InitForPlayer(APlayerController* PC);  // 로컬 PC의 BeginPlay — WBP_Main을 짓는다(낡았으면 다시)
+  UCL9Widget* OpenWidget(FName UIName, bool bResetHistory = false);   // 표에서 클래스·레이어 조회 → 생성 → 부착
+  UCL9Widget* OpenRootScreen(FName UIName);  // 히스토리를 비우고 열고, 이름을 루트로 표시
+  bool IsRootScreen(FName UIName) const;
+  void CloseWidget(FName UIName);         // 루트 화면이면 아무것도 하지 않는다
   bool IsOpen(FName UIName) const;
   FName GetOpenScreen() const;            // 열려 있는 Screen 행 이름 (None이면 없음)
 };
 ```
+
+- **레벨 이동 뒤에는 UI를 처음부터 다시 짓는다** (2026-10-05 start-lobby L3). `CreateWidget`의 outer는
+  GameInstance라서 `WBP_Main`은 월드와 함께 죽지 않는다 — 엔진은 월드를 내릴 때 뷰포트에서 떼기만 한다. 그래서
+  하드 트래블(시작 레벨 → 스테이지, 스테이지 → 시작 레벨) 뒤에는 **유효하지만 뷰포트 밖이고 주인 컨트롤러가 죽은**
+  메인 위젯이 남는다. 옛 코드는 `IsValid`만 봐서 다시 짓지 않았고, 그 뒤의 `OpenWidget`이 전부 nullptr였다.
+  지금 `InitForPlayer`는 `!IsValid(MainWidget) || OwningPlayer != 이 PC || !MainWidget->IsInViewport()`이면 낡았다고
+  보고 — 열린 위젯 전부와 메인 위젯을 부모에서 떼고, 열린 목록·화면 이름·히스토리·루트 표시를 비운 뒤 새로 짓는다.
+  지을 때마다 로그 한 줄: `UIManager: bootstrapped for <PC> in <World>` (LogCL9, Log). 같은 PC가 두 번 불러도
+  낡지 않았으면 아무것도 하지 않는다.
+- **루트 화면** (2026-10-05 start-lobby L3): `OpenRootScreen(Name)`은 `OpenWidget(Name, true)`로 히스토리를 비우고 연 뒤
+  이름을 루트로 표시한다. `CloseWidget`은 루트 이름을 받으면 **아무것도 하지 않는다** — M(`PauseInput`)·[X]·`CloseSelf`가 전부
+  이 함수로 오므로 타이틀과 게임 오버는 이 셋으로 닫히지 않는다. 위에 다른 Screen을 열면 평소처럼 대체되고(타이틀 → 설정),
+  그 화면을 닫으면 히스토리가 루트를 새 인스턴스로 되살린다. 루트 표시는 다음 부트스트랩(레벨 이동)에서 지워진다.
+  루트 규칙이 매니저 안에 있어서 `PauseInput`은 고치지 않았다. 지금 루트로 여는 곳은 둘 — 시작 레벨의 컨트롤러가 메뉴
+  GameMode의 `TitleUIRow`(`Title`)를, HUD가 `GameOver`를 연다.
 
 - **Screen 레이어는 배타다**: `OpenWidget`이 Screen 행이면 열려 있던 Screen 위젯을 먼저
   닫는다. "전면 화면은 동시에 하나"라는 기획(ui.md)이 레이어 정책으로 지켜진다.
@@ -77,6 +96,28 @@ public:
 - 입력 모드(GameOnly ↔ GameAndUI + 커서)와 `IMC_UI` 부착·해제는 Open/Close 안 한 곳에서
   처리한다 — IMC 상태가 화면 상태와 어긋나는 버그를 원천 차단 ([input.md](input.md)).
 
+## 스스로 짓는 위젯 (2026-10-05)
+
+타이틀(`UCL9TitleWidget`)과 게임 오버(`UCL9GameOverWidget`)는 **WBP에 아무것도 없어도 화면이 선다.** 디자이너 트리 대신
+C++이 위젯 트리를 짓기 때문이다 — WBP를 디자이너로 꾸미는 대신 MCP 호출 세 번(부모 클래스로 만들기 · 컴파일 · 저장)으로
+껍데기만 만들면 되고, `BindWidget` 이름이 어긋나 컴파일 모달이 뜰 일도 없다(start-lobby L10).
+
+- **언제 짓나**: `NativeOnInitialized`에서. 슬레이트 위젯은 그 뒤 `TakeWidget`이 `WidgetTree->RootWidget`에서 만들므로,
+  `NativeConstruct`에서 루트를 바꾸면 이미 늦다. 엔진의 `UUserWidget::Initialize`는 네이티브 클래스에도 빈 `WidgetTree`를
+  만들어 주고(루트 null), `CreateWidget(PC, …)`가 플레이어 문맥을 넣어 주므로 `NativeOnInitialized`가 반드시 불린다.
+  디자이너 미리보기에서는 불리지 않는다.
+- **어디에 싣나**: 루트가 비었으면 지은 덮개(`UBorder`)가 루트가 된다. 껍데기 WBP가 빈 패널(기본 캔버스) 하나를 들고
+  왔으면 그 안을 (0,0,1,1)로 꽉 채워 붙인다. 디자이너가 이미 무언가를 놓았으면 짓지 않고 경고 한 줄을 남긴다.
+- **필수 바인딩이 없다**: `UCL9Widget`의 가정은 둘 다 선택 사항이다 — `CloseButton`은 `BindWidgetOptional`이라 없으면
+  무시되고(루트 화면이라 어차피 닫히지 않는다), `SlidePanelName`은 생성자 기본값이 지은 안쪽 패널의 이름
+  (`TitlePanel`·`GameOverPanel`)이라 덮개는 두고 패널만 올라온다. `ShowAnim`은 `UCL9Widget`에 없다(스캔 라벨만 쓴다).
+- **모양은 기존 화면 값을 따른다**: 버튼 바탕 (0.16, 0.16, 0.16, 0.92), 흰 글자, 제목 30 Bold · 버튼 20 Regular · 최소 16
+  ([ui.md](ui.md) 글자 위계). 색·크기·간격은 전부 위젯 프로퍼티라 WBP CDO에서 바꿀 수 있다. 문구는 `LOCTABLE` 리터럴.
+- **버튼 배선**: 값이 없는 버튼은 위젯의 `UFUNCTION`에 바로, 값이 다른 버튼(타이틀의 목적지)은 릴레이 UObject
+  (`UCL9TitleStageRelay`)에 — 디버그 패널과 같은 방식이다.
+- **UI 표에 무엇을 넣나**: 껍데기 WBP(`WBP_Title_C` · `WBP_GameOver_C`)든 네이티브 클래스(`/Script/CL9.CL9TitleWidget` ·
+  `/Script/CL9.CL9GameOverWidget`, 둘 다 비추상)든 같은 화면이 뜬다.
+
 ## 데이터 연결
 
 - HUD 값은 전부 GameState/PlayerState의 Replicated 값에서 읽는다 — OnRep 콜백이 위젯 갱신을
@@ -86,6 +127,9 @@ public:
   읽는다. 차징 게이지는 버튼을 누른 시간의 함수라 차징 중 매 프레임 `GetThrowChargeAlpha()`
   (로컬 예측 — [input.md](input.md) 던지기 차징)를 읽는다. 둘 다 소유 클라의 로컬 값이라
   네트워크 비용이 없다. 복제 값에는 이 예외를 넓히지 않는다.
+  **셋째 — 말하는 사람 목록** (2026-10-11, [voice.md](voice.md)): HUD `NativeTick` 이 `PlayerArray`(≤4)를 훑어 `ACL9PlayerState::IsVoiceTalking()` 을 묻는다. 로컬 마이크 상태·
+  원격의 말하는 중 값(`BP_ReadVoiceTalking` 을 PlayerState 가 0.1초마다 읽는다)에는 변경 이벤트가 없고 복제 값도 아니라서 폴링이다 — 대신 **집합(사람 + 슬롯 색)이 지난 틱과 같으면 위젯을 건드리지 않고**, 달라질 때만 `TalkingBox` 를 다시 만든다.
+  복제 값에 이 예외를 넓히는 것이 아니다.
 - **상호작용 프롬프트는 이벤트다** — 캐릭터가 포커스 틱에서 `GetFocusPrompt()` 문구를 계산하고
   **문구가 바뀔 때만** `OnFocusPromptChanged`를 쏜다. HUD는 그 이벤트에서 문구를 읽어 표시하고,
   비면 숨긴다. 액터 변경이 아니라 문구 변경 기준인 이유: 수레처럼 같은 액터라도 상태에 따라
@@ -96,6 +140,22 @@ public:
   `OpenWidget(OrderSelect)`, 비면 `CloseWidget`. 관전 화면을 PlayerController의 `bSpectating` OnRep이 여는
   것과 같은 원칙(열려 있어야 할 Screen = 상태의 함수)이고, HUD는 항상 떠 있어 GameState 델리게이트를
   이미 받고 있어서 거기 둔다. 화면 자신은 열고 닫지 않는다.
+  **저절로 여는 것은 제시마다 한 번이다** (2026-10-05 start-lobby L11): HUD가 연 순간 `bOrderScreenAutoOpened`가 서고,
+  `HandleOrdersChanged`에서 **제시 자체가 바뀌었을 때만**(날 + `OfferedOrders`가 마지막으로 본 것과 다를 때, 배선 시점에 한 번
+  적어 둔다) 풀린다. `OnOrdersChanged`는 받은 주문만 바뀌어도(납품으로 주문이 채워짐) 오므로 그때마다 풀면 닫아 둔 화면이
+  다시 뜬다(검토 UI-1). 사람이 M으로 닫으면 닫힌 채라 로비를 걸어 다닐 수 있다 — 예전에는 매 틱
+  다시 열어서, 확정할 수 없는 참가자까지 호스트가 고를 때까지 커서에 묶였다. 호스트가 다시 열 길은 출발 레버다(제시가 남아
+  있으면 레버가 `Client_OpenScreen(OrderSelect)`). 다른 Screen에 양보하는 동안은 아직 연 것이 아니라 표시가 서지 않는다.
+- **게임 오버 화면도 HUD가 상태에서 파생한다** (2026-10-05 start-lobby L8) — `DeriveRunOverScreen`이 틱마다(주문 파생보다 먼저)
+  `GameState->IsRunOver()`를 보고, 참이면 열린 화면이 `GameOver`·`Settings`·`DebugPanel`·`Pause`가 아닐 때
+  `OpenRootScreen(GameOver)`를 부른다. 관전 화면이 밀어내도, 판 종료 복제가 늦게 와도 다음 틱에 다시 선다 — RPC도
+  컨트롤러 훅도 없다. 판이 끝난 동안 `DeriveOrderScreen`은 바로 돌아간다. 열기에 실패하면(표에 행이 없음 등) HUD 프로퍼티
+  `RunOverRetryTime`(1초)마다만 다시 시도하고 HUD 경고는 한 번만 남긴다 — 매 틱 시도하면 매니저 경고가 프레임마다 찍힌다. 판 종료 값은 바뀌면 레벨을 떠나는 길밖에 없어서
+  틱 폴링이 이벤트보다 단순하다(GameState에 델리게이트가 없다).
+- **HUD는 배선될 때까지 숨는다** (2026-10-05 start-lobby L10) — `NativeConstruct`가 디자이너 가시성을 `WiredVisibility`에
+  기억하고 접은 뒤, `TryWire`가 성공하는 순간(PlayerState·GameState가 둘 다 CL9 것으로 도착) 되돌린다. 시작 레벨은 메뉴
+  GameMode라 CL9 GameState·PlayerState가 없어 배선이 끝내 안 되므로 HUD가 타이틀 뒤에 비치지 않는다. 늦게 붙는 클라이언트는
+  복제가 도착할 때 HUD가 나타난다.
 - **스캔은 로컬 표현이고 Popup 레이어의 첫 사용자다** — `ACL9PlayerController::RequestScan()`(캐릭터가 IA_Scan 탭에 부른다 — input.md)이
   `OpenWidget(Scan)`을 부르면 UI 표의 Popup 행 `Scan`(`WBP_Scan`, `UCL9ScanWidget`)이 하나 열린다. 그 위젯이
   열리는 순간 화면에 보이는 액터 중 `ScanKinds`(`ECL9ActorKind` 목록, 기본 아이템만)에 든 종류를 모으고, 파동 링을 키우며 자기 `LabelLayer`에 `WBP_ScanLabel`을 개별로

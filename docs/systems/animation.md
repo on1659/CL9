@@ -19,11 +19,11 @@
 
 | 에셋 | 위치 | 용도 |
 |---|---|---|
-| **농부 A 자체 제작** — 전신 `SK_Farmer_A_Body`·1인칭 팔 `SK_Farmer_A_Arms` + 클립 `Anims/AN_Farmer_*`(전신 Hold 3·Swing·SwingWindup·Eat·Knockdown·Down·GetUp·Throw·ThrowWindup, 1인칭 `AN_Farmer_FP*` 12) + 팔 ABP `Anims/ABP_FP_View` | `Content/Characters/FarmerA/` | `CharacterTable.farmer_a` 행이 가리킴. 스켈레톤은 마네킹 `SK_Mannequin` 호환(레거시 FBX 임포트). 제작 기록 [docs/asset/character/farmer_a.md](../asset/character/farmer_a.md), 1인칭 팔 구조는 아래 "1인칭 팔" 절 |
+| **농부 A 자체 제작** — 전신 `SK_Farmer_A_Body`·1인칭 팔 `SK_Farmer_A_Arms` + 클립 `Anims/AN_Farmer_*`(전신 Hold 3·Swing·SwingWindup·Eat·Knockdown·Down·GetUp·Throw·ThrowWindup, 1인칭 `AN_Farmer_FP*` 13) + 팔 ABP `Anims/ABP_FP_View` | `Content/Characters/FarmerA/` | `CharacterTable.farmer_a` 행이 가리킴. 스켈레톤은 마네킹 `SK_Mannequin` 호환(레거시 FBX 임포트). 제작 기록 [docs/asset/character/farmer_a.md](../asset/character/farmer_a.md), 1인칭 팔 구조는 아래 "1인칭 팔" 절 |
 | 템플릿 마네킹 — 스켈레톤 `SK_Mannequin`·`SKM_Manny/Quinn_Simple` + 전신 ABP `Anims/Unarmed/ABP_Unarmed`(+ `BS_Idle_Walk_Run`·Jog/Walk/Jump/Attack 클립) | `Content/Characters/Mannequins/` | **스켈레톤·전신 ABP 호환용으로만** — 농부 A 몸이 이 스켈레톤을 쓰고 `ABP_Unarmed` 가 남이 보는 전신 애님이다. 마네킹 메시 자체는 화면에 안 나온다 |
 | 동물 5종 자체 제작 SK + 클립 (닭·거위·너구리·돼지·양) | `Content/Monsters/<종>A/` | 2026-09-11 연결 — `Content/Monsters/ABP_<종>_A`(ABP_Chicken 복제·종별 스켈레톤), `MonsterTable` 행이 가리킴. 제작 기록은 [docs/asset/monster/](../asset/monster/README.md), 결정은 decisions.md 2026-09-11 |
 | (구) 템플릿 동물 ABP `ABP_Chicken`·`ABP_Fox`·`ABP_Pig`·`ABP_Sheep` | `Content/Monsters/` 바로 아래 | 참조 0·빈 플레이어인 채 남아 있음 — 삭제 보류 |
-| Dreamscape Farmlands — 환경(농장 건물·지형·폴리지) + `Meshes/Chars/Chicken/` SK 하나 | `Content/DreamscapeSeries/DreamscapeFarmlands/` | **환경 팩으로만** 쓴다(5a 맵·light.md). 동물은 09-10 팩 축소로 닭 SK 만 남았고 그것도 미사용 — 돼지·양 SK 는 디스크에 없다 |
+| (구) Dreamscape Farmlands | 없음 | **쓰지 않는다.** 2026-10-04(f300179)에 팩 폴더를 지웠다. 맵 조각·소품은 자체 제작 `Content/Maps/Henhouse/`다. 위 구 ABP 셋 중 `ABP_Chicken`·`ABP_Pig`·`ABP_Sheep`은 지워진 팩 경로를 가리킨 채 남아 있다 |
 | Horror 조명 깜빡임 | `Variant_Horror/` | light.md 참고 |
 
 옛 `Content/FirstPerson/Anims/`(빈 폴더만 남음)·`ABP_FP`·`ABP_FP_Copy`·`CtrlRig_FPWarp` 는 없다 — 1인칭 팔은 2026-09-13 `ABP_FP_View`(카메라 자식 뷰모델)로
@@ -245,7 +245,9 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
   3. `SwingWindupElapsed ≥ 0` → 시퀀스 플레이어 `AN_Farmer_FPSwingWindup`(1.0초 루프)
   4. `SwingElapsed ∈ [0, 0.347)` → 시퀀스 평가기 `AN_Farmer_FPSwing`(`ExplicitTime = SwingElapsed + 0.12` — 치켜든 자세부터, 클립 0.467초)
   5. `HoldPose == None ? (IsRunning ? AN_Farmer_FPRun[루프, PlayRate = Speed / 654] : AN_Farmer_FPArmsDown[루프])
-     : (Large ? FPHoldLarge : Flashlight ? FPHoldFlashlight : FPHoldSmall)`
+     : (Large ? FPHoldLarge : Flashlight ? FPHoldFlashlight : Weapon ? FPHoldWeapon : FPHoldSmall)`
+     — `Weapon`(2026-10-20, 휘두를 수 있는 고기·프라이팬)은 Small 자리 앞에 부울 블렌드 한 단(`HoldPose == Weapon`)을 끼운 것이다
+     (`Tools/Unreal/mcp_wire_fp_weapon_hold.py`).
   변수 `HoldPose`·`IsRunning`·`Speed`·`SwingElapsed`·`SwingWindupElapsed`·`EatElapsed`·`KnockdownElapsed`·`KnockdownRemaining`·`ThrowElapsed`·
   `ThrowWindupElapsed` 는 매 틱 `ACL9Character` 게터로 채운다
   (전신 ABP 와 같은 게터, `BlueprintUpdateAnimation → TryGetPawnOwner`). 빈손 규칙(기본값 19·20)은 그대로: 서 있거나 걸을 때는 손이
@@ -265,12 +267,19 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
   `FPHoldFlashlight`(같은 높이·구석, 꽉 쥔 주먹 — 렌즈 정면은 ItemTable `flashlight.GripRotation` 새 행이 맞춘다)·`FPHoldLarge`(두 주먹 중심
   ≈ 0.28/0.72·v 0.9)·`FPArmsDown`·
   `FPRun`(0.6s 루프, `reference_speed_cm_s` 654, 앞 극점 주먹 u 0.65~0.82·v 0.58~0.77)·`FPSwingWindup`(1.0s 루프, 주먹 우상단)·
-  `FPSwing`(0.467s 원샷)·`FPEat`(0.6s 원샷, 입 앞 = 렌즈 앞 27cm 중앙) + 전신 `AN_Farmer_Swing` 30fps 재수출. 제작 `Tools/Blender/
+  `FPSwing`(0.467s 원샷)·`FPEat`(0.6s 원샷, 입 앞 = 렌즈 앞 27cm 중앙) + 전신 `AN_Farmer_Swing` 30fps 재수출.
+  2026-10-20 추가 `FPHoldWeapon`(2.0s 루프, 숨쉬기 손목 z ±0.5cm — HoldPose `Weapon`): 플레이테스트 3번 "들고 있는 모습만으로는 때릴 수
+  있다는 느낌이 없다". 오른 주먹을 화면 오른쪽 가운데 아래로 치켜들고(손목 (−0.24, −0.40, 1.49)m·너클 uv (0.80, 0.63)·손목 uv (0.93, 0.72),
+  팔꿈치 103°·손목 꺾임 23°), 아래팔이 우하단 구석에서 올라온다. 물건은 주먹에 몽둥이처럼 세워 쥐어 때리는 끝이 위·화면 안쪽으로 28° 기운다
+  (미리보기는 고기 HeldScale 0.4 가정 — 끝 uv ≈ (0.66, 0.20). 실제 표 값은 0.3 이라 조금 더 작다) — 공격 대기(`FPSwingWindup`, 손목 (−0.17, −0.33, 1.55))보다 낮고 덜 젖힌 편한 대기 자세라
+  화면 가운데는 비어 있다. 스펙 `farmer_hold_spec.json` `Weapon.fp`(1인칭 전용 — 전신 클립은 없다), 미리보기 `preview/hold_Weapon_fp_fp.png`
+  (팔만)·`hold_Weapon_meat_fp.png`·`hold_Weapon_pan_fp.png`(물건을 꽂은 모습). 그립은 `measure_item_grip.py` 의 `club` 해. 제작 `Tools/Blender/
   export_farmer_fp_clips.py`(hold·fparms·swing·windup·eat·verify 일괄), 임포트 `Tools/Unreal/import_farmer_clips.py`(기본 목록 = 이 9클립)
   → `/Game/Characters/FarmerA/Anims`. `AN_Farmer_FPHoldIdle`·`ABP_FP_Copy` 는 참조 해제 뒤 삭제 여부 리드 판단.
 - **전신 `ABP_Unarmed`** (남이 보는 것 — 2026-09-12~13 구조 유지): `Slot(DefaultSlot)` → `본별 레이어드 블렌딩`(`spine_01`, 로컬 공간,
   BlendDepth 0) → `ControlRig(발 IK)`. 레이어의 블렌드 포즈는 **부울 블렌드 2단** `HoldPose == Large ? HoldLarge : (HoldPose == Flashlight ?
-  HoldFlashlight : HoldSmall)`, 가중치 `ToFloat(NOT(HoldPose == None))` — 빈손이면 템플릿 로코모션 그대로. 레이어 뒤 `Transform (Modify)
+  HoldFlashlight : HoldSmall)`, 가중치 `ToFloat(NOT(HoldPose == None))` — 빈손이면 템플릿 로코모션 그대로. `Weapon`(2026-10-20)은 따로
+  배선하지 않는다 — 두 비교가 모두 거짓이라 `HoldSmall` 로 떨어진다(남이 보는 전신은 Small 들기 자세, 손의 물건은 같은 그립 행이라 위로 선다). 레이어 뒤 `Transform (Modify)
   Bone`(`spine_03`, 회전 Add, 피치 = `AimPitch × 0.6`, `AimPitch` ← `GetAimPitch()`)로 아래를 보면 상체가 기운다(계수는 초안 — PIE 로 확정).
   `BlendPoses(ECL9HoldPose)` 노드를 안 쓴 이유: 항목 핀 노출(`ExposeEnumElementAsPin`)이 에디터 컨텍스트 메뉴 전용이라 MCP/파이썬으로
   만들 수 없다. ABP 변수 `HoldPose`(ECL9HoldPose)는 EventGraph 가 매 틱 `Cast To CL9Character → GetHoldPose` 로 채운다(`SetIsFalling`
@@ -343,3 +352,45 @@ ControlRig FPWarp·`Transform (Modify) Bone` 피치 추종·`FPHoldIdle` — 는
   [../plan/data/monster/common.md](../plan/data/monster/common.md)
 - 상태 정의: [monster.md](monster.md) · [inventory.md](inventory.md)
 - 표현 계층 규칙: conventions.md § 9 (사운드와 같은 원칙)
+
+
+## 2026-10-17 소·닭 새 본체의 시간 이동 공격
+
+`/Game/Monsters/MotionReview20261017/AttackV01/ABP_{cow,chicken}_Attack`은 승인 v07 본체와 제자리 로코모션을 유지한다. `GetPounceTiming()`은 행의 (예고, 이동, 복귀) 시간 벡터. Pounce의 SequenceEvaluator 시간은 `GetStateElapsed()`, 명중 Catch의 시간은 예고+이동+`GetPounceResultElapsed()`. 공격 포즈 블렌드 뒤 명시적 local↔component 변환과 접촉 커브 월드 발 고정 IK를 둔다. 판정/연속 이동/방향 고정/복귀는 공유 서버 AI, 애님 노티파이는 판정을 실행하지 않는다. 기존 일반 ChickenA ABP는 그대로다. 상세 제작·영상·검수 한계는 [현재 카드](../asset/monster/disguise-trio-next-production.md) 상단.
+
+
+### 구매 공격 리타깃 v06 (2026-10-17)
+
+`AttackPackV01/ABP_{cow,chicken}_Attack`이 현재 새 본체 소비 경로다. 원래 v07 메시/바인드와 검증한 제자리 로코모션을 유지하고, 구매 모션을 Blender에서 체형별로 보정한 공격만 대체한다. Pole_i_X/Y/Z 커브는 공격 포즈의 저작된 관절 굽힘 방향을 전달하며, AttackAlpha 블렌드 때 기존 로코모션 폴과 연결한다. 이동/명중/복귀는 기존 공유 서버 상태 시간으로 처리한다. 닭 새 본체의 이동/복귀 초안은 0.42/0.72초, 일반 ChickenA 행은 변경하지 않았다. 실제 영상·후보 선택·검수 한계는 현재 제작 카드 상단 참조.
+
+## 계란 요리사 동작 (2026-10-23, round_cook_trial)
+
+플레이어 기본 캐릭터를 계란 요리사(`CharacterTable.round_cook_trial`)로 바꾸기 위해, 농부의 동작 클립을 계란 리그에 다시 저작해 새 애님 BP 에 연결했다.
+원본 `ABP_EggCrouchV04_Body_Fold`·`ABP_GripV02_Arms` 는 그대로 두고 복제본 `/Game/Characters/FarmerA/EggActionsV01/ABP_EggActions_Body`·`ABP_EggActions_Arms`
+를 만들었으며, 행의 AnimBP·ArmsAnimBP 가 이 복제본을 가리킨다(`farmer_a` 행은 그대로).
+
+- **클립**: 전신 16 개(HoldSmall·HoldLarge·HoldFlashlight·SwingWindup·Swing·ThrowWindup·Throw·Eat·Knockdown·Down·GetUp·Executed_Pig·Executed_Raccoon·Jump·FallLoop·Land),
+  1인칭 팔 13 개(FPArmsDown·FPRun·FPHold{Small,Large,Flashlight,Weapon}·FPSwingWindup·FPSwing·FPThrowWindup·FPThrow·FPEat·FPKnockdown·FPGetUp), 이름은 `AN_Egg_<이름>`, 30fps.
+  길이·반복·키 시각은 농부 manifest(`ArtSource/character/farmer_a/manifest.json` `animations`)의 같은 이름 항목, Jump/FallLoop/Land 는 MM_Jump·MM_Fall_Loop·MM_Land(0.867·3.0·0.867초).
+  제작 `Tools/Blender/animate_egg_actions_v01.py`, 임포트 `Tools/Unreal/import_egg_actions_v01.py`(압축 포즈 대조), 원본·미리보기 `ArtSource/character/farmer_a/egg_actions_v01/`.
+- **계란은 단단하다**: 상체 레이어 클립(spine_01 위)은 척추를 기준 자세로 두고 팔만 움직인다(몸통을 비틀면 계란이 찌그러진다 — egg_crouch_v04 원칙).
+  넘어짐·처형·점프류는 골반 회전·위치로 계란 전체를 굴리고, 매 프레임 메시 최저점을 바닥에 맞췄다. 처형 2종은 농부 `execute_anchor.farmer_times`
+  (돼지 접촉 0.5·DOWN 1.4 / 너구리 접촉 0.6·PRONE 1.25)에 맞물리고 마지막 자세에서 멈춘다. 팔이 짧아(어깨 0.76m·팔 0.25m) 먹기는 입 옆 뺨 높이까지만 올라간다.
+- **몸 리그의 `_r` 뼈는 캐릭터의 왼쪽에 있다**(이름이 거울). 남이 보는 전신에서는 아이템이 캐릭터 왼손에 들린다 — 1인칭 팔 리그는 오른쪽이 맞다.
+- **1인칭**: 카메라 공간 클립이라 농부 1인칭 키의 손목·방향을 좌표만 옮겨(농부 −Y 정면 → 계란 +X 정면) 화면 위치가 농부와 같다. 어깨가 낮아 닿지 않는 목표는
+  화면 밖 쇄골을 돌려 어깨를 옮긴다(팔 메시는 쇄골에 가중치가 없다). 지정이 없는 팔은 FPArmsDown(프레임 밖) 자세.
+- **소켓 `HandGrip_R`**: SK_RoundCook_Body·SK_RoundCook_Arms·SK_GripV02_Body·SK_GripV02_Arms 의 hand_r 아래, 장갑 손바닥 중심(몸 5.9cm·팔 4.5cm),
+  축은 마네킹과 같은 규약(+X 손바닥 바깥, +Y 손가락 쪽). 계란 리그는 루트 뼈가 100배 스케일(Blender m)이라 소켓 상대 스케일을 0.01 로 두어 소켓 월드 스케일을 1 로 맞췄다
+  (아니면 아이템 GripOffset cm 가 100배로 먹는다). `Tools/Unreal/add_egg_handgrip_sockets.py`.
+- **ABP 연결** (`Tools/Unreal/connect_egg_actions_v01.py`): 변수·게터·조건은 ABP_Unarmed·ABP_FP_View 그대로(위 "1인칭 팔"·"전신 ABP_Unarmed" 절).
+  전신 순서 = 로코모션·수레밀기 → 앉기 → **점프 가지** → 상체 레이어(spine_01) → 수레 IK → 넘어짐 → 처형 → 출력. 점프 가지는 ABP_Unarmed 의 MainStates 상태 기계 대신
+  상태 파생 값으로 고른다 — `IsFalling` 이면 `AirTime < 0.867` 동안 Jump 평가기(`ExplicitTime = AirTime`) 다음 FallLoop, 착지 뒤 `LandElapsed < 0.867 ∧ LastAirTime > 0.2 ∧ MoveAlpha < 0.5`
+  동안 Land 평가기(걷기 시작하면 바로 로코모션). `AirTime`·`LandElapsed` 는 EventGraph 가 DeltaTime 으로 쌓는다. 앉으면(CrouchActive) 기존 앉기 분기가 그대로 고른다.
+  1인칭은 ABP_FP_View 의 우선순위 사슬(넘어짐 > 던짐 > 던지기 준비 > 먹기 > 휘두르기 준비 > 휘두르기 > 들기/빈손)을 옛 AN_Arms 자리에 넣고 수레 IK 는 그 뒤에 둔다.
+  ABP_Unarmed 의 AimPitch(spine_03 기울임)는 옮기지 않았다 — 계란 몸통이 찌그러진다.
+  상체 레이어 가중치는 `HoldPose != None ∨ 던지기 ∨ 먹는 중` 이다 — 먹는 순간 요리가 소모돼 HoldPose 가 None 이 되므로 먹기 항을 더했다
+  (ABP_Unarmed 에는 이 항이 없어 남이 보는 농부의 먹기가 보이지 않는다). 수레 EventGraph 의 HoldPose switch 는 "None 이면 보간, 아니면 0" 선택식으로 옮겼다(Weapon 도 0).
+- **PIE 확인**(2026-10-23, `Saved/Film/egg_probe*/probe.jsonl` — 봇 `probe` 동작이 몸·팔 메시의 애님 클래스·골반·손 위치·PushAlpha 를 찍는다):
+  휘두르기 대기 손 99.8cm → 0.16초 69cm, 먹기 0.26~0.36초 손 97cm, 점프 공중 손 88cm·착지 골반 32cm, 앉기 골반 23.5cm, 넘어짐 누움 골반 55cm → 1.3초 일어나기,
+  돼지 처형 0.6초 뒤 뒤로 넘어가 1.4초 누움, 수레 PushAlpha 1·손 IK 손잡이(97cm). 시험 맵(혼자)에서는 처형 사망 뒤 2.2초에 다시 선 자세가 된다.
+- 상체 레이어 가중치는 블렌드 시간이 없어 들기·먹기가 끝나는 프레임에 팔이 기준 자세로 한 번에 돌아온다(농부와 같음).

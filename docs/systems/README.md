@@ -37,9 +37,11 @@
 | **소리 낸 자리에 퍼지는 링**(파동) — 소음원 추가·색·반경·벽 차폐 | [wave.md](wave.md) → 기획은 [../plan/wave.md](../plan/wave.md) |
 | 전이 연출(시퀀스) | [sequence.md](sequence.md) |
 | 판 저장·로드 (호스트) | [save.md](save.md) — 로컬 옵션은 여기 아님 → [settings.md](settings.md) |
-| 로비·세션·매칭 (미구현) | [session.md](session.md) |
+| 로비·세션·매칭 — 방 만들기·접속·EOS 로비(Redpoint, 2026-10-12)는 개발용으로 구현, 로비 화면·Steam 인증·매칭은 계획 | [session.md](session.md) |
+| **마이크 음성 채팅** — EOS Voice(Redpoint) 전송·블루프린트 브리지, 근접·핫라인 경로, 관전자 규칙, 마이크 증폭·볼륨, 말하는 사람 목록 | [voice.md](voice.md) → 옵션 화면은 [settings.md](settings.md) · 검증은 [../testing/pie-scenarios.md](../testing/pie-scenarios.md) Z절 |
 | 모든 액터의 공통 베이스(네트워크·RPC·Alias 로드) | [actor-base.md](actor-base.md) |
 | 표 컬럼·조회·Validate 규칙 | [../data/schema.md](../data/schema.md) · 기획 표 공통은 [../plan/data/README.md](../plan/data/README.md) |
+| **데이터 애셋 값을 브라우저에서 고치고 싶다** (PIE 중 바로 반영·저장) / 표 페이지를 하나 더 만들고 싶다 | [data-panel.md](data-panel.md) "쓰기" · "다음 표 페이지 추가하기" |
 | PIE로 검증하는 순서 | [../testing/pie-scenarios.md](../testing/pie-scenarios.md) |
 | **PIE가 느리다 / 프레임을 재고 싶다 / 틱·광원·이펙트를 더할 때 지킬 것** | [performance.md](performance.md) "점검표"(창 최소화 3fps 스로틀부터) · "측정"(`Tools/Unreal/perf_probe.py`) · "규칙" |
 
@@ -52,10 +54,12 @@
 | [actor-base.md](actor-base.md) | `ACL9ActorBase` — 아이템·몬스터 공통 베이스(네트워크·RPC 소유권·Alias 데이터 로드) |
 | [animation.md](animation.md) | 애니메이션은 표현 — 상태에서 파생, 판정에 안 들어감. 스켈레톤·AnimBP·보유 에셋 |
 | [asset-swap.md](asset-swap.md) | 맵을 무엇으로 짓는지(조각 표·배치 규약·테마) — 에셋 팩 교체 절차 |
+| [autonomous-loop.md](autonomous-loop.md) | 자율 제작 루프 — 공용 도구 `C:\Work\Tools\AgentOffice\`(루프 도구 `loop\loop.py`·사무실 서버 8770·조율자 `/office CL9 step`)의 CL9 설정(`.agent-office\project.json`)·명령·파일 형식 (명세 [../goal/autonomous-production-loop.md](../goal/autonomous-production-loop.md)) |
 | [balance.md](balance.md) | 일자가 오르면 무엇이 어려워지나, 밤 하나의 흐름, 실패 조건 |
 | [character.md](character.md) | 커스텀 CMC — 이동·스태미나·예측 |
 | [cheats.md](cheats.md) | 콘솔 치트 — 추가 절차·명령 목록 |
 | [cooking.md](cooking.md) | 열원 위 시간 → 날것·익음·탄 것 |
+| [data-panel.md](data-panel.md) | 데이터 패널 — 브라우저 페이지에서 데이터 애셋을 고치고 PIE 에 바로 반영·저장, 표 페이지 추가 방법 |
 | [drop.md](drop.md) | 몬스터 처치 드롭 |
 | [economy.md](economy.md) | 이더의 유입·유출, 가격 계산 |
 | [input.md](input.md) | Enhanced Input — IMC·IA 목록, 기본 키, 리바인딩, 키 표기 `{0}` |
@@ -70,12 +74,13 @@
 | [raiding.md](raiding.md) | 원정 — 진입·회수·탈출 |
 | [save.md](save.md) | 판 세이브 — 호스트의 것 |
 | [sequence.md](sequence.md) | 전이 연출 재생 |
-| [session.md](session.md) | 로비~시작 흐름 (미구현, 사전 문서) |
+| [session.md](session.md) | 로비~시작 흐름 — 방 만들기·주소 접속·EOS 로비(Redpoint)·출발 레버·판 끝은 구현, 로비 화면·Steam 은 사전 문서 |
 | [settings.md](settings.md) | 로컬 옵션 — 저장·적용·설정 화면·옵션 추가 레시피 |
 | [shop.md](shop.md) | 트럭 패널 — 장비 구매·잔여 판매 |
 | [sound.md](sound.md) | 사운드 분류·이벤트·에셋 위치·볼륨 믹스 |
 | [ui.md](ui.md) | 화면에 무엇을 띄우나 — HUD·각 화면의 내용 |
 | [ui_system.md](ui_system.md) | UI 코드 구조 — WBP_Main·UI 표·UIManager·화면 히스토리 |
+| [voice.md](voice.md) | 마이크 음성 채팅 — EOS Voice(Redpoint) 전송, 블루프린트 브리지, 근접·핫라인 경로, 호스트 뮤트 표, 화자별 소리 자리(핫라인 ①), 말하기 방식, 개발용 로그인, Steam 전환 |
 | [warning.md](warning.md) | 위험 전달 — 월드 연출 우선 |
 | [wave.md](wave.md) | 파동 — 소음 이벤트 하나로 모아 각 머신이 그리는 바닥 링 |
 

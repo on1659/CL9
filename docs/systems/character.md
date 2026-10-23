@@ -35,6 +35,53 @@
   3인칭 상황에서만 의미가 있다.
 - 관전은 동료 시점 관전 (1인칭 그대로 — 초안).
 
+## 카메라 손맛 — 보브·롤·질주 FOV·착지 스프링 (2026-10-05)
+
+[../goal/control-feel.md](../goal/control-feel.md) C8~C12. **새 카메라 모디파이어는 없다.** 소유 머신의 `ACL9Character::Tick`(로컬 조작
+게이트 뒤)에서 `UpdateViewFeel(Dt)` 하나가 옛 넘어짐 카메라 하강 블록을 대신해 아래 순서로 합친다. 값은 `CL9Rules.ViewFeel`
+(`FCL9ViewFeel`, [../plan/data/rules.md](../plan/data/rules.md) ViewFeel), 순수 수학은 `Source/CL9/Character/CL9FeelMath.h`.
+
+1. **바탕 높이 `CameraBaseZ`** = FInterpTo(바탕, 넘어짐·죽음 ? 바닥 + 30 : 눈높이, 6/s). **컴포넌트에서 되읽지 않는다** — 옛 블록은
+   컴포넌트 Z 를 읽어 보간했는데, 거기에 손맛 오프셋을 더하면 서로 싸운다. `ApplyCharacterDef`가 행의 눈높이로 심는다. 데스캠 동안은
+   얼려 두고(옛 블록과 같다 — 부활하면 죽은 순간의 높이에서 올라온다), 1인칭 카메라의 롤·FOV 가산 오프셋만 지운다(부활 틱에 죽기 전 값이
+   한 프레임 남지 않게, 2026-10-05 리뷰 CAM-2).
+2. **`FeelWeight`** = FInterpTo(가중치, 넘어짐·죽음·처형·데스캠 ? 0 : 1, 10/s) — 아래 손맛 전부에 곱한다.
+3. **세로**: 보브 + 착지/점프 스프링을 [−22, +5]cm 로 자른 뒤 CameraMotion × FeelWeight 를 곱해 카메라 **컴포넌트**의 상대 Z =
+   바탕 + 그 값. 팔·든 물건·헤드램프가 카메라의 자식이라 함께 움직인다(POV 만 옮기면 팔이 화면에서 미끄러진다).
+4. **롤과 FOV**: 옆걸음 롤 + 걸음 롤을 ±2.5° 로 자르고, 질주 FOV 킥(≤ 8°, ≤ 20°/s)과 함께 CameraMotion × FeelWeight 를 곱해
+   `ClearAdditiveOffset` → `AddAdditiveOffset(롤만 있는 변환, FOV)`. 가산 오프셋은 `GetCameraView`에서만 얹혀 이 카메라에만
+   걸린다 — 데스캠(다른 컴포넌트)·처형 카메라(몬스터)·관전(남의 폰은 이 함수가 안 돈다)에 게이트 코드가 필요 없다. 1인칭 팔 FOV 70 은 그대로.
+5. 그 뒤는 그대로: 포커스·프롬프트, `UpdateStaminaShake`(세기 × CameraMotion), `UpdateHitShakes`, 피격 시선 모디파이어와 셰이크는
+   `GetCameraView` 뒤에 돈다.
+
+- **이동 손맛은 시선의 피치·요를 절대 건드리지 않는다** (C9) — 세로 이동·롤·FOV 만. 롤은 카메라 전방 축 회전이라 화면 중앙(조준선)이
+  컨트롤 회전 그대로다. 피치·요 오프셋은 전투 피드백(타격 킥·피격 흔들림·피격 시선)만의 언어다. 보브 요·착지 끄덕임·회전 기울임·
+  가로 보브·숨쉬기는 없다.
+- **보브는 발소리와 한 시계다** — 아래 "발소리"의 걸음 위상(`StepPhase`)을 읽는다. 모양 = Lerp(0.5 − 0.5cos(2π·위상), |sin(π·위상)|, 날카로움),
+  세로 = 진폭(위아래 폭) × (모양 − 0.6) 이라 위상 0(= 발 디딤 = 발소리)이 골이다. 진폭은 정지 0 → 걷기 2.8cm → 달리기 6.8cm(속도 선형,
+  공중 0), 10/s 로 따라간다. 걸음 롤 ±0.10°(걷기)/±0.30°(달리기)는 걸음마다 좌우가 바뀐다.
+- **옆걸음 롤** = 1.5° × clamp(속도·오른쪽 / 걷기 속도, −1, 1) — 오른쪽으로 가면 양수, 12/s 로 따라간다(처음 8/s 는 "0.35초 안 90 %"
+  경계에 걸려 2026-10-05 리뷰에서 올렸다 — 목표 자체가 0.2초 걸리는 속도를 따르기 때문).
+- **질주 FOV 킥** = 6° × (수평 속도 − 걷기)/(달리기 − 걷기) — 질주 키가 아니라 실제 속도를 따라 벽에 대고 달리면 0. 올라갈 때 6/s,
+  내려갈 때 4/s 지수 추종에 변화율 상한. 기본 FOV 는 `CharacterTable.CameraFov`(98, 2026-10-20 플레이테스트 9번 — 리썰 세로 66° 를 16:9 가로로 옮긴 값, 그 전 엔진 기본 90)이고 킥은 그 위에 더한다.
+- **착지·점프 스프링**: 감쇠 스프링 하나(ω 16, ζ 0.6)를 닫힌 꼴로 정확히 적분한다(오일러는 30fps 에서 딥이 반으로 준다). 충격 =
+  딥 / `SpringGain(ω, ζ)`(0.03118, 코드가 계산). 착지 딥 = min(18, 8 × (|Vz| / 점프 초속)^1.6)cm, |Vz| < 350 이면 없음 — 평지 점프 8cm,
+  1000 cm/s 11.9cm. 점프 순간 2.5cm. 충격은 소유 머신의 `Landed`·`OnJumped_Implementation`이 주고, 보정 리플레이(`bClientUpdating`)는
+  건너뛰며 같은 사건은 0.15초에 한 번이다.
+- **`화면 움직임`(`UCL9GameUserSettings::CameraMotion`, 0..1, 기본 1)**: 보브·롤·질주 FOV·스프링·스태미나 흔들림에 곱한다. 타격 킥·
+  피격 흔들림·피격 시선·넘어짐 하강·데스캠/처형 카메라·소리에는 곱하지 않는다. 0 이면 시점이 고정된다 — 카메라 회귀 확인용이기도 하다.
+  슬라이더는 설정 화면([settings.md](settings.md)).
+- **남의 폰에는 이 함수가 안 돈다** — 호스트가 보는 클라이언트 폰의 카메라 상대 Z 는 눈높이 그대로다. QA 표본은
+  `UCL9FeelDebug::GetFeelSample`(화면에 실제로 들어간 값 — CameraMotion·FeelWeight 를 곱한 뒤). QA 가 화면 움직임을 바꿀 때는
+  `UCL9FeelDebug::SetCameraMotion`(메모리 값만, 저장 안 함)을 쓴다 — `CameraMotion` 필드도 `EditAnywhere, BlueprintReadWrite`라 파이썬에서 읽고 쓸 수 있다.
+- **팔(뷰모델) 층** (C16, `UpdateViewFeel` 끝의 `UpdateViewmodel`): 팔 메시는 카메라의 자식이라 위의 세로 이동은 그대로 따라오고, 그 위에
+  팔만의 작은 어긋남을 상대 변환으로 얹는다. ① 시선 뒤처짐 — 매 틱 컨트롤 회전량의 `ArmsLagGain`(0.5) 몫만큼 반대로 남고 `ArmsLagDecay`
+  (15/s)로 돌아온다, 상한 요 4°·피치 3°, 눈(카메라 원점) 기준 회전. 컨트롤 회전은 읽기만 한다. ② 세로 — 보브 × `ArmsBobScale`(−0.25,
+  팔이 보브의 75 % 만 출렁) + 느린 팔 스프링(ω 12·ζ 0.5, 카메라 착지·점프 충격의 `ArmsImpulseScale` 0.2 몫 — 평지 착지에 약 2.3cm,
+  손이 시선보다 조금 늦게 내려간다), 상한 3.5cm. ①②에 CameraMotion × FeelWeight 를 곱한다. ③ 칸 전환·줍기 딥 — 소유자의 `Pickup`·
+  `SlotSwitch` 소리와 같은 에지에서 6cm 아래로 0.06초, 0.12초에 돌아온다. **CameraMotion 을 곱하지 않는다**(정보다). 바탕 변환은
+  `BeginPlay`가 잡은 회전과 `ApplyCharacterDef`의 위치(−눈높이). 값은 `CL9Rules.ViewFeel.Arms*`·`EquipDip*`.
+
 ## 구조
 
 ```
@@ -58,9 +105,49 @@ UI용 미러만 복제한다.
 2. FSavedMove_CL9: bWantsToRun을 압축 플래그로 저장
    (CompressedFlags — 서버로 가는 이동 패킷에 실린다)
 3. UCL9CharacterMovement::UpdateFromCompressedFlags: 서버가 같은 플래그를 복원
-4. GetMaxSpeed() override: bWantsToRun && CanRun() ? RunSpeed : WalkSpeed
+4. GetMaxSpeed() override: Lerp(Walk', Run', SprintRamp) — Walk'/Run' 은 각자의 먹기 보너스를 얹은 값,
+   그다음 수레 배율·넘어짐/처형 0 (2026-10-05 — 아래 "이동 손맛")
    → 서버·자율 프록시가 같은 함수로 같은 결과 — 예측이 어긋나지 않는다
 ```
+
+**저장무브를 합칠 때 시간 적분 상태를 되돌린다** (2026-10-05, [../goal/control-feel.md](../goal/control-feel.md) C2).
+엔진은 클라이언트 프레임이 송신 간격보다 짧으면 대기 무브와 새 무브를 합쳐(`ReplicateMoveToServer` → `CombineWith`) 위치·속도·
+점프 카운터만 대기 무브 시작 값으로 되돌리고 합친 시간을 **다시** 시뮬레이션한다. `SetMoveFor`는 대기 프레임이 이미 한 번
+적분된 뒤의 값을 찍으므로, 되돌리지 않으면 144fps 클라이언트의 스태미나가 호스트보다 두 배 빨리 줄었다(코드 읽기로 확인, 미측정).
+`FSavedMove_CL9::CombineWith`가 Super 뒤에 `Stamina`·`bExhausted`·`SprintRamp`를 대기 무브의 스냅샷(`Saved*`)으로 되돌리고
+같은 값을 새 무브의 스냅샷에도 넣는다 — 엔진이 점프 카운터를 되돌리는 것과 같은 꼴. 시간 적분 예측 상태를 새로 더하면 여기에도
+더한다. **참여 클라이언트에서의 검증(보정 수)은 2인 세션 전까지 미확인이다.**
+
+**보정 리플레이 뒤 달리기 입력을 되돌린다** (2026-10-05 리뷰 MP-2, 이전부터 있던 결함). 서버 보정이 오면 엔진은 미확인 저장 무브를 다시
+돌리는데(`ClientUpdatePositionAfterServerUpdate`), 무브마다 `PrepMoveFor`·`UpdateFromCompressedFlags`가 `bWantsToRun`을 그 무브의 값으로
+덮는다. 이 플래그는 입력 이벤트만 쓰므로 그대로 두면 보정과 같은 프레임의 달리기 누름·뗌이 사라지고 다음 키 이벤트까지 틀린 상태로
+남는다. `UCL9CharacterMovement::ClientUpdatePositionAfterServerUpdate` 오버라이드가 리플레이 전 값을 들고 있다가 끝나면 되돌린다 — 엔진이
+`bPressedJump`·`bWantsToCrouch`를 보존하는 것과 같은 꼴. 스태미나·탈진·램프·코요테는 무브 스냅샷에서 다시 도출되므로 되돌리지 않는다.
+
+## 이동 손맛 — 가속·제동·질주 램프·공중 제어 (2026-10-05)
+
+[../goal/control-feel.md](../goal/control-feel.md) C1·C3~C7. 최고 속도(396/654)·스태미나(6/8/1.0)·점프 높이(156cm)는 그대로 두고
+속도가 변하는 **곡선**만 정한다. 값은 전부 `UCL9CharacterDef`의 `Movement` 열이고 헤더 기본값이 의도한 값이다(기존 행에 셀이 없어도
+이 값으로 돈다) — 열 설명은 [../plan/data/character.md](../plan/data/character.md).
+
+| 무엇 | 어떻게 | 열 (기본값) |
+|---|---|---|
+| 지상 가속 | `ApplyCharacterDef`가 CMC `MaxAcceleration`에 넣는 상수. `GetMaxAcceleration`은 덮지 않는다 — 엔진이 입력 배율(`AnalogInputModifier`)을 이 값으로 나누므로 상태에 따라 바뀌면 합친 무브에서 플레이어가 브레이크를 밟는다 | `Accel` (2000) |
+| 제동 | 엔진 쌍 하나: `bUseSeparateBrakingFriction = true`, `BrakingFrictionFactor = 1`, `BrakingFriction`, `BrakingDecelerationWalking`. 걷기 정지 0.20초 ≈ 32cm, 질주 정지 0.28초 ≈ 71cm(파이썬 복제, 30~240Hz). 넘어짐·처형·수레·버프 만료처럼 속도가 상한을 넘는 모든 경우도 같은 제동이다 | `BrakingFriction` (3.5) · `BrakingDecel` (1300) |
+| 공중 제동 가드 | `ApplyVelocityBraking` 오버라이드 하나 — `MOVE_Falling`이면 마찰을 `FallingLateralFriction`(0)으로 되돌린다. 안 그러면 위 플래그 때문에 `BrakingFriction`이 공중에도 걸려 점프 중 손을 떼면 수평 속도가 녹는다 | — |
+| 질주 램프 | 예측 상태 `SprintRamp` 0..1 이 `GetMaxSpeed` 상한을 걷기 ↔ 달리기 사이로 잇는다. `UpdateCharacterStateBeforeMovement`에서 스태미나 블록 **뒤**에 진행 — 조건 `bWantsToRun && !bExhausted && 수평 속도 > 0`(탈진은 갱신 뒤 값). 오를 때 ease-out quad 를 정확히 적분(진행도 a = 1 − √(1 − S) 를 역산해 dt/UpTime 더하고 S = 1 − (1 − a)²), 내릴 때 선형. 시간 0 = 즉시(옛 동작). 프레임률과 무관하게 0.1/0.2/0.3/0.4/0.6/0.85초에 상한 453/503/546/582/632/654. `FSavedMove_CL9`가 스냅샷(`SavedSprintRamp`)을 들고 `PrepMoveFor`가 복원, `CombineWith`가 되돌린다. 복제·보정 페이로드·압축 플래그 없음(스태미나와 같은 등급 — 0.85초 안에 포화해 어긋나도 저절로 낫는다) | `SprintRampUpTime` (0.85) · `SprintRampDownTime` (0.25) |
+| 질주 해제 | 별도 감속 열이 없다 — 상한이 `SprintRampDownTime`에 걸쳐 내려가고, 제동 권한(1300 + 3.5v)이 상한 하강 속도(258/0.25 = 1032 cm/s²)보다 커서 속도가 상한에 붙어 내려간다(엔진의 "상한 아래로는 제동하지 않음" 클램프). 이 부등식이 깨지는 행은 로드 때 Warning 한 줄 | — |
+| 질주 중 조향 무게 | 무브마다 `GroundFriction = Lerp(GroundFriction, SprintTurnFriction, SprintRamp)` — 엔진 `PhysWalking`이 이 멤버를 `CalcVelocity`에 넘긴다. 속도가 아니라 예측 상태에 걸어 걷기 속도 문턱에서 갈라지지 않는다. 전력 질주 중 90° 급회전: 0.25초에 정렬, 옛 방향으로 ≈ 103cm 밀림. 마우스로 도는 모퉁이는 손해 0 | `GroundFriction` (8) · `SprintTurnFriction` (5.0) |
+| 공중 제어 | `AirControl` 상수(가속 2000 × 0.32 = 640 cm/s² 횡가속). 점프 높이·달리며 점프한 거리는 그대로, 제자리 점프 앞 도달거리가 33 → 약 205~225cm | `AirControl` (0.32) |
+
+- **`IsRunning()`은 여전히 플래그 기준이다**(`bWantsToRun && !bExhausted && 움직임`) — 스태미나 소모·팔 애님·몬스터 청각이 그대로다.
+  램프가 차는 동안에도 스태미나는 이진 규칙대로 준다(C7 — "6초 스태미나"의 뜻을 바꾸지 않는다).
+- **로드 검사 A1·A2에 램프 항** (`UCL9DefRegistry::CheckCharacterRelations`): 램프 손실 = (Run − Walk) × UpTime / 3(=73.1cm),
+  해제 이득 = (Run − Walk) × DownTime / 2(=32.3cm). 질주 예산 = Run × Drain − 램프 손실(3851cm), 지친 지속 속도 =
+  (Run × Drain + Walk × Regen − 램프 손실 + 해제 이득) / (Drain + Regen)(503.7cm/s). 어느 부등식도 뒤집히지 않는다(너구리 462 대비 +41.7).
+  `Tools/Balance/check_inequalities.py`는 같은 두 식을 아직 안 쓴다 — 리드 후속.
+- **데이터 끄기**: `SprintRampUpTime`/`SprintRampDownTime` 0 = 즉시 상한(옛 동작), `SprintTurnFriction` = `GroundFriction` = 질주 조향 무게 없음.
+- 검증: 순수 수학은 `CL9.Feel.Ramp` 자동화 테스트(고정 dt 1/30·1/60·1/120), 곡선 전체는 `Tools/Unreal/qa_control_feel.py`(PIE, t.MaxFPS 60).
 
 **스태미나도 CMC 틱 안에서 시뮬레이션한다** — 서버와 클라(자율 프록시)가 같은 입력 플래그로
 같은 공식을 돌리므로 결정론적으로 일치한다. 서버 보정이 오면 저장무브 리플레이로 재계산돼
@@ -111,6 +198,13 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
 
 - 속도 등 판정 값은 CMC가 Def에서 읽는다 — 로드 검사(A1 행별)가 이 값 기준.
 - 슬롯 색(`TintColor`)은 슬롯 번호가 정한다 — 배정 규칙은 [session.md](session.md).
+- **메시 요(`MeshYaw`, 2026-10-22)**: 리그마다 앞 방향이 달라 전신·1인칭 팔 메시의 요를 행이 정한다. 마네킹 규격(`SK_Farmer_A_*`)은 −90(기본값),
+  계란 요리사(`SK_RoundCook_*`, 리그 `RIG_RoundCook_Body`)는 0이다. `ApplyCharacterDef`가 두 메시에 걸고, 팔 뷰모델 바탕(`ArmsBaseRotation`)과
+  엔진 메시 오프셋(`CacheInitialMeshOffset` — 남의 폰 보간·앉기 기준)도 다시 잡는다. 그래서 계란 요리사로 바꿀 때 시험 폰 `BP_RoundCookTrial`처럼
+  메시 회전만 다른 BP를 따로 둘 필요가 없다 — 행의 외형 열(`SkeletalMesh`·`Skeleton`·`AnimBP`·`ArmsMesh`·`ArmsAnimBP`)과 `MeshYaw`만 바꾼다.
+- **기본 플레이어는 계란 요리사(2026-10-22 사용자 "아예 round로")**: 정식 게임모드 `BP_CL9GameMode`·`BP_CL9GameMode_Flat`의 `DefaultCharacterAlias`를
+  `round_cook_trial`로 돌린다. `round_cook_trial` 행은 `MeshYaw` 0이다. 적용 스크립트는 `C:\Work\CL9\Tools\Unreal\switch_player_to_round_cook.py`이고,
+  `farmer_a` 행은 남아 있어서 별칭만 되돌리면 원래대로 돌아간다.
 
 ## 흔들림 (들고 달리기) — 판정·표현 (2026-09-02 설계)
 
@@ -137,6 +231,46 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
 - 판정 역할은 **낮은 장애물 통과** 하나 (segkind.md 점프 통과 셋). 거리·소음·감각 판정은
   평면(2D) 기준 — 점프로 회피 불가 (rules.md)
 - 던지기 원점에 점프 높이를 더하지 않는다
+- **코요테 타임** (2026-10-05, [../goal/control-feel.md](../goal/control-feel.md) C15): 턱에서 **걸어** 떨어진 뒤 `CoyoteTime`(0.12초) 안이면
+  아직 땅 점프와 같은 점프가 된다. CMC `HandleWalkingOffLedge` 오버라이드가 타이머를 건다(점프·발사는 이 길을 안 탄다 — 땅 점프 뒤에는
+  코요테가 없다). 타이머 `CoyoteTimeRemaining`은 질주 램프와 같은 예측 상태로, 낙하 중 시뮬레이션 시간으로 줄고 낙하가 아니면 0, 저장무브
+  스냅샷·`CombineWith` 되돌림이 있다. 엔진의 전용 훅 `ACharacter::CanJumpWhileFalling()`을 덮어 이 타이머를 읽는다 — `DoJump`·
+  `CanJumpInternal`은 덮지 않는다. 점프 뒤에는 `JumpCurrentCount`가 1 이라 두 번째 점프가 없다. 정점은 턱 위 약 142cm(≤ 156).
+- **점프 버퍼** (같은 날): `IA_Jump` 누름은 `JumpInputStart`(= `Jump()` + 코요테 없이 공중이면 누른 시각 기억). 소유 머신의 `Tick`이
+  착지(`IsMovingOnGround`) 뒤 `JumpBufferTime`(0.15초) 안이면 `Jump()`를 다시 낸다 — 다음 무브가 평범한 땅 점프로 서버에 간다(서버에는
+  특별한 것이 없다). `Landed` 안에서 내면 안 된다: 엔진이 `Landed` 직후 착지 물리 전환에서 점프 입력을 지운다.
+- 데이터 끄기: `CoyoteTime` 0 · `JumpBufferTime` 0 (둘 다 0..0.3, 로드 검사). 버퍼 0 은 완전한 끄기다 — `JumpInputStart`가 무장하지
+  않고 `Tick`도 창 0 이면 바로 버린다(착지 프레임의 누름도 엔진 기본처럼 사라진다, 리뷰 MP-1). **참여 클라이언트에서의 코요테 예측은 2인
+  세션 전까지 미확인이다.**
+
+## 앉기 — Ctrl 누르는 동안 앉아 걷기 (2026-10-22)
+
+이동은 세 가지다. 아무 키 없이 움직이면 걷기(`WalkSpeed`), Shift를 누르면 달리기(`RunSpeed`, 질주 램프·스태미나), **Ctrl을 누르는 동안은
+앉아 걷기**(`CrouchSpeed`)다. 사용자가 정한 두 가지(2026-10-22)는 이렇다. 앉아 걸으면 **소음이 0**이고, **카메라와 몸(캡슐)이 모두 낮아진다**.
+
+- **엔진 앉기를 그대로 쓴다.** `IA_Crouch` Started → `Crouch()`, Completed → `UnCrouch()`(누르는 동안만, 토글이 아니다). 엔진의 `bWantsToCrouch`는
+  이미 예측 무브의 압축 플래그(`FLAG_WantsToCrouch`)에 실리고 `bIsCrouched`는 남의 폰에 복제되므로 커스텀 플래그를 새로 두지 않았다.
+  `ApplyCharacterDef`가 `NavAgentProps.bCanCrouch = true`, `SetCrouchedHalfHeight(CrouchedHalfHeight)`를 심는다.
+- **속도**: `UCL9CharacterMovement::GetMaxSpeed`는 앉은 동안 걷기·달리기 보간 대신 `CrouchSpeed`를 상한으로 쓴다. 수레 배율과 넘어짐·처형·인트로
+  0은 그 위에 그대로 걸린다. 앉은 동안 달리기 키는 효과가 없다 — `IsRunning()`이 거짓이고 스태미나 소모와 질주 램프 상승도 멈춘다
+  (`UpdateCharacterStateBeforeMovement`, Super가 이번 무브의 앉기를 먼저 끝낸다). 앉은 채로는 점프가 안 된다(엔진 `CanJumpInternal`).
+  앉은 채로 턱 끝에서 떨어지지 않는 것도 엔진 기본값(`bCanWalkOffLedgesWhenCrouching` false)이다.
+- **몸**: 캡슐 반높이가 `CrouchedHalfHeight`로 줄어 그 높이(×2)보다 높은 틈 밑을 지나간다. 땅 위에서는 엔진이 발을 제자리에 두고 중심을 내리며,
+  전신 메시는 엔진 `OnStartCrouch`가 바닥에 붙여 둔다. 머리 위가 막혀 있으면 Ctrl을 떼도 설 수 있을 때까지 앉은 채로 남는다(엔진 `UnCrouch`
+  겹침 검사). **일어설 때 엔진은 클래스 기본(CDO) 반높이로 돌아가므로** 표의 `CapsuleHalfHeight`는 `CL9::CapsuleHalfHeight`(90)와 같아야 한다.
+- **눈높이**: `ACL9Character::GetCurrentEyeHeight()`는 앉았으면 `CrouchedEyeHeight`, 아니면 `EyeHeight`를 돌려준다(바닥 기준). 카메라 바탕 높이
+  (`UpdateViewFeel` (1)), 줍기 시선 원점, 휘두르기 원점, 던지기 원점이 모두 이 값과 지금 캡슐 반높이에서 눈 자리를 잡는다. 앉는 순간 캡슐
+  중심이 내려가면 캡슐 자식인 카메라도 같이 뚝 떨어지므로, `OnStartCrouch`·`OnEndCrouch` 오버라이드가 `bCrouchMaintainsBaseLocation`일 때
+  `CameraBaseZ`를 그만큼 되돌린다. 그 뒤 앉을 때는 `CL9Feel::CrouchCameraInterp` 18/s로 빠르게 새 눈높이에 도달한다. 일어서기·넘어짐/사망의 기존 높이 보간은 `CameraSinkInterp` 6/s를 유지한다.
+- **소음 0**: 몬스터 청각(`SenseTick`의 걷기 청각)과 잠든 몬스터의 걸음 기상(`WakeRadius`)은 앉은 사람의 걸음을 세지 않는다. 시야 판정은
+  바뀌지 않는다 — 보이면 보인다. 발소리 **소리**(사람에게 들리는 효과음)는 걷기 볼륨 그대로다. 파동은 `TickStepNoise`가 앉은 동안 `crouch` 행으로
+  낸다 — 판정 반경이 없는 아주 작은 링으로 "거의 소리가 없다"만 보여 준다(2026-10-22 사용자 — 뛰기·걷기·앉아 걷기 셋의 파동이 달라야 한다,
+  [wave.md](wave.md) 행 목록). 행을 끄면 아무것도 뜨지 않는다. 수레 소음은 그대로 난다.
+- **애니메이션**: 1인칭은 눈높이 이동만 하고 전용 클립이 없다. 전신(남이 보는 몸)에는 앉아 서 있기·앉아 걷기 클립 두 개가 필요하고, ABP는
+  엔진의 복제 변수 `bIsCrouched`를 읽는다(아트 몫, [animation.md](animation.md)).
+- 표 열: `CharacterTable`의 `CrouchSpeed`·`CrouchedHalfHeight`·`CrouchedEyeHeight`(Crouch 분류). 헤더 기본값 200·55·90은 자리표시다 — 수치는
+  balance가 정한다. 로드 검사: `CrouchSpeed` > 0, `CapsuleRadius` ≤ `CrouchedHalfHeight` ≤ `CapsuleHalfHeight`, 0 < `CrouchedEyeHeight` ≤
+  `CrouchedHalfHeight` × 2.
 
 ## 피격·넘어짐·죽음 — OnDamage 가상 함수
 
@@ -145,7 +279,7 @@ GetMaxSpeed() = 기본 속도 × 감속 f(유효 무게)     // 식·값 미결 
 ```cpp
 // 캐릭터·몬스터가 각자 구현 (베이스가 달라서 인터페이스로)
 class ICL9Damageable {
-  virtual void OnDamage(int32 Amount, AActor* Source) = 0;  // 호스트에서만 호출
+  virtual void OnDamage(int32 Amount, AActor* Source, float Knockback) = 0;  // 호스트에서만 호출 (2026-10-16 정정: 넉백 인자까지 3개 — CL9Damageable.h)
 };
 // ACL9Character::OnDamage — HP 차감, HurtStun, 넘어짐, (죽을 때만) 짐 흘림
 // ACL9Monster::OnDamage  — HP 차감, HitStun, 죽음 (monster.md)
@@ -154,11 +288,11 @@ class ICL9Damageable {
 - 호출은 **호스트 판정 코드에서만** (몬스터 잡기, 프라이팬 밀치기 등) — 클라 호출 금지.
 - HP는 PlayerState의 int (기본 3 — 값의 문제, character.md). 잡히면 `CatchDamage`만큼
   OnDamage로 깎이고 `HurtStun`(0.35초) 비틀 + 넘어짐 — 판정은 호스트, 표현은 OnRep/Multicast
-- **짐을 흘리는 것은 죽을 때뿐이다** (2026-09-15 사용자 — 2026-09-02의 "잡히면 손+품 전부 흘림" 폐기).
-  HP가 남는 타격은 넘어뜨리기만 하고 **손에 든 것과 퀵슬롯 네 칸을 그대로 둔다** — 일어나면 들고 있던 그
-  물건을 그대로 들고 있고(활성 칸도 그대로), 바닥에 흘린 것은 없다. 다만 두 경우 다 `HostCancelCarryActions()`가
-  수레를 놓고(`StopPull`) 던지기 차징·휘두르기 대기를 취소한다 — 넘어진 채 차징이 이어지면 안 된다.
-  HP 0이 되는 타격에서만 `HostDropEverything()`가 손과 네 칸을 전부 발밑에 흘린다(동료가 시체 옆에서 주워 가게).
+- ~~**짐을 흘리는 것은 죽을 때뿐이다** (2026-09-15 사용자)~~ → **넘어지면 0~2개를 무작위로 흘린다** (2026-10-17 결정 B, 사용자 "0~2개, 2개는 낮음" —
+  [../goal/knockdown-drop.md](../goal/knockdown-drop.md)). HP가 남는 타격은 `HostCancelCarryActions()`(수레 놓기 `StopPull`·던지기 차징·휘두르기 대기 취소) 뒤
+  `HostDropOnKnockdown()` — `CL9Rules.KnockdownDropWeight0/1/2` 가중치로 개수를 굴리고, 찬 칸(활성 칸 포함·머리 칸 제외) 중 무작위로 그만큼을 죽음과 같은
+  `SpillAtFeet` 로 발밑에 흘린다(손의 것은 액터를 놓고, 비활성 칸은 저장된 값·조명 스위치 그대로 다시 스폰). 활성 칸 번호는 그대로. 셋 다 0 이면 옛 규칙.
+  HP 0이 되는 타격은 그대로 `HostDropEverything()`가 손과 네 칸을 전부 발밑에 흘린다(동료가 시체 옆에서 주워 가게).
   **넘어져 있는 동안은 놓기(G)·던지기도 무시된다** (2026-09-15 사용자 — 사용·먹기와 같은 규칙):
   `Server_Drop`·`Server_ThrowChargeStart`·`Server_ThrowRelease`가 `IsKnockedDown()`이면 조용히 돌아간다.
   짐을 든 채 넘어지게 된 뒤로 필요해진 검사다 — 누운 채로 물건을 내려놓거나 던질 수는 없다.
@@ -194,7 +328,8 @@ class ICL9Damageable {
     카메라에서 데스캠으로 블렌드(`HostBeginExecuted` 의 짝). 보통 사망은 뷰 타깃이 이미 자기 폰이라 엔진이 블렌드하지 않는다 =
     넘어짐 카메라에서 데스캠으로 **즉시 전환**(같은 액터 안의 두 카메라 사이엔 `SetViewTargetWithBlend` 가 없다). `SpectateDelay`
     뒤 `BeginSpectating` 의 `SetViewTarget(동료)` 는 그대로(데스캠 → 동료 1인칭); 혼자면 데스캠 유지 → 전멸 → 밤 종료.
-  - **몸·팔** `ApplyThirdPersonMeshes()`(`ApplyExecuted` 와 공통부): 처형 중 ∨ 데스캠이면 몸 `FirstPersonPrimitiveType`
+  - **몸·팔** `ApplyThirdPersonMeshes()`(`ApplyExecuted` 와 공통부): 처형 중 ∨ 데스캠 ∨ 전원 인트로 카메라가 내 1인칭 카메라 자리에서 120 cm 넘게 떨어졌으면
+    (`ACL9PlayerController::IsIntroBodyShown`, 2026-10-11 K10-F F5 — 눈 위치에서 출발하는 동안은 1인칭 그대로, 한 번 바뀌면 그 인트로 끝까지) 몸 `FirstPersonPrimitiveType`
     `WorldSpaceRepresentation → None` + `SetOwnerNoSee(false)`·팔(과 손의 아이템) 숨김, 아니면 1인칭(타입 복구). 타입을 같이
     내리는 이유: `WorldSpaceRepresentation` 프록시는 `bOwnerNoSee` 를 강제로 true 로 덮어써서(엔진 `PrimitiveSceneProxy.cpp`)
     OwnerNoSee 토글만으로는 몸이 안 보이고 그림자만 남는다(2026-09-21 PIE 에서 발견). 처형 표시가 먼저 걷혀도(`HostEndExecuted`)
@@ -211,7 +346,19 @@ class ICL9Damageable {
   - 값: `DeathCameraOffset`(−320, 140, 260)·`DeathCameraLookAtZ`(−60)·`DeathCameraBlend`(0.5) —
     [../plan/data/rules.md](../plan/data/rules.md) 죽음과 회복, 아트 튜닝. 로드 검사: 오프셋·높이 유한, 블렌드 유한·비음수.
 - **부활은 없다** — 다음 로비(`EnterLobby`)에서 `ReviveDead()`: 죽은 전원을 `HostRevive()`
-  (HP = `MaxHp`, 넘어짐 해제, 데스캠 끔)하고 트럭 패드 위로 옮기며 관전을 끝낸다(뷰 타깃 = 자기 폰).
+  (HP = `MaxHp`, 넘어짐 해제, **넘어짐 시각을 "아직 없음"(−1000)으로 되돌림**, 데스캠 끔)하고 트럭 패드 위로 옮기며 관전을 끝낸다(뷰 타깃 = 자기 폰).
+  (트럭이 특정 장소에 닿아야 되살아나는 규칙은 다음 명세다 — 지금은 위 흐름 그대로.)
+  - **`HostRevive` 가 넘어짐 시각을 되돌리는 이유** (2026-10-06, round-start-truck-intro K5): 판 끝에 트럭 밖에 남겨진 사람은 새벽에 죽고 곧바로
+    로비에서 되살아난다(`DawnLength` 0 이면 같은 프레임). 그러면 다른 머신은 죽음의 `KnockdownStartServerTime` 을 **산 몸에서 처음 보게 되어**
+    피격 셰이크·Hurt 소리·빨간 플래시·비네트가 부활한 몸에 떴다. 그래서 `HostRevive` 가 `KnockdownStartServerTime = NoKnockdownServerTime`(−1000)으로 되돌린다 —
+    넘어진 적 없는 몸과 같은 상태다. 셰이크(`UpdateHitShakes`)와 Hurt 소리(`UpdateHitSounds`)는 이 값이 **올라갈 때만**(`>`) 내므로 되돌림(내려감)은
+    사건이 아니다(옛 `!=` 비교를 상승 에지로 바꿨다). 플래시·비네트는 경과 시간(`GetHurtElapsed`)이 아주 커져 저절로 꺼진다.
+- **판 끝에 트럭 밖에 있으면 남겨져 죽는다** (2026-10-06, K5 — 흐름·순서는 [session.md](session.md) "판 끝 — 남겨진 사람"). 캐릭터 쪽 입구는
+  **`ACL9Character::HostLeaveBehind()`**(호스트 전용, 이미 죽었으면 아무 일도 없다): `HostCancelCarryActions()` 로 수레를 놓고 차징·대기를 취소한 뒤
+  **손에 든 것(`HeldItem`)과 머리에 쓴 것(`WornItem`)을 `Destroy` 하고 퀵슬롯·`HeadItem` 미러를 비운다**(바뀐 게 있으면 `NotifyCarryChanged`) —
+  흘리지 않고 없앤다. 머리 칸을 따로 처리하는 이유: 죽음의 흘림 `HostDropEverything` 은 `WornItem` 을 건드리지 않는다.
+  그다음 `HostApplyDamage(남은 HP 전부, nullptr, "left behind")` 로 죽음 경로(데스캠·`HandlePlayerDeath`)를 그대로 탄다. `HostApplyDamage` 가 protected 라
+  이 래퍼가 캐릭터 안에 있다. 넘어짐 무적·인트로 무적을 거치지 않는다(처형의 `HostKill` 과 같다) — 로그는 `left behind 'None': -N HP → 0 (dead — down for the night)`.
 - **트럭 패드 회복** (`ACL9TruckPad`, Source/CL9/World): HealZone 안에 **살아 있고 다친**
   캐릭터가 `TruckPadHealTime`초 연속으로 서 있으면 HP가 `MaxHp`로 찬다. 벗어나면 카운트
   초기화. 죽은 사람은 여기서 안 살아난다. 호스트 전용 틱, 복제 없음(HP는 PlayerState로 도착).
@@ -223,14 +370,25 @@ class ICL9Damageable {
 - **넘어진 동안은 무적이다** (2026-09-20 사용자 결정): `OnDamage` 머리의 `IsKnockedDown()` 게이트가 HP·넘어짐 시계·
   피격 사건을 전부 그대로 두고 로그 한 줄만 남긴다. 다른 닭의 덮침도 `cl9.damage`도 같은 문이라 **우회가 없다**.
   몬스터 쪽은 넘어진 타깃에 예고·잡기를 시작하지 않는다 ([monster.md](monster.md) 잡기 = 공격).
-  유일한 예외는 아래 처형의 `HostKill` — 이 문을 아예 거치지 않는다.
+  유일한 예외는 아래 처형의 `HostKill` — 이 문을 아예 거치지 않는다. (판 끝 남겨짐의 `HostLeaveBehind` 도 `HostApplyDamage` 를 직접 불러 이 문을 거치지 않는다.)
+- **전원 인트로 동안은 잠기고 무적이다** (2026-10-06, round-start-truck-intro K11 — 건물 전원 스위치를 켠 판의 연출, [light.md](light.md) "전원 단계"):
+  `IsIntroLocked()` = 이 플레이어가 켠 순간의 **참가자**(`IntroTargets` 에 든 사람 — 살아 있고 처형·관전 중이 아니었던 사람)이고, 판(Night)이며,
+  켠 시각 T 로부터 `IntroLeadIn + IntroFlyTime + IntroFlickerTime + IntroReturnTime`(기본 9.4 초 — 비행 7.0 초, 2026-10-10) 안이다. `IsIntroInvulnerable()` 은 같은 창에 `IntroGrace`(기본 1.0 초)를 더한 것(10.4 초) —
+  조작이 돌아온 뒤 한 박자의 반응 시간이다. 둘 다 `ACL9GameState::IsIntroLocked/IsIntroInvulnerable(PlayerState)` 에서 복제된 값(켠 시각·참가자 목록·페이즈)과 서버 시각만으로
+  파생하므로 서버와 소유 클라이언트가 같은 값을 내고 새 복제 필드가 없다. **Night 에서만 참이다** — 판이 창 안에서 끝나면(귀가·시간 끝) 새벽·로비에 잠금이 남지 않는다.
+  - **잠금은 한 곳이 아니라 다섯 곳이다**: `IsIncapacitated()`(= 넘어짐 ∨ 처형 ∨ **인트로 잠금** — 서버 RPC 게이트 전부), `UCL9CharacterMovement::GetMaxSpeed()`(0 — 넘어짐·처형 옆),
+    `LookInput`(시선 — 돌아왔을 때 떠난 자리 그대로), `JumpInputStart`(점프 초속은 속도 상한을 거치지 않는다), 조준 대상·프롬프트 게이트(`Tick` — 포커스 없음).
+  - **무적 게이트**: `OnDamage` 머리의 `IsKnockedDown()` 바로 뒤에 `IsIntroInvulnerable()`(로그 `hit by '…' during the power intro — ignored (invulnerable)`)와, 몬스터 쪽 관문 —
+    잡기 진입(`bCanCatch`)·덮침 결과(`bHit`)·`TryBeginExecute` 의 타깃 상태 검사·`HostCheatExecute`(막힘 사유 `target-intro`). `cl9.damage` 도 같은 문이라 우회가 없다.
+    이미 진행 중인 처형의 `HostKill` 은 이 게이트를 거치지 않는다. 스토커의 미발견 계수기는 무적 동안에도 흐른다 — 창이 끝나면 곧바로 처형 조건이 설 수 있어 `IntroGrace` 가 반응할 틈을 준다.
+  - 참가자가 아닌 사람(늦게 들어온 사람·이미 죽은 사람)은 잠기지 않는다. 후보가 0개인 레이아웃은 참가자가 비어 아무도 잠기지 않는다(불만 켜졌다 죽는다).
 - **처형 — 종 전용 즉사** (2026-09-20, [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) D2·D3·D6·D9;
   몬스터 쪽은 [monster.md](monster.md) 스토킹과 처형 — 너구리는 스토커, 돼지는 잡히면 처형이지만 캐릭터 쪽 흐름은 같다):
   - **상태** = `ExecuteStartServerTime`(float, `ReplicatedUsing=OnRep_ExecuteStartServerTime`, 모두에게 — 남의 ABP 와
     CMC 가 읽는다; −1000 = 아님) + `ExecutedBy`(`TObjectPtr<ACL9Monster>`, Replicated). 게터(BlueprintPure):
     `IsExecuted()`(= 시각 ≥ 0) · `GetExecuteElapsed()`(처형 아니면 −1) · `GetExecuteDuration()`(`ExecutedBy` 행의
     `ExecuteDuration`, 없으면 0) · `GetExecutedByAlias()`(`ExecutedBy` 행의 `Alias` — `pig`/`raccoon`, 없으면 `None`;
-    ABP 가 종별 2인 클립을 고른다, 2026-09-21); C++ `IsIncapacitated()`(= 넘어짐 ∨ 처형) · `GetExecutedBy()`. **`ExecutedBy` 는
+    ABP 가 종별 2인 클립을 고른다, 2026-09-21); C++ `IsIncapacitated()`(= 넘어짐 ∨ 처형 ∨ 전원 인트로 잠금 — 위 "전원 인트로 동안은 잠기고 무적이다") · `GetExecutedBy()`. **`ExecutedBy` 는
     죽은 뒤에도 남는다**(ABP·카메라 게이트 — 게터들도 그동안 같은 값) — 로비 정리·부활이 걷는다.
   - **`HostBeginExecuted(Executioner)`** (호스트, 몬스터가 부른다): 두 필드 세팅 → `HostCancelCarryActions()`
     (**수레는 진입 순간 놓는다** — 무력화된 사람이 수레를 끌 수 없다; 던지기 차징·휘두르기 대기도 취소. 짐은 죽는
@@ -310,6 +468,34 @@ class ICL9Damageable {
   — balance 초안. **로드 검사** `HurtLookTime + 0.6 <= CharacterDef.KnockdownTime`(1.5): 규칙 표와 캐릭터 행이 둘 다 보이는
   `ApplyCharacterDef`에서 Warning — 어기면 진입·복귀 보간이 겹쳐 카메라가 떤다.
 
+### 겁먹는 표현 — 공포 게이지·소리 겹·스팅어·추격 신호·시선 끌림 (2026-10-17, 결정 H)
+
+"무섭지 않다"의 표현 층이다 ([../reference/scare-mechanics.md](../reference/scare-mechanics.md) §3 — 가장 싼 다섯 개, 전부 로컬).
+`UCL9FearComponent`(`Source/CL9/Character/`, 캐릭터의 기본 서브오브젝트 `Fear`)가 **소유 폰에서만** 틱마다 돈다. 판정·호스트 로직·복제는
+하나도 건드리지 않는다 — 입력은 이미 복제되는 몬스터의 `State`·`GetStateElapsed()`·위치와 내 `GetKnockdownElapsed()` 뿐이다. 값은 전부
+`CL9Rules` 겁먹는 표현 열([../plan/data/rules.md](../plan/data/rules.md)), 소리는 `SoundTable` 행, 흔들림은 `ShakeTable` 행이다.
+
+- **공포 게이지** `FearLevel` 0~1 (리썰 `fearLevel`). 사건이 **점프**시킨다(`JumpTo` — 올라갈 때만, 차이 0.05 미만 무시): 화면에 보이는 깨어 있는 몬스터가
+  `FearSeenNearRadius` 안이면 `FearSeenNear`, `FearSeenFarRadius` 안이면 `FearSeenFar`; Chase 전이(아래 조건)에 `FearChaseBegin`; Pounce 전이에
+  `FearPounce`; 내 넘어짐의 상승 에지에 `FearHurt`. 추격 중인 몬스터가 `FearSeenNearRadius` 안에 있는 동안은 `FearNearRate`/초로 **쌓인다**(보이든 안 보이든).
+  이번 틱에 아무도 안 올렸으면 `FearDecayPerSecond` 로 식는다. 죽었거나 관전이면 0.
+- **"화면에 보인다"** = 카메라 전방 원뿔(가로 FOV 반각) 안 ∧ `ACL9Monster::TraceWorld`(세상 지형만)로 눈→몬스터 중심이 안 막힘. `FearSeenFarRadius` 밖·
+  자는 것·시체는 트레이스도 긋지 않는다.
+- **소리 네 겹** (리썰 `SetFearAudio`): `FearLow` 는 게이지가 `FearLowMin`~`FearLowMax` 사이, `FearHigh1` 은 > `FearHigh1Min`, `FearHigh2` 는 > `FearHigh2Min`
+  일 때 켜지고(목표 볼륨 1), `Heartbeat` 는 문턱 없이 볼륨 = 게이지. 볼륨은 `FearLayerFadeSpeed` 로 목표를 따라가고 0.01 아래면 멈춘다. 음원은 처음 0 을
+  벗어날 때 `CL9Sound::Resolve` 로 받아 `CreateSound2D` 루프로 튼다 — 표·행·애셋이 없으면 그 겹은 조용히 없다. 애셋에 Looping 이 켜져 있어야 한다.
+- **첫 목격 스팅어** (리포 `MusicEnemySighting`): 몬스터가 내 화면에 **처음** 들어오는 틱(지난 틱엔 안 보였다)에 `SightingRadius` 안이고 쿨다운이 끝났으면
+  `MonsterSighting` 을 몬스터 자리에서 + 셰이크 `Sighting`, 그 뒤 `SightingCooldown` 동안 쉰다(플레이어 하나에 하나 — 종별이 아니다).
+- **추격 시작 신호** (리포 `ChaseBegin`): 몬스터의 전이(`State` 가 바뀌거나 같은 상태의 경과가 줄어듦 — `TickStateSounds` 와 같은 틀, 첫 틱은 기준값만)가
+  Chase 로 들어오고 화면에 보이거나 `ChaseBeginRadius` 안이면 `MonsterChaseBegin` 을 몬스터 자리에서 + 셰이크 `ChaseBegin` + 게이지 점프. 리포는
+  "누구를 쫓는지"로 세기를 바꾸지만 CL9 는 타깃을 복제하지 않으므로 거리·화면이 그 대신이다(새 복제를 만들지 않았다).
+- **시선 끌림** (리포 `EnemyHeadController`): 컴포넌트가 추격 중(Chase·Pounce·Stalk)인 가장 가까운 몬스터를 `ChaseLookRadius` 안에서 고르고
+  (`GetChaseLookTarget`), `UCL9HurtLookModifier` 가 **넘어져 있지 않을 때** POV 요를 그쪽으로 각도 차이 × `ChaseLookStrength`, 상한 `ChaseLookYawMax`,
+  시정수 `ChaseLookTime` 으로 끌고 없어지면 되돌린다. 기준은 컨트롤 요(POV 요를 기준으로 재면 되먹임). 넘어지면 끌림은 풀리고 피격 요가 대신한다.
+  피격 카메라와 같은 **POV 만** 원칙 — 조준은 그대로다. `HurtLookTime` 0 은 이제 피격 오프셋만 끄고, 끌림은 `ChaseLookYawMax` 0 으로 끈다.
+- **없는 것**: 리썰 화면 필터(게이지 > 0.4 비네트), 동료 시체 목격 점프, 리포의 추격 시작 때 배경음악 20초 중단, "보면 돌아본다"(판정 층 — A·E 결정 뒤).
+- **상태**: 코드·열·행은 들어갔고 **음원·셰이크 애셋은 비어 있다**(2026-10-17) — 들리는 것은 아직 없고, 시선 끌림만 눈에 보인다.
+
 ### 맞는 느낌 — 타격감·피격감 (2026-09-15 구현)
 
 판정은 하나도 건드리지 않는 표현 층이다. **모든 트리거가 이미 복제된 시각에서 파생되고**, 새로 복제하는
@@ -328,7 +514,8 @@ class ICL9Damageable {
   **시체 타격**에는 아예 찍히지 않는다(시체는 맞은 목록에도 넣지 않는다).
 - **셰이크는 OnRep이 아니라 틱 비교로 낸다.** 리슨 호스트는 권한이자 소유자라 자기 폰에서 OnRep이
   뜨지 않는다 — 지난 틱에 본 값과 다르면 한 번 재생하는 방식이 호스트·클라 양쪽에서 똑같이 돈다
-  (`UpdateHitShakes`). 접속 직후 첫 틱은 값을 받아 적기만 하고 재생하지 않는다.
+  (`UpdateHitShakes`). 접속 직후 첫 틱은 값을 받아 적기만 하고 재생하지 않는다. **피격(`Hurt`) 셰이크는 `KnockdownStartServerTime` 이 올라갈 때만**
+  재생한다(2026-10-06 — `HostRevive` 가 이 값을 "아직 없음"으로 **되돌리는** 것은 사건이 아니다; 위 "부활" 항목). 타격(`Hit`) 셰이크는 `SwingHitServerTime` 의 변화 그대로다.
 - **셰이크는 표의 행이다.** `CL9ShakeNames::Hit`·`Hurt` (rules.md 셰이크 표) — 원샷이라 `StartAt`은
   보지 않고 행의 `Scale` 세기로 한 번 재생한다(2026-09-18 — 옛 세기 1, 위 "흔들림" 절). 행이 없으면 조용히 지나간다.
 - **셰이크 에셋 값** (정본은 `Tools/Unreal/create_hit_feedback_assets.py`의 `HIT_SHAKE`·`HURT_SHAKE` — 에디터에서 손으로
@@ -348,7 +535,8 @@ class ICL9Damageable {
   **내가 켠 것만 끈다**는 가드를 둔다 — 켜고 끌 때만 세팅하고, 켠 적이 없으면 지우지 않는다.
 - **표현 시계는 `GetKnockdownElapsed()`가 아니다.** 그 게터는 일어나는 순간 −1로 돌아가서(애님 분기용)
   플래시가 영원히 켜진 것으로 읽힌다. 플래시·비네트는 `GetHurtElapsed()`(= 서버 시각 − 넘어진 시각,
-  일어난 뒤에도 계속 커진다)를 쓴다. 넘어진 적이 없으면 −1000 기본값 덕에 아주 큰 값이 되어 꺼져 있다.
+  일어난 뒤에도 계속 커진다)를 쓴다. 넘어진 적이 없으면 −1000 기본값 덕에 아주 큰 값이 되어 꺼져 있다 — 부활이 되돌린 값도 같은 −1000 이라
+  부활한 몸의 플래시·비네트가 같은 이유로 꺼져 있다.
 - HUD 비네트 이미지는 `GetHurtFlash()`를 불투명도로 읽는다 ([ui.md](ui.md)).
 
 ### 소리·팔 히트스톱·발소리 (2026-09-18 구현)
@@ -361,14 +549,15 @@ class ICL9Damageable {
 |---|---|---|---|
 | `Swing` 소리 (폰 자리, 맞든 빗나가든) | 전원 | `SwingStartServerTime` 변화 | `UpdateHitSounds` |
 | `HitSurface` 소리 (폰 자리 — 벽·바닥을 쳤다, 2026-09-22) | 전원 | `SwingSurfaceHitServerTime` 변화 (Replicated, 조건 없음) | `UpdateHitSounds` |
-| `Hurt` 소리 (폰 자리) | 전원 | `KnockdownStartServerTime` 변화 | `UpdateHitSounds` |
-| 1인칭 팔 히트스톱 | 때린 본인 | `SwingHitServerTime` 뒤 `CL9Rules.HitStopTime`(0.08초) | `GetSwingAnimElapsed()` → ABP `SwingElapsed` |
-| 발소리 `Footstep` (발밑) | 전원 | 수평 이동 거리 누적 ≥ 보폭 | `TickFootstepSound` |
+| `Hurt` 소리 (폰 자리) | 전원 | `KnockdownStartServerTime` **상승**(되돌림은 제외, 2026-10-06) | `UpdateHitSounds` |
+| 1인칭 팔 히트스톱 | 때린 본인 | `SwingHitServerTime` 뒤 `CL9Rules.HitStopTime`(0.08초), 그 명중이 죽였으면(`bSwingHitKill`, COND_OwnerOnly) `KillHitStopTime`(0.12초, 2026-10-17) | `GetSwingAnimElapsed()` → ABP `SwingElapsed` |
+| 발소리 `Footstep` (발밑) | 전원 | 걸음 위상이 1 을 넘음(2026-10-05 — 아래) | `TickFootstepSound` |
 
 - **소리도 셰이크와 같은 틱 비교다** — `UpdateHitSounds()`가 지난 틱과 값이 다르면 `CL9Sound::PlayAt`으로 한 번 튼다.
   다만 셰이크의 `UpdateHitShakes`는 소유자 전용인데 소리는 **남의 폰에서도 들려야** 하므로 로컬 조작 게이트 **앞**에서
   모든 머신이 돌고, 비교값도 따로 둔다(`LastSeenSwingStartTime`·`LastSeenHurtSoundTime`). 접속 직후 첫 틱은 기준값만
-  받아 적는다(`bHitSoundsPrimed`). `Hurt`는 넘어지는 순간 한 번이고 일어날 때는 없다.
+  받아 적는다(`bHitSoundsPrimed`). `Hurt`는 넘어지는 순간 한 번이고 일어날 때는 없다. 비교는 `!=` 가 아니라 **상승 에지**(`>`)다 — 부활이 시각을
+  "아직 없음"(−1000)으로 내려도 소리가 나지 않는다(위 "부활" 항목).
 - **팔 히트스톱은 판정 시계가 아니라 ABP 전용 게터다.** `GetSwingAnimElapsed()`(BlueprintPure)는 이번 휘두르기가 맞은 뒤
   (`SwingHitServerTime >= SwingStartServerTime`, `COND_OwnerOnly`라 때린 본인 화면에서만) `HitStopTime` 동안 명중 시각의
   경과값에 머물고, 지나면 실제 경과에서 정지 길이를 뺀 값으로 이어진다 — 팔 클립이 명중 프레임에 0.08초 멈췄다가 이어서
@@ -377,20 +566,45 @@ class ICL9Damageable {
   보므로 클립이 0.08초 늦게 끝까지 간다([animation.md](animation.md) 휘두르기 가지). 판정 `HostTickSwingHit`은 여전히
   `GetSwingElapsed()`를 쓴다 — 히트박스 창은 그대로다. 전역 시간 지연·`CustomTimeDilation`은 쓰지 않는다(리슨 호스트에서
   남에게 번지고 이동 예측을 깨뜨린다).
-- **발소리는 애님 노티파이가 아니라 거리 누적기다** (클립에 노티파이가 없다). `TickFootstepSound()`가 모든 머신에서 매 틱
-  `GetFootLocation()`의 수평 이동 거리를 누적(`FootstepDistanceAccum`)해 보폭에 닿을 때마다 발밑에서 `Footstep` 행을 피치
-  ±8 %로 튼다. `IsMovingOnGround()`일 때만 — 서 있거나 공중이거나 넘어졌거나 죽었으면 안 난다. 보폭은 수평 속도가 행의
-  `WalkSpeed`를 넘으면 `CL9Rules.FootstepStrideRun`(196cm = 654 × 0.3초, `AN_Farmer_FPRun` 0.6초 루프의 반 — 주먹이 앞
-  극점에 올 때마다 한 발), 아니면 `FootstepStrideWalk`(150cm, 2.64 걸음/초) — 달리기 입력 `bWantsToRun`은 남의 폰에
-  복제되지 않아 속도로 가른다. 보폭 종류가 바뀌면 누적을 0으로 되돌린다. 무게로 느려지면 간격이 같이 벌어진다.
-  소음 판정의 `TickStepNoise`(파동, 호스트·소유 클라만, 표의 간격)와는 **별개 누적**이다 — 발소리는 연출이지 몬스터
-  청각이 아니다.
+- **발소리는 애님 노티파이가 아니라 걸음 위상이다** (클립에 노티파이가 없다. 2026-10-05 거리 누적기 → 정규화 위상,
+  [../goal/control-feel.md](../goal/control-feel.md) C10). `TickFootstepSound(Dt)`가 모든 머신에서 매 틱 `GetFootLocation()`의
+  수평 이동 거리를 보폭으로 나눠 `StepPhase`(0..1)에 더하고, 1 을 넘는 순간 1 을 빼고 발밑에서 `Footstep` 행을 피치 ±8 %로
+  튼다(걸음 좌우 `bStepParity`를 뒤집고 `StepCount`를 센다 — 한 틱에 한 발). 보폭은 수평 속도로 `CL9Rules.FootstepStrideWalk`(150cm,
+  396 에서 2.64 걸음/초) → `FootstepStrideRun`(196cm = 654 × 0.3초, `AN_Farmer_FPRun` 0.6초 루프의 반)을 **선형으로 잇는다** —
+  달리기 입력 `bWantsToRun`은 남의 폰에 복제되지 않아 속도로 가른다. 보폭이 바뀌어도 위상을 버리지 않으므로 질주 램프 동안
+  케이던스가 2.64 → 3.34 걸음/초로 단조롭게 오른다(옛 누적기는 걷기·달리기가 갈릴 때마다 0 으로 돌아가 램프 초반에 박자가 오히려
+  늘어졌다). 볼륨은 세 단계로 섞지 않는다(2026-10-22) — 걷기 `ViewFeel.FootstepVolumeWalk` 0.7, 뛰기(쉬프트 — 속도 비율 `FootstepRunAlpha` 0.5 이상) `FootstepVolumeRun` 1.0, 앉아 걷기(엔진 웅크리기 `bIsCrouched`) `FootstepVolumeCrouch` 0 — 0 인 단계는 틀지 않는다. `IsMovingOnGround()`일 때만 — 서 있거나 공중이거나
+  넘어졌거나 죽었으면 위상을 얼리고, `ViewFeel.StepIdleResetTime`(0.25초)이 지나면 0.5 로 둔다(다시 걸으면 반 보폭 뒤에 첫 발).
+  걷기 보폭 0 이면 발소리가 없다. 소유자의 카메라 보브가 같은 위상을 읽는다(위 "카메라 손맛"). 소음 판정의 `TickStepNoise`(파동,
+  호스트·소유 클라만, 표의 간격)와는 **별개 누적**이다 — 발소리는 연출이지 몬스터 청각이 아니다.
+
+### 일상 동작 소리 — 소유자 전용 (2026-10-05)
+
+[../goal/control-feel.md](../goal/control-feel.md) C14. 새 행 8개(`Jump`·`LandSoft`·`LandHard`·`SlotSwitch`·`LightToggle`·`Eat`·`Exhausted`·
+`CartGrab`)와 기존 `Pickup` 행이 **그 폰을 조종하는 머신에서만** 난다 — `PlayAt`에 감쇠가 없어 남에게 들리게 하면 맵 전체에 같은 크기로
+들리기 때문이다(임시, [sound.md](sound.md)). 새 복제·RPC·Multicast 없음, 몬스터가 듣는 소음 없음(기존 `Land` 파동·줍기 소음 반경은 그대로).
+
+| 소리 | 언제 | 어디서 |
+|---|---|---|
+| `Jump` (피치 ±6 %) | 점프한 순간 — 보정 리플레이 제외, 0.15초에 한 번 | `OnJumped_Implementation` |
+| `LandSoft` / `LandHard` | 착지 낙하 속도 350~1000 cm/s = `LandSoft`(볼륨 0.5 → 1.0, ±6 %), 1000 이상 = `LandHard`(±4 %), 350 미만 없음 — 같은 가드 | `Landed` |
+| `Pickup` | 채워진 퀵슬롯 칸 수가 늘었거나 머리 칸이 채워짐(착용) | `UpdateOwnerSounds` |
+| `SlotSwitch` | 활성 칸이 바뀜 — 줍기로 바뀐 것은 `Pickup`만 | `UpdateOwnerSounds` |
+| `LightToggle` | 든 손전등·쓴 헤드램프(`ACL9FlashItem`) **같은 액터**의 스위치가 바뀜 — 이 머신이 아직 들고(`!IsFree`)·쓰고(`IsWorn`) 있다고 보는 것만 찍고, 조명 키(F·든 손전등 좌클, `LocalLightInputTime`)를 누른 뒤 0.5초 안일 때만, 정전이 든 손전등을 끈 것은 뺀다 | `UpdateOwnerSounds` |
+| `Eat` | `EatStartServerTime` 변화 | `UpdateOwnerSounds` |
+| `CartGrab` | `PullingCart`가 비었다가 채워짐 | `UpdateOwnerSounds` |
+| `Exhausted` | 탈진 래치 상승 에지(예측 상태) — 2초에 한 번까지 | `UpdateOwnerSounds` |
+
+- `UpdateOwnerSounds`는 셰이크와 같은 "지난 틱 값과 비교"다 — 자기 PlayerState·Character 의 복제 상태와 CMC 예측 상태를 찍어
+  두고 다르면 낸다. 빙의가 바뀐 뒤 첫 틱(`NotifyControllerChanged`가 기준값을 지운다)은 받아 적기만 한다.
+- 참여 클라이언트에서는 상태가 복제돼 온 뒤라 RTT 만큼 늦다 — 다른 손 동작 피드백과 같다(클라 표현 예측 M6 은 이번에 안 한다).
 
 ## 네트워크 정리
 
 | 상태 | 위치 | 이유 |
 |---|---|---|
-| 달리기 플래그·스태미나·유효 무게 속도 | **CMC (예측 경로)** | FSavedMove로 서버·클라 동기 |
+| 달리기 플래그·스태미나·질주 램프·유효 무게 속도 | **CMC (예측 경로)** | FSavedMove로 서버·클라 동기 (합칠 때 `CombineWith`가 되돌린다) |
+| 카메라 손맛(보브·롤·FOV·스프링)·걸음 위상·일상 동작 소리 | 복제 없음 — 소유 머신이 위 상태에서 파생(걸음 위상만 모든 머신) | 표현은 상태에서 나온다 |
 | HP(`Hp`·`MaxHp`)·퀵슬롯 목록(`Slots`·`ActiveSlot`)·머리 장비(`HeadItem`) | PlayerState (Replicated + OnRep) | 판정·UI·타 클라 표시 |
 | 넘어짐 시계 `KnockdownStartServerTime`/`KnockdownEndServerTime` · 처형 `ExecuteStartServerTime`/`ExecutedBy` · 소지 실물 `HeldItem`/`WornItem`/`PullingCart` · 휘두르기·먹기·던지기 시각 | **Character** (Replicated) | 표현 파생용 서버 시각과 실물 참조 — conventions § 4 의 명시된 예외 (decisions.md 2026-09-13·09-15·09-20). PlayerState 는 미러만 |
 | 위치·회전 | ACharacter 표준 (네트워크 스무딩 내장) | |
@@ -430,7 +644,7 @@ class ICL9Damageable {
 ## 먹기 효과 (④ 4i — 2026-09-07)
 
 `ACL9Character::HostEat()` — 손에 든 것이 `Dish` 타입일 때만 먹힌다("먹을 수 있나" 플래그를 따로 두지 않고
-아이템 표의 타입이 가른다). 행의 `EatBuffs`가 가리키는 버프 행들의 효과(스탯·양·지속초)가 걸리고
+아이템 표의 타입이 가른다). 행의 `EatBuffs`가 가리키는 버프 행(`UCL9BuffDef`, 표 에셋 `Content/Data/BuffTable`)들의 효과(스탯·양·지속초)가 걸리고
 먹은 물건은 사라진다 — 값은 아이템 행이 아니라 버프 표가 갖는다 ([../plan/data/buff.md](../plan/data/buff.md), 2026-09-08).
 
 - **효과는 복제되고 서버 시각으로 만료된다**(`FCL9ActiveEffect{Stat, Amount, EndServerTime, BuffAlias}`) — 넘어짐의
@@ -492,7 +706,7 @@ ABP가 대기 자세(`AN_Farmer_SwingWindup` 루프)를, `GetSwingElapsed()`로 
 
 - **회복** `CL9Rules.SwingRecovery`(초, 헤더 **0.6** = 옛 상수 동작): `HostSwing`이 `SwingReadyTime = 지금 + SwingRecovery`를
   찍고 그 전의 뗌은 거부한다. `Validate`: `SwingRecovery >= SwingClipWindow(0.347)` ∧ `SwingHitEnd < SwingRecovery`. 한 휘두르기의
-  **첫 명중**을 찍는 틱에 `SwingReadyTime += HitStopTime` — 팔 히트스톱만큼 늦춰 맞든 빗나가든 팔이 돌아온 뒤 같은 여유가 남고,
+  **첫 명중**을 찍는 틱에 `SwingReadyTime += HitStopTime`(죽였으면 `KillHitStopTime` — `GetArmHitStopTime`, 2026-10-17) — 팔 히트스톱만큼 늦춰 맞든 빗나가든 팔이 돌아온 뒤 같은 여유가 남고,
   다음 `SwingStartServerTime` 리셋이 멈춘 팔 애님 도중에 떨어지지 않는다.
 - **예약** `CL9Rules.SwingBufferTime`(초, 헤더 **0** = 끔 = 옛 동작): `Server_UseRelease`가 회복 중(`Now < SwingReadyTime`)이고
   `SwingReadyTime − Now <= SwingBufferTime`이면 `bSwingBuffered = true`(호스트 전용, 비복제, 하나뿐·덮어쓰기). 회복이 끝나는

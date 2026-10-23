@@ -1,6 +1,6 @@
 # goal: loop-7h-kill-contribution
 
-**Status**: done (2026-10-12 — listen 2-player PIE verified, uncommitted). Build order ⑦ step **7h** ([../plan/build-order.md](../plan/build-order.md)).
+**Status**: done (2026-10-12 — listen 2-player PIE verified, uncommitted). **2026-10-16 정정**: 코드·규칙 셀은 커밋 a5af9f2(2026-10-13)에 들어갔다. Build order ⑦ step **7h** ([../plan/build-order.md](../plan/build-order.md)).
 Parent concept spec: [loop-rework.md](loop-rework.md) — decision 4 ("kill contribution would be nice"), "구현 가능성 — 처치 기여", open question 6 answered 2026-10-12.
 
 ## One-line Goal

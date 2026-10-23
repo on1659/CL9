@@ -96,6 +96,8 @@ class UCL9WalletSave : public USaveGame {   // 파일명 CL9Wallet — PIE 인�
 
 ### 스킨 (2026-10-12, 7k — [../goal/loop-7k-skins.md](../goal/loop-7k-skins.md))
 
+- 스킨 행 클래스는 `UCL9SkinDef`(`Source/CL9/Data/CL9SkinDef.h`), 표 에셋은 `Content/Data/SkinTable` 이다 — 기획 표 문서는 아직 없다(2026-10-16 감사).
+
 - 지갑 파일 버전 2 — `OwnedSkins`(산 스킨, 기본 스킨은 적지 않는다)·`EquippedSkin`(None = 기본)을 더했다. 1 짜리 파일은 스킨 칸이 빈 채로 읽힌다.
 - `UCL9WalletSubsystem::BuySkin`(이더가 모자라면 거절, 사면 깎고 저장)·`EquipSkin`(저장)·`OwnsSkin`·`GetEquippedSkin`. 입은 스킨은 빙의 때 호스트에 알린다(`ACL9PlayerController::RequestSkin`).
 - 호스트는 보유를 확인하지 않는다(각자의 파일) — 치장 전용이라 받아들인다(이더 파일과 같다).

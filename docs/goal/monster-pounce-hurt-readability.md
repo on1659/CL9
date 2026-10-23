@@ -1,7 +1,7 @@
 <!-- 원본: /autoplan 계획 2026-09-19 (~/.claude/plans/giggly-wishing-penguin.md) -->
 # 잡히는 순간을 보이게 — 예고 + 피격 읽기 계획
 
-**상태**: 구현 완료 2026-09-20(실행 monster-pounce-hurt-readability — decisions 09-20 "잡기 예고(`Pounce`) 도입"·"넘어진 동안 무적"·"잡히는 순간 카메라는 `UCameraModifier`"·"피격 방향 호"·"소리는 상태 전이 감지" 항목; PIE `docs/testing/pie-scenarios.md` C3-예고·C3·C3-다마리). 코드는 2026-09-21 현재 **미커밋**(HEAD 의 `CL9MonsterDef.h` 에 `Pounce` 열이 없다). 본문의 초안 잔재·TODO 는 지우지 않고 정정 표기만 덧붙였다.
+**상태**: 구현 완료 2026-09-20(실행 monster-pounce-hurt-readability — decisions 09-20 "잡기 예고(`Pounce`) 도입"·"넘어진 동안 무적"·"잡히는 순간 카메라는 `UCameraModifier`"·"피격 방향 호"·"소리는 상태 전이 감지" 항목; PIE `docs/testing/pie-scenarios.md` C3-예고·C3·C3-다마리). 코드는 2026-09-21 현재 **미커밋**(HEAD 의 `CL9MonsterDef.h` 에 `Pounce` 열이 없다). **2026-10-16 정정**: 코드는 같은 날 밤 커밋 4a151e7(2026-09-21 23:44)에 들어갔다 — HEAD 의 `CL9MonsterDef.h` 에 `Pounce` 열이 있다. 앞 문장은 커밋 전에 쓴 것이다. 본문의 초안 잔재·TODO 는 지우지 않고 정정 표기만 덧붙였다.
 
 ## 배경
 

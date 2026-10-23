@@ -55,12 +55,23 @@
 - 상태는 enum 하나 (`ECL9MonsterState`) — Replicated, OnRep에서 애니메이션·소리 전환. `Pounce`·`Stalk`·
   `Execute`는 enum **끝**에 그 순서로 있다(복제·에셋의 옛 값 보존).
 - **안 보이는 몬스터의 애님** (2026-10-04, [../goal/giant-stage.md](../goal/giant-stage.md)): 메시
-  `VisibilityBasedAnimTickOption = OnlyTickMontagesWhenNotRendered` — 화면에 없으면 포즈를 계산하지 않는다. 다섯 종 모두
-  판정·AI·이동이 포즈에 기대지 않아(ABP 는 게터만 읽고 노티파이·몽타주가 없다) 예외 종이 없다. 포즈를 읽는 곳은 표현뿐
-  (히트 퍼프 `spine` 소켓, 처형 카메라 소켓). AI·감각·이동은 거리와 무관하게 매 틱 돈다(재우기·디스폰·늦추기 없음 — 사용자 결정).
-  새 종의 ABP 에 게임플레이 노티파이나 몽타주를 넣으면 이 줄을 다시 본다.
+  `VisibilityBasedAnimTickOption = OnlyTickMontagesWhenNotRendered` — 화면에 없으면 포즈를 계산하지 않는다.
+  **C++ 검사**: 판정·AI·이동은 상태·시각·액터 위치를 읽으며 포즈에 기대지 않는다. 포즈를 읽는 곳은 표현
+  (히트 퍼프 `spine` 소켓, 처형 카메라 소켓)이다. **에셋 읽기 검사(2026-10-04)**: MonsterTable이 사용하는
+  닭·거위·돼지·너구리·양의 `ABP_*_A` 5개와 공유 `BP_CL9Monster`, 자체 제작 클립 50개를 확인했다.
+  클립 notify event는 모두 0개이고, ABP EventGraph는 C++ 상태·속도·시각 게터와 애님 변수 설정/분기만 사용하며
+  포즈·소켓·뼈·노티파이·몽타주에 의존하는 게임플레이 노드가 없다. 공유 BP의 생성 그래프는 빈 진입점, EventGraph는 기본 이벤트 3개뿐이다.
+  현재 5종은 전용 ActorClass 없이 공유 BP를 사용하고, 그 Mesh CDO 옵션도 `OnlyTickMontagesWhenNotRendered`이므로
+  C++ 생성자 설정을 덮어쓰는 문제나 종별 예외는 확인되지 않았다. 별도 런타임 강제 적용/에셋 저장은 추가하지 않는다.
+  새 종/ABP 변경 때는 다시 검사하며 포즈 판정이 필요한 종은 기존 옵션을 유지한다.
+  AI·감각·이동은 거리와 무관하게 매 틱 돈다(재우기·디스폰·늦추기 없음 — 사용자 결정).
 - `ChaseCooldown`은 **새로 경계 상태에 들어가는 것만** 막는다. 정전·복수·기절에서 깨어나는 건
   못 막는다.
+- **미끼** (2026-10-17 결정 F — [../goal/burnt-bait.md](../goal/burnt-bait.md)): 바닥에 멎은 **탄 요리**(`IsBurntRow() && IsFree()`)는 미끼다. `SenseTick` 이 사람을
+  못 느낀 틱에 Wander·Patrol·Return·Investigate 이고 `ChaseCooldown` 이 끝났으면 `CL9Rules.DecoyRadius` 안의 가장 가까운 미끼를 `BaitItem` 으로 잡고
+  Investigate 로 들어간다(무리 경보와 같은 문). Investigate 틱은 미끼가 있으면 **사람을 봐도 무시**하고 미끼로 걸어가(`PatrolSpeed`), `DecoyEatRadius` 안에서
+  서서 `DecoyEatTime` 을 세고, 다 먹으면 아이템을 없애고 Return. 미끼가 사라지면(주워 감) 보통 조사로 돌아간다. 다른 상태에 들어가면(경직·추격·죽음)
+  미끼를 잊는다. 사냥 중(Chase·Pounce·Stalk)인 몬스터는 미끼에 안 끌린다. 멎는 순간 아이템이 `decoy` 파동을 한 번 낸다(끌림은 파동이 아니라 거리 검사).
 - **타격 플래시** (2026-09-15): `Stun`·`Dead`에 들어간 뒤 `HitFlashTime`(rules) 동안 메시가
   `HitFlashMaterial` 오버레이를 쓰고, 지나면 벗는다 (`ACL9Monster::TickHitFlash`, 모든 머신).
   때렸다는 사실을 화면에 알리는 절반이고 나머지 절반은 공격자 카메라 킥이다
@@ -79,8 +90,10 @@
 1. **시야** — 히스테리시스: 발견은 `SightIn`, 놓침은 `SightOut`. 정전 시 `SightDark`.
    시야에서 벗어나도 `DetectGrace` 유예. 벽 차단 판정 방식은 경로 탐색 선택과 함께 정한다.
 2. **청각** — 소리 반경은 몬스터가 아니라 **행동이 정한다** (`CL9Rules`:
-   달리기 390 / 조용한 줍기 150 / 시끄러운 줍기 390 / 밀치기 255 / 미끼 330).
-   **걷기는 어그로 0.** 몬스터 쪽 값은 `HearRadius` 하나다.
+   달리기 390 / 걷기 200 / 휘두르기 300 / 타격 600 / 조용한 줍기 150 / 시끄러운 줍기 390 / 밀치기 255 / 미끼 330).
+   `SenseTick` 이 실제로 듣는 것은 **달리기·걷기·휘두르기·타격** 넷이다(매 틱 거리 검사 — 걷기는 땅 위에서 움직이는 중, 휘두르기·타격은
+   `GetSwingElapsed()`·`GetSwingHitElapsed()` 가 `NoiseLingerTime` 안; 2026-10-17 결정 C·D). 줍기·밀치기·미끼는 아직 링만 그리고 귀에는
+   안 닿는다(`HostReportNoise` 의 반경 인자는 쓰이지 않는다 — 통일은 미결). ~~걷기는 어그로 0~~ 2026-10-17 번복. 몬스터 쪽 값은 `HearRadius` 하나다(미사용).
    (예외 축 하나: `WakeRadius`가 0보다 큰 종은 그 안에서 걸어도 깬다 — 지금은 거위 450뿐,
    [../plan/data/monster/goose.md](../plan/data/monster/goose.md))
 3. **근접** — `DetectNearRadius` 안이면 게이지가 `DetectRateNear`로, 밖 시야는
@@ -284,13 +297,16 @@
 | 타격 플래시 | Stun·Dead ∧ `GetStateElapsed() < HitFlashTime` (수준) | 모든 머신 | `TickHitFlash` | 빨간 오버레이 (2026-09-15 그대로) |
 | `Hit` 소리 · 타격 퍼프 | 위 창의 **상승 에지**, 또는 창 안에서 `StateStartServerTime`이 바뀜(경직 중 다시 맞음) | 모든 머신 | `TickHitFeel` → `SpawnHitPuff` | 몬스터 메시 중심(`spine` 소켓, 없으면 `Bounds.Origin`)에서 소리 한 번 + 나이아가라 `User.Scale` 1.0 |
 | `MonsterDeath` 소리 · 큰 퍼프 | 같은 에지인데 상태가 Dead | 모든 머신 | `TickHitFeel` | `Hit` **과 함께** `MonsterDeath`, 퍼프 `User.Scale` 3.0 |
-| 몬스터 히트스톱 | Stun·Dead ∧ `GetStateElapsed() < HitStopTime` (수준) | 모든 머신 | `TickHitFeel` | `MeshComponent->bPauseAnims` 켬→끔. 이동·AI·히트박스는 흐른다 |
-| 팔 히트스톱 | `SwingHitServerTime`(COND_OwnerOnly) 뒤 `HitStopTime` 동안 | 때린 사람 화면 | `ACL9Character::GetSwingAnimElapsed` | ABP 의 `SwingElapsed` 소스가 이 게터 — 명중 프레임에 머물다 이어서 돈다. `GetSwingElapsed`(판정)는 그대로 |
+| 몬스터 히트스톱 | Stun ∧ `GetStateElapsed() < HitStopTime`, Dead ∧ `< KillHitStopTime` (수준, 2026-10-17 분리) | 모든 머신 | `TickHitFeel` | `MeshComponent->bPauseAnims` 켬→끔. 이동·AI·히트박스·죽음 발사는 흐른다 |
+| 타격 스쿼시 (2026-10-17) | Stun·Dead ∧ `GetStateElapsed() < HitSquashTime` (수준) | 모든 머신 | `TickHitFeel` | 메시 상대 스케일을 세로 `HitSquashScale`→1(2차 감속), 가로 1/√세로 로 — 걸기 전 스케일을 적어 두고(`HitSquashBaseScale`) 창이 끝나면 그 값으로 되돌린다. 구·히트박스·이동은 안 건드린다 |
+| 팔 히트스톱 | `SwingHitServerTime`(COND_OwnerOnly) 뒤 `HitStopTime`, 그 명중이 죽였으면(`bSwingHitKill`, COND_OwnerOnly) `KillHitStopTime` 동안 | 때린 사람 화면 | `ACL9Character::GetSwingAnimElapsed` | ABP 의 `SwingElapsed` 소스가 이 게터 — 명중 프레임에 머물다 이어서 돈다. `GetSwingElapsed`(판정)는 그대로 |
 | `Swing` 소리 | `SwingStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리. 맞든 빗나가든 |
 | `Hurt` 소리 | `KnockdownStartServerTime` 변화 | 모든 머신 | `ACL9Character::UpdateHitSounds` | 폰 자리 |
 | `MonsterPounce` 소리 | **상태 전이**: `State == Pounce ∧ (지난 틱 State != Pounce ∨ StateStartServerTime 변화)` | 모든 머신 | `TickStateSounds` | 메시 중심. 창(elapsed)이 아니라 전이라 늦게 온 복제도 놓치지 않는다. 첫 틱은 기준값만(`bStateSoundPrimed`) |
 | `MonsterCatch` 소리 | 같은 전이 감지, 상태가 Catch | 모든 머신 | `TickStateSounds` | 메시 중심. 잡힌 쪽 `Hurt`와 같은 순간에 겹친다(Concurrency는 에셋). 헛침엔 없다. `TickHitFeel`의 Stun·Dead 창과 별개라 Catch가 관측 전에 Stun·Dead로 덮이면(같은 틱 피격) 그 잡기 소리는 빠진다 — `Hurt`가 이미 나므로 허용 |
 | `MonsterNear` 소리 | 근접 소나 사건 `monster_prox` (`HostTickProxNoise` → 파동) | 모든 머신 | `UCL9WaveRenderer::PlayWave` | 파동 행의 `SoundRow` 열 — 링과 같은 박자, 시각 게이트 앞이라 링이 안 그려져도 난다 ([wave.md](wave.md)) |
+| `MonsterChaseBegin` 소리 · 셰이크 `ChaseBegin` · 공포 점프 | **상태 전이**: Chase 진입(같은 전이 감지) ∧ (내 화면에 보임 ∨ `ChaseBeginRadius` 안) | **소유 폰만** | `UCL9FearComponent::TickMonsters` | 몬스터 자리. 타깃은 복제되지 않아 거리·화면이 "누구를 쫓는지"를 대신한다 ([character.md](character.md) 겁먹는 표현, 2026-10-17) |
+| `MonsterSighting` 소리 · 셰이크 `Sighting` | 깨어 있는 몬스터가 내 화면에 **처음** 들어옴 ∧ `SightingRadius` 안 ∧ 쿨다운 끝 | **소유 폰만** | 같은 곳 | 몬스터 자리, `SightingCooldown` 마다 한 번 |
 | `Place` 소리 | 아이템 `HoldState` Held·Worn → Free | 모든 머신 | `ACL9Item::ApplyHoldState` (호스트는 OnPlaced/OnThrown, 클라는 OnRep) | 아이템 자리. 수레 Pushed→Free·죽음 드랍은 아님 |
 | `Footstep` 소리 | 수평 이동 거리 누적 ≥ 보폭 (`FootstepStrideRun/Walk`) | 모든 머신 | `ACL9Character::TickFootstepSound` · `ACL9Monster::TickFootstep` | 발밑, 피치 ±8 %. 폰은 속도 > `WalkSpeed`면 달리기 보폭, 몬스터는 Chase 면 달리기 보폭. 서 있으면·공중이면·시체면 안 난다. 클라의 몬스터는 보간된 메시 자리로 잰다 |
 | 죽음 발사 | `Die(Source)` | 호스트 (트랜스폼 복제) | `HostTickDeathLaunch` (`HostTickAI` 의 Dead 거름 앞) | 원점→몬스터 수평 `DeathLaunchSpeed` + 위 `DeathLaunchUp`, 월드 중력. 몸체 구 스윕·WorldStatic 오브젝트 질의는 바닥을 지나쳤다(2026-09-18 PIE — `Floor_0` 은 BlockAllDynamic = WorldDynamic) → **Visibility 채널** 선 트레이스 `TraceWorld`(위 "세상 트레이스" — 폰·아이템·몬스터에 맞으면 무시하고 뒤를 다시 긋는다)로 검사한다 — 수평 선분이 막히면 그 자리에서 수평 속도 0, 발밑(중심 − Radius)까지 내려 그은 선이 닿으면 발을 바닥에 스냅하고 끝. 죽는 클립은 그대로 |
@@ -333,14 +349,19 @@
 전에는 스폰이 판 시작 한 번(`StartNight` → `SpawnNightPopulation` 의 큐)뿐이었다. 이제 판이 흐르는 동안 **예고 없이** 한 마리씩 더 나온다
 (사용자 결정 2026-10-11 "언제 나올지 모른다는 건 플레이어 기준", 조건·위치·수는 2026-10-12 사용자 답).
 
-- **무장** `ACL9GameMode::ArmMidSpawns` — `SpawnNightPopulation` 바로 뒤. 생성된 맵이 있고 `CL9Rules.MidSpawnInterval` > 0 이고
-  총량 = round(판 시작 큐 수 × `MidSpawnCapRatio`) > 0 일 때만 `MidSpawnInterval` 반복 타이머를 건다. 종 풀 = 사이트 행 `MonsterSpawns` + 지어진 맵의 구역 행,
-  엔트리마다 무게 Min+Max. 로그 `Night N: mid-round spawns armed — every Ts, cap C (S at start × R), E species entries.` / `… off (…)`.
-- **한 번** `MidSpawnTick` — 종을 무게로 하나 뽑고, 지어진 맵들의 `Monster` 지점(마당은 7b 로 없음)을 무작위 순서로 **최대 64개** 본다. 살아 있는 **모든** 플레이어에게서
-  `MidSpawnMinDistance` 이상이고, 각자의 눈(`GetPawnViewLocation`)에서 그 자리까지 `TraceWorld` 가 지형에 막히는(= 안 보이는) 첫 지점에 `SpawnMonster`(판 시작과 같은 함수·조정 스폰),
-  `NightSpawned` 에 넣는다. 없으면 이번은 건너뛴다(다음 간격에 다시). 로그 `mid-round spawn k/C — <종> at <자리>, nearest player <cm>, hidden from N player(s).`
-- **멈춤** — 총량에 닿으면 스스로, 판이 끝나는 모든 길은 `CancelNightWork` 가 타이머를 지운다(귀가·만료·전멸·판 종료·새 판). 다음 판은 자기 총량으로 다시 무장한다.
-- 값은 전부 초안이다(밸런스 나중) — [../plan/data/rules.md](../plan/data/rules.md) `MidSpawn*`.
+**2026-10-20 위협 예산으로 바뀜** (결정 #38 A4 — [C:\Work\CL9\docs\goal\threat-budget-spawns.md](C:\Work\CL9\docs\goal\threat-budget-spawns.md)). 판 중간에 나오는 것은
+구역의 실내 위협 풀이고, 수는 구역 파워 예산이 정한다. 판 시작 총량에 비례하던 `MidSpawnCapRatio` 는 없어졌다.
+
+- **판 시작** `SpawnNightPopulation` — 구역마다 가축 줄(`Zones[].MonsterSpawns`)을 큐에 넣고, 예산 = `ThreatBudget` × `ThreatBudgetCurve` 가운데
+  `ThreatStartShare` 몫을 `CL9ThreatBudget::Pick`(희귀도 가중 · 파워 ≤ 남은 예산 · 한 판 나온 수 < `SpawnMaxCount` · 종 수 ≤ `ThreatKindsMax`)으로 뽑아 큐에 넣는다.
+  남은 몫과 구역 상태는 `ThreatZones` 에 남는다. 로그 `zone <이름> …: threat budget B (base × mult) — start share … spent … [종들], M left for mid-round, kinds max K.`
+- **무장** `ACL9GameMode::ArmMidSpawns` — `MidSpawnInterval` > 0 이고 판 중간 몫이 남은 구역이 있으면, `MidSpawnFirstDelay` + 간격 뒤부터 간격마다 반복.
+  로그 `mid-round spawns armed — budget B over N zone(s), opens at Ts, full by Ts, check every Ts.` / `… off (…)`.
+- **한 번** `MidSpawnTick` — 시각 t 의 몫 = 판 중간 예산 × (t − `MidSpawnFirstDelay`) / `MidSpawnRampTime`(1에서 멈춤). 쓴 것이 그보다 적은 구역 가운데 하나를 골라
+  그 풀에서 하나를 뽑고, 그 구역 깊이 띠의 `Monster` 지점을 무작위로 **최대 64개** 본다. 살아 있는 **모든** 플레이어에게서 `MidSpawnMinDistance` 이상이고
+  각자의 눈에서 `TraceWorld` 가 지형에 막히는 첫 지점에 `SpawnMonster`. 로그 `zone <이름> … mid-round spawn at Ts — <종> (power P, spent S/M, open %) at …`.
+- **멈춤** — 어느 구역에서도 더 뽑을 수 없으면 스스로(`mid-round threat budget used up`), 판이 끝나는 모든 길은 `CancelNightWork` 가 타이머를 지운다.
+- 값 — [C:\Work\CL9\docs\plan\data\rules.md](C:\Work\CL9\docs\plan\data\rules.md) `MidSpawn*`, [C:\Work\CL9\docs\plan\data\site.md](C:\Work\CL9\docs\plan\data\site.md) 구역, [C:\Work\CL9\docs\plan\data\monster\common.md](C:\Work\CL9\docs\plan\data\monster\common.md) "스폰 예산".
 
 ## 종별 차이를 다루는 규칙
 

@@ -150,7 +150,7 @@ void ACL9GameMode::SpawnItem(const FName& ItemAlias, const FVector& Location) {
 }
 ```
 
-### 3️⃣ 목적지 설정에서 액터들 초기화 (권장)
+### 3️⃣ 목적지 설정에서 액터들 초기화 (권장 — 아래는 예시 코드다. `InitializeNight` 라는 함수는 소스에 없다, 2026-10-16 표기)
 
 ```cpp
 void ACL9GameMode::InitializeNight(int32 Day) {

@@ -182,6 +182,7 @@ py -3 .claude/hooks/render_roles.py --list
    동료 통지·잠금·taskkill·재기동은 브로커가 한다. 브로커를 못 쓸 때만 같은 문서의 수동 절차(`acquire build --pid` …).
    빌드 실패는 결과의 **파일 주인 역할**의 에이전트에 오류 줄을 보내 고치게 한다(리드가 직접 고치지 않는다) → 다시 audit → 다시 요청.
    `needs_user`(같은 오류 연속 실패)면 멈추고 사용자에게 알린다.
+   `QUEUED`(종료 코드 2 — 잠금·보류·묶음 대기)는 사용자에게 묻지 않는다. 잠금도 직접 풀지 않고 `--ticket N` 으로 이어서 기다린다 — 대기는 브로커가 처리한다.
 7. PIE: `acquire pie` → `state <slug> PIE` → 보고서들의 'PIE 확인 항목' 합집합을 `docs/testing/pie-scenarios.md` 절 문자대로 MCP + `cl9.*` 치트로
    확인 → `release`. 밸런스 표 행의 "PIE 관찰" 도 여기서 본다.
 8. 마무리: 'decisions.md에 남길 결정' 항목을 `docs/decisions.md` 끝에 붙인다(밸런스 값은 PIE 관찰 전이면 `초안` 표시), `memory/work-progress.md`

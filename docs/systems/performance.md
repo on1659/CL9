@@ -8,6 +8,7 @@
 > `stat dumphitches` 스택), 첫 파동 링의 나이아가라 로드(≈500ms, 프로세스당 1회), 첫 타격의 플래시 재질·퍼프, 종별 첫 스폰의 메시·ABP(35~40ms).
 > 고침은 아래 "첫 사용 동기 로드 금지" 규칙 — `UCL9GameInstance::Init` 이 표의 소프트 참조를 전부 미리 올리고 `WarmAssets` 로 붙든다.
 > 렌더 기본값(루멘·VSM·하드웨어 RT·Substrate·Nanite·TSR)은 바꾸지 않는다 — 실측 절감 ≤1ms 이고 루멘은 밤 조명의 전제다.
+> **예외(2026-10-15 룩 개편)**: 레트로 화면이 켜진 동안 `r.ScreenPercentage.MaxResolution`·`r.Upscale.Quality`·`r.AntiAliasingMethod`(FXAA/없음)를 게임 설정 우선순위로 덮는다 — 끄면 원복([settings.md](settings.md) 화면).
 
 ## 예산
 
@@ -109,11 +110,17 @@ py -3 .claude/hooks/cl9_lock.py release
 
 ### 틱
 - `Tick` 은 매 프레임 할 일이 있을 때만 켠다(`bCanEverTick`). 시간 뒤에 한 번 할 일은 타이머, 상태가 바뀔 때 할 일은 OnRep·델리게이트.
-  지금 틱하는 클래스 9개(Character·Cart·FlashItem·Item·Kitchen·Monster·NightLighting·SiteMap·TruckPad)는 각각 이유가 있다 — 새로 더할 때 이유를 주석에 적는다.
+  지금 틱하는 클래스 10개(Character·Cart·FlashItem·Item·Kitchen·Monster·NightLighting·SiteMap·TruckPad·**DepartLever**)는 각각 이유가 있다 — 새로 더할 때 이유를 주석에 적는다.
+  - **`ACL9DepartLever`**(2026-10-06, round-start-truck-intro K2): 손잡이 자세(판 = 내림, 그 밖 = 올림)를 복제된 페이즈에서 **매 틱 파생**하는 표현 전용 틱이다 — 복제 상태를
+    늘리지 않으려는 선택이다. 틱 본문은 페이즈 비교 하나고 **자세가 바뀔 때만 손잡이 컴포넌트를 돌린다**(`SetRelativeRotation`). 레벨에 하나뿐이다.
+    같은 판의 `ACL9Truck`·`ACL9PowerSwitch` 는 틱하지 않는다(스위치 불빛은 `ACL9SiteMap` 의 램프 무리 패스가 바뀔 때만 켜고 끈다).
+  - **전원 인트로 카메라**(2026-10-06, K10 — 같은 실행의 gameplay 가 `ACL9PlayerController` 에 만든다): **로컬 플레이어 컨트롤러 하나**의 틱이 구동한다(원격 컨트롤러·연출 밖에서는 일하지 않는다).
+    틱은 `GameState` 의 켠 시각·내 목적지에서 창을 판단하고 카메라 위치를 (서버 지금 − 켠 시각)의 함수로 낸다 — 틱 사이에 쌓는 상태가 없다.
+    **길(칸 BFS)과 구간 스윕은 연출을 시작할 때 한 번만** 만든다(아래 "질의"). 임시 카메라는 로컬 스폰(복제 안 함)이고 끝나면 수명으로 정리한다.
 - 틱 안에서 `TActorIterator`·`GetAllActorsOfClass` 는 **플레이어(≤4)** 처럼 상한이 작은 것만. 아이템·몬스터·`ACL9ActorBase` 전체를 매 프레임 훑지 않는다 —
   사건이 날 때(줍기·스폰·죽음) 캐시하거나 오버랩 이벤트를 쓴다. `TObjectIterator` 는 틱에서 금지(초기화·치트 전용).
 - 표현 전용 틱(플래시·소리·발소리)은 상태 시각에서 파생해 **값이 바뀔 때만** 컴포넌트를 건드린다(`SetIntensity`·`SetVisibility` 매 프레임 호출 금지 —
-  `ACL9SiteMap::SetLampsOn` 처럼 같은 값이면 나간다).
+  `ACL9SiteMap::SetLampGroup` 처럼 같은 값이면 나간다 — 2026-10-16 정정: 옛 이름 `SetLampsOn`).
 - 물리 아이템은 재운다(`CL9Item` 변위 기준 잠들기). 잠든 몸체에 매 틱 힘을 주지 않는다.
 - 몬스터 감각(`SenseTick`)은 마리당 프레임당 시야 트레이스 1회(플레이어 수만큼) — 종류가 늘어도 이 틀을 넘기지 않는다. 몬스터 스켈레탈 애니가
   게임 스레드의 가장 큰 단일 항목(마리당 ≈0.23ms)이다: 새 종의 ABP 는 `BlueprintUpdateAnimation` 을 얇게(변수 복사만), 계산은 C++ 게터.
@@ -122,10 +129,14 @@ py -3 .claude/hooks/cl9_lock.py release
 - 프레임당 트레이스 수를 **셀 수 있어야** 한다: 발생 사건 × 광선 수. 파동 `OcclusionRays` 처럼 표 컬럼으로 두고 balance 가 정한다.
 - 반복 질의는 사건 단위로(파동은 **발생 때만** 광선을 쏘고 링 차폐는 나이아가라 Collision 이 한다 — [wave.md](wave.md) "비용").
 - 휘두르기(2026-09-22): 판정 구간의 틱마다 구 스윕 1 + 걸린 살아 있는 몬스터 수만큼 가림 선 트레이스 + 표면 선 트레이스 1 회 / 넉백: 스텝(틱)마다 선 트레이스 1 회 — [character.md](character.md) 판정·[monster.md](monster.md) "타격 넉백".
+- 전원 인트로(2026-10-06): 호스트가 스위치를 켤 때 `IntroCandidates` 가 후보마다 칸 BFS 1회를 **한 번만** 돈다(틱이 아니다). 각 머신의 인트로 카메라는 **연출 시작 때 한 번**
+  길의 구간마다 구 스윕(반지름 20, WorldStatic) 1회를 쏘고, 막히면 Z 를 50 cm 씩 최대 150 cm 올려 다시 본다(구간당 최악 4회) — 틱마다 쏘지 않는다.
+  2026-10-11(K10-F): 시작 때 머신마다 칸→칸 BFS(`FindCellPathToCell`) 1회가 더 돌고, 모이기 길 G 의 구간마다 같은 구 스윕을 쏜다(구간당 최악 4회, 양 끝이 고정된 구간은 훑지 않는다).
+  인트로 동안 로컬 컨트롤러가 매 틱 벡터 거리 비교 1회로 자기 몸 전환을 정한다(트레이스 없음).
 - 넓은 반경 오버랩(`OverlapMultiByObjectType`)은 작은 반경·오브젝트 타입 필터와 같이. 조준(`ResolveFocus`)의 `PickRadius` 구가 상한 예.
 
 ### 광원
-- 동적 그림자 광원은 **손전등·헤드램프·달(방향광)** 셋뿐. 시설 조명(작업등·모닥불)은 `SetCastShadows(false)`([light.md](light.md) 광원 목록) — 새 소품 빛도 같다.
+- 동적 그림자 광원은 **손전등·헤드램프·달(방향광) + 원뿔이 있는 시설 조명**(작업등 스포트 — 2026-10-15 룩 개편, 벽의 형태가 그림자에서 나온다). 포인트 시설 조명(모닥불)은 그림자 없음, 모든 시설 조명은 볼류메트릭 그림자 없음([light.md](light.md) 룩 개편). 거리로 그림자를 토글하지 않는다 — 예산을 넘으면 `MaxDrawDistance` 로 라이트째 페이드. 그림자 램프를 더할 때는 `stat gpu` ShadowDepths·VolumetricFog 를 전후로 잰다.
 - 켜진 램프 수는 `LampDensity`(사이트 행)가 정한다 — 모듈에 빛 소품을 더하면 이 비율이 총량을 잡는다. 깜박임(`TickFlicker`)은 켜진 램프만 돈다.
 - 새 광원 종류를 넣기 전에 `stat gpu` 의 `Lights`·`ShadowDepths` 를 전후로 본다(기준 0.2~0.5ms).
 

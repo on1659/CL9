@@ -3,6 +3,16 @@
 먼저 [공통](../common.md)과 [기획 행](../../plan/data/monster/common.md)을 읽는다.
 몬스터는 **재료의 주인**이다. 종과 상태가 어두운 실루엣·자세로 구분되어야 한다.
 
+## 신규 외형 제작의 시작점
+
+- **닭 탈 괴물 `chicken_disguise`:** [현재 제작·인계 지시](chicken_disguise-animation-handoff.md).
+  TRELLIS 닭 생성, 기존 본체의 보정, 속 빈 탈·리그·벗기/재착용·실제 영상 검수를 이 문서에서 관리한다.
+- [TRELLIS 공통 사용법](../tools/trellis2.md)은 도구 환경과 재개 규칙의 정본이다.
+- [전신 외형 기록](chicken_disguise-fullbody-model.md), [이전 자연 동작 기록](chicken_disguise-natural-production.md),
+  [초기 시안 이력](chicken_disguise-animatic.md)은 비교·실패 분석 자료다. 현재 제작 지시를 별도로 복제하지 않는다.
+- `chicken_disguise`는 기존 런타임 `chicken_a`와 구분된 독립 시안이다. 아래 기존 종의 뼈·Catch 시간·UE 연결 상태를
+  새 탈착 모델에 자동 적용하지 않는다. 게임 연결은 별도 검수 전까지 미연결로 기록한다.
+
 ## 카드
 
 | 카드 | 종 | 역할(2026-09-20 기준) |

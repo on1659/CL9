@@ -516,7 +516,7 @@ spawnIdlePauseTimer = Mathf.Max(spawnIdlePauseTimer, 5f);
 
 ## 연출
 
-`MusicEnemyNear`는 몬스터가 가까울수록 볼륨이 올라가는 상시 루프다(`MaxDistance = 15f`, `MinDistance = 4f`, `OnScreenDistance = 10f`). 시야 차단 레이캐스트를 하므로 벽 너머의 몬스터는 덜 들리고, 몬스터마다 `Enemy.EnemyNearMusic` 플래그로 이 음악을 쓸지 정한다.
+`MusicEnemyNear`는 몬스터가 가까울수록 볼륨이 올라가는 상시 루프다(코드 기본값 `MaxDistance = 15f`, `MinDistance = 4f`, `OnScreenDistance = 10f` — **2026-10-17 정정: 에셋 실값은 5 / 1 / 10, `FadeSpeed` 0.2** — [../scare-mechanics.md](../scare-mechanics.md) 2.3). 시야 차단 레이캐스트를 하므로 벽 너머의 몬스터는 덜 들리고, 몬스터마다 `Enemy.EnemyNearMusic` 플래그로 이 음악을 쓸지 정한다.
 
 `MusicEnemySighting`은 "처음 봤을 때" 스팅어다. 1초마다 `enemiesSpawned`를 훑어 `Enemy.SightingStinger`가 켜진 몬스터가 `DistanceMax` 안에 있고 **로컬 화면에 실제로 보이며**(`OnScreen.OnScreenLocal`) 방금 텔레포트하지 않았을 때만 울린다. 이 컴포넌트는 대상 몬스터에 `EnemyPlayerDistance`와 `EnemyOnScreen`이 없으면 `Debug.LogError`를 낸다 — **연출 요구사항이 컴포넌트 요구사항을 만든다.** `MusicEnemyCatch`는 잡혔을 때 무작위 클립을 재생하고 배경음악을 10초 끊는다.
 

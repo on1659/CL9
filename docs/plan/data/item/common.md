@@ -15,10 +15,14 @@
 | `Weight` | float | 무게 — 들었을 때의 감속이 여기서 계산된다 | **미정** |
 | `GripOffset` | Vector | 손에 들었을 때 손 소켓 `HandGrip_R` 기준 상대 위치(cm) — 손잡이가 메시 원점에 없는 물건용. 두 손 물건(냄비·작업등)은 양손 중점 (12.3, −5.4, 17.3) | (0,0,0) |
 | `GripRotation` | Rotator | 손 소켓 기준 상대 회전 — 손전등은 렌즈(+X)가 카메라 정면을 보도록 (−17.8, 136.8, 69.3), 두 손 물건은 똑바로 서도록 (1.6, 81.6, 51.8). 1인칭 Hold 자세의 손 방향에서 역산한 값 ([../../../systems/inventory.md](../../../systems/inventory.md)) | (0,0,0) |
+| `HeldScale` | float | **내 1인칭 화면에서만** 메시 크기 배율 — 바닥·남의 손에서는 그대로다. 판정 반경(`Radius`)에 맞춘 메시가 손에서 화면을 덮어 따로 줄인다(그립 오프셋도 같은 배율로 줄어 쥔 자리가 손바닥에 남는다). 2026-10-20 플레이테스트 2·3번: 계란 다섯 상태 0.4 · 고기 세 상태 0.3 · 프라이팬 0.35(무기 자세는 손을 눈 가까이 치켜들어 계란보다 더 줄였다), 나머지 1 | 1 |
 
 그립 두 열의 **정본은 `ItemTable` 행이고 값은 art가 메시에서 역산한다**(고기는 뼈를 잡고, 프라이팬은 손잡이를 —
 `Tools/Blender/measure_item_grip.py`, 2026-09-13). 위 표의 수치는 예시일 뿐 표 행이 바뀌면 여기를 고치지 않는다.
-| `HoldPose` | enum | 들었을 때 팔 자세 범주 — `Small` 한 손(달걀·고기·팬) / `Flashlight` 앞을 향해 쥠(손전등·헤드램프) / `Large` 두 손(냄비·작업등) — **들고 있는 동안 퀵슬롯 전환·줍기가 잠긴다**(리썰 twoHanded, 2026-09-13) / `None` 자세 없음(수레 — 앞에서 미는 액터라 손에 들지 않는다) | `Small` |
+2026-10-20 `HoldPose` `Weapon` 으로 옮긴 행(고기 세 상태·프라이팬)은 같은 스크립트의 `club` 해(무기 대기 자세에서 몽둥이처럼 세워 쥠, 때리는 면이 정면)를
+쓴다 — 프라이팬 `GripOffset` (1.0, 8.2, 26.4) · `GripRotation` (73.6, 101.1, −176.3)(옛 Small 값 (−2.0, 26.4, −5.2) · (90, 101.6, 28.1)), 고기는 [meat.md](meat.md).
+적용 스크립트 `Tools/Unreal/apply_weapon_hold_rows.py`.
+| `HoldPose` | enum | 들었을 때 팔 자세 범주 — `Small` 한 손(달걀) / `Weapon` 휘두를 수 있는 물건을 몽둥이처럼 치켜든 무기 대기 자세(고기 세 상태·프라이팬 — `UseAction` 이 `Swing` 인 행, 2026-10-20 플레이테스트 3번. 1인칭 `AN_Farmer_FPHoldWeapon`, 전신은 `Small` 클립을 그대로 쓴다) / `Flashlight` 앞을 향해 쥠(손전등·헤드램프) / `Large` 두 손(냄비·작업등) — **들고 있는 동안 퀵슬롯 전환·줍기가 잠긴다**(리썰 twoHanded, 2026-09-13) / `None` 자세 없음(수레 — 앞에서 미는 액터라 손에 들지 않는다) | `Small` |
 | `bStackable` | bool | 겹치나 | false |
 
 ## 사용 (좌클) — 2026-09-12, 2026-09-13 대기→타격
@@ -47,7 +51,7 @@
 본 적 있음은 `Alias`별로 내 PC 설정(`UCL9GameUserSettings.SeenItemHints`)에 남는다 (2026-09-13).
 
 **운반은 `QuickSlots`(4) 칸 퀵슬롯이다** ([../rules.md](../rules.md), 2026-09-13). 활성 칸 하나만 손에 실물로
-들리고 나머지 칸은 데이터(별칭·상태·굴린 값)만 남는다 — **비활성 칸에서는 빛만 잃고 들키는 건 그대로다.**
+들리고 나머지 칸은 데이터(별칭·상태·굴린 값·조명 스위치)만 남는다 — **비활성 칸의 켜진 손전등은 주머니 빛으로 계속 비춘다** (2026-10-17).
 칸 전환은 휠·숫자키로 즉시이며 잠금 시간이 없다. 규칙 전문은
 [../../../systems/inventory.md](../../../systems/inventory.md).
 
@@ -61,7 +65,8 @@
 
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
-| `Radius` | float | 반경 (cm) |
+| `Radius` | float | 반경 (cm) — 보통 행은 몸체(구)의 반경. `bMeshIsBody`·`bMeshCollisionBody` 행은 몸체에 쓰이지 않고 놓기·흘리기·라벨 높이에만 쓰인다 |
+| `bMeshCollisionBody` | bool (기본 false) | **메시의 심플 콜리전(UCX)이 곧 몸체**인가 — 구 대신, 메시 자동 배율 없이 실물 크기로. 납작해서 구로는 눕지 못하는 것(계란후라이). 수레(`bMeshIsBody`)와 달리 손에 드는 보통 아이템이고 밀기·소켓 열은 읽지 않는다. 몸체의 채널·응답은 구와 같다. `bPhysicsEnabled`·`Mesh`(UCX 포함)가 있어야 하고 `bMeshIsBody`와 함께 켤 수 없다(로드 검사). `Mass`(kg, 0 = 엔진이 콜리전 부피로 계산)를 읽는다. 구 행에서 이 행으로 바뀌면 몸체가 구에서 메시로 넘어간다 — 한 방향이다 |
 | `bFragile` | bool | 깨지나 |
 | `CrackSpeed` | float | 금 가는 충격 (cm/s) |
 | `BreakSpeed` | float | 성한 것이 깨지는 충격 (cm/s) |
@@ -90,11 +95,8 @@
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
 | `ActorClass` | class | 빛을 내려면 `BP_CL9FlashItem`(스포트, 좌클 토글) — 2026-09-11 클래스 분리 전에는 `bEmitsLight`+`LightKind` 컬럼이었다. 아래 값은 그 클래스가 읽는 광원 수치다 |
-| `LightRadius` | float (기본 0) | 소지 중 발광 반경 / 손전등 도달 거리 (cm) |
-| `LightIntensity` | float (기본 5000) | 밝기 — 포인트 라이트는 칸델라, 손전등은 빔 강도 |
-| `LightConeAngle` | float (기본 32) | 손전등 외곽 원뿔의 반각 (도) — 발광(점광원)에서는 무시된다 |
-| `LightScattering` | float (기본 1, 하한 0) | 볼류메트릭 안개 속 빔 후광 세기 (`VolumetricScatteringIntensity`, 1 = 엔진 기본) — 2026-09-17, [../../../systems/light.md](../../../systems/light.md) |
-| `bLightLostInPocket` | bool (기본 true) | 활성이 아닌 퀵슬롯 칸에 있을 때 빛을 잃나 (열 이름은 옛 품 시절 그대로 — 비활성 칸은 액터가 없어 자연히 꺼진다) |
+| `LampKind` | FName | 이 아이템이 내는 빛 — 룩 표의 램프 종류 이름(`Flashlight` · `Headlamp`). 세기·거리·원뿔·산란·색은 그 종류가 갖는다 (2026-10-16, 옛 `LightRadius`·`LightIntensity`·`LightConeAngle`·`LightScattering` 열 — [../look.md](../look.md)) |
+| ~~`bLightLostInPocket`~~ | — | **제거 (2026-10-17)** — 켜진 손전등은 비활성 칸에서도 주머니 빛으로 비춘다([../../../systems/light.md](../../../systems/light.md) 손전등). 열이 뜻을 잃어 `CL9ItemDef.h` 에서 뺐다 |
 | `CarrierSeenRadius` | float (기본 0) | 발광 소지자가 정전 때 보이는 거리 (cm) |
 
 **발광이 세지면 손전등의 역할이 무의미해지고, 약하면 "들고 있으면 들킨다"가 사라진다.**

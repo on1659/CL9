@@ -13,6 +13,39 @@
 
 ---
 
+## 층 (2026-10-13 사용자 결정 — 컬럼은 초안, 구현 전)
+
+한 곳의 위협은 세 층이고, 행마다 어느 층인지가 있어야 한다 — [../../story.md](../../story.md) "위협의 세 층"이 정본이다.
+
+**같은 날 뒤에 번복 — 그냥 동물과 빈 것은 행이 하나다.** 2026-10-13 사용자: "닭들이 광폭화 게이지가 꽉 차면 괴물로 변신한다.
+광폭화 전이랑 후랑 다른 것뿐. 닭마다 게이지 기준이 달라서 어떤 닭은 금방 변하고 어떤 닭은 이번 게임 내내 변신을 못 한다."
+그래서 행은 두 종류다. 이야기의 세 층은 그대로이고, 그냥 동물과 빈 것은 **같은 행의 광폭화 전·후**다.
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `Tier` | enum `ECL9MonsterTier` | `Beast`(그 곳의 동물 — 탈을 쓴 것이 섞여 있다, **게이지 있음**) · `Monster`(탈 없는 일반 몬스터, **게이지 없음**) |
+
+| 값 | 어느 행 | 규칙 |
+|---|---|---|
+| `Beast` | `chicken` · `pig` | 많다. 잡으면 HP를 깎고 0이면 죽는다(돼지는 잡으면 처형 — 그 행의 값). 개체마다 광폭화 문턱을 굴리고, 문턱이 판 안에 닿으면 터진다(빈 것), 안 닿으면 그냥 동물이다. 실밥은 모델에 있고 기록은 그 곳의 소품이다. **판 중간 스폰(7e)은 이 층을 뽑는다** |
+| `Monster` | `goose` · `raccoon` | 한 판 0~1. 사연·게이지·광폭화 없음. 종마다의 규칙(경보·스토킹·처형) 그대로. 7e가 안 뽑는다 |
+
+세 층은 곳마다 다 있다 — 양계장은 닭 행 하나(그중 몇 마리가 터진다), 돼지우리는 돼지 행 하나. **양(`sheep`)은 뺀다**(2026-10-13 사용자) —
+어느 층에도 없고, 행·레벨 배치·문서 정리는 별도 작업이다.
+스폰 표([../site.md](../site.md) `MonsterSpawns`·구역)는 그대로 행 단위다 — 빈 것 수를 따로 적지 않고 문턱 분포가 정한다.
+
+### 광폭화 게이지 — 컬럼 초안 (구현 전, 값은 밸런스 때)
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `RageThresholdMin` | float | 개체가 굴리는 문턱의 하한. 0이면 이 종은 게이지가 없다(`Monster`) |
+| `RageThresholdMax` | float | 〃 상한. 판 안에 닿을 수 없을 만큼 크면 "이번 판 내내 못 터지는" 개체가 나온다 |
+| `RageGainPerEvent` | float | 그 곳의 광폭화 조건 사건 하나가 채우는 양 (닭: 둥지 가까이서 알이 깨지는 소리 — 조건 자체는 story.md 틀의 "광폭화 조건") |
+| `RageDecayPerSec` | float | 초당 줄어드는 양. 0이면 안 줄어든다 |
+| 광폭화 후 값 | — | 속도·시야·치명 여부 등 — story.md "이 스토리가 기존 기획에 요구하는 것" 첫 행. 컬럼은 그때 정한다 |
+
+HP처럼 **문턱은 개체 스폰 때 `Min~Max`에서 굴린 값**이다. 행 값이 같아도 개체마다 다르게 터진다.
+
 ## 체력
 
 | 컬럼 | 타입 | 뜻 |
@@ -82,12 +115,15 @@ HP는 `HpMin`~`HpMax`에서 굴린 정수다. 즉사를 피하고 싶은 종은 
 | `ChaseBreakTime` | 포기하고 서서 두리번 (초) |
 | `ChaseCooldown` | 포기 후 재추격 금지 (초) |
 | `HomeRange` | 집에서 멀어질 수 있는 한계 (cm) |
+| `bRehomeOnLeash` | 켜면 `HomeRange` 를 넘어 추격을 놓을 때 옛 집으로 돌아가지 않고 그 자리를 새 집으로 삼는다 (닭만 켬, 2026-10-23) |
 | `DeaggroRadius` | 짐을 다 놓았을 때 풀리는 거리 (cm) |
 | `CatchRadius` | 잡는 반경 (cm) — 0이면 잡지 않는 종 |
 | `CatchDamage` | 잡았을 때 플레이어 타격량 (HP) — 즉사 여부는 이 값과 HP가 정한다 |
 | `PounceRadius` | 잡기 예고가 시작되는 거리 (cm) — 이 안에서 멈춰 서서 예고한다 |
 | `PounceWindup` | 예고 길이 (초) — 이동 0, 타깃을 향해 `TurnRate`로 돌며 기다린다. **0이면 예고 없음** |
-| `PounceLunge` | 예고 끝에 타깃의 지금 위치 방향으로 한 번에 덮치는 거리 (cm) — 벽이면 거기까지 |
+| `PounceLunge` | 덮치는 거리 (cm) — 벽이면 거기까지. 기본 즉시 이동 또는 아래 시간 이동 |
+| `PounceMoveTime` | 0: 기존 즉시 덮침. 양수: 예고 뒤 이 시간 동안 연속 이동, 출발 방향 고정, 매 스텝 스윕/명중 검사 |
+| `PounceRecoveryTime` | 시간 이동이 빗나간 뒤 Pounce에서 제자리 복귀하는 시간. 명중 뒤 Catch 휴지기도 최소 이 시간 |
 | `PounceMissCooldown` | 헛친 뒤 다시 예고할 수 있기까지 (초) — `KillCooldown`과 무관 |
 | `SearchHops` | 수색 홉 수 |
 | `SearchDwellTime` | 한 지점에서 머무는 시간 (초) |
@@ -96,6 +132,8 @@ HP는 `HpMin`~`HpMax`에서 굴린 정수다. 즉사를 피하고 싶은 종은 
 못 막는다 — 쿨다운이 만능 방패가 되면 안 된다.
 
 ### 잡기 예고 (Pounce, 2026-09-20)
+
+2026-10-17: `PounceMoveTime > 0`인 행은 예고 끝의 **몸 방향**을 고정해 연속 이동한다. 타깃을 계속 쫓아 방향을 꺾지 않으며 이동 중 매 스텝 명중을 검사한다. 빗나가면 `PounceRecoveryTime` 동안 정지한 뒤 Chase로 복귀한다. 소 Cow/닭 revealed_attack 검수 행만 사용하며 기본 0인 기존 행은 아래 즉시 덮침 동작을 유지한다. 새 두 열도 유한·비음수 검사.
 
 잡기는 예고 뒤에 온다 ([../../../systems/monster.md](../../../systems/monster.md) 잡기 예고):
 추격 중 `Dist2D <= PounceRadius`이고 `KillCooldown`·`PounceMissCooldown`이 둘 다 다 닳았으면
@@ -180,6 +218,51 @@ Category `Execute`. 처형에는 두 갈래가 있고 표 값으로만 갈린다
 
 ---
 
+## 핵심 행동 (2026-10-20 사용자 결정)
+
+사용자 결정(2026-10-20): "초안에 집착하지 말고, 기믹을 정해서 딱 하나의 핵심 행동 패턴만 만들어서 몬스터를 집어넣자." 그래서 종마다
+행동을 하나만 둔다. `docs/plan/draft/monster*.md` 초안의 보조 규칙(광폭화·문 밖 추격·격분 등)은 이 표에 들지 않는다.
+제작 1묶음 10종 가운데 모델이 있는 6종을 먼저 넣고, 어미 닭·횃대 닭·토끼·쥐는 모델이 나온 뒤에 넣는다(같은 날 사용자 결정).
+
+| 종 | 핵심 행동 | 플레이어가 할 일 | 켜는 열 |
+|---|---|---|---|
+| 닭 | 켜진 빛에 몰려든다 — 평소처럼 보고 듣는 데 더해, 빛을 켠 사람은 시야 밖에서도 알아채고 쫓는다. 아무도 못 느끼면 바닥에 켜 둔 빛으로 모여 맴돈다 (2026-10-20 오후 사용자: "닭이 나를 봐도 아무 반응이 없어" → 눈·귀를 되살림) | 닭 곁에서는 불을 끈다. 바닥에 켠 빛을 두면 미끼가 된다 | `LightLureRadius` |
+| 돼지 | 먹을 것을 든 사람만 노리고, 잡으면 처형한다 | 짐을 내려놓거나 던진다 | `bTargetCarriersOnly` (+ 기존 `bExecuteOnCatch`) |
+| 소 | 누가 보고 있으면 움직이지 않고, 아무도 안 볼 때만 다가온다 | 눈을 떼지 않는다 | `bFreezeWhenWatched` |
+| 거위 | 자다가 가까이서 걷거나 뛰면 깨서 울고 경보를 낸다 | 깨우지 않고 돌아간다 | 기존 거위 열 그대로 |
+| 너구리 | 아무도 안 보는 사람의 등 뒤로 와서 처형한다 | 자주 돌아본다 | 기존 스토킹 열, `StalkStareAnger` 0 (격분 없음) |
+| 양 | 혼자 떨어진 사람만 노린다 | 혼자 다니지 않는다 | `IsolationRadius` |
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `LightLureRadius` | float, cm | 0 보다 크면 평소 눈·귀(`SightIn`·행동 소음)에 더해, 이 안에서 든 손전등·쓴 헤드램프·주머니 빛(비활성 칸의 켜진 손전등)을 켠 사람을 시야 거리 밖이어도 시야선만 있으면 "보인" 것으로 친다. 시야 밖에서 불을 끄면 놓침 시계(`ChaseLoseTime`)가 흐른다. 사람을 못 느끼면 바닥에 켜 둔 빛(`ACL9LightItem`)으로 가서 맴돈다 — 탄 요리 미끼 대신이다. 0 = 끔 |
+| `bTargetCarriersOnly` | bool | 재료·요리(`ItemType` ≠ `Tool`)를 손이나 퀵슬롯에 든 사람만 느낀다. 추격 중인 사람이 먹을 것을 다 내려놓으면 거리와 무관하게 바로 놓는다(`DeaggroRadius`보다 앞선다) |
+| `IsolationRadius` | float, cm | 0 보다 크면 이 안에 다른 산 사람이 없는 사람만 느끼고, 추격 중인 사람 곁에 동료가 들어오면 바로 놓는다. 0 = 끔 |
+| `bFreezeWhenWatched` | bool | 누가 보고 있는 동안(시선 판정 = `StalkGazeHalfAngle`·`StalkGazeRadius`, 스토킹과 같은 판정) 배회·조사·추격·덮치기 예고의 틱을 건너뛴다 — 이동과 시계가 다 멈춘다. 로드 검사: 켜면 두 시선 열이 0 보다 커야 한다 |
+| `PounceWallStunTime` | float, s | **싸움 패턴(2026-10-20, [../../../goal/chicken-fight-pattern.md](../../../goal/chicken-fight-pattern.md))**. 시간형 덮침(`PounceMoveTime` > 0)이 사람을 못 잡고 벽에 막히면 이 초 동안 경직(밀침 클립) — 반격 창. 경직 중 맞아도 남은 시간을 깎지 않는다. 0 = 벽에서 그냥 멈춤 |
+| `FleeHpThreshold` | int | HP가 이 값 이하면 사냥 상태(추격·스토킹·조사·덮치기)로 들어가려 할 때 `EnterState`가 도망으로 돌린다. 도망은 Return 상태의 부분 모드다(새 상태 값 없음 — ABP 가지가 없다). HP는 회복하지 않는다. 0 = 끔. 로드 검사: 켜면 아래 둘이 0 보다 커야 한다 |
+| `FleeSpeed` | float, cm/s | 도망 속도 |
+| `FleeSafeDistance` | float, cm | 산 사람 모두가 이 거리 밖이고 아무도 시야선이 없으면 도망을 멈추고 그 자리를 새 집(`HomeLocation`)으로 삼는다 |
+| `ChaseRampRate` · `ChaseMaxSpeed` | float, cm/s² · cm/s | **덤퍼식 추격(2026-10-21, [../../../goal/chicken-thumper-chase.md](../../../goal/chicken-thumper-chase.md))**. 추격 속도가 0 에서 이 빠르기로 상한까지 오른다. 추격 시작·경직·잡은 뒤 0 으로. 0 = `ChaseSpeed` 등속. A1 부등식은 `ChaseSpeed` 만 보므로 이 상한에는 걸리지 않는다(덤퍼는 일부러 달리기보다 빠르다) |
+| `ChaseHitRampBonus` | float, cm/s² | 맞은 뒤 1초 동안 가속에 더한다 |
+| `TurnRateAtMaxSpeed` | float, °/s | 추격 중 속도에 비례해 `TurnRate` 에서 이 값으로 줄어든다 — 빠를수록 코너를 못 돈다. 0 = `TurnRate` 고정 |
+| `ChaseWallSlamSpeed` · `ChaseWallSlamKeep` · `ChaseWallStunTime` | cm/s · 0~1 · s | 이 속도 이상으로 달리다 벽(몬스터·사람 아닌 것)에 막히면 속도가 `Keep` 배만 남고, `StunTime` > 0 이면 경직 |
+| `SightHalfAngle` · `ChaseSightHalfAngle` · `SightNearRadius` | ° · ° · cm | 시야각(평소·추격 중). `SightNearRadius` 안은 각도 무시. 켜진 빛(빛 끌림)과 소리는 각도와 무관하다. 0 = 360° |
+| `IndividualSpeedSpread` · `NoticeScaleMin` | 0~0.5 · 0~1 | **개체 차이(2026-10-21, [../../../goal/monster-individual-spread.md](../../../goal/monster-individual-spread.md))**. 태어날 때 호스트가 HP 와 같이 한 번 굴린다. 이동 속도에 1±spread(걷기·추격·상한 모두), 감지 속도에 [min, 1]. 0 = 모두 같다 |
+| `ChaseFlankOffset` · `ChaseFlankDistance` | cm · cm | 태어날 때 왼쪽·오른쪽·정면(-1·0·+1) 중 하나를 고르고, 추격 경로 목표를 타깃 옆 `Offset × min(거리/Distance, 1)` 로 둔다 — 붙을 때는 정면. 그 지점이 내비 밖이면 타깃 자체. 0 = 곧장 |
+| `ChaseRepathJitter` | 0~0.9 | 추격 재경로 간격(0.5초)에 매번 1±값 |
+| `OwnedItemAlias` | 아이템 별칭 | 이 종이 주인인 아이템 — 판 시작에 놓인 것을 누가 처음 주우면 살아 있는 이 종 무작위 한 마리가 주운 사람을 찾으러 간다 (2026-10-21) |
+| `ThiefHuntSpeed` | cm/s | 도둑을 찾으러 가는 속도 |
+| `ThiefDetourStep` | cm | 도둑 쪽으로 한 번에 나아가는 거리 |
+| `ThiefDetourRadius` | cm | 그 자리 둘레에서 다음 지점을 고르는 반지름 — 곧은 길에서 비껴 가는 폭, 이 안이면 곧장 |
+| `StalkStareAnger` | float, s | (위 스토킹 절) 0 이면 격분하지 않는다 — 2026-10-20부터 |
+
+값(2026-10-20 기본값, 플레이 뒤 조절): 닭 `LightLureRadius` 900 · `KillAlarmRadius` 2100 → 0(맞아 죽은 닭이 무리를 부르는 옛 핵심 행동을 끈다) ·
+돼지 `bTargetCarriersOnly` true · 양 `IsolationRadius` 600 · 소 `bFreezeWhenWatched` true · 너구리 `StalkStareAnger` 6 → 0.
+코드: `Source/CL9/Monsters/CL9Monster.cpp` `SenseTick`·`TickChaseGiveUp`·`HostTickAI`, 열 설명은 데이터 패널 `Tools/DataPanel/effects/monsters.csv`.
+
+---
+
 ## 각성과 경보
 
 | 컬럼 | 뜻 |
@@ -244,6 +327,24 @@ Category `Execute`. 처형에는 두 갈래가 있고 표 값으로만 갈린다
 
 ---
 
+## 스폰 예산 (2026-10-20, 결정 #38 A4)
+
+목적지의 실내 위협 풀(`MapTable.Zones[].ThreatPool`)에서 뽑힐 때 쓰는 열이다. 가축 줄(`Zones[].MonsterSpawns`)로만 놓이는 종은 쓰지 않는다.
+뽑는 순서와 목적지 값은 [C:\Work\CL9\docs\goal	hreat-budget-spawns.md](C:\Work\CL9\docs\goal	hreat-budget-spawns.md).
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `SpawnPower` | float | 구역 예산에서 빼는 파워 — 리썰 `PowerLevel` 눈금(0.5~3). 0보다 커야 한다 |
+| `SpawnMaxCount` | int | 한 판에 위협으로 나올 수 있는 이 종의 수(모든 구역 합, 나온 수로 센다). 0 = 상한 없음 |
+
+| 종 | `SpawnPower` | `SpawnMaxCount` | 리썰 짝 |
+|---|---|---|---|
+| `goose` | 1 | 2 | Hoarding bug |
+| `sheep` | 1 | 3 | Centipede |
+| `cow` | 1 | 2 | Spring(Coil-head) |
+| `pig` | 2 | 2 | Bunker spider · Butler |
+| `raccoon` | 3 | 1 | Flowerman(Bracken) |
+
 ## 지금 있는 것
 
 | Alias | 문서 | 상태 |
@@ -252,4 +353,4 @@ Category `Execute`. 처형에는 두 갈래가 있고 표 값으로만 갈린다
 | `goose` | [goose.md](goose.md) | 값 있음 (양계장 기본 스폰 0~1 — site.md) |
 | `raccoon` | [raccoon.md](raccoon.md) | 역할 = 스토커(`ExecuteRadius > 0`, 2026-09-20 사용자 결정) — 전 열 값 있음(확정 `StalkSpeed` 450·`StalkStareAnger` 6·`SleepTime` 0, 나머지 초안), `check_inequalities.py` A1·A5·A6·A7 통과 |
 | `pig` | [pig.md](pig.md) | 역할 = 잡히면 무조건 처형(`bExecuteOnCatch`, 2026-09-20 사용자 결정) — 그 밖 값은 닭 복사 (2026-09-05) |
-| `sheep` | [sheep.md](sheep.md) | 시스템 검증용 — 값은 닭 복사, 역할 미결 (2026-09-05) |
+| `sheep` | [sheep.md](sheep.md) | 시스템 검증용 — 값은 닭 복사. **2026-10-13 뺀다**(사용자) — 행·배치 제거는 별도 작업 |

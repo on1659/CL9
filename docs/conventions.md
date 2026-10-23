@@ -108,18 +108,21 @@ int32 Quota = Progression->QuotaCurve->GetFloatValue(Day);     // CL9Progression
 CL9/
   ├─ Core/             (ACL9ActorBase 공통 베이스, ICL9Damageable·ICL9Interactable 인터페이스,
   │                     CL9InputText 키 표기 `{0}`, CL9ReplicationCheck 복제 등록 자동화 테스트)
-  ├─ Character/        (ACL9Character, 커스텀 CMC CL9CharacterMovement)
+  ├─ Character/        (ACL9Character, 커스텀 CMC CL9CharacterMovement, 손맛 측정 UCL9FeelDebug·CL9FeelMath)
   ├─ GameMode/         (ACL9GameMode, ACL9GameState, ACL9PlayerState, ACL9PlayerController, GameInstance,
-  │                     CheatManager·CL9Cheats 등록부, SaveGame, GameUserSettings, CameraManager, HurtLookModifier)
-  ├─ Items/            (ACL9Item 와 파생 LightItem/FlashItem/LampItem, ACL9Cart, 시설 액터 Kitchen/Counter/Jar/TruckPanel)
+  │                     CheatManager·CL9Cheats 등록부, SaveGame, GameUserSettings, CameraManager, HurtLookModifier,
+  │                     LookModifier, MenuGameMode, 지갑 CL9Wallet(UCL9WalletSubsystem·UCL9WalletSave))
+  ├─ Items/            (ACL9Item 와 파생 LightItem/FlashItem/LampItem, ACL9Cart, 시설 액터 Kitchen/Counter/Jar/TruckPanel/
+  │                     DepartLever/DestinationBoard/PowerSwitch/SkinCloset)
   ├─ Monsters/         (ACL9Monster, AI 상태 기계)
   ├─ World/            (ACL9SiteMap 맵 조립·소품·램프, CL9SiteLayout 레이아웃(+Tests), ACL9NightLighting,
-  │                     ACL9Fixture 시설물 베이스, ACL9FlapIn 문짝, ACL9TruckPad)
+  │                     ACL9Fixture 시설물 베이스, ACL9FlapIn 문짝, ACL9TruckPad, ACL9Truck, ACL9YardTension 마당 긴장 연출,
+  │                     UCL9LandscapeTools 실외 랜드스케이프 생성)
   ├─ FX/               (UCL9WaveRenderer 파동 링)
   ├─ Data/             (CL9Types.h, CL9Constants.h, *Def 행 클래스, DefRegistry, Sound/Wave/Shake 표)
   └─ UI/               (위젯 클래스, UITable, SettingsTable)
 ```
-(2026-09-21 감사로 실제 디스크와 맞춤 — Public/Private 분리 없음)
+(2026-09-21 감사로 실제 디스크와 맞춤, 2026-10-16 감사로 빠진 클래스 9개 보충 — Public/Private 분리 없음)
 
 **Constants.h 정책:**
 - ✅ **물리 상수** (플레이어 반경, 눈높이, 통로 폭 등) — Constants.h에 OK
@@ -142,7 +145,7 @@ Content/
   ├─ Strings/          (CL9_Strings.csv 마스터 시트 + 생성물 CL9.csv — systems/localization.md)
   ├─ Localization/CL9/ (수집·번역 산출물 manifest·po·locres — 생성물, 커밋함)
   ├─ Tests/            (검수 레벨 Lvl_AssetQA01·리그 왕복 프로브 — 게임이 참조하지 않는 테스트물)
-  └─ (벤더·템플릿) DreamscapeSeries/·AnimalVarietyPack/·FirstPerson/·Variant_Horror/·LevelPrototyping/
+  └─ (벤더·템플릿) AnimalVarietyPack/·FirstPerson/·Variant_Horror/·LevelPrototyping/
                        — 저장소 제외 또는 템플릿 잔재, 새 에셋을 두지 않는다
 ```
 
@@ -220,6 +223,11 @@ GAS(`UAttributeSet` 등)는 금지가 아니라 **현재 미사용**이다 — �
   표현은 OnRep 이 아니라 **복제된 서버 시각·상태를 매 틱 비교해 상승 에지에서** 낸다 — 모든 머신이 같은 코드를
   돈다 (decisions.md 2026-09-15 타격감 · 2026-09-18 SoundTable; UI 폴링 예외는 [systems/ui_system.md](systems/ui_system.md))
 - 데이터: 모두 DataAsset/에디터에서 관리
+- **규칙 로직은 엔진 없는 순수 모듈 + 얇은 액터** (2026-10-24): 새 시스템을 만들거나 한 시스템을 크게 고칠 때, 판정·상태 전환·생성 규칙은
+  `FCL9SiteLayout`(World/CL9SiteLayout.h — 엔진 의존 없음, 시드로 결정적, `CL9SiteLayoutTests.cpp` 자동화 테스트 30개)처럼
+  UObject·World 에 기대지 않는 함수·구조체로 먼저 쓰고, 액터는 그것을 부르고 복제·표현만 한다. 그 모듈에는 자동화 테스트를 붙인다 —
+  PIE 없이 검증할 수 있고, 나르샤의 테스트 생성·실행 도구가 그 모양을 전제한다. 이미 있는 큰 파일(`CL9Character`·`CL9GameMode`·`CL9Monster`)은
+  한꺼번에 뜯지 않고 그 부분을 고칠 때 한 덩이씩 옮긴다.
 - 복제 업데이트: `SetNetUpdateFrequency(20)` (20 FPS 고정)
   — 현재 부르는 곳은 `ACL9Character`·`ACL9ActorBase`·`ACL9PlayerState` 셋이고 `ACL9GameState`·`ACL9PlayerController`
   는 부르지 않는다 (2026-09-21 감사 — 결정 필요)
@@ -330,6 +338,7 @@ Visual Studio의 캐시를 활용하면 두 번째 빌드부터 빠르다:
 **Claude가 할 수 있는 것:**
 
 ✅ C++ 코드 작성/수정
+✅ 에셋(BP·ABP·표·위젯)·C++ 기호·엔진 소스 읽기 — 나르샤 MCP(`mcp__narshamcp__*`)로 에디터 없이 (2026-10-24, `docs/workflow/sessions.md` "읽기는 나르샤")
 ✅ conventions.md, 설계 문서 작성
 ✅ 빌드 명령어 제시
 ✅ 컴파일 로그 분석
@@ -377,6 +386,9 @@ You: 에디터에서 확인
   리슨 호스트는 자기 액터에서 OnRep 이 뜨지 않아 OnRep 콜백을 쓰지 않고, 소리용 Multicast RPC 도 두지 않는다
   (§ 6 예외 — decisions.md 2026-09-15·09-18). Multicast 는 시각으로 담기지 않는 순간 사건(`Multicast_Noise`)뿐.
 - 시스템 공용 에셋(MasterSoundMix)만 경로 하드코딩 예외 — 게임 콘텐츠는 항상 DataAsset에서 읽는다.
+- **예외 — 마이크 음성 스트림** (2026-10-11, voice-chat): 동료의 말소리는 EOS RTC 로 오가고 Redpoint 가 재생한다(2026-10-12, voice-eos-redpoint — 2026-10-11 에는 엔진 `VoiceChannel`·`UVOIPTalker`) — 서버 시간 틱 비교의 대상이 아니고 `CL9Sound::PlayAt` 도
+  거치지 않는다. **새 Multicast 는 없다**, 새 Server RPC 는 `Server_SetVoiceRoute` 하나다. 자리(2D/3D)와 뮤트는 복제된 상태
+  (경로·생사)에서 각 머신이 파생한다. 전문은 [systems/voice.md](systems/voice.md).
 
 전문(분류·이벤트 목록·에셋 위치·재생/볼륨 설정)은 [systems/sound.md](systems/sound.md).
 

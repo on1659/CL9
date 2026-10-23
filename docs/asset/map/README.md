@@ -14,7 +14,15 @@
 
 | 카드 | 대상 |
 |---|---|
+| [henhouse_indoor_usage.md](henhouse_indoor_usage.md) | **양계장 전용 사용법 — Claude가 납품 FBX를 UE에 임포트하고 확인용 레벨을 배치·저장·재열기하는 절차. 실제 게임 PropSets 연결은 별도 절** |
+| [henhouse_indoor_objects.md](henhouse_indoor_objects.md) | **양계장(실내 계사) 재제작 — 오브젝트 전체 목록·톤·랜덤 배치 규칙·Tripo 공정 (2026-10-13, 아래 양계장 카드들을 대체)** |
+| [henhouse_indoor_prompts.md](henhouse_indoor_prompts.md) | 위 목록의 ChatGPT 이미지 프롬프트 정본(머리글 + 오브젝트별 한 줄). 파일 자리 `ArtSource/map/henhouse_indoor/` |
+| [henhouse_indoor_gpt_prompt.md](henhouse_indoor_gpt_prompt.md) | 위 프롬프트를 **한 메시지로 합친 복사용** — 이미지 97장 브리프 |
+| [henhouse_indoor_handoff.md](henhouse_indoor_handoff.md) | **ChatGPT 전체 이관 브리프(2026-10-13)** — 이미지·Tripo·Blender 재단·FBX 납품까지 ChatGPT가 한다. 첨부 6개 목록 + 번들 명령. 번들 산출물 [henhouse_indoor_handoff_bundle.md](henhouse_indoor_handoff_bundle.md)는 생성물이라 손으로 고치지 않는다(예외: 2026-10-16 문서 감사에서 합치며 어긋난 상대 링크 3개 — `reference-direction`·`iterations/004`·`systems/animation` — 만 손으로 고쳤다. 다시 생성하면 같은 수정이 필요하다) |
+| [henhouse_storage_furniture.md](henhouse_storage_furniture.md) | **수납 가구 7종(서랍·문짝·뚜껑이 따로 움직임)·숨는 통·큰 홀 소품 2종·계란 트레이 더미 (2026-10-22, Blender 검수됨·UE 임포트 전).** 소켓 이름 정본은 `docs/goal/map-hidden-loot.md` 인터페이스 절 |
+| [../tools/tripo.md](../tools/tripo.md) | Tripo Studio 설정·비용·실패 기록 (2026-10-13) |
 | [henhouse.md](henhouse.md) | 양계장 시각 방향(제작 카드가 아닌 방향 문서) |
+| [henhouse_roof.md](henhouse_roof.md) | 양계장 지붕 2종 — UE 임포트·3맵 day1/10 차폐 검수됨(2026-10-04). `Content/Maps/Henhouse/Structure/Roof` |
 | [henhouse_sample_01.md](henhouse_sample_01.md) | 첫 샘플 8종 부품(벽·바닥·둥지·상자·포대·작업등·여물통·기준 큐브) |
 | [henhouse_fence.md](henhouse_fence.md) | 판자 울타리 250 |
 | [pen_fence.md](pen_fence.md) | 우리 철망 울타리 250(개방형, 높이130) |
@@ -27,7 +35,7 @@
 | [kitchen.md](kitchen.md) | 철판 조리대 |
 | [delivery_counter.md](delivery_counter.md) | 납품 창구 |
 | [truck_parts.md](truck_parts.md) | 트럭 회복 패드·장비 패널 |
-| [food_truck.md](food_truck.md) | 푸드트럭 본체·계단 |
+| [food_truck.md](food_truck.md) | 푸드트럭 본체·계단(A) · 걸어 들어가는 B 본체·계단·출발 레버·전원 스위치(2026-10-06) |
 | [campfire.md](campfire.md) | 마당 모닥불 `SM_Campfire_A`(2026-09-17) |
 
 밤하늘 재질 `M_CL9_NightSky`(`Content/Maps/Sky/`, `Tools/Unreal/create_night_sky.py`, 2026-09-18)는 Blender 에셋이 아니라 카드가 없다 —

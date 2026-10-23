@@ -16,6 +16,7 @@
 | [segkind.md](segkind.md) | 맵 조각 11종 |
 | [module.md](module.md) | 맵 모듈 — 생성기가 조립하는 단위 |
 | [sequence.md](sequence.md) | 연출 시퀀스 — 전이 지점(밤 시작·정전·전멸·새벽). **표는 아직 없다** |
+| (문서 없음) `SkinTable` | 스킨 — `UCL9SkinDef`(`Source/CL9/Data/CL9SkinDef.h`), 대역 4벌. 기획 표 문서는 아직 없다(2026-10-16 감사) — 정본은 [../../goal/loop-7k-skins.md](../../goal/loop-7k-skins.md) · [../../systems/save.md](../../systems/save.md) |
 | [wave.md](wave.md) | 파동 — 소음원마다 링의 리소스·속도·색·파워·차폐 광선 수 (구현됨 2026-09-16, 행 스키마 정본은 [../../systems/wave.md](../../systems/wave.md)) |
 
 ---
@@ -82,7 +83,7 @@ UCL9DefRegistry             // 게임 인스턴스가 들고 있는다
   FindSegKind(Alias) / FindPiece(Role, Theme) / FindModule(Alias, Stage)   // 맵 표 셋
 ```
 
-(`Source/CL9/Data/CL9DefRegistry.h` 기준 열 개. 시퀀스 표는 아직 없어 조회 함수도 없다 — [sequence.md](sequence.md).)
+(`Source/CL9/Data/CL9DefRegistry.h` 기준 열 개. 시퀀스 표는 아직 없어 조회 함수도 없다 — [sequence.md](sequence.md). 표 등록 목록 에셋은 `Content/Data/CL9DefList`(`UCL9DefList`), 표 에셋 이름 전체는 [../../data/schema.md](../../data/schema.md).)
 
 에셋 목록은 전용 목록 에셋에 등록한다. **코드에 에셋 경로를 쓰지 않는다** — 하드코딩된 경로가
 아니라 등록된 목록을 순회한다.

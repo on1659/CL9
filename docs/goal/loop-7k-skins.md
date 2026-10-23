@@ -1,6 +1,6 @@
 # goal: loop-7k-skins
 
-**Status**: done — structure with stand-ins (2026-10-12, listen 2-player PIE verified, uncommitted). Real skin models pending. Build order ⑦ step **7k** ([../plan/build-order.md](../plan/build-order.md)).
+**Status**: done — structure with stand-ins (2026-10-12, listen 2-player PIE verified, uncommitted). **2026-10-16 정정**: 코드·`SkinTable` 은 커밋 a5af9f2(2026-10-13)에 들어갔다. Real skin models pending. Build order ⑦ step **7k** ([../plan/build-order.md](../plan/build-order.md)).
 Parent concept spec: [loop-rework.md](loop-rework.md) — user decision 1 (out-game currency buys cosmetics only), open questions 2 and 3 answered 2026-10-12.
 
 ## One-line Goal

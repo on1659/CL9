@@ -201,10 +201,10 @@ LogCL9: Site map: 'barn' tiled with a 500 x 40 x 400 piece — 128 instances, wo
 반 폭 조각(`penFenceQuarter`)이 필요하다 — art 쪽에서 만들 수 있다고 확인됐다
 ([../asset/map/pen_fence.md](../asset/map/pen_fence.md)).
 
-### 팩에 있지만 아직 안 쓰는 것
+### 팩에 있지만 아직 안 쓰는 것 (기록)
 
-배치 규칙이 기획에 없어서 표에 넣지 않았다. 규칙이 생기면 여기서 조각을 가져온다 —
-폴더를 다시 뒤질 일이 없도록 분류만 해 둔다.
+팩은 2026-10-04에 지웠으므로 여기서 조각을 가져올 수 없다. 아래 분류는 자체 제작할 조각의 목록으로만 본다.
+배치 규칙이 기획에 없어서 표에 넣지 않았다.
 
 | 역할 | Dreamscape Farmlands 조각 |
 |---|---|

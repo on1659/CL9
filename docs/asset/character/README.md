@@ -4,6 +4,8 @@
 1인칭 게임이므로 **동료에게 보이는 풀바디**와 **자기 화면의 팔**을 별도로 제작·검수한다.
 카드: [farmer_a.md](farmer_a.md)(농부 A 풀바디·1인칭 팔·클립). farmer_b 는 미제작([catalog](../catalog.md)).
 
+새 외형 수정: [이미지별 형태 기준](farmer_a-visual-reference.md) → [제작 이력](farmer_a-model-brief.md) → [세션 시작문](farmer_a-model-brief-astra-prompt.md).
+
 ## 몸 크기와 리그
 
 - 현재 기준 캡슐 반경 **39cm**, 반높이 **90cm**(전체 180cm), 눈높이 **156cm**(정본 `docs/plan/data/character.md`

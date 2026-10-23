@@ -1,0 +1,360 @@
+{
+  "engine": "5.8.3-58210709+++UE5+Release-5.8",
+  "utc": "2026-10-06T00:39:10.602506+00:00",
+  "script": "Tools/Unreal/import_food_truck_b.py",
+  "folder": "/Game/Maps/FoodTruck/B",
+  "materials": {
+    "M_CL9_FoodTruck_Steel": {
+      "path": "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+      "created": false
+    },
+    "M_CL9_FoodTruck_Paint": {
+      "path": "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Paint.M_CL9_FoodTruck_Paint",
+      "created": false
+    },
+    "M_CL9_FoodTruck_Dark": {
+      "path": "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark",
+      "created": false
+    },
+    "M_CL9_FoodTruck_Red": {
+      "path": "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Red.M_CL9_FoodTruck_Red",
+      "created": false
+    },
+    "M_CL9_TruckSteps_Steel": {
+      "path": "/Game/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Steel.M_CL9_TruckSteps_Steel",
+      "created": false
+    },
+    "M_CL9_TruckSteps_Mark": {
+      "path": "/Game/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Mark.M_CL9_TruckSteps_Mark",
+      "created": false
+    },
+    "M_CL9_DepartLever_Knob": {
+      "path": "/Game/Maps/FoodTruck/B/M_CL9_DepartLever_Knob.M_CL9_DepartLever_Knob",
+      "created": true
+    },
+    "M_CL9_PowerSwitch_Hazard": {
+      "path": "/Game/Maps/FoodTruck/B/M_CL9_PowerSwitch_Hazard.M_CL9_PowerSwitch_Hazard",
+      "created": true
+    }
+  },
+  "assets": [
+    {
+      "id": "body",
+      "path": "/Game/Maps/FoodTruck/B/SM_FoodTruck_B.SM_FoodTruck_B",
+      "source_sha256": "93c55c5bd91b48c28b6e94cf17b910329606d267079478d9d40540754b6c003e",
+      "previous_sha256": null,
+      "imported": true,
+      "reimported": false,
+      "changed": true,
+      "material_slots": [
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Paint.M_CL9_FoodTruck_Paint",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Red.M_CL9_FoodTruck_Red"
+      ],
+      "anchors_ue_cm": {
+        "RearOpeningSill": [
+          5.0,
+          0.0,
+          64.0
+        ],
+        "InteriorCenter": [
+          362.0,
+          0.0,
+          192.0
+        ],
+        "LeverHinge": [
+          669.0,
+          0.0,
+          178.0
+        ],
+        "StepsEnd": [
+          -120.0,
+          0.0,
+          0.0
+        ]
+      },
+      "dimensions_cm": [
+        917.5000374317169,
+        423.99998474121094,
+        380.0000059604645
+      ],
+      "bounds_ue_cm": [
+        [
+          -1.500037431716919,
+          -211.99986267089844,
+          -5.9604644775390625e-06
+        ],
+        [
+          916.0,
+          212.0001220703125,
+          380.0
+        ]
+      ],
+      "max_error_cm": 0.000133514404296875,
+      "convex_hulls": 18,
+      "simple_collision_count": 0,
+      "uv_channels": 1,
+      "lod_count": 3,
+      "vertices_lod0": 5096,
+      "triangles_blender": 2680,
+      "collision_trace_flag": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+    },
+    {
+      "id": "steps",
+      "path": "/Game/Maps/FoodTruck/B/SM_FoodTruck_B_Steps.SM_FoodTruck_B_Steps",
+      "source_sha256": "b971fb7308686104044d5ee7bd19052b5d9ea5e857e45a0ad0848281c84e321b",
+      "previous_sha256": null,
+      "imported": true,
+      "reimported": false,
+      "changed": true,
+      "material_slots": [
+        "/Game/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Steel.M_CL9_TruckSteps_Steel",
+        "/Game/Maps/FoodTruck/Steps/M_CL9_TruckSteps_Mark.M_CL9_TruckSteps_Mark"
+      ],
+      "anchors_ue_cm": {
+        "TruckOrigin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "StepsEnd": [
+          -120.0,
+          0.0,
+          0.0
+        ],
+        "TopTread": [
+          -15.0,
+          0.0,
+          64.0
+        ]
+      },
+      "dimensions_cm": [
+        122.00004400270336,
+        279.00001525878906,
+        162.25379943847656
+      ],
+      "bounds_ue_cm": [
+        [
+          -122.0000228881836,
+          -139.50001525878906,
+          0.0
+        ],
+        [
+          2.11145197681617e-05,
+          139.5,
+          162.25379943847656
+        ]
+      ],
+      "max_error_cm": 4.114168041269295e-05,
+      "convex_hulls": 4,
+      "simple_collision_count": 0,
+      "uv_channels": 1,
+      "lod_count": 3,
+      "vertices_lod0": 888,
+      "triangles_blender": 464,
+      "collision_trace_flag": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+    },
+    {
+      "id": "lever_base",
+      "path": "/Game/Maps/FoodTruck/B/SM_DepartLever_Base_A.SM_DepartLever_Base_A",
+      "source_sha256": "9f29368fb703f9199709538c80b4df47c54eff56cb24e8142ca849eb7893af63",
+      "previous_sha256": null,
+      "imported": true,
+      "reimported": false,
+      "changed": true,
+      "material_slots": [
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Red.M_CL9_FoodTruck_Red"
+      ],
+      "anchors_ue_cm": {
+        "Hinge": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "BaseBottom": [
+          0.0,
+          0.0,
+          -14.0
+        ]
+      },
+      "dimensions_cm": [
+        28.40000629425049,
+        32.000003814697266,
+        18.0
+      ],
+      "bounds_ue_cm": [
+        [
+          -14.00000286102295,
+          -16.000001907348633,
+          -14.0
+        ],
+        [
+          14.400003433227539,
+          16.000001907348633,
+          4.0
+        ]
+      ],
+      "max_error_cm": 5.364418029785156e-06,
+      "convex_hulls": 1,
+      "simple_collision_count": 0,
+      "uv_channels": 1,
+      "lod_count": 3,
+      "vertices_lod0": 720,
+      "triangles_blender": 364,
+      "collision_trace_flag": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+    },
+    {
+      "id": "lever_handle",
+      "path": "/Game/Maps/FoodTruck/B/SM_DepartLever_Handle_A.SM_DepartLever_Handle_A",
+      "source_sha256": "144fdfa187f4fd7c988f28f1c6597a3fd1e3f5d7b89a4ccfd2a870dc311bef03",
+      "previous_sha256": null,
+      "imported": true,
+      "reimported": false,
+      "changed": true,
+      "material_slots": [
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+        "/Game/Maps/FoodTruck/B/M_CL9_DepartLever_Knob.M_CL9_DepartLever_Knob"
+      ],
+      "anchors_ue_cm": {
+        "Hinge": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "KnobCenter": [
+          0.0,
+          0.0,
+          58.0
+        ]
+      },
+      "dimensions_cm": [
+        12.999996662139893,
+        12.999997615814209,
+        68.5
+      ],
+      "bounds_ue_cm": [
+        [
+          -6.499997615814209,
+          -6.499999523162842,
+          -4.0
+        ],
+        [
+          6.499999046325684,
+          6.499998092651367,
+          64.5
+        ]
+      ],
+      "max_error_cm": 1.9073486328125e-06,
+      "convex_hulls": 1,
+      "simple_collision_count": 0,
+      "uv_channels": 1,
+      "lod_count": 3,
+      "vertices_lod0": 848,
+      "triangles_blender": 420,
+      "collision_trace_flag": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+    },
+    {
+      "id": "power_switch",
+      "path": "/Game/Maps/FoodTruck/B/SM_PowerSwitch_A.SM_PowerSwitch_A",
+      "source_sha256": "fb638717c8bc92a8734a0739bcbd70185e0579d9cabb348bf43212c0cd49b7e1",
+      "previous_sha256": null,
+      "imported": true,
+      "reimported": false,
+      "changed": true,
+      "material_slots": [
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Dark.M_CL9_FoodTruck_Dark",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Steel.M_CL9_FoodTruck_Steel",
+        "/Game/Maps/FoodTruck/B/M_CL9_PowerSwitch_Hazard.M_CL9_PowerSwitch_Hazard",
+        "/Game/Maps/FoodTruck/Body/M_CL9_FoodTruck_Red.M_CL9_FoodTruck_Red"
+      ],
+      "anchors_ue_cm": {
+        "GlowLight": [
+          0.0,
+          0.0,
+          133.0
+        ],
+        "FocusCenter": [
+          0.0,
+          0.0,
+          100.0
+        ],
+        "FrontFace": [
+          11.5,
+          0.0,
+          100.0
+        ]
+      },
+      "dimensions_cm": [
+        50.00000762939453,
+        55.000003814697266,
+        140.50001525878906
+      ],
+      "bounds_ue_cm": [
+        [
+          -25.000003814697266,
+          -25.000003814697266,
+          0.0
+        ],
+        [
+          25.000003814697266,
+          30.0,
+          140.50001525878906
+        ]
+      ],
+      "max_error_cm": 8.58306884765625e-06,
+      "convex_hulls": 1,
+      "simple_collision_count": 0,
+      "uv_channels": 1,
+      "lod_count": 3,
+      "vertices_lod0": 1980,
+      "triangles_blender": 992,
+      "collision_trace_flag": "<CollisionTraceFlag.CTF_USE_DEFAULT: 0>"
+    }
+  ],
+  "rules_cells_from_manifest": {
+    "TruckInteriorCenter": [
+      362.0,
+      0.0,
+      192.0
+    ],
+    "TruckInteriorExtent": [
+      352.0,
+      170.0,
+      128.0
+    ],
+    "DepartLeverOffset": {
+      "location_cm": [
+        669.0,
+        0.0,
+        178.0
+      ],
+      "rotation": {
+        "pitch": 0,
+        "yaw": 180,
+        "roll": 0
+      }
+    },
+    "TruckOffset_suggested": {
+      "location_cm": [
+        -335,
+        0,
+        0
+      ],
+      "yaw": 180
+    },
+    "steps_end_in_pad_space_cm": -215,
+    "pad_edge_gap_cm": 15
+  },
+  "known_source_sha256": [
+    "144fdfa187f4fd7c988f28f1c6597a3fd1e3f5d7b89a4ccfd2a870dc311bef03",
+    "93c55c5bd91b48c28b6e94cf17b910329606d267079478d9d40540754b6c003e",
+    "9f29368fb703f9199709538c80b4df47c54eff56cb24e8142ca849eb7893af63",
+    "b971fb7308686104044d5ee7bd19052b5d9ea5e857e45a0ad0848281c84e321b",
+    "fb638717c8bc92a8734a0739bcbd70185e0579d9cabb348bf43212c0cd49b7e1"
+  ],
+  "gameplay_status": "임포트·치수·껍질 검증만. 게임 연결(Rules 셀)·PIE 캡슐 검수는 별도(A8)."
+}

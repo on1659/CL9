@@ -46,6 +46,17 @@
 - **append-only** `docs/decisions.md` — 역할은 못 고친다. 항목 문안을 보고서에 쓰면 리드가 붙인다.
 - **리드 전용** `Config/*`(Localization 제외), `.claude/*`, `CL9.uproject`, `CL9.Build.cs`, `CL9.{h,cpp}`, 모든 `.uasset`·`.umap` —
   바이너리 에셋은 에디터로만 고치고, 에디터는 리드만 몬다. 역할은 "표 행: `ItemTable.egg.HoldPose: None → Small`"처럼 요청한다.
+- **읽기는 나르샤** (2026-10-24, 사용자 "나르샤 쓸 거고 잘 쓸 수 있게 구조 바꾸자"): 에셋(BP·ABP·표·위젯)·C++ 기호·엔진 소스를 **읽는** 일은
+  모든 세션이 나르샤 MCP(`mcp__narshamcp__*`)로 한다 — `ue_grep`(한 줄 요약)·`ue_read`(상세)·`ue_manage_blueprint`(BP 구조)·
+  `ue_analyze_symbols`(PDB 기호: 계층·호출자)·`ue_search_assets`(참조·표). `.uasset` 을 에디터 없이 직접 풀어 읽으므로 **잠금·임대·에디터가 필요 없다** —
+  탐침용 `Tools/Unreal/probe_*.py` 를 에디터에서 돌리지 않는다. 고치는 일(임포트·표 행·배치·BP 편집)은 그대로 에디터 MCP 와 잠금 규약이다.
+  서버는 데몬 하나(포트는 19620 부터 비는 것을 고른다 — 2026-10-24 는 19704, 대시보드 19804)를 세션들이 같이 쓰고 첫 세션이 띄운다.
+  **에디터 플러그인 `NarshaMCP`(`CL9.uproject`)가 켜질 때마다 `narshamcp.exe setup` 을 돌려 [.mcp.json](C:\Work\CL9\.mcp.json)·`settings.local.json`·
+  Codex/Antigravity 설정·`AGENTS.md` 를 다시 쓴다** — 그래서 `.mcp.json` 의 env 는 손으로 고쳐도 남지 않는다. 데몬 설정은 사용자 환경 변수로 둔다:
+  `NARSHAMCP_DAEMON_MEMORY_CAP_GB=6`(이 머신은 RAM 31GB 에 에디터·세션 여럿이라 기본값 15 를 쓰지 않는다), `NARSHAMCP_NO_DASHBOARD_GUI=1`.
+  캐시는 `Intermediate/NarshaMCP/`, 상태 파일은 `.narshamcp/`(둘 다 gitignore). 처음 띄우면 PDB 색인에 수십 초 걸리고 그동안 `ue_analyze_symbols` 만
+  "symbol_index_loading" 을 돌려준다 — `ue_grep`·`ue_read` 는 바로 된다. 에디터 플러그인은 에디터 안에 WebSocket 서버(30011 부터)를 열어 데몬과 이어진다 —
+  BP 편집·애니메이션·자동화 테스트 같은 **고치는** 도구(`[E]` 표시)가 이것을 쓴다. 읽기에는 에디터가 필요 없다.
 - **grant-gated 공유**: 두 역할의 공유 목록에 같이 있는 경로(gameplay ↔ balance 의 수치 문서). 실행마다 `grants.json`에 **한 역할 이름으로만**
   올라가야 편집할 수 있다 — 같은 파일에 두 손이 못 들어간다.
 - 우선순위: append-only > 리드 전용 > 소유(제외 반영) > 공유 > grant > 밖.
@@ -72,31 +83,70 @@
 
 ## 잠금
 
-에디터 하나·PIE 하나·빌드 하나(UBT 전역 뮤텍스)·MCP 포트 8000 하나. **끄거나 세우거나 돌리는 쪽이 잠금을 잡는다** —
+에디터 하나·PIE 하나·빌드 하나(UBT 전역 뮤텍스)·MCP 포트(`Config/DefaultEditorPerProjectUserSettings.ini` 의 `ServerPortNumber`, 기본 8100) 하나. **끄거나 세우거나 돌리는 쪽이 잠금을 잡는다** —
 "아무도 안 잡았으니 괜찮다"가 아니라 **내가 잡고 있어야** 훅이 `taskkill`·`Build.bat`·`UnrealEditor-Cmd`·`StartPIE`·`StopPIE`를
 허용한다(2026-09-07 사고: 잠금 없이 에디터를 끄고 동료 작업 6분 날림).
+
+2026-10-18: MCP 포트를 8000 에서 설정값(기본 8100)으로 옮겼다. 이유는 8000 이 다른 앱과 겹쳤기 때문이다. 정본은
+[DefaultEditorPerProjectUserSettings.ini](C:\Work\CL9\Config\DefaultEditorPerProjectUserSettings.ini) 의 `ServerPortNumber` 다
+(엔진의 `UModelContextProtocolSettings` 가 `config=EditorPerProjectUserSettings` 라서 DefaultEngine.ini 에 적으면 읽히지 않는다).
+파이썬 도구는 전부 [editor_proc.py](C:\Work\CL9\Tools\Build\editor_proc.py) 의 `mcp_port()` 로 이 값을 읽고, 에디터를 띄울 때
+`-ModelContextProtocolPort=<포트>` 도 붙인다. 정적 파일인 [.mcp.json](C:\Work\CL9\.mcp.json) 의 `unreal-mcp` url 과
+[project.json](C:\Work\CL9\.agent-office\project.json) 의 `editor.ready_probe.port` 는 값을 읽어 오지 못하므로, 포트를 바꾸면 손으로 같이 맞춘다.
 
 ```
 py -3 .claude/hooks/cl9_lock.py acquire <build|compile|pie|commandlet|editor> [--minutes N] [--pid P] [--wait S]
 py -3 .claude/hooks/cl9_lock.py release [--force]
 py -3 .claude/hooks/cl9_lock.py status [--nonce X]
 py -3 .claude/hooks/cl9_lock.py guard off [--minutes N] | on
+py -3 .claude/hooks/cl9_lock.py wait <pie|build|compile|commandlet> [--max S]   # Bash run_in_background 로
 ```
 
 - **배타 용도** `build`·`compile`·`pie`·`commandlet`: 한 세션만. `build`·`commandlet`은 `--pid`(분리 실행한 .cmd 의 PID) **필수** —
-  만료(기본 90분, 그 밖 30분)가 지나도 그 프로세스가 살아 있으면 잠금이 유지된다(Live Coding 빌드는 어떤 만료보다 길다).
+  만료(기본 90분, 그 밖 30분)가 지나도 그 프로세스가 살아 있으면 잠금이 유지된다. 정식 빌드는 에디터를 끄고 하고(1~3분),
+  Live Coding 은 작은 .cpp 로직 수정 때만 쓴다.
+  **상한 1시간**: 보유 세션이 마지막으로 `acquire` 한 뒤 1시간이 지나면 프로세스가 살아 있어도 잠금이 풀린다(멈춘 프로세스가 영영
+  쥐지 않게 — `cl9_lock.py` `MAX_HOLD_S`). 1시간 넘게 쥐어야 하면 같은 용도로 다시 `acquire` 해 연장한다.
   PID 는 (pid, 생성 시각, 이미지 이름) 삼중항으로 확인한다 — Windows 는 PID 를 재사용한다.
 - **공유 임대** `editor`: 에디터를 MCP 로 모는 세션은 훅이 `call_tool`마다 자동 갱신한다(30분). 임대가 살아 있는 동안 다른 세션은
   배타 잠금을 못 잡는다 → 에디터를 못 끈다. `/cl9 role`로 역할을 맡은 세션도 임대를 하나 받는다.
 - `acquire` 는 원자적이다(`O_EXCL` 생성 → 검증 → 임시 파일 교체 → 재확인). `--wait` 는 90초까지(Bash 도구 120초 제한) — 넘으면 "busy"로
-  돌아오니 다시 친다.
+  돌아온다.
+- **busy 면 멈추지 않고 뒤에서 기다린다**(2026-10-23, 사용자 "잠금 교착"): `py -3 .claude/hooks/cl9_lock.py wait <용도>` 를 Bash
+  `run_in_background` 로 건다. 줄에 서 두고, 남의 잠금·임대가 없고 내가 줄 머리가 되면 끝난다(기본 최대 2시간). 끝났다는 알림을 받으면
+  바로 `acquire <용도>` 를 단독 명령으로 친다(10분 안에 안 잡으면 줄에서 빠진다). 기다리는 동안 다른 일을 하고, 사장에게 묻지 않는다.
+- **PIE 잠금은 15분 임대**(`lock_values.csv` `pie_lease_minutes`): 쥔 세션이 도구(Bash·Edit·에디터 MCP 등)를 쓸 때마다 훅이 이어 준다.
+  사장 답을 기다리거나 턴을 끝낸 세션은 마지막 도구 뒤 15분이면 놓인다. `--minutes` 를 더 크게 줘도 15분이다. `film.py` 는 찍는 동안
+  자기 프로세스를 잠금에 붙여 둔다(도구를 안 써도 안 놓인다). **PIE 잠금은 PIE·촬영에만 쓰고, 끝나면 바로 `release`** —
+  에디터 스크립트로 에셋을 고칠 때는 PIE 잠금을 잡지 않는다(에디터 MCP `call_tool` 은 훅이 `editor` 임대를 붙인다) —
+  다만 남이 PIE·촬영 중이면 끊지 않게 먼저 `status` 를 본다. **에셋을 읽기만 할 때는 에디터 스크립트 대신 나르샤**(위 "읽기는 나르샤") — 잠금과 무관하다.
+- **쥔 세션이 꺼지면 놓인다**: 훅으로 잡은 잠금과 줄 자리에는 그 세션의 `claude.exe` 가 함께 적힌다. 세션 창이 닫히거나 메모리 부족으로
+  꺼지면, 프로세스 없이 쥔 잠금(pie 등)은 만료 전이어도 무효가 되고 줄 자리는 다음 청소 때 빠진다. 사무실 서버가 30초마다 줄을 청소한다
+  (`server.json` `queue_sweep_every_s`).
+- **잠금을 쥔 채 빌드를 요청하면** `build_request.py` 가 요청 전에 그 세션의 잠금·임대를 놓는다 — 브로커가 그 잠금을, 세션이 빌드를
+  서로 기다리는 교착을 막는다.
 - `commandlet` 은 `UnrealEditor.exe`·`UnrealEditor-Cmd.exe` 가 하나라도 떠 있으면 거부된다(헤드리스 저장은 에디터를 닫은 창에서만 —
   안 그러면 유령 에디터).
 - `release --force` 는 기록된 프로세스가 살아 있으면 거부된다. 죽은 잠금만 뺏는다.
+- **사장 권한 풀기**(2026-10-20): 사무실 페이지(빌드팀 자세히·에디터실 탭)의 [지금 풀기]는 `release --boss --session user` —
+  쥔 프로세스가 살아 있어도 배타 잠금과 에디터 임대를 모두 푼다. 돌던 빌드·PIE 는 멈추지 않는다. 잠금을 뺏긴 세션은 다음 잠금 명령에서
+  훅에 거부되면 그대로 다시 `acquire`(줄 서기)한다 — 사장이 푼 것이니 따지지 않는다. `--boss` 는 `user` 만 쓴다.
+- **역할 울타리 끔**(2026-10-22, 사용자 "도구막는거 싹다풀어"): `.claude/cl9-roles.json` 의 `role_fence: false` — `cl9-<role>` 에이전트도
+  리드와 같이 다룬다. 훅이 편집 영역·셸 허용 목록·MCP 를 막지 않고, 에이전트 파일에 `tools` 줄이 없어 묻기·웹 찾기 등 세션 도구를 다 쓴다.
+  잠금 극성(에디터·빌드·PIE 는 배타 잠금 보유 세션만)은 그대로다. 에이전트 본문의 "네 영역"·"하지 않는 것"은 이제 훅이 아니라 지침이다.
+  다시 막으려면 `true` 로 바꾸고 `py -3 .claude/hooks/render_roles.py --write`.
 - `save_assets` 는 **절대 거부되지 않는다** — "에디터 끈다"는 통지를 받은 쪽이 저장은 할 수 있어야 한다.
 - **훅은 세션 시작 때 실린다.** 훅이 없던 세션은 `.claude/settings.json`에 훅이 생겨도 재시작 전까지 잠금을 지키지도 따르지도 않는다(훅이 이미 실린 세션은 명령 문자열 변경을 파일 감시로 받는다 — 2026-09-13 실측).
   `/cl9 status`(또는 `cl9_lock.py status --nonce <아무 값>`)가 "훅: 활성/비활성"을 알려 준다.
 - 세션 ID 는 훅이 stdin 에서 찍는다 — 셸에서 `--session` 을 줄 필요가 없다. `--session` 은 테스트용.
+- **에디터 자리 줄**(2026-10-18, [goal/editor-ops.md](C:\Work\CL9\docs\goal\editor-ops.md)): 배타 잠금의 `acquire` 는 줄 서기를 겸한다 —
+  줄에 없으면 끝에 서고, **머리일 때만** 잡는다(거부 사유 "busy: 줄 머리는 …, 내 차례는 N번째"). 이미 배타 잠금이나 살아 있는 임대를 쥔
+  세션은 줄을 서지 않는다(쓰던 에디터를 이어 쓰는 것). 머리는 사용자 손(`user`·`panel`)이 먼저, 그 뒤 선 순서다. 머리가 10분
+  (`.claude/hooks/lock_values.csv` `queue_head_minutes`) 안에 안 잡으면 `queue sweep` 이 지운다(잠금이 쥐어져 있는 동안은 세지 않는다).
+  `queue join <용도> [--item N]`·`leave`·`list [--json]`·`sweep`. 줄 파일은 `.claude/runs/editor-queue.json`.
+- **고정 ID** `broker`(빌드 브로커)·`panel`(데이터 패널)·`user`(사무실 페이지에서 사장이 직접) 는 `--session <id>` 로 쓴다. 사무실 페이지
+  (`http://127.0.0.1:8770` 에디터실 탭)는 잠금의 정식 창구다 — 잡기·놓기·죽은 잠금 뺏기·가드·줄을 거기서 하고, 도구와 같은 거부를 받는다.
+  데이터 패널은 쓰기·저장마다 `panel` 임대(5분)를 받고, 다른 보유자의 배타 잠금이 살아 있으면 쓰기를 막는다("그래도 쓰기"는 사용자 손, 기록됨).
 - 잠금은 *안 된다*를 말하고, `SendMessage` 는 *왜·언제*를 말한다 — 둘 다 한다.
 - 사람이 손으로 에디터를 닫거나 Claude Code 밖 PowerShell 창에서 빌드하는 건 훅 밖이다 — 아래 체크리스트를 따른다.
 
@@ -118,12 +168,18 @@ py -3 Tools/Build/build_ctl.py status | hold | resume | now | start-in N | coale
 - **실패하면** 결과에 오류 줄마다 파일 · 줄 · 코드 · **주인 역할**(`cl9-roles.json`) · 수정 중 여부 · 마지막 성공 빌드 이후 수정 여부가 붙어
   요청 세션 전원에게 돌아간다. **누구 것인지는 받은 세션이 판단**한다 — 내 파일이면 고치고 같은 명령으로 다시 요청하고, 아니면 주인 역할/요청
   세션에 알린다. 같은 오류로 연속 2회 실패하면 `needs_user` 로 제어 페이지에 뜨고, 세션은 더 시도하지 않고 사용자에게 알린다.
+- **대기는 묻지 않는다.** `QUEUED`(종료 코드 2)는 잠금·보류·묶음 대기 중이라는 뜻이다. 사유에 잠금 안내문(`release --force` 등)이 보여도
+  세션은 잠금을 풀거나 사용자에게 묻지 않고 `build_request.py --ticket N` 으로 이어서 기다린다. 사용자에게 올라가는 건 `needs_user` 뿐이다.
   정식 빌드가 실패하면 에디터는 꺼진 채 남는다(고쳐서 다시 요청 — 제어 페이지에 '에디터 켜기').
 - **기록.** 빌드마다 `.claude/runs/build-broker/builds.jsonl` 에 git HEAD · 수정 중 파일 · 요청 세션/사유 · 결과 · 시간이 남는다
   (`build_ctl.py history`).
 - **꺼짐.** 큐가 비고 15분간 요청·제어가 없으면 스스로 종료한다. 브로커는 파이썬 프로세스라 토큰을 쓰지 않는다.
 - 브로커는 `cl9_lock` 을 세션 ID `broker` 로 잡는다 — 아래 수동 절차를 따르는 세션도 잠금을 본다(병행). 훅으로 직접 `Build.bat` 을 막는
   대체 단계는 아직 아니다.
+- **새벽 패키징.** 작업 스케줄러 `CL9_NightlyPackage` 가 매일 `Tools/Build/nightly_package.py` 를 부른다(2026-10-22 사용자 "새벽 5시마다 빌드예약").
+  잠금을 세션 ID `nightly`·용도 build 로 잡고 RunUAT BuildCookRun(에디터 타깃은 빌드하지 않음)을 돌려 `Packaged/Windows/CL9.exe` 를 만들고,
+  압축해서 GitHub 비공개 저장소의 `nightly` 릴리스에 올린다(매일 덮어씀, 2GB 넘으면 조각, 2026-10-23 사용자 "github에도 실행파일 올리게해줘").
+  시각·구성·잠금 대기는 `Tools/Build/nightly_values.csv`, 결과는 `Saved/Nightly/last.json`·`<날짜>.log`. 시각을 바꾸면 `--register` 로 다시 등록한다.
 
 ### 빌드 — 복사해서 쓰는 수동 절차 (브로커를 못 쓸 때)
 
@@ -138,13 +194,13 @@ taskkill /IM UnrealEditor.exe /F
 # 3. 분리 프로세스 빌드 — Bash/PowerShell 도구의 백그라운드는 10분 제한에 죽는다
 #    scratchpad 에 build.cmd(Build.bat CL9Editor Win64 Development -Project=… → 성공 시 UnrealEditor.exe 재기동) 를 쓰고
 Start-Process cmd.exe -ArgumentList '/c','"<scratchpad>\build.cmd"' -WindowStyle Hidden -PassThru   # ← 이 PID 로 acquire
-Monitor 로 로그의 BUILD EXIT / Result: 와 UnrealEditor.exe·포트 8000 을 감시
+Monitor 로 로그의 BUILD EXIT / Result: 와 UnrealEditor.exe·MCP 포트(설정값, 기본 8100)를 감시
 # 4. 에디터가 다시 뜨면 MCP 대기 → 동료에게 "에디터 올라옴" → 해제
 py -3 .claude/hooks/cl9_lock.py release
 ```
 
 에디터를 끈 상태의 빌드는 이 머신에서 1~3분, 켠 채 Live Coding 은 20~48분. 여러 세션 변경분은 **모아서 한 번에** 빌드한다.
-빌드 전 `tasklist`로 에디터가 이미 떠 있는지 확인한다 — 두 개가 뜨면 나중 것이 포트 8000을 못 잡고 레벨만 붙든 **유령**이 되어
+빌드 전 `tasklist`로 에디터가 이미 떠 있는지 확인한다 — 두 개가 뜨면 나중 것이 MCP 포트(설정값, 기본 8100)를 못 잡고 레벨만 붙든 **유령**이 되어
 `.umap` 저장을 `Error Code 32`로 막는다(포트 소유 PID 는 `netstat -ano`).
 
 ### PIE
@@ -304,7 +360,7 @@ CL9 이어서 하자 — memory/work-progress.md(C:\Users\user\.claude\projects\
 
 ## 런북
 
-**유령 에디터** — 저장이 `Error Code 32`, 또는 MCP 가 안 붙는다: `tasklist /FI "IMAGENAME eq UnrealEditor.exe"` 로 둘 이상이면 `netstat -ano | findstr :8000` 으로
+**유령 에디터** — 저장이 `Error Code 32`, 또는 MCP 가 안 붙는다: `tasklist /FI "IMAGENAME eq UnrealEditor.exe"` 로 둘 이상이면 `netstat -ano | findstr :8100`(MCP 포트 — 설정값, 기본 8100. 2026-10-18 전에는 8000)으로
 포트 주인을 찾고, 주인이 아닌 쪽을 `taskkill /PID`. 잠금이 필요하다(`acquire compile` 로 잡는다 — pid 없이 되는 배타 용도).
 
 **빌드 실패** — 로그의 첫 `error C`/`error LNK` 를 보고 **바꾼 파일의 역할**에 돌려준다(`SendMessage` 로 그 에이전트 이름에, 수동이면 그 세션에).

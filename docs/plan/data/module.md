@@ -50,7 +50,7 @@
 | `Size` | `FIntPoint` | 격자 칸 단위 W × H |
 | `Sockets` | 4비트 마스크 | 어느 변이 열리나 — N/S/E/W (회전 전 기준). 열린 변의 경계 칸이 전부 문 후보다 |
 | `Rarity` | int 1~3 | 뽑힐 가중치 (REPO `ModuleRarity1/2/3`) |
-| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다. 소품의 `LightIntensity`(cd, 0이면 빛 없음)·`LightRadius`·`LightColor`·`LightOffset`이 있으면 **시설 조명**이 된다 — 인스턴스마다 포인트 라이트가 붙고 정전이면 꺼진다(2026-09-16, light.md). `LightScattering`(안개 후광, 기본 1)·`LightFlicker`(깜박임 진폭 0~1)·`LightFlickerSpeed`(Hz, 기본 6)는 2026-09-17 — 작업등 10cd·산란 1·깜박임 0, 모닥불 12cd·산란 4·깜박임 0.35/5. **세트마다 `Fixtures`**(2026-10-12, 7c): 그 세트가 뽑히면 호스트가 판 시작에 세우는 복제 액터 — `ActorClass`·`Local`·`Yaw`(소품과 같은 좌표계). `kitchen` 은 두 세트 모두 작업대 대신 조리대(`BP_CL9Kitchen`) 하나 |
+| `PropSets` | `FCL9PropSet[]` | 소품 배치 세트들 — 인스턴스마다 하나를 자리 좌표 해시로 뽑는다(2026-09-11 구현). 세트 안 소품(`FCL9PropPlacement`)은 `Mesh` · `Local`(회전 전 모듈 로컬 cm, 원점 = 최소 모서리, Z = 바닥 윗면) · `Yaw` · `bSolid`(이동·시야를 막나) · `Side`+`SideRule`(`Always`/`SideClosed`/`SideOpen` — 소품 발자국이 걸친 그 변의 경계 칸이 전부 벽인가로 켜고 끈다, REPO `ModulePropSwitch`). 몸 있는 소품은 칸 중심 ±130cm(스폰 지터)와 문 자리를 비워야 하며 배치기가 어기면 경고한다. 소품의 `LightIntensity`(cd, 0이면 빛 없음)·`LightRadius`·`LightColor`·`LightOffset`이 있으면 **시설 조명**이 된다 — 인스턴스마다 포인트 라이트가 붙고 정전이면 꺼진다(2026-09-16, light.md). `LightScattering`(안개 후광, 기본 1)·`LightFlicker`(깜박임 진폭 0~1)·`LightFlickerSpeed`(Hz, 기본 6)는 2026-09-17 — 작업등 10cd·산란 1·깜박임 0, 모닥불 12cd·산란 4·깜박임 0.35/5. **2026-10-16 룩 표**: 빛 값(세기·거리·색·산란·깜박임·원뿔)은 소품마다 적지 않고 `LampKind`(룩 표 램프 종류 이름 — `WorkLamp`·`Campfire`)로 고른다. 소품은 이름과 자리(`LightOffset`)만 — [look.md](look.md). **세트마다 `Fixtures`**(2026-10-12, 7c): 그 세트가 뽑히면 호스트가 판 시작에 세우는 복제 액터 — `ActorClass`·`Local`·`Yaw`(소품과 같은 좌표계). `kitchen` 은 두 세트 모두 작업대 대신 조리대(`BP_CL9Kitchen`) 하나 |
 | `Height` | float | 천장 높이 (모듈마다 다를 수 있다) |
 | `bStairs` | bool | 모듈 **안에서** 오르내리는 높이차가 있는가 — 바깥으로 전파되지 않는다 |
 | `bOutdoor` | bool | 야외 모듈인가 (마당) — 천장을 안 씌우고 벽 대신 울타리를 세운다 |
@@ -92,12 +92,26 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 | 17 | `stair_up` | Stair | 2×2 | 위층으로 올라가는 계단실 (2026-09-10) | 난간 · 자루 |
 | 18 | `corridor_3` | Passage | 1×3 | 곧은 긴 복도 (2026-09-15) | 〃 (아직 비움) |
 | 19 | `corridor_4` | Passage | 1×4 | 곧은 더 긴 복도 (2026-09-15) | 〃 (아직 비움) |
+| 20 | `feed_hall` | Normal | 4×4 | **건물 안 큰 홀** (2026-10-22, [C:\Work\CL9\docs\goal\map-hidden-loot.md](C:\Work\CL9\docs\goal\map-hidden-loot.md) 기능 C) — Flow 판마다 본줄기에 하나 | 기둥 넷·상자 더미·포대 더미·팔레트(칸 모서리), 벽 선반 랙·타이어·드럼통, 사물함 둘·뚜껑 상자 둘·숨는 통 둘(고정물) |
+
+**큰 홀 `feed_hall` (2026-10-22).** 사용자 — "광장처럼 큰 공간도 없고", 답 5 "건물 내부에 큰 것". 칸 500 cm 라 지금 방은 2×2(10 m),
+가장 큰 `coop_hall` 이 3×3(15 m)이므로 홀은 4×4(20 m)다. `bInjectOnMain` 을 켠 **보통 방**이라 납품 방처럼 본줄기 깊이 창(0.2~0.8) 안
+한 칸을 반드시 차지하고, 무작위 본줄기·곁가지에서는 뽑히지 않는다(Main·Branch·Cap 0, `Once`). `Rarity` 0 이라 Henhouse 생성기(대농장·돼지 농장)에는 서지 않는다.
+문 자리 (1,3)N · (3,2)E · (2,0)S · (0,1)W — 변마다 하나, 가운데에서 한 칸씩 비껴 놓았다. 홀의 남는 문 자리마다 곁가지가 붙는다(본줄기 칸이므로).
+가운데 소품은 칸 모서리(500 의 배수)에만 둬서 칸 중심 ±130 스폰 자리를 비운다. 행은 `Tools/Unreal/apply_hidden_loot_map_20261022.py` 가 `coop_hall` 을 베껴 만든다.
+테스트 `CL9.Map.Flow.InjectHall`(200 시드 — 홀이 판마다 정확히 하나, 1층 본줄기, 깊이 창 근처, 납품 방도 선다).
+
+**수납 가구·숨는 통은 고정물이다 (2026-10-22).** 소품 세트의 `Fixtures` 에 `ACL9StorageFurniture`(BP 자식 `BP_CL9_<가구>`)와 숨는 통을 벽에 붙여 넣는다.
+고정물에 `Side`·`SideRule` 이 생겼다(소품과 같은 규칙, 고정물은 `Local` 한 점이 걸친 경계 칸 하나를 본다) — 벽에 붙인 가구는 `SideClosed` 라
+그 벽이 문으로 뚫린 판(특히 열린 변 전부가 문 후보인 Henhouse 생성기)에서는 서지 않는다. 모듈별 가구 목록과 꾸밈 소품은 위 스크립트의 `ROOM_FURNITURE`·`ROOM_EXTRAS`.
 
 **복도 행을 둘 더한 이유 (2026-09-15).** 복도가 1×2 하나뿐이라 직선 구간이 10 m를 못 넘고,
 시드 873 실측에서는 양옆이 벽인 복도 칸이 1층에 3개뿐이라 방→개구부→방이 10 m마다 반복됐다
 (리썰컴퍼니 직선 복도 타일은 28.5 u). 1×3 · 1×4로 직선 구간을 15~20 m까지 늘린다. 소켓은 짧은
-변 둘(N · S), Rarity는 `corridor` 2 · `corridor_3` 2 · `corridor_4` 1(초안). 소품 세트는 비워
-둔다 — 1×2 세트의 로컬 좌표를 그대로 못 쓴다(후속). 곁가지에서 통로가 뽑히는 비중은 사이트
+변 둘(N · S), Rarity는 `corridor` 2 · `corridor_3` 2 · `corridor_4` 1(초안). 소품 세트는 2026-10-15 룩 개편에서
+채웠다(`Tools/Unreal/apply_corridor_propsets.py` — corridor_3·corridor_4 둘씩, corridor·corner 하나 더, entrance 하나. 허용 소품은
+소화기·배전반·경고 표지판·포스터·양동이·계란 트레이 더미·바구니·깃털·얼룩 + 세트마다 작업등 하나, 벽 소품 깊이 50 cm 이하·한 변·가운데
+400 cm 비움 — henhouse_indoor_objects.md §7; 벽 소품 자리는 메시 바운드로 벽에서 2 cm 띄워 계산한다). 곁가지에서 통로가 뽑히는 비중은 사이트
 행의 `PassageShare`(양계장 0.40 초안)가 정한다.
 
 **`pen`(6번) 둘레는 울타리다 — 아트는 생겼고 연결 규칙은 미결 (2026-09-28).** 우리용 조각
@@ -117,11 +131,30 @@ REPO의 타입 비율(N 31% · DE 25% · P 19% · E 19%)에 맞췄다.
 1번이 맞아 보이지만 열 추가 = `ModuleTable` 스키마 변경이라 사용자 결정이 필요하다. 그래서
 이번 실행에서는 표·문서만 준비하고 생성기는 손대지 않았다.
 
-**소품은 이미 보유하고 있다** — Dreamscape Farmlands의 `Meshes/Props/Interior`(58) ·
-`Exterior`(84), 총 142종. 양계장에 필요한 게 거의 다 있다.
+**소품은 자체 제작한다** — Dreamscape Farmlands 팩은 쓰지 않는다(2026-10-04 삭제). 지금 있는 것은
+`Content/Maps/Henhouse/Props/`의 상자·사료 포대·여물통·세 칸 둥지·작업등·모닥불과 `Workbench/`의 작업대다.
 
 seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"배치 규칙이 기획에 없어서"**
 비어 있었는데, 그 빈칸이 이 설계를 기다린 것이다.
+
+## Flow 생성기 — 리썰 방식 (2026-10-15, 양계장)
+
+> 양계장(`henhouse`) 사이트 행은 `Generator = Flow` 다. 아래 "생성 알고리즘"은 **대농장·돼지 농장이 쓰는 `Henhouse` 생성기**의
+> 설명으로 남는다. Flow 의 설계·결정·검증 기준 정본은 [../../goal/lethal-layout.md](../../goal/lethal-layout.md).
+
+Flow 는 모듈 표의 아래 열만 읽는다(`Henhouse` 생성기는 이 열을 읽지 않는다). 문 자리가 없거나 실외(`bOutdoor`)인 행은 Flow 판에 서지 않는다.
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `DoorSlots` | 배열 (칸 · 변 · `Level`) | 문 자리 — 회전 전 모듈 기준 경계 칸과 그 변. 모듈끼리는 이 자리끼리만 맞물리고, 곁가지 수를 자르는 "남은 문"도 여기서 센다. `Level` 1 은 계단실의 위층 문 |
+| `MainWeight` · `BranchWeight` · `CapWeight` | 실수 | 본줄기 · 곁가지 가운데 · 곁가지 끝(과 본줄기 끝) 칸에서 뽑힐 가중치. **곁가지 끝은 `CapWeight` 행으로만 맺는다** — 막다른 곳은 늘 방 |
+| `MazeWeight` | 실수 | 미로 구간(사이트 `MazeMin`~`MazeMax`) 본줄기에서 `MainWeight` 에 곱한다. 사거리 3.75(= 15), 큰 방 0 |
+| `DepthMin` · `DepthMax` | 0~1 | 본줄기 깊이 창 — 창 밖이면 본줄기 가중치 0. 계단·부엌은 이 창 안 본줄기 칸 옆에만 붙는다 |
+| `Repeat` | `Allow` · `NoImmediate` · `Once` | 한 판 반복 규칙 — 큰 방은 `Once`(한 판 한 번), 복도는 `NoImmediate` |
+| `bInjectOnMain` | bool | Special 만 — 켜면 본줄기 깊이 창 안 한 칸을 차지(납품 방), 끄면 그 창 안 본줄기 칸의 곁가지 한 칸(부엌) |
+
+`Rarity` 0 은 "`Henhouse` 생성기에서 뺀다"는 뜻이다 — 실내 입구 `entrance`(Start, 2×2, 서쪽 칸에 트럭 문)가 그 행이다.
+양계장 19행의 값은 [../../goal/lethal-layout.md](../../goal/lethal-layout.md) "Henhouse values" 표.
 
 ## 생성 알고리즘
 
@@ -130,6 +163,8 @@ seg kind 표의 `hay` · `trough` · `crate` · `brooder` 행이 그동안 **"�
    빈 칸에 놓는다. 칸 점유 검사로 겹침을 막는다.
 3. **곁가지**를 쳐서 `DeadEnd`로 끝낸다. 리썰컴퍼니는 **본줄기 8~22개에 가지 22~25개** —
    지나는 곳 대부분이 막다른 곁가지다. 그 비율을 참고한다.
+   (2026-10-15 정정: "22~25"는 리썰에서 쓰이지 않는 Global 값이다. 실제로는 본줄기 타일의 남는 출입구마다 가지 하나 —
+   [../../reference/lethal/lethal-map.md](../../reference/lethal/lethal-map.md). Flow 생성기는 그 규칙을 그대로 쓴다.)
    **위층도 같다 (2026-09-16)**: 계단실마다 위층을 3모듈 이상 틔운 뒤, 위층 예산(아래층 × `UpperFloorShare`)으로
    먼저 본줄기(가장 깊은 자리만 이어 붙임)를 뻗고 그다음 곁가지를 친다. 곁가지만으로 채우면 계단 둘레의
    뭉치로 끝나 "올라가자마자 막힌다". 본줄기 비율 · 통로/막다른 방 비율 ·

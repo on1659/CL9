@@ -29,17 +29,36 @@
 | `CellSize` | float | 격자 칸 하나의 크기 (cm) — 조각 한 장과 같아야 벽이 안 늘어난다 | 500 |
 | `BaseModuleCount` | int | **1층**의 모듈 수 기준값 — 진행 표의 `SiteSizeCurve`가 곱해지고, 위층은 그 × `UpperFloorShare`가 덧붙는다 (2026-09-10 층 부활, 09-16 비율 컬럼화) | 40 (2026-09-15, 헤더 기본 24에서 올림 — 아래 "크기는 일자가 정한다") |
 | `EntryOffset` | float | 트럭 패드에서 시작 모듈 바깥면까지 (cm) | 1000 |
+| `InteriorOffset` | FVector | 건물 안을 바깥과 떼어 놓는 거리 (cm, 트럭 패드 기준). 0 이 아니면 실내가 그만큼 떨어진 자리에 서고 마당에는 겉모습만 남는다 — 드나들기는 건물 문 자리의 순간 이동(`C:\Work\CL9\docs\goal\map-hidden-loot.md` 기능 E). 0 이면 예전처럼 붙은 판 | 0 (켤 때 제안 (0,0,-20000)) |
+| `DoorArrivalDistance` | float | 건물 문으로 옮겨 갈 때 짝 문의 문턱에서 내려놓는 거리 (cm) | 150 |
 | `MaxFloors` | int | **몇 층까지 세우나** — 2면 2층, 3이면 3층까지 (2026-09-10) | 2 |
 | `StairCountMin` | int | 층 사이에 놓을 계단 모듈 수의 하한 — 시드가 이 안에서 뽑는다 | 2 |
 | `StairCountMax` | int | 〃 상한 | 4 |
 | `UpperFloorShare` | float | 위층 예산 = 아래층 예산 × 이 값 (2026-09-16 — 0.5 상수에서 컬럼으로. 2층이 계단을 올라가자마자 끝나서 올림) | 0.75 (초안, 09-17 PIE 확인) |
 | `LampDensity` | float 0~1 | 빛 값이 있는 소품 가운데 실제로 켜지는 비율 — 등 몸체는 그대로 서고 빛만 시드로 뺀다(불 꺼진 등). 2026-09-18 "조명 개수가 너무 많다" | 0.5 (시드 873: 45 → 23개) |
-| `bBuildCeilings` | bool | **실내 모듈에 천장을 씌우나** — 끄면 위에서 맵 속이 보인다 (2026-09-10) | 지금 꺼 둠 |
+| ~~`LampSurviveShare`~~ | — | **룩 표 조명 프로필로 옮김 (2026-10-16)** — [look.md](look.md) |
+| `bBuildCeilings` | bool | **실내 모듈에 천장을 씌우나** — 외부 지붕과 독립 (2026-09-10) | true |
+| `bBuildRoofs` | bool | **지상 발자국 전체에 공통 외부 지붕과 외곽 빈 띠 마감을 씌우나** — 마당 포함, 생성기·길·기존 천장 유지 (2026-10-04) | true (헤더 기본 false) |
+| `RoofClearanceCm` | float ≥0 | 가장 높은 모듈 천장 판 위에서 공통 지붕 밑면까지의 간격(cm) | 2 |
 | `LoopChance` | float | 이미 놓인 모듈끼리 맞닿았을 때 문을 뚫을 확률 — 고리(우회로)가 여기서 생긴다 (2026-09-15, 생성기 상수에서 컬럼으로) | 0.25 |
 | `MainPathShare` | float | 전체 모듈 중 본줄기(입구에서 가장 깊은 곳까지 한 줄기)의 비율 — 나머지는 곁가지 (〃) | 0.4 |
 | `PassageShare` | float | 곁가지 예산 중 통로(복도·코너·계단 통로)의 비율 (〃) | 0.40 (초안 — 0.28에서 올림) |
 | `DeadEndShare` | float | 곁가지 예산 중 막다른 방의 비율 — 둘을 뺀 나머지가 방 (〃) | 0.32 |
 | `SpecialCopies` | int | Special 행(납품 방·주방) 하나를 한 판에 몇 번 놓나 — 납품 방마다 반납 항아리가 하나다 (2026-10-03) | 1 |
+
+**2026-10-15: 양계장은 `Generator = Flow`(리썰 방식)다** — 설계·결정 정본 [../../goal/lethal-layout.md](../../goal/lethal-layout.md).
+위 표의 `BaseModuleCount` · `MainPathShare` · `PassageShare` · `DeadEndShare` 는 Flow 에서 쓰지 않고(대농장·돼지 농장의 `Henhouse` 생성기가 쓴다),
+아래 열이 판을 정한다. 양계장 값: 계단 `StairCountMin/Max` 1/2(2~4 에서 내림 — "계단 너무 많으면 위아래 와리가리"),
+`UpperFloorShare` 0.5(**Flow 에서는 본줄기 길이에 곱한다** — 위층 본줄기 총길이), `LoopChance` 1.0(Flow 는 문 자리가 정확히 마주볼 때만 후보라 뜻이 다르다).
+
+| 컬럼 | 타입 | 뜻 | 양계장 |
+|---|---|---|---|
+| `MainPathMin` · `MainPathMax` | int | 본줄기 모듈 수 범위(입구·끝 포함) — **판 크기를 정한다.** `SiteSizeCurve` 를 곱한다(리썰 `LengthMultiplier`) | 9 · 11 |
+| `MazeMin` · `MazeMax` | float | 미로 구간 — 본줄기 깊이가 이 사이면 모듈 행의 `MazeWeight` 가 곱해진다(리썰 공장 12~43%) | 0.15 · 0.45 |
+| `BranchDepthMin` · `BranchDepthMax` | int | 곁가지 하나의 길이(끝 방 포함) — 리썰 `BranchingDepth` | 2 · 4 |
+
+실측(2026-10-15, 에디터 판 6개, `measure_site_traverse.py`): 1일차 28모듈, 10일차 31~42모듈, 전부 2층·계단 1개,
+트럭 패드 → 가장 먼 칸 내비 경로 63~108 m (같은 측정으로 `Henhouse` 생성기 40모듈 판은 148~218 m — 837c10 실측).
 
 **`MaxFloors`는 상한이지 목표가 아니다.** 위층은 아래층 실내 모듈이 받쳐 주는 자리에만 설 수
 있어서, 아래층이 좁게 나온 판은 적힌 것보다 낮게 끝난다. 계단 행(`ECL9ModuleType::Stair`)이
@@ -58,6 +77,14 @@
 - **층 높이도 안 바뀐다.** 한 층의 높이는 천장 판 두께를 늘 포함해 계산하므로, 스위치를
   올렸다 내렸다 해도 2층 바닥이 움직이지 않는다.
 - 야외 모듈(`bOutdoor`)은 이 값과 무관하게 언제나 천장이 없다.
+
+**외부 지붕은 별도다** (2026-10-04 사용자: "지붕모델만들어서 덮자"). `bBuildRoofs`를 켜면
+지상 모듈의 발자국을 같은 높이의 `roof` 판으로 덮는다. 실내뿐 아니라 열린 마당도 포함하지만
+빈 격자에는 만들지 않는다. `bOutdoor`·실내 천장·층고·길·레이아웃 해시는 바꾸지 않는다.
+지붕 밑면은 모든 모듈의 `TopFloor × 층고 + Height` 최댓값에 천장 판 두께와
+`RoofClearanceCm`을 더한 높이다. `roofFascia`는 지상 발자국 외곽에서 각 층의 벽 위와
+다음 층 바닥 사이, 마지막 벽 위와 지붕 사이의 빈 높이만 막는다. 내부 방 경계와 출입구 하부는
+유지한다. 정식 henhouse/farm/pigfarm은 켜고 생성기 없는 flat은 끈다.
 
 **`Theme`가 두 표를 한 이름으로 가리킨다.** 조각 표는 테마에 없는 역할이 공용 행으로 떨어지지만,
 모듈 표는 폴백이 없다 — 스테이지의 모듈 세트는 통째로 한 벌이다.
@@ -122,6 +149,24 @@
 
 거위를 되살릴 때는 요충지 술어를 통과해야 한다 — 거위가 좁은 길목에 서면 그 길이 막힌다.
 
+### 양계장 몬스터 구성 — 스토리 기준 제안 (2026-10-23, 미결)
+
+스토리 초안([draft/story-cast.md](C:\Work\CL9\docs\plan\draft\story-cast.md))에서 읽은 첫 스테이지 테마는 **"품어진 적 없는 것"**이다. 주인은 닭이고, 닭 사연의 변주(어미 닭·횃대 닭)와 양계장에 실제로 드나드는 동물(거위·쥐·너구리)이 어울린다. 아래는 제안이며 위 표와 구역 표의 값은 바꾸지 않았다.
+
+| 종 | 양계장 | 이유 |
+|---|---|---|
+| 닭 | 넣는다 (1판부터) | 주인. 그냥 닭과 빈 것이 섞인다 |
+| 어미 닭 · 횃대 닭 | 넣는다 (2판부터) | 닭 사연의 변주. 모델이 나온 뒤 |
+| 거위 | 넣는다 (2판부터) | 출입문·마당의 경보꾼 |
+| 쥐 | 넣는다 (2판부터) | 헛간 벽 속. 모델이 나온 뒤 |
+| 너구리 | 넣는다 (3판부터) | 닭장을 터는 동물. 이 스테이지의 마지막 위협 |
+| 돼지 | 뺀다 | 돼지 농장(`Lvl_PigFarm`)의 주인 |
+| 소 | 뺀다 | 외양간 테마 |
+| 양 | 뺀다 | 외양간·목장 쪽 테마로 본 것(추측) |
+| 토끼 | 뺀다 | 어느 곳 테마인지 문서에 없다 |
+
+**지금 구역 표와 어긋나는 곳:** `middle` 풀에 소·양, `deep` 풀에 돼지·소가 있다. 이 제안대로면 그 넷을 풀에서 빼고 어미 닭·횃대 닭·쥐를 넣어야 한다. 일차별로 처음 나오는 종을 늦추는 장치(1판은 닭만)는 아직 표에 없다 — [../roadmap.md](C:\Work\CL9\docs\plan\roadmap.md) M14.
+
 ---
 
 ## 산출 재료
@@ -130,14 +175,25 @@
 |---|---|---|
 | `ItemSpawns` | `TArray<FCL9SpawnEntry>` | `{ Alias, MinCount, MaxCount }` (schema.md 정본 필드명) |
 
-양계장 기본값:
+양계장 사이트 열은 **비어 있다**(2026-10-20) — 재료는 전부 아래 구역 표에서 나온다.
 
-| 아이템 | 최소 | 최대 |
-|---|---|---|
-| `egg` | 16 | 20 |
-| `meat` | 8 | 12 |
+| 구역 | 깊이 | 재료 | 값 몫(평균) |
+|---|---|---|---|
+| `entrance` | 0.00~0.30 | 계란 3~4 | 약 10% |
+| `middle` | 0.30~0.65 | 계란 8~10 · 고기 2~3 | 약 38% |
+| `deep` | 0.65~1.00 | 계란 6~7 · 고기 6~8 | 약 52% |
 
-구 CCL8 값은 밤당 28개 고정(계란 18 + 고기 10)이었다 — 그 값을 출발점으로 삼았다.
+합계는 계란 17~21 · 고기 8~11로 예전 사이트 열(계란 16~20 · 고기 8~12, 구 CCL8 밤당 28개에서 출발)과 거의 같다. 바뀐 것은 자리다 —
+예전에는 맵 전체에 고르게 깔려 입구와 맵 끝의 보상이 같았다. 정산 목표는 이 총량에서 거꾸로 정했다
+([C:\Work\CL9\docs\plan\economy.md](C:\Work\CL9\docs\plan\economy.md) "공급 대비 목표", [C:\Work\CL9\docs\goal\henhouse-supply-quota.md](C:\Work\CL9\docs\goal\henhouse-supply-quota.md)).
+몬스터도 2026-10-20부터 구역에서 나온다(결정 #38 A4 — [C:\Work\CL9\docs\goal\threat-budget-spawns.md](C:\Work\CL9\docs\goal\threat-budget-spawns.md)).
+사이트 `MonsterSpawns` 는 비었다. 가축 줄(닭)은 판 시작에 마릿수로, 실내 위협은 구역 예산 안에서 판이 흐르며 들어온다.
+
+| 구역 | 가축 줄 | 위협 풀(희귀도) | `ThreatBudget` | `ThreatKindsMax` | `ThreatStartShare` |
+|---|---|---|---|---|---|
+| `entrance` | — | — | 0 | 0 | — |
+| `middle` | 닭 1~2 | 거위 40 · 소 30 · 양 30 | 1.5 | 1 | 0 |
+| `deep` | 닭 2~3 | 돼지 40 · 너구리 25 · 소 20 · 거위 15 | 2.5 | 2 | 0 |
 
 ---
 
@@ -145,13 +201,13 @@
 
 | 컬럼 | 타입 | 뜻 |
 |---|---|---|
-| `Zones` | `TArray<FCL9SiteZone>` | `{ Name, DepthMin, DepthMax, MonsterSpawns, ItemSpawns }` |
+| `Zones` | `TArray<FCL9SiteZone>` | `{ Name, DepthMin, DepthMax, MonsterSpawns, ItemSpawns, ThreatPool, ThreatBudget, ThreatKindsMax, ThreatStartShare }` — `MonsterSpawns` 는 가축 줄, `ThreatPool`(`{Alias, Rarity}` 희귀도 0~100)·`ThreatBudget`(5일차 기준 파워, × `CL9Progression.ThreatBudgetCurve`)·`ThreatKindsMax`·`ThreatStartShare`(판 시작 몫, 나머지는 판 중간)는 실내 위협 풀(2026-10-20, 결정 #38 A4) |
 
 **깊이** = 스폰 지점의 홉 거리(시작 모듈에서 몇 모듈 건너왔나) ÷ 그 판에서 가장 먼 홉. 0이 입구, 1이 가장 깊은 곳이다.
 구역은 `[DepthMin, DepthMax)` 띠 안의 지점에만 자기 몫을 놓는다(`DepthMax` 1이면 가장 깊은 지점까지 넣는다). 띠 안에서는
 몬스터도 재료도 고르게 고른다 — 깊이에 따른 차이는 구역의 행이 이미 말한다. 개수 규칙은 위와 같다(기준값 × 일자 배율).
 
-- **구역이 비어 있으면 예전 그대로다** — `MonsterSpawns`는 깊은 쪽 60% 지점에, `ItemSpawns`는 전체에. 양계장이 그렇다.
+- **구역이 비어 있으면 예전 그대로다** — `MonsterSpawns`는 깊은 쪽 60% 지점에, `ItemSpawns`는 전체에. 양계장은 2026-10-20부터 재료도 몬스터도 구역에서 나온다.
 - 구역이 있어도 사이트의 `MonsterSpawns`·`ItemSpawns`는 예전 방식으로 그 위에 더해진다. 대농장은 둘을 비우고 구역만 쓴다.
 - 생성기가 없는 사이트(`flat`)는 띠를 가릴 수 없어 구역 몫이 트럭 주변 원환에 함께 떨어진다.
 - 띠에 해당 용도의 지점이 하나도 없으면 그 구역 몫은 안 놓인다 — 로그 줄 `zone <이름> (… N monster / M loot points)`가 그것을 보여 준다.
@@ -162,6 +218,7 @@
 
 양계장 1층의 5배 판. 모듈 세트는 아직 양계장 것(`Theme` henhouse)을 쓴다 — 농장 전용 모듈이 생기면 `Theme`만 바꾼다.
 레벨은 `Lvl_Farm`(Lvl_Henhouse 복제 — 트럭 패드·푸드트럭·주방·카운터·조명·시작 손전등이 따라온다).
+**(2026-10-09 정정 — "주방·카운터"는 따라오지 않는다. 조리대(`BP_CL9Kitchen`)·창구(`BP_CL9Counter`)·트럭 패널·수레는 `Lvl_Flat` 에만 있고 `Lvl_Henhouse`·`Lvl_Farm`·`Lvl_PigFarm` 에는 없다(umap 문자열 조회로 확인). 위 문장의 나머지 항목은 이 정정이 따로 확인하지 않았다. 스테이지에 조리대를 놓는 일은 다음이다 — 배치는 나중(사용자 2026-10-09), [../../goal/kitchen-identity.md](../../goal/kitchen-identity.md).)**
 **(2026-10-13 정정 — 창구는 트럭에 붙는다)**: 판 레벨마다 게임 모드가 트럭 옆면 바깥에 납품 창구(`BP_CL9Counter`)를 세운다(`CL9Rules.TruckCounterClass`·`TruckCounterOffset`, [../../goal/truck-counter.md](../../goal/truck-counter.md)). 위의 "창구는 Lvl_Flat 에만"은 이것으로 바뀐다 — Lvl_Flat 은 손으로 놓은 창구 하나를 그대로 쓴다.
 행과 레벨은 명세 `Tools/Unreal/stages/farm.json` + `Tools/Unreal/setup_stage.py`가 만든다(다시 돌려도 같은 결과 — [../../systems/stage.md](../../systems/stage.md)).
 
@@ -232,7 +289,7 @@
 | `UnlockDay` | int | 몇 일차부터 갈 수 있나 | 1 (양계장) |
 | `BaseDanger` | float | 기본 위험도 — 일자 곡선의 기준 | 1.0 |
 | `ValueRate` | float | 가격식의 목적지 배율 ([../economy.md](../economy.md)) | 1.0 (양계장 — 눈금 기준) |
-| `TravelDays` | int | 가는 데 걸리는 일수 | 0 |
+| `TravelDays` | int | 가는 데 걸리는 일수 — **미구현**(2026-10-16 감사: `UCL9SiteDef` 에 없다, 당분간 0) | 0 |
 
 `TravelDays`가 0보다 크면 이동에 날이 걸린다. **당분간 0으로 둔다** — 먼 목적지가 생기면 켠다.
 
@@ -244,7 +301,7 @@
 |---|---|---|
 | `NightLength` | 밤 길이 (초) | 245 |
 | `DarkBase` | 정전까지 (초) | 185 |
-| `DarkAccel` | 반납 1회가 앞당기는 시간 (초) | 4.0 |
+| `DarkAccel` | 반납 1회가 앞당기는 시간 (초) — 2026-10-16 정정: 사이트 열이 아니라 `CL9Rules.DarkAccel`([rules.md](rules.md))이다. `UCL9SiteDef` 에는 `NightLength`·`DarkBase`·`DarkMin` 만 있다 | 4.0 |
 | `DarkMin` | 정전 최소 시각 (초) | 125 |
 
 **비우면 [rules.md](rules.md)의 전역값을 쓴다.** 목적지마다 덮어쓸 수 있다.
@@ -253,7 +310,16 @@
 
 ---
 
-## 조명 (2026-09-12)
+## 조명 (2026-09-12) — 2026-10-16 룩 표로 옮김
+
+> **지금 정본은 [look.md](look.md) "조명 프로필"이다.** 사이트 행에는 `LightingProfile`(프로필 이름, 비면 첫 프로필)만 남았다 —
+> 양계장·대농장·돼지 농장·확인용 고정 맵은 `default`, 테스트 레벨 flat 은 `flat`. 아래 표와 설명은 옮기기 전의 기록이다(값의 뜻은
+> 그대로 유효하고, 열이 사는 곳만 바뀌었다). PIE 중에 표를 고치면 바로 보인다(look.md 실시간 모드).
+
+| 컬럼 | 타입 | 뜻 |
+|---|---|---|
+| `LightingProfile` | FName | 룩 표의 조명 프로필 이름 (2026-10-16) |
+
 
 **어둠은 사이트의 성격이다** — 축사의 밤과 다른 목적지의 밤은 다르게 보인다. 그래서 페이즈별
 조명 값은 `ACL9NightLighting` 액터 프로퍼티가 아니라 여기 컬럼이다. 값의 뜻과 튜닝 방향은
@@ -273,13 +339,14 @@
 | `SunColor` | 태양 색에 곱하는 색조 — 흰색이면 원래 색 | 흰색 / 달빛 청색 (0.35, 0.45, 0.75) / 〃 |
 | `SkyScale` | 하늘(SkyLight) 밝기 **배율** | 0.5 / **10** / 0 |
 | `SkyColor` | 하늘 색에 곱하는 색조 — "검정의 색" | 흰색 / 차가운 청색 (0.55, 0.7, 1.0) / 〃 |
-| `SkyLeak` | 닫힌 실내로 새어 드는 하늘빛 비율 (Lumen Skylight Leaking, 0~1) | 1 / 1 / 0 |
-| `FogDensity` | 안개(ExponentialHeightFog) 밀도 **절대값** — 0이면 안개 없음 | 0.0436 / **0.05** / **0.05** (밤·정전 0.01 → 0.05, 2026-09-17 볼류메트릭 안개 기본 — light.md) |
-| `FogColor` | 안개 산란색 | 검정 / 짙은 남색 (0.02, 0.03, 0.06) / 검정 |
+| `SkyLeak` | 닫힌 실내로 새어 드는 하늘빛 비율 (Lumen Skylight Leaking, 0~1) | 1 / **0.5** / 0 (2026-10-15 룩 개편 — 잔여 누수. PIE 실측: 0.15 는 좁은 실내에서 0 과 같다, 루멘 누수가 히트 거리/1000cm 로 깎인다. light.md 룩 개편) |
+| `FogDensity` | 안개(ExponentialHeightFog) 밀도 **절대값** — 0이면 안개 없음 | 0.0436 / **0.5** / **0.5** (2026-10-15 룩 개편 — 검은 안개 투과율이 거리감의 전부라 올렸다. PIE 실측: 1.0 은 마당(첫 어둠 ×2)이 회색 안개 벽; 그전 밤·정전 0.01 → 0.05, 2026-09-17 볼류메트릭 안개 기본 — light.md) |
+| `FogColor` | 안개 산란색 | 검정 / **검정** (2026-10-15, 그전 짙은 남색 (0.02, 0.03, 0.06)) / 검정 |
 | `SkyMaterial` | 하늘 구(`SM_SkySphere`)에 씌울 재질 — 비면 레벨 재질(2026-10-03부터 레벨 재질도 저녁 하늘) | **`MI_CL9_DuskSky`**(2026-10-03 — 어두운 남보라 저녁, 옛 값 비움 = 밝은 낮 하늘) / `M_CL9_NightSky`(별 있는 남색, Tools/Unreal/create_night_sky.py) / 같음 (2026-09-18) |
 | `bClouds` | 볼류메트릭 구름 표시 | **끔**(2026-10-03) / 끔 / 끔 (2026-09-18 — 밤 구름이 하얗게 남았다) |
-| `SkyScattering` | 하늘빛이 볼류메트릭 안개를 밝히는 세기 | 1 / **0.1** / 0.1 (2026-09-18 — 밤 SkyScale 5 가 안개를 밝혀 마당이 뿌옇던 것) |
+| `SkyScattering` | 하늘빛이 볼류메트릭 안개를 밝히는 세기 | 1 / **0** / 0.1 (2026-10-15 밤 0 — 룩 개편; 2026-09-18 — 밤 SkyScale 5 가 안개를 밝혀 마당이 뿌옇던 것) |
 | `SkyLuminance` | 보이는 하늘(SkyAtmosphere) 밝기 배율 — 태양과 별개 (2026-09-16) | **0.3**(2026-10-03, 1에서) / 0.15 / 0.05 (초안) |
+| `FogSkyAmbient` | 하늘 대기·하늘빛이 높이 안개에 더하는 앰비언트 비율 (`SkyAtmosphereAmbientContributionColorScale`) — 0 이면 안개가 표의 색만 낸다 | 1 / **0** / **0** (2026-10-15 룩 개편 — 검정 안개가 먼 데서 하늘색으로 물들던 것) |
 
 태양·하늘은 레벨에 놓인 라이트의 원래 값에 곱하는 배율이라 레벨을 바꿔도 같은 행을 쓴다.
 안개는 레벨에 `ExponentialHeightFog`가 있어야 갈 곳이 있다 — 없으면 안개 값만 버려진다.

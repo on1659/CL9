@@ -21,6 +21,7 @@
 | `CL9Rules` (단일) | `UCL9RulesDef` | [plan/data/rules.md](../plan/data/rules.md) | [systems/balance.md](../systems/balance.md) | `CL9RulesDef.h` |
 | `CL9Progression` (단일) | `UCL9ProgressionDef` | [plan/data/progression.md](../plan/data/progression.md) | [systems/balance.md](../systems/balance.md) | `CL9ProgressionDef.h` |
 | `CL9DefList` | `UCL9DefList` | [plan/data/README.md](../plan/data/README.md) | 아래 "조회·등록" | `CL9DefRegistry.h` |
+| `SkinTable` | `UCL9SkinDef` | — (기획 표 문서 없음, 2026-10-16 감사) | [systems/save.md](../systems/save.md)(스킨) · [goal/loop-7k-skins.md](../goal/loop-7k-skins.md) | `CL9SkinDef.h` |
 | `SettingsTable` | `UCL9SettingsTable` | [plan/settings.md](../plan/settings.md) | [systems/settings.md](../systems/settings.md) | `Source/CL9/UI/CL9SettingsTable.h` |
 | `ShakeTable` | `UCL9ShakeTable` | — | [systems/character.md](../systems/character.md)(스태미나 셰이크) · [warning.md](../systems/warning.md) | `CL9ShakeTable.h` |
 | `UI/UITable` | `UCL9UITable` | — | [systems/ui_system.md](../systems/ui_system.md) | `Source/CL9/UI/` |

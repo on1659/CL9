@@ -14,9 +14,8 @@
 |---|---|
 | `CarrySlot` | **`Head`** — 주우면(E) 머리에 쓴다. 손·퀵슬롯·수레에는 안 들어간다 |
 | `ActorClass` | `BP_CL9FlashItem` — 지향성 스포트라이트 (2026-09-11: `bEmitsLight` 컬럼 대신 클래스) |
-| `LightRadius` / `LightIntensity` / `LightConeAngle` | **1800cm / 16000 / 26°** — 손전등과 같은 값 (2026-09-16 올림, 09-17 PIE 확정 — [flashlight.md](flashlight.md)) |
-| `LightScattering` | **8** — 손전등과 같은 값 (2026-09-17, 볼류메트릭 안개 속 빔 후광) |
-| `bLightLostInPocket` | 해당 없음 (퀵슬롯에 안 들어간다 — 머리에 쓴다) |
+| `LampKind` | **`Headlamp`** — 빛 값(1800cm · 16000 · 26° · 산란 3)은 룩 표 램프 종류에 산다 (2026-10-16 — [../look.md](../look.md); 2026-09-16 800/6000/32° → 1800/16000/26°, 2026-10-15 산란 8 → 3) |
+| ~~`bLightLostInPocket`~~ | **없음** — 2026-10-17 컬럼 제거 ([common.md](common.md)) |
 | `bFragile` | false |
 | `Weight` | 0 (초안 — 머리에 쓴 것은 짐이 아니다) |
 | `ValueMin/Max` | 미정 |

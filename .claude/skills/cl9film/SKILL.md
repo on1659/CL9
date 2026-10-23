@@ -13,6 +13,8 @@ user-invocable: true
 사용자 결정(2026-10-13): **봇이 플레이**한다 · 영상은 **한 판 흐름 + 이번에 만든 기능 장면** · 치트는 **필요한 곳에만 쓰고 자막에 밝힌다**.
 보고·자막은 한국어 완결 문장. 플레이 구간은 "판"(코드 이름 Night 그대로).
 
+샷 목록 `record` 로 녹화할 창을 고른다 — 기본은 혼자 `NetMode`·2인 `Server 0`(호스트 화면), **동료 시점(남이 보는 내 몸)은 `players: 2` + `"record": "Client 1"`**(2026-10-23, 예: `Saved/Film/shots/egg_actions_peer.json`).
+
 인자가 `round` 면 한 판 템플릿(`Tools/Film/shots/round_farm.json`)을 그대로 찍는다. 기능 설명이면 아래 절차로 샷 목록을 짜서 찍는다.
 인자가 없으면 이번 대화에서 막 만든 기능을 대상으로 한다 — 무엇인지 분명하지 않으면 묻는다.
 
@@ -38,6 +40,9 @@ user-invocable: true
 
 ## 봇 동작 (`Tools/Film/bot.py`)
 
+> **영상에 넣지 말 것 (2026-10-16 사용자):** 아이템 이름표·[E] 안내, 판 시작 연출(트럭 도착·오늘의 주문 창), HUD 전부. 첫 표를 `{"do":"mark","kind":"S","lines":["준비"],"skip":true}`로 두면 다음 표까지가 영상에서 빠지고(compose.py), `{"do":"hud"}`가 화면에 붙은 UI 위젯을 숨긴다(뒤에 새 창이 뜨면 다시 부른다). 물체에 너무 붙으면 상호작용 강조 표시가 켜져 형체가 드러나니 거리를 둔다.
+
+
 샷 목록 `steps` 의 한 줄 = `{"do": <동작>, ...인자}`. 봇은 **호스트 캐릭터만** 움직인다.
 
 | do | 인자 | 하는 일 |
@@ -45,19 +50,31 @@ user-invocable: true
 | `mark` | `kind` S·F·E, `lines` [1~2줄], `speed`(F) | 자막 표. S = 제 속도, F = 다음 표까지 빨리 감기(자막 끝에 "(N배속)" 자동), E = 끝 |
 | `wait` | `seconds` | 기다린다 |
 | `wait_move` | `timeout` | 조작 잠금(트럭 도착·전원 인트로)이 풀릴 때까지 |
-| `walk` | `to`, `within`(cm), `run`, `timeout` | 내비 경로를 따라 이동 입력으로 걷는다(가는 쪽을 본다). 경로 끝에서는 대상 쪽으로 붙어 선다 |
+| `walk` | `to`, `within`(cm), `run`, `crouch`, `timeout` | 내비 경로를 따라 이동 입력으로 걷는다(가는 쪽을 본다, `run` 이면 달리기, `crouch` 면 앉아 걷기 — 끝나면 일어선다). 경로 끝에서는 대상 쪽으로 붙어 선다 |
 | `face` | `to`(기본 직전 대상), `seconds` | 시선을 대상으로 부드럽게 돌린다 — 줍기·상호작용 전에 꼭 |
+| `turn` | `yaw`(지금 방향에서 상대, 도), `pitch`(절대, 아래 음수), `seconds` | 대상 없이 시선만 돌린다 — 방 안쪽을 내려다보며 파동을 비교할 때 |
 | `press` | `expect`(조준 대상 클래스 이름 일부), `times`, `gap` | E (`Server_PickPlace`) — 줍기·스위치·레버·판 |
 | `drop` | | G (`Server_Drop`) — 놓기·조리대에 올리기 |
 | `swing` | `hold` | 휘두르기(`Server_UseStart/Release`) |
+| `fight` | `timeout`, `reach`(260), `dodge` | 가장 가까운 산 몬스터와 싸운다 — 계속 보고, 달려드는 만큼(0.3초 거리) 미리 휘두르고(0.7초 간격), 빠르게 달려들면 옆으로 비킨다. 죽거나 사라지면 끝. 등 돌린 덤퍼식 닭은 못 알아채니 앞에 `walk` 로 2m 안까지 다가간다 (샷 예 `Saved/Film/shots/chicken_fight.json`) |
+| `headlamp` | — | F(`Server_Flashlight`) — 쓴 헤드램프 켜고 끄기. 어두운 장면은 손전등 대신 헤드램프로 찍는다(재료를 주우면 손전등 칸이 바뀌어 꺼진다) |
 | `slot` | `n` | 퀵슬롯 고르기 |
+| `jump` | `hold` | 스페이스(`Jump`/`StopJumping`) — 착지 파동(land 행)을 보일 때 |
+| `throw` | `hold` | Shift+G — 던지기 차징(`Server_ThrowChargeStart`) hold 초 뒤 놓기(`Server_ThrowRelease`) |
+| `eat` | `after` | 우클 길게(`Server_Eat`) — 활성 칸이 Dish(익은 계란 `egg+cooked`)일 때만 먹는다 |
+| `crouch` | `seconds` | 제자리 앉기(`Crouch`) seconds 뒤 일어선다 |
+| `forward` | `seconds`, `crouch`, `run`, `pitch` | 대상 없이 보는 쪽으로 걷는다 — 수레 밀기·앉아 걷기 |
+| `call` | `method` | 호스트 캐릭터 메서드를 그대로 부른다(`Server_UseStart`·`Jump` 등) — 누르는 동안 `probe` 를 찍을 때 |
+| `probe` | `tag`, `every`, `seconds` | 몸·팔 메시의 애님 BP 클래스, 골반·손 위치(컴포넌트 cm), `PushAlpha`·`HoldPose` 를 실행 폴더 `probe.jsonl` 에 적는다 — PIE 수치 확인용 |
+| `present` | `distance`(300), `side`, `seconds` | **동료 시점용** — 호스트를 첫 참가자 시선 앞에 순간이동시키고 참가자를 보게 한다. 샷 목록 `"record": "Client 1"` 과 같이 쓴다(자막에 순간이동을 밝힌다) |
 | `wait_cooked` | `timeout` | 조리대 위가 익을 때까지(계란 12초) |
+| `sound_counts` | `rows` | 행마다 효과음 재생 요청·해결 횟수를 실행 폴더의 `sound_counts.json` 에 쓴다 (소리 붙이기 점검) |
 | `cheat` | `cmd` | `cl9.*` 콘솔 치트(`docs/systems/cheats.md`) — 자막에 밝힌다 |
 | `teleport` | `to`, `offset`, `who` host·client | 순간이동 — 참가자를 세울 때. 영상에 보이면 자막에 밝힌다 |
 | `rebind` | `timeout` | 레벨을 건넌 뒤 새 세계의 컨트롤러·캐릭터를 다시 잡는다 |
 
 대상 `to`: `{"class": "CL9Kitchen"}`(클래스 — 걸어서 닿는 가장 가까운 것) · `{"item": "egg", "sub": ""}`(바닥의 날것, `"cooked"` 면 익은 것)
-· `{"kitchen_item": true}`(조리대 위의 것) · `{"truck_inside": true}`(트럭 짐칸 가운데) · `{"loc": [x, y, z]}` · `{"last": true}`(직전 대상).
+· `{"kitchen_item": true}`(조리대 위의 것) · `{"truck_inside": true}`(트럭 짐칸 가운데) · `{"upstairs": true, "rise": 350}`(한 층 위의 내비 지점 — 계단으로 올라간다) · `{"loc": [x, y, z]}` · `{"last": true}`(직전 대상).
 고정물 클래스: `CL9PowerSwitch` `CL9Kitchen` `CL9DepartLever` `CL9Truck` `CL9Jar` `CL9DestinationBoard` `CL9SkinCloset` `CL9Counter`(판 레벨은 트럭 창구).
 
 ## 자막
@@ -69,7 +86,9 @@ user-invocable: true
 
 ## 알려진 함정 (2026-10-13 실측)
 
-- **양계장(Lvl_Henhouse)은 저장된 내비 범위가 건물보다 작다** — 조리대까지 경로가 없어 봇이 벽에 막힌다. 한 판 템플릿은 **대농장**.
+- 양계장(Lvl_Henhouse)은 저장된 내비 범위가 건물보다 작았다 — 2026-10-15부터 맵을 지은 뒤 내비 범위를 그 맵까지 늘려서 조리대까지 간다(`ACL9SiteMap` `FitNavBoundsToMap`). 양계장 맵 탐방 샷 목록은 `Saved/Film/shots/map_wave.json`. 한 판 템플릿은 여전히 **대농장**.
+- 봇이 계란을 들면 1인칭 손의 계란이 화면 오른쪽 아래를 가린다(2026-10-20부터 `HeldScale` 0.4 로 줄었지만 여전히 보인다) — 몬스터를 보여 줄 장면은 줍기 앞에 둔다.
+- 플레이테스트 반영 확인 샷 목록은 `Saved/Film/shots/playtest_1020.json`(양계장 — 손전등·줍기·든 물건·착지 파동·정차 중 건물 진입).
 - 납품은 **트럭 창구**(트럭 옆면 바깥의 `CL9Counter`, 2026-10-13 — `docs/goal/truck-counter.md`). 창구는 마당 내비메시 바깥이라
   `walk` 가 목표에서 가장 가까운 내비 지점까지 경로로 간 뒤 곧장 걷는다(로그 `goal off navmesh`).
 - 대농장·돼지 농장은 사이트 행이 판 길이를 정해 `NightLength` 셀이 안 먹는다 — 판을 끝내려면 레버(트럭 안, 5초 안에 두 번) 또는 `cl9.night`.

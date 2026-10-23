@@ -1,5 +1,9 @@
 # 돼지 — `pig`
 
+**층: 동물(`Beast`) — 2026-10-13.** 이 행 하나가 그냥 돼지이자 돼지우리 주인(빈 것)이다 — 개체마다 광폭화 문턱을 굴린다
+([common.md](common.md) "층"·"광폭화 게이지", [../../story.md](../../story.md) "위협의 세 층"). 같은 날 앞서 적었던 "그냥 돼지 별도 행"은
+번복됐다. 잡으면 처형은 이 행의 값이라 그냥 돼지도 그렇다 — 스토리의 "탈을 쓴 채로도 죽이는 유일한 주인"이 그대로다.
+
 **무겁고 느린 잡는 종 — 잡히면 무조건 처형(즉사) (2026-09-20 저녁 재정의, 전부 초안).** 2026-09-05에
 몬스터 시스템 검증용으로 닭 값을 복사해 넣었던 자리에, 사용자 결정(2026-09-19/20 —
 [../../../goal/execute-sequence-pig.md](../../../goal/execute-sequence-pig.md))으로 처형이 붙었고, 같은 날 저녁
@@ -38,7 +42,7 @@
 
 | 컬럼 | 값 | 근거 |
 |---|---|---|
-| `SightIn` / `SightOut` / `SightDark` | 480 / 320 / 160 | 닭(330/219/111) × 1.45 — 큰 짐승은 멀리서 본다. 추격이 걷기 속도라 멀리서 시작하는 추격은 위험이 아니라 예고다(거리 = 여유). A2 3924 > 480 × 1.3 = 624 |
+| `SightIn` / `SightOut` / `SightDark` | 480 / 320 / 160 | 닭(330/219/111) × 1.45 — 큰 짐승은 멀리서 본다 (2026-10-17 닭이 600/400 으로 올라 이 배수 관계는 깨졌다 — 돼지는 결정 D 범위 밖, 밸런스 때 다시 본다). 추격이 걷기 속도라 멀리서 시작하는 추격은 위험이 아니라 예고다(거리 = 여유). A2 3924 > 480 × 1.3 = 624 |
 | `HearRadius` | 270 | 닭 180 × 1.5 — 돼지는 눈보다 귀·코다 |
 | `DetectNearRadius` / `DetectRateNear` / `DetectRateFar` / `DetectDecay` / `DetectGrace` | 120 / 2.5 / 0.5 / 0.4 / 0.5 | 닭과 동일 — 게이지 속도는 종 공통으로 둔다 |
 
@@ -97,32 +101,19 @@
 돼지 `Break`(최대 2.0 + 3.0 = 5.0초 카메라 유지). 예고 안에 뒤로 걸으면 헛치고(여유 +253), 걸어서 멀어지면 다시 못
 좁힌다(396 = 396). `KillCooldown` 9초 동안 다음 처형은 없다(처형 틱의 `HostKill` 자리에서 재충전).
 
-## 에셋 (보유 — 2026-09-05 확인)
+## 에셋 (자체 제작 — 2026-10-09 확인)
 
-`Content/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Pig/`:
+`Content/Monsters/PigA/` — 제작 기록은 [../../../asset/monster/pig_a.md](../../../asset/monster/pig_a.md), 원본은 `ArtSource/monster/`.
 
 | 컬럼 | 에셋 |
 |---|---|
-| `SkeletalMesh` | `SK_Pig` |
-| `Skeleton` | `SKEL_Pig` |
-| `AnimBP` | `ABP_Pig` (Content/Monsters — ABP_Chicken 복제 후 스켈레톤·애님 교체) |
+| `SkeletalMesh` | `SK_Pig_A` |
+| `Skeleton` | `SK_Pig_A_Skeleton` |
+| `AnimBP` | `ABP_Pig_A` (`Content/Monsters/`) |
 
-애님 커버리지 (상태 기계 요구 대조):
+클립(폴더 실물): `AN_Pig_Idle` · `AN_Pig_Walk` · `AN_Pig_Run` · `AN_Pig_LookAround` · `AN_Pig_WakeTelegraph` · `AN_Pig_Catch` · `AN_Pig_Execute` · `AN_Pig_HitReact` · `AN_Pig_PushReact` · `AN_Pig_Death`.
 
-| 상태 기계 요구 | 팩 애님 | 비고 |
-|---|---|---|
-| 배회·순찰 (Walk) | `A_Pig_Walkcycle` | ✓ |
-| 추격 (Run) | `A_Pig_Runcycle` | ✓ |
-| 평시 (Idle) | `A_Pig_Idle` | ✓ |
-| 잠듦 | `A_Pig_SleepLoop` | ✓ (SleepTime 0이라 미사용) |
-| 기상 예고 | `A_Pig_SleepIdle` | ✓ (동상) |
-| 잡기 (Catch) | `A_Pig_Eat` | 공격 애님이 없어 먹기로 대타 (초안) |
-| 경직 (HitStunMs) | `A_Pig_Hurt` | ✓ |
-| 죽음 | `A_Pig_Death` | ✓ |
-
-미사용 여분: `A_Pig_IdleRoll`/`RollLoop`/`RollIdle`, `IdleSit`/`SitLoop`/`SitIdle`.
-
-(2026-09-11 이후 실제 연결은 자체 제작 `Content/Monsters/PigA/` + `ABP_Pig_A` — [../../../asset/monster/pig_a.md](../../../asset/monster/pig_a.md). 위 표는 구 팩 기록이다.)
+Dreamscape Farmlands 팩의 `SK_Pig`·`A_Pig_*`는 쓰지 않는다 — 팩은 2026-10-04에 지웠다.
 
 ## 미결
 

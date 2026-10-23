@@ -1,7 +1,7 @@
 # goal: execute-sequence-pig
 
 **상태**: Run 1 착수 2026-09-20(실행 execute-sequence-pig — 역할 gameplay·balance·docs), 같은 날 저녁 종 재배치(실행 execute-species-swap),
-Run 2 착수 2026-09-21(실행 execute-clips — 역할 art·gameplay·balance·docs, 2인 클립 4개).
+Run 2 착수 2026-09-21(실행 execute-clips — 역할 art·gameplay·balance·docs, 2인 클립 4개). **2026-10-16 정정**: Run 2 클립 4개(`AN_Pig_Execute`·`AN_Raccoon_Execute`·`AN_Farmer_Executed_Pig`·`AN_Farmer_Executed_Raccoon`)는 커밋 7e00227(09-21)·a2c4834(09-22)에, 처형 C++(`ExecuteRadius`·`bExecuteOnCatch` 등)은 4a151e7(09-21)에 들어 있다. 남은 것은 2인 PIE 검증(수용 기준 마지막 항목)뿐이다. 수용 기준 체크박스는 실행 당시 갱신되지 않았다.
 
 **2026-09-20 밤 데스캠 도입(실행 death-camera)** — D6 의 "뷰 타깃을 죽은 폰으로 되돌리지 않는다"를 **번복**한다: 즉사 순간 몬스터 카메라에서 폰의 `DeathCamera` 컴포넌트(액터 공간 오프셋 `CL9Rules.DeathCameraOffset`에서 시체를 바라봄, `DeathCameraBlend`)로 블렌드하고 `SpectateDelay` 뒤 관전으로 간다. 데스캠은 넘어짐 1인칭 카메라와 별도 컴포넌트라 D6 이 피하려던 "시체 속에 박히는 넘어짐 카메라" 문제가 없다. 몬스터가 시체 옆에 `SpectateDelay` 까지 머무는 것·처형 중 카메라(`ExecuteCamera*`)·그 밖의 D6 은 그대로. PIE 는 `docs/testing/pie-scenarios.md` H2·C-처형-돼지 ①·C-처형-너구리 ④(2026-09-21 정정 — 옛 표기 "C-처형 ③" 은 없는 절 번호였다).
 

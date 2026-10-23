@@ -199,6 +199,7 @@ Editor / PIE:
 - Stairs average 1.04 although the cap is 2 — the second stair's upper wing usually cannot find three supported cells. Acceptable for
   "few stairs"; raise `UpperFloorShare` or relax spacing if two stairs are wanted.
 - Navmesh bounds of `Lvl_Henhouse` must be refit (`setup_stage.py` NavBounds) before monsters can path across the whole Flow grid.
+  **Done 2026-10-20** (`Tools/Unreal/fit_henhouse_nav_20261020.py`, [henhouse-supply-quota.md](C:\Work\CL9\docs\goal\henhouse-supply-quota.md)). The loop knob was tried the same day and reverted — see that doc, decision 4.
 - Commit: the C++ files, `ModuleTable.uasset`, `MapTable.uasset`, `setup_stage.py` and the stage JSONs already contained other sessions'
   uncommitted work at the start of this run, so they are left for a hunk-level `/cl9 commit`. This run's own hunks: the Flow sections of
   `CL9SiteLayout.h/.cpp`, `CL9SiteLayoutTests.cpp` (from "Flow 생성기 (리썰 방식" to the end), `CL9ModuleDef.h/.cpp` (DoorSlot, Repeat,

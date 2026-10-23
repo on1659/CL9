@@ -1,6 +1,6 @@
 # goal: farm-stage
 
-Status: implemented and verified headless + scripted PIE (2026-10-03, autogoal LIGHT — user away, decisions taken autonomously and recorded below). Not committed. Human play-feel pass still pending.
+Status: implemented and verified headless + scripted PIE (2026-10-03, autogoal LIGHT — user away, decisions taken autonomously and recorded below). Not committed. Human play-feel pass still pending. **2026-10-16 정정**: `Lvl_Farm`·`Lvl_PigFarm`·사이트·모듈·구간 표는 커밋 747ca8c(2026-10-04)에 들어갔다.
 
 ## One-line Goal
 Ship one playable level, `Lvl_Farm`, that runs the whole loop (truck arrives → generated map → monsters and ingredients

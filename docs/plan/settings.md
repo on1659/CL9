@@ -2,6 +2,7 @@
 
 > 플레이어가 자기 머신에서 바꾸는 것들. **무엇을 옵션으로 열고 무엇을 열지 않는가**를 이 문서가
 > 정하고, UE에서 어떻게 저장·적용·표시하는지는 [../systems/settings.md](../systems/settings.md)가 정한다.
+> 에셋 참조(사운드 클래스 등)는 표 에셋 `Content/Data/SettingsTable`(`UCL9SettingsTable`, `Source/CL9/UI/CL9SettingsTable.h`)에 있다(2026-10-16 표기).
 > 기능을 하나 만들 때마다 아래 "옵션으로 열 것인가" 체크리스트를 한 번 돌린다 (2026-09-12 사용자 —
 > "옵션 시스템인데 plan이랑 system에도 있어야지, 그래서 어떤 기능 개발할 때 옵션을 넣을지 말지 고민해야 돼").
 

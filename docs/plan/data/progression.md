@@ -28,9 +28,10 @@
 |---|---|---|
 | `MonsterCountCurve` | 목적지의 몬스터 수 | 1일차 0.6 → 5일차 1.0 → 10일차 1.5 |
 | `DangerCurve` | 추격 예산 · 발각 속도 · 시야 | 1일차 0.8 → 10일차 1.3 |
+| `ThreatBudgetCurve` | 깊이 구역의 실내 위협 파워 예산(`MapTable.Zones[].ThreatBudget`) | **1일차 0.5 → 5일차 1.0 → 10일차 1.75 → 20일차 2.5** (2026-10-20 — 양계장 5일차 합 4.0 = 리썰 첫 달 실내 예산 4, [C:\Work\CL9\docs\goal\threat-budget-spawns.md](C:\Work\CL9\docs\goal\threat-budget-spawns.md)) |
 | `ItemCountCurve` | 목적지의 재료 수 | 1일차 1.0 → 10일차 1.0 (평평) |
-| `ValueCurve` | 아이템·몬스터 가격 | 1일차 1.0 → 10일차 1.4 |
-| `QuotaCurve` | 정산일의 목표 이더 | 첫 정산(3일차 — 2026-10-12 2일차에서 옮김) 800 → 급격히 상승 |
+| `ValueCurve` | 아이템·몬스터 가격 | 1일차 1.0 → 10일차 1.4 (초안 — **에셋에는 비어 있어 늘 1.0**, 2026-10-20 확인) |
+| `QuotaCurve` | 정산일의 목표 코인 | **3일차 600 → 6일차 775 → 9일차 950 → 12일차 1150 → 30일차 2290**(그 뒤도 정산마다 약 190씩) — 2026-10-20 공급에서 거꾸로 정함, 양계장 세 판 날재료 값의 0.45 → 0.9배([../economy.md](../economy.md) "공급 대비 목표"). 그 전: 100 → 200 → 325 → 650(2026-10-17 "첫 목표는 100") — 세 판 공급의 8%였다 |
 | `NightLengthCurve` | 밤 길이 | 평평 (1.0 고정) |
 | `SiteSizeCurve` | 한 판의 모듈 수 | 1일차 0.85 → 5일차 1.0 → 10일차 1.25 |
 
@@ -45,7 +46,7 @@
 |---|---|---|
 | `OrdersOfferedPerDay` | 하루에 제시하는 개수 N | 3 |
 | `OrdersRequiredPerDay` | 골라야 하는 개수 M | 2 |
-| `OrdersOfferedCurve` | 일자에 따라 N을 늘리려면 | 평평 |
+| `OrdersOfferedCurve` | 일자에 따라 N을 늘리려면 — **미구현**(2026-10-16 감사: `UCL9ProgressionDef` 에 이 열이 없다, N 은 `OrdersOfferedPerDay` 고정) | 평평 |
 
 **N = M이면 선택이 사라진다.** M이 너무 작으면 쉬운 것만 골라 밤이 늘어진다.
 상세는 [order.md](order.md).
@@ -80,7 +81,7 @@ FCL9DayOverride
 
 | 컬럼 | 타입 | 뜻 | 값 |
 |---|---|---|---|
-| `FinalDay` | int | 마지막 일차 (0 = 무한) | **0** |
+| `FinalDay` | int | 마지막 일차 (0 = 무한) — **미구현**(2026-10-16 감사: 헤더에 없다. 끝은 7l 스테이지 별의 마지막 목적지 클리어로 정해진다, [../../goal/loop-7l-stage-stars.md](../../goal/loop-7l-stage-stars.md)) | **0** |
 | `SettlementIntervalDays` | int | 며칠에 한 번 정산하나 | 2 (초안) → **3** (2026-10-11 사용자 "3판마다 회사에서 정산" — 에셋 값만 바꾸면 된다, `QuotaCurve` 첫 키도 3일차로. 미적용, [../../goal/loop-rework.md](../../goal/loop-rework.md)). **2026-10-12 적용(7a)** — 에셋 3·첫 키 3일차 800, 헤더 기본값도 3 |
 
 **정산일에 그 정산 기간 동안 번 이더(납품·판매 수입)가 `QuotaCurve`의 목표에 미달하면
@@ -125,6 +126,7 @@ FCL9DayOverride
 ## 미결
 
 - **곡선 모양 전부** — 위 초안은 짐작이다. 플레이해봐야 나온다
+- **양계장 일차별 몬스터 등장 사다리 (2026-10-23 제안)** — 1판은 닭만, 2판에 거위·어미 닭·횃대 닭·쥐, 3판에 너구리. 돼지·소·양·토끼는 양계장에서 뺀다. 근거는 [site.md](site.md) "양계장 몬스터 구성"과 [../draft/story-cast.md](C:\Work\CL9\docs\plan\draft\story-cast.md). 지금 `ThreatBudgetCurve`는 일차마다 예산만 곱하고 종을 늦추지 못한다 — 종별 첫 등장 일차 열이 필요한지는 gameplay와 정한다. 새 종(어미 닭·횃대 닭·쥐)의 파워 값은 모델·규칙이 나온 뒤에 정한다
 
 ---
 

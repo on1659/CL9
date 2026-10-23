@@ -108,6 +108,19 @@ decisions.md 2026-09-28).
 
 ---
 
+## 공통 외부 지붕 (2026-10-04)
+
+| Alias | Placement | Height(cm) | Piece | bBlocksSight |
+|---|---|---|---|---|
+| `roof` | Grid | 20 | `roof` | true |
+| `roofFascia` | Tile | 100 | `roofFascia` | true |
+
+두 Piece는 `henhouse` 테마의 정식 불투명 금속 모델을 쓴다. `roof`는 500×500×20cm 닫힌 판,
+`roofFascia`는 500×10×100cm 닫힌 패널(X 길이/Y 두께/Z 높이)이다. 두 모델 모두 XY 중심·밑면 Z0.
+높이 100은 마감 조각의 기준 높이이며, 실제 빈 띠는 segment의 `HeightOverride`로 전달한다
+(0이면 기존 Kind Height). Tile 배치는 길이·높이를 맞추되 10cm 두께와 축 회전·pivot 보정을 유지한다.
+기존 실내 `ceiling` 행은 유지한다. 외부 지붕의 활성 조건은 [site.md](site.md)의 `bBuildRoofs`다.
+
 ## 높이 210은 천장이 아니다
 
 `cage`·`plug`·`barn`·`flapIn`·`stair`의 210은 **투척 차단 높이**이고 천장 높이와는 별개 값이다.

@@ -18,7 +18,7 @@
 |---|---|---|
 | `IMC_Gameplay` | 폰 빙의 중 (기본) | 이동·시점·달리기·점프·줍기·놓기/던지기·퀵슬롯 칸 전환·손전등·상호작용 |
 | `IMC_UI` | 전면 화면 열림 (`WBP_Main.ShowScreen ≠ None`) | 메뉴 탐색·닫기 — Gameplay보다 우선 |
-| `IMC_Spectate` | 사망 후 관전 (`ACL9PlayerController.SpectateMappingContext`, 우선순위 5 — `bSpectating` OnRep이 관전 화면과 함께 붙였다 뗀다. DefaultMappingContexts에 넣지 않는다) | 관전 대상 전환·(밤 종료 대기). 시점은 동료 1인칭 승계라 별도 Look 없음 |
+| `IMC_Spectate` | 사망 후 관전 (`ACL9PlayerController.SpectateMappingContext`, 우선순위 5 — `bSpectating` OnRep이 관전 화면과 함께 붙였다 뗀다. DefaultMappingContexts에 넣지 않는다) | 관전 대상 전환·말하기(`IA_Talk` — 죽은 사람도 말한다)·(밤 종료 대기). 시점은 동료 1인칭 승계라 별도 Look 없음 |
 
 - 전환은 `ShowScreen`/관전 진입과 한 곳에서 묶어서 처리한다 ([ui_system.md](ui_system.md)) —
   IMC 부착 상태가 화면 상태와 어긋나는 버그를 원천 차단.
@@ -34,13 +34,15 @@
 | `IA_Jump` | Pressed | 점프 — 낮은 장애물 통과용. 거리·감각 판정은 평면 기준 (rules.md) | CMC |
 | `IA_PickPlace` | Pressed | 줍기(활성 칸이 비었으면 활성 칸, 아니면 첫 빈 칸 — 꽉 차거나 잠기면 프롬프트도 안 뜨고 무시) / 착용(Head) / 컨텍스트 상호작용(반납·트럭 패널·창구·수레 — 별도 `IA_Interact`는 없다, 아래 공통 틀) / 미는 수레 놓기. **아이템 놓기는 아니다** — 그건 `IA_Drop`(2026-09-13) | Server RPC |
 | `IA_Use` | Started/Completed | **좌클 = 든 아이템 사용** — 행의 `UseAction`이 정한다(2026-09-13 리썰 삽 방식). `Swing`(프라이팬 등): **누르면 공격 대기**(Started → `Server_UseStart`, 대기 자세 루프 — 시간 제한 없음), **떼면 타격**(Completed → `Server_UseRelease` → 몬스터 `OnStrike(HitDamage, HitStun)`). 평범하게 딸깍 누르면 평범한 한 방, 누르고 있으면 타이밍을 고른다 — 데미지·판정은 대기 시간과 무관하게 항상 같다(무엇에 맞느냐는 `CL9Rules.SwingHitStart~End` 구간의 히트박스가 정한다 — [inventory.md](inventory.md) 휘두르기 히트박스). `ToggleLight`(손전등): Started에 **즉시 켜고 끈다**, 대기 없음. `None`: 무동작. **먹기가 아니다** — 먹기는 `IA_Scan` 길게(아래). 빈손은 무동작 — 옛 빈손 밀치기는 프라이팬 행(`Swing`+`Push`)이 이어받았다 | Server RPC (`Server_UseStart`/`Server_UseRelease` → `ToggleLight`/`HostSwing`) |
-| `IA_Drop` | Started/Completed | **G = 놓기, 달리기 키 + G = 던지기 차징** (2026-09-13 — `IA_Throw` 폐기). Started에 달리기 키(`bRunHeld`)가 눌려 있으면 `Server_ThrowChargeStart`, 아니면 `Server_Drop`(활성 칸의 것을 손 자리에 그대로 놓고 그 칸을 비운다 — 활성 칸 번호는 그대로. **수레의 짐칸 쪽을 보고 있고 가까우면 손 자리에서 짐칸으로 낮은 호를 그리며 얹는다** — 2026-09-15, [inventory.md](inventory.md) 놓기 행). Completed는 차징 중이었을 때만 `Server_ThrowRelease`. 셋 다 **넘어져 있으면(`IsKnockedDown()`) 호스트가 조용히 무시**한다(2026-09-15 — 사용·먹기와 같은 규칙). 차징은 누른 시간 0~`ThrowChargeTime`(0.85s) → `ThrowMin~MaxSpeed`. **Hold 트리거 금지** — 임계 전에 떼면 Canceled가 떠서 짧은 던지기가 먹힌다 | Server RPC (아래) |
+| `IA_Drop` | Started/Completed | **G = 놓기, 달리기 키 + G = 던지기 차징** (2026-09-13 — `IA_Throw` 폐기). Started에 달리기 키(`bRunHeld`)가 눌려 있으면 `Server_ThrowChargeStart`, 아니면 `Server_Drop`(활성 칸의 것을 손 자리에 그대로 놓고 그 칸을 비운다 — 활성 칸 번호는 그대로. **수레의 짐칸 쪽을 보고 있고 가까우면 손 자리에서 짐칸으로 낮은 호를 그리며 얹는다** — 2026-09-15, [inventory.md](inventory.md) 놓기 행). **익힐 재료를 들고 조리대를 바라보면 손 자리 낙하 대신 상판 위 가장 가까운 빈 자리에 똑바로·속도 0 으로 올린다** — 2026-10-09, [cooking.md](cooking.md) "놓기 — 상판 안착". Completed는 차징 중이었을 때만 `Server_ThrowRelease`. 셋 다 **넘어져 있으면(`IsKnockedDown()`) 호스트가 조용히 무시**한다(2026-09-15 — 사용·먹기와 같은 규칙). 차징은 누른 시간 0~`ThrowChargeTime`(0.85s) → `ThrowMin~MaxSpeed`. **Hold 트리거 금지** — 임계 전에 떼면 Canceled가 떠서 짧은 던지기가 먹힌다 | Server RPC (아래) |
 | `IA_Slot1`~`IA_Slot4` | Pressed | 퀵슬롯 그 번호 칸을 손에 든다(절대 번호 → `Server_SelectSlot(n)`). 빈 칸도 고를 수 있다 = 빈손. `BP_CL9Character.SlotActions` 배열 순서가 칸 번호다 | Server RPC |
 | `IA_SlotScroll` | Axis1D(Triggered) | 마우스 휠 — **아래(−) = 다음 칸, 위(+) = 이전 칸**, 순환, 한 노치 한 칸(부호만 보고 로컬 디바운스 `SlotScrollDebounce` 0.1초로 겹침을 거른다). 목표 칸을 클라가 계산하지 않고 `Server_ScrollSlot(±1)`로 호스트가 자기 `ActiveSlot`에서 옮긴다. IMC 행에 **Negate 모디파이어를 넣지 않는다**(위가 +). **리바인딩 대상 아님** — 행 `IgnoreSettings` | Server RPC |
 | `IA_Flashlight` | Pressed | **쓴 헤드램프** 켜기/끄기 — 손전등은 `IA_Use`(좌클)가 켠다 (2026-09-12; [light.md](light.md) · [../plan/data/item/headlamp.md](../plan/data/item/headlamp.md)) | Server RPC (아이템 상태 Replicated) |
 | `IA_Skip` | Pressed | 시퀀스 로컬 스킵 (`bSkippable`) — **에셋 미생성** (시퀀스 시스템과 함께) | 로컬 |
 | `IA_Pause` | Pressed | 메뉴 화면 (게임은 멈추지 않는다 — 온라인이라 멈춤 자체가 없다) | 로컬 |
 | `IA_SpectateNext` | Pressed | 관전 대상 전환 — `ACL9PlayerController.SpectateNextAction` → `SpectateNext()` (관전 화면 버튼도 같은 함수) | Server RPC (호스트가 다음 생존자로 뷰 타깃 교체) |
+| `IA_Talk` | Started/Completed (+Canceled) | **R = 말하기** (2026-10-11, [voice.md](voice.md)) — **눌러서 말하기(PTT) 방식에서만** 마이크를 연다: 누르는 동안 송신을 켜고(`bTalkKeyHeld`), 떼거나 취소(누른 채 화면이 열려 `IMC_Gameplay` 가 떼이면 뗌 대신 취소가 온다)하면 끈다. **음성 감지 방식은 이 키를 쓰지 않는다**(말하면 나간다). `ACL9PlayerController.TalkAction` → `ApplyVoiceTalking()` → `SendVoiceOptions` → `BP_ApplyVoiceOptions(…, bTransmit, …)`. **`IMC_Gameplay` 와 `IMC_Spectate` 둘 다에 행이 있다 — 죽은 사람도 말한다.** 음성 스트림 자체는 EOS 음성 채널(Redpoint)이라 Server RPC 가 아니다. 키·바인딩·IMC 행은 2026-10-12 전송층 교체에도 그대로다 | 로컬 (음성은 EOS+Redpoint) |
+| `IA_DebugPanel` | Pressed | **Tab = 디버그 패널 여닫기** (개발용, 2026-10-05) — `ACL9PlayerController.DebugPanelAction` → `DebugPanelInput()` → `SetDebugPanelOpen`. 2026-10-21부터 패널은 UI 매니저 화면이 아니라 게임 입력을 끄지 않는다(커서만 켠다). 여닫기 모두 `IMC_Gameplay` 행으로 받고, `IMC_UI` 에도 행이 있다. Shipping 빌드에서는 아무것도 안 한다. **리바인딩 대상 아님** — IA에 `PlayerMappableKeySettings`가 없어 설정 화면에 안 뜬다 ([ui.md](ui.md) 디버그 패널) | 로컬 (패널 버튼은 치트 경로) |
 | `IA_Scan` | Started/Completed | **우클릭 — 탭은 스캔, 길게는 먹기** (2026-09-13). 바인딩은 **캐릭터**(`BP_CL9Character.ScanAction`)가 갖는다 — 컨트롤러가 갖던 `ScanAction`은 뗐다. `CL9Rules.UseHoldTime`(0.4초) 안에 떼면 `ACL9PlayerController::RequestScan()`(시야 안 아이템에 이름·가격 라벨을 잠깐 띄우는 표현 — [ui.md](ui.md) 스캔, 판정 없음), 그보다 길게 누르면 활성 칸이 `ItemType == Dish`일 때 `Server_Eat` — 먹기. 리썰의 우클릭처럼 "보기"에 가까운 키에 먹기를 얹은 것이라 좌클(타격)과 섞이지 않는다 | 탭: 로컬 · 길게: Server RPC (`Server_Eat` → `HostEat`) |
 
 **기본 키 배치** (시점·휠·게임패드 빼고 전부 리바인딩 가능 — 아래 리바인딩 절):
@@ -48,11 +50,16 @@ WASD 이동 · 마우스 시점 · Shift 달리기 · Space 점프 · **E 상호
 **달리기 키+G 던지기 차징**(조합 고정 — G를 바꾸면 던지기도 따라간다) · **1~4 / 마우스 휠 퀵슬롯 칸 전환**(휠 아래 = 다음 칸) ·
 **마우스좌 사용**(누르면 공격 대기·떼면 타격 — 프라이팬 / 손전등은 누르는 즉시 켜고 끄기 — 행이 정함) ·
 **마우스우 스캔/먹기**(탭: 시야 안 아이템 라벨 / `UseHoldTime` 0.4초 길게: 든 요리 먹기) · F 헤드램프 ·
-**M 메뉴 열기·닫기** · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate).
-R은 비어 있다 — 옛 품 교체(`IA_Swap`)가 2026-09-13 퀵슬롯로 대체되며 사라졌다. 에셋 `IA_Swap`·`IA_Throw`는
+**M · Esc 메뉴 열기·닫기**(Esc 는 2026-10-23 부터, 아래) · **Tab 주문서 보기**(누르는 동안만 — `IA_Orders`, 2026-10-22 결정 "주문서는 탭을 눌렀을 때", ui.md 주문) · **Tab 관전 대상 전환**(관전 중에만 — IMC_Spectate) · **디버그 패널**(관전 중이 아닐 때, 개발 빌드만 — Tab 을 주문서에 내주므로 다른 키로 옮긴다, 제안 F3) ·
+**R 말하기**(눌러서 말하기 방식에서만 — 관전 중에도, 2026-10-11).
+R은 옛 품 교체(`IA_Swap`)가 2026-09-13 퀵슬롯로 대체되며 비었다가 2026-10-11 말하기가 가져갔다. 에셋 `IA_Swap`·`IA_Throw`는
 `Content/Input/Actions/`에 참조 0으로 아직 남아 있다(코드 바인딩·IMC 행 없음 — 삭제 보류, decisions.md 2026-09-13).
 (2026-09-05: 이 화면을 Esc→M으로 변경. 같은 날 사용자 결정으로 **Esc는 게임에서 쓰지 않는다** —
 PIE 정지 키와 겹쳐 에디터가 꺼진다. IMC_Gameplay·IMC_UI 모두 M→IA_Pause 한 행, Esc 행 없음).
+**2026-10-23 사용자 "Esc + M 둘 다"** — Esc 도 메뉴를 연다. IMC 행이 아니라 `ACL9PlayerController::SetupInputComponent` 의
+`InputComponent->BindKey(EKeys::Escape …PauseInput)` 한 줄이다: Esc 는 키 캡처가 거부하는 키라 사람이 바꾸거나 다른 동작에
+줄 수 없고 설정 키 목록에도 뜨지 않는다. PIE 에서는 에디터가 Esc 를 먼저 먹어(플레이 정지) 게임에 오지 않으니 PIE·촬영은
+그대로 M, 패키지 빌드에서는 Esc·M 둘 다. "Esc 는 게임 키가 아니다" 는 **리바인딩 대상이 아니다** 로 읽는다.
 
 ## 던지기 차징 — 시간 판정은 호스트가
 
@@ -86,13 +93,15 @@ class ICL9Interactable {
   void Interact(ACL9Character* Who);           // 호스트에서만 호출된다
 };
 
-// 실행 경로: 클라 입력 → ACL9Character::Server_Interact(대상) [소유 액터의 RPC]
+// 실행 경로: 클라 입력 → ACL9Character::Server_PickPlace() [소유 액터의 RPC — 2026-10-16 정정: 옛 이름 Server_Interact 는 코드에 없다, CL9Character.h]
 //            → 호스트가 재검사 후 대상->Interact(Who) 직접 호출
 ```
 
-- **감지**: 로컬 틱에서 카메라 전방 트레이스 + `PickRadius`(120cm) 구형 검사.
-  후보가 여럿이면 우선순위: **들 수 있는 아이템 > 상호작용 액터**, 같은 급이면 조준점에
-  가까운 것.
+- **감지** (`ACL9Character::ResolveFocus`, 로컬 틱 + 호스트 재검사): 트레이스가 아니라 구형 오버랩이다.
+  - 아이템: **눈** 위치에서 `ItemPickReach`(250cm) 구 안, 눈에서 몸체 가운데로 가는 방향과 시선의 내적이 `ItemPickAimDot`(0.8) 이상,
+    눈에서 보이는(Visibility 채널로 가리는 것이 없는) 것 중 내적이 가장 큰 것 (2026-10-20 플레이테스트 1번).
+  - 상호작용 액터(스위치·레버·조리대·수레): 캡슐 중심 `PickRadius`(120cm) 구 안, 캡슐 중심에서 본 내적 0.3 이상 중 내적이 가장 큰 것.
+  - 둘 다 있으면 **들 수 있는 아이템 > 상호작용 액터**.
 - **프롬프트**: 감지 결과를 HUD가 표시 ([ui.md](ui.md) 하단 중앙). 몬스터·위협 정보는
   프롬프트에 싣지 않는다.
 - **실행**: `IA_PickPlace` → Server RPC → 호스트가 같은 검사를 다시 하고
@@ -110,7 +119,7 @@ class ICL9Interactable {
 
 | 대상 | 설정 위치 | 매핑 이름(`Name`) | 표시 이름(`DisplayName`) |
 |---|---|---|---|
-| `IA_Jump` `IA_Run` `IA_PickPlace` `IA_Drop` `IA_Slot1`~`IA_Slot4` `IA_Use` `IA_Flashlight` `IA_Scan` `IA_Pause` `IA_SpectateNext` | IA 에셋의 `PlayerMappableKeySettings` (IMC 행은 `InheritSettingsFromAction`) | IA 이름에서 `IA_`를 뗀 것 (`Jump` `Drop` `Slot1`…) | String Table `Input.<Name>.Name` (`Input.Drop.Name` "놓기", `Input.Slot1.Name` "1번 칸"…) |
+| `IA_Jump` `IA_Run` `IA_PickPlace` `IA_Drop` `IA_Slot1`~`IA_Slot4` `IA_Use` `IA_Flashlight` `IA_Scan` `IA_Pause` `IA_SpectateNext` `IA_Talk` | IA 에셋의 `PlayerMappableKeySettings` (IMC 행은 `InheritSettingsFromAction`) | IA 이름에서 `IA_`를 뗀 것 (`Jump` `Drop` `Slot1` `Talk`…) | String Table `Input.<Name>.Name` (`Input.Drop.Name` "놓기", `Input.Slot1.Name` "1번 칸", `Input.Talk.Name` "말하기"…) |
 | `IA_Move` | `IMC_Gameplay`의 W/S/A/D 행마다 `OverrideSettings` | `MoveForward` `MoveBack` `MoveLeft` `MoveRight` | `Input.MoveForward.Name` … |
 | `IA_Look`, `IA_SlotScroll`(마우스 휠), 게임패드 행(`Gamepad_*`) | 액션에 설정 없음 / 행 `IgnoreSettings` | — | 대상 아님 — 설정 화면에 행이 뜨지 않고, 캡처도 휠을 거부하므로 다른 동작에 휠을 넣을 수도 없다 |
 
@@ -143,6 +152,8 @@ UserSettings->RegisterInputMappingContexts({IMC_Gameplay, IMC_UI, IMC_Spectate})
 - 행은 `GetPlayerMappingRows()`(TMap, 해시 순서)를 통째로 나열하지 않고, 등록한 IMC(**Gameplay → Spectate**)의
   `GetMappings()` 순서로 매핑 이름을 뽑아 프로필에서 찾는다 — 표시 순서는 IMC 에셋이 정하고 잔여 행이 새지 않는다.
   `IMC_UI`의 Pause 행은 `IMC_Gameplay`에 같은 이름이 있어 한 행이다(재빌드가 매핑 이름으로 모든 IMC에 적용한다).
+  `IA_Talk`(`Talk`)도 `IMC_Gameplay`·`IMC_Spectate` 두 곳에 같은 이름으로 있어 **설정 화면에 "말하기" 한 행**으로 뜬다 — 화면 코드를 바꾸지 않았다(액션을 더하면 자동 나열되는 규칙 그대로).
+  `IA_Talk` 의 `DisplayName` 은 String Table `Input.Talk.Name` 참조여야 한다(아니면 설정 화면이 `LogCL9` Error 를 낸다).
 - 표시·수정하는 매핑은 행의 `FPlayerKeyMapping` 중 **키보드/마우스 키인 첫 것**(`!IsGamepadKey`) — `Slot::First`
   고정이 아니다.
 - **`MapPlayerKey`는 `Slot`·`HardwareDeviceId`를 그 매핑의 값으로 채우고 `bCreateMatchingSlotIfNeeded=false`로
@@ -194,6 +205,7 @@ UserSettings->RegisterInputMappingContexts({IMC_Gameplay, IMC_UI, IMC_Spectate})
 | 이동·달리기·점프 | 커스텀 CMC + `FSavedMove` 예측 (1d 스텝) |
 | 줍기·놓기·던지기·퀵슬롯 칸 전환·손전등·상호작용 | **캐릭터(소유 액터)의 Server RPC** → 호스트 판정 → 대상 액터 함수 호출 → Replicated 결과 |
 | 시점·스킵·메뉴·UI | 로컬 전용 |
+| 말하기 (`IA_Talk`) | 로컬 — 송신을 켜고 끌 뿐이다. 음성은 EOS 음성 채널(Redpoint)로 가고 Server RPC 가 아니다 ([voice.md](voice.md)) |
 
 ## 참고
 

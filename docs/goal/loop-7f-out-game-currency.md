@@ -1,6 +1,6 @@
 # goal: loop-7f-out-game-currency
 
-**Status**: done (2026-10-12 — PIE 1 player + listen 2 players verified, uncommitted). Build order ⑦ step **7f** ([../plan/build-order.md](../plan/build-order.md)).
+**Status**: done (2026-10-12 — PIE 1 player + listen 2 players verified, uncommitted). **2026-10-16 정정**: 코드·규칙 셀은 커밋 a5af9f2(2026-10-13)에 들어갔다. Build order ⑦ step **7f** ([../plan/build-order.md](../plan/build-order.md)).
 Parent concept spec: [loop-rework.md](loop-rework.md) — user decision 1 (two currency layers: run money owned by the host's run, and a personal out-game currency that outlives runs, buys cosmetics only); open question 1 (where it is earned) answered here.
 
 ## One-line Goal

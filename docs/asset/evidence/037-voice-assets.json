@@ -1,0 +1,322 @@
+{
+  "icon_render": {
+    "utc": "2026-10-11T04:45:51.560805+00:00",
+    "python": "3.13.13",
+    "source": "ArtSource/ui/icons/T_Icon_mic.png",
+    "file": "T_Icon_mic.png",
+    "alias": "mic",
+    "size": [
+      128,
+      128
+    ],
+    "png_sha256": "e3486ad449aea5fdbc7364c8a256b4b0cb247199de6cc99c58ea9b276e986a04",
+    "fill_target": 0.88,
+    "opaque_pixels": 4436,
+    "opaque_box_px": [
+      27,
+      7,
+      100,
+      120
+    ],
+    "fill_ratio": 0.8906,
+    "min_rgb": 1.0,
+    "symmetric": true,
+    "shape": {
+      "unit": "glyph height (bottom y=0, top y=1)",
+      "stroke": 0.09,
+      "head_half_width": 0.17,
+      "head_top": 1.0,
+      "head_bottom": 0.4,
+      "gap": 0.065,
+      "u_radius": 0.28,
+      "u_rise": 0.06,
+      "base_half_width": 0.16,
+      "glyph_width": 0.65
+    },
+    "spec": "128x128, 모든 픽셀 RGB=1·알파만 실루엣, 세로 긴 변 88 %, 가운데 정렬, 정면 평면 픽토그램"
+  },
+  "ue": {
+    "script": "Tools/Unreal/create_voice_assets.py",
+    "started": "2026-10-12T01:52:27",
+    "status": "ok",
+    "saved": [
+      "/Game/Sounds/Master/SA_CL9_Voice",
+      "/Game/Sounds/Master/SA_CL9_VoiceSpeaker",
+      "/Game/Data/SettingsTable"
+    ],
+    "mode": "create",
+    "engine": "5.8.3-58210709+++UE5+Release-5.8",
+    "sound_class": {
+      "path": "/Game/Sounds/Master/SC_Voice",
+      "created": false,
+      "changed": [],
+      "volume": 1.0,
+      "parent": "/Game/Sounds/Master/SC_Master.SC_Master",
+      "children": [],
+      "master_children_before": [
+        "/Game/Sounds/Master/SC_Effects.SC_Effects",
+        "/Game/Sounds/Master/SC_VO.SC_VO",
+        "/Game/Sounds/Master/SC_UI.SC_UI",
+        "/Game/Sounds/Master/SC_Ambience.SC_Ambience",
+        "/Game/Sounds/Master/SC_Music.SC_Music",
+        "/Game/Sounds/Master/SC_Voice.SC_Voice"
+      ],
+      "master_children_after": [
+        "/Game/Sounds/Master/SC_Effects.SC_Effects",
+        "/Game/Sounds/Master/SC_VO.SC_VO",
+        "/Game/Sounds/Master/SC_UI.SC_UI",
+        "/Game/Sounds/Master/SC_Ambience.SC_Ambience",
+        "/Game/Sounds/Master/SC_Music.SC_Music",
+        "/Game/Sounds/Master/SC_Voice.SC_Voice"
+      ],
+      "sc_vo_before": {
+        "volume": 1.0,
+        "parent": "/Game/Sounds/Master/SC_Master.SC_Master",
+        "children": []
+      },
+      "sc_vo_after": {
+        "volume": 1.0,
+        "parent": "/Game/Sounds/Master/SC_Master.SC_Master",
+        "children": []
+      }
+    },
+    "icon": {
+      "path": "/Game/UI/Icons/T_Icon_mic.T_Icon_mic",
+      "source": "ArtSource/ui/icons/T_Icon_mic.png",
+      "source_sha256": "e3486ad449aea5fdbc7364c8a256b4b0cb247199de6cc99c58ea9b276e986a04",
+      "existed": true,
+      "reimported": false,
+      "changed": false,
+      "size": [
+        128,
+        128
+      ],
+      "lod_group": "<TextureGroup.TEXTUREGROUP_UI: 16>",
+      "mip_gen_settings": "<TextureMipGenSettings.TMGS_NO_MIPMAPS: 13>",
+      "compression_settings": "<TextureCompressionSettings.TC_EDITOR_ICON: 7>",
+      "srgb": "True",
+      "never_stream": "True",
+      "fill_ratio": 0.8906,
+      "opaque_pixels": 4436
+    },
+    "attenuations": [
+      {
+        "path": "/Game/Sounds/Master/SA_CL9_Voice",
+        "created": true,
+        "changed": true,
+        "before": {
+          "inner_cm": 400.0,
+          "silent_at_cm": 4000.0,
+          "falloff_distance_cm": 3600.0,
+          "curve": "LINEAR",
+          "attenuate": true,
+          "spatialize": true,
+          "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+          "attenuation_shape": "SPHERE",
+          "enable_occlusion": false,
+          "attenuate_with_lpf": false,
+          "enable_listener_focus": false,
+          "plugin_settings": {
+            "spatialization_plugin_settings_array": 0,
+            "occlusion_plugin_settings_array": 0,
+            "reverb_plugin_settings_array": 0,
+            "source_data_override_plugin_settings_array": 0
+          }
+        },
+        "after": {
+          "inner_cm": 150.0,
+          "silent_at_cm": 1500.0,
+          "falloff_distance_cm": 1350.0,
+          "curve": "LINEAR",
+          "attenuate": true,
+          "spatialize": true,
+          "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+          "attenuation_shape": "SPHERE",
+          "enable_occlusion": false,
+          "attenuate_with_lpf": false,
+          "enable_listener_focus": false,
+          "plugin_settings": {
+            "spatialization_plugin_settings_array": 0,
+            "occlusion_plugin_settings_array": 0,
+            "reverb_plugin_settings_array": 0,
+            "source_data_override_plugin_settings_array": 0
+          }
+        }
+      },
+      {
+        "path": "/Game/Sounds/Master/SA_CL9_VoiceSpeaker",
+        "created": true,
+        "changed": true,
+        "before": {
+          "inner_cm": 400.0,
+          "silent_at_cm": 4000.0,
+          "falloff_distance_cm": 3600.0,
+          "curve": "LINEAR",
+          "attenuate": true,
+          "spatialize": true,
+          "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+          "attenuation_shape": "SPHERE",
+          "enable_occlusion": false,
+          "attenuate_with_lpf": false,
+          "enable_listener_focus": false,
+          "plugin_settings": {
+            "spatialization_plugin_settings_array": 0,
+            "occlusion_plugin_settings_array": 0,
+            "reverb_plugin_settings_array": 0,
+            "source_data_override_plugin_settings_array": 0
+          }
+        },
+        "after": {
+          "inner_cm": 150.0,
+          "silent_at_cm": 1500.0,
+          "falloff_distance_cm": 1350.0,
+          "curve": "LINEAR",
+          "attenuate": true,
+          "spatialize": true,
+          "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+          "attenuation_shape": "SPHERE",
+          "enable_occlusion": false,
+          "attenuate_with_lpf": false,
+          "enable_listener_focus": false,
+          "plugin_settings": {
+            "spatialization_plugin_settings_array": 0,
+            "occlusion_plugin_settings_array": 0,
+            "reverb_plugin_settings_array": 0,
+            "source_data_override_plugin_settings_array": 0
+          }
+        }
+      }
+    ],
+    "settings_table": {
+      "path": "/Game/Data/SettingsTable",
+      "VoiceClass": {
+        "before": "/Game/Sounds/Master/SC_Voice.SC_Voice",
+        "after": "/Game/Sounds/Master/SC_Voice.SC_Voice"
+      },
+      "VoiceAttenuation": {
+        "before": null,
+        "after": "/Game/Sounds/Master/SA_CL9_Voice.SA_CL9_Voice"
+      },
+      "VoiceSpeakerAttenuation": {
+        "before": null,
+        "after": "/Game/Sounds/Master/SA_CL9_VoiceSpeaker.SA_CL9_VoiceSpeaker"
+      }
+    },
+    "finished": "2026-10-12T01:52:27"
+  },
+  "ue_verify": {
+    "script": "Tools/Unreal/create_voice_assets.py",
+    "started": "2026-10-12T01:52:31",
+    "status": "ok",
+    "saved": [],
+    "mode": "verify",
+    "engine": "5.8.3-58210709+++UE5+Release-5.8",
+    "verify": {
+      "attenuations": [
+        {
+          "path": "/Game/Sounds/Master/SA_CL9_Voice",
+          "exists": true,
+          "ok": true,
+          "mismatches": [],
+          "actual": {
+            "inner_cm": 150.0,
+            "silent_at_cm": 1500.0,
+            "falloff_distance_cm": 1350.0,
+            "curve": "LINEAR",
+            "attenuate": true,
+            "spatialize": true,
+            "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+            "attenuation_shape": "SPHERE",
+            "enable_occlusion": false,
+            "attenuate_with_lpf": false,
+            "enable_listener_focus": false,
+            "plugin_settings": {
+              "spatialization_plugin_settings_array": 0,
+              "occlusion_plugin_settings_array": 0,
+              "reverb_plugin_settings_array": 0,
+              "source_data_override_plugin_settings_array": 0
+            }
+          },
+          "expected": {
+            "inner_cm": 150.0,
+            "silent_at_cm": 1500.0,
+            "falloff_distance_cm": 1350.0,
+            "curve": "LINEAR",
+            "attenuate": true,
+            "spatialize": true,
+            "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+            "attenuation_shape": "SPHERE",
+            "enable_occlusion": false,
+            "attenuate_with_lpf": false,
+            "enable_listener_focus": false,
+            "plugin_settings": {
+              "spatialization_plugin_settings_array": 0,
+              "occlusion_plugin_settings_array": 0,
+              "reverb_plugin_settings_array": 0,
+              "source_data_override_plugin_settings_array": 0
+            }
+          }
+        },
+        {
+          "path": "/Game/Sounds/Master/SA_CL9_VoiceSpeaker",
+          "exists": true,
+          "ok": true,
+          "mismatches": [],
+          "actual": {
+            "inner_cm": 150.0,
+            "silent_at_cm": 1500.0,
+            "falloff_distance_cm": 1350.0,
+            "curve": "LINEAR",
+            "attenuate": true,
+            "spatialize": true,
+            "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+            "attenuation_shape": "SPHERE",
+            "enable_occlusion": false,
+            "attenuate_with_lpf": false,
+            "enable_listener_focus": false,
+            "plugin_settings": {
+              "spatialization_plugin_settings_array": 0,
+              "occlusion_plugin_settings_array": 0,
+              "reverb_plugin_settings_array": 0,
+              "source_data_override_plugin_settings_array": 0
+            }
+          },
+          "expected": {
+            "inner_cm": 150.0,
+            "silent_at_cm": 1500.0,
+            "falloff_distance_cm": 1350.0,
+            "curve": "LINEAR",
+            "attenuate": true,
+            "spatialize": true,
+            "spatialization_algorithm": "SPATIALIZATION_DEFAULT",
+            "attenuation_shape": "SPHERE",
+            "enable_occlusion": false,
+            "attenuate_with_lpf": false,
+            "enable_listener_focus": false,
+            "plugin_settings": {
+              "spatialization_plugin_settings_array": 0,
+              "occlusion_plugin_settings_array": 0,
+              "reverb_plugin_settings_array": 0,
+              "source_data_override_plugin_settings_array": 0
+            }
+          }
+        }
+      ],
+      "settings_table": {
+        "path": "/Game/Data/SettingsTable",
+        "VoiceAttenuation": {
+          "ok": true,
+          "actual": "/Game/Sounds/Master/SA_CL9_Voice.SA_CL9_Voice",
+          "expected": "/Game/Sounds/Master/SA_CL9_Voice.SA_CL9_Voice"
+        },
+        "VoiceSpeakerAttenuation": {
+          "ok": true,
+          "actual": "/Game/Sounds/Master/SA_CL9_VoiceSpeaker.SA_CL9_VoiceSpeaker",
+          "expected": "/Game/Sounds/Master/SA_CL9_VoiceSpeaker.SA_CL9_VoiceSpeaker"
+        }
+      },
+      "failures": []
+    },
+    "finished": "2026-10-12T01:52:31"
+  }
+}

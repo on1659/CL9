@@ -4,6 +4,17 @@
 
 ## 현재 재개 지점
 
+- **[2026-10-16 정리 — 문서 감사로 보충, 09-21 이후 공백]** 아래 09-21 항목 가운데 끝난 것과, 그 뒤 들어온 것.
+  - 처형 Run 2 클립 4개(`AN_Pig_Execute`·`AN_Raccoon_Execute`·`AN_Farmer_Executed_Pig/Raccoon`)는 09-21·22 에 커밋됐다(7e00227·a2c4834). 2인 PIE 검증만 남음.
+  - 계란 cooked·burnt 는 2026-10-09 계란후라이로 재제작해 `Content/Items/Egg/SM_Egg_Cooked_A`·`SM_Egg_Burnt_A`·`M_CL9_Egg_Fried` 로 임포트됐다([catalog](catalog.md)). cracked·broken 은 아직 FBX 만.
+  - `pen_fence` 는 09-28 UE 임포트·`PieceTable`·`SegKindTable` `penFence` 행까지 끝났다([map/pen_fence.md](map/pen_fence.md)).
+  - **푸드트럭 B**(본체·계단·출발 레버·전원 스위치) — `ArtSource/map/food_truck_b/` 5개 하위 폴더, `Content/Maps/FoodTruck/B` SM 5개 임포트([map/food_truck.md](map/food_truck.md), 증거 [036-food-truck-b-imports.json](evidence/036-food-truck-b-imports.json)). 카탈로그 행 없음.
+  - **바깥 지면** — `ArtSource/map/exterior_ground/export/SM_CL9_ExteriorGround_100_A.fbx` → `Content/Maps/Outdoor/SM_CL9_ExteriorGround_100_A`([../systems/stage.md](../systems/stage.md)). 10-16 부터 트럭 → 입구 사이는 랜드스케이프(`Tools/Unreal/setup_outdoor.py`, [../decisions.md](../decisions.md) 2026-10-16). 카탈로그 행 없음.
+  - **양계장 지붕** — `ArtSource/map/henhouse_roof/export` FBX 2개 → `Content/Maps/Henhouse/Structure/Roof` SM 2개, 카드 [map/henhouse_roof.md](map/henhouse_roof.md)(10-04). 카탈로그 행 없음.
+  - **양계장 실내 소품 세트 `henhouse_indoor`**(ChatGPT 이관 제작, 10-13~14) — FBX 90개 → `Content/Maps/Henhouse/Indoor` SM 90개 + 확인용 레벨 `Lvl_HenhouseIndoor_Review`(10-14, 정본 `ArtSource/map/henhouse_indoor/PRODUCTION_LOG.md`). `ModuleTable` 에 Indoor 메시 경로(`basket`·`egg_box_stack`·`feathers`·`poster`·`stain`)가 들어가기 시작했다(작업 트리, 미커밋) — [map/henhouse_indoor_usage.md](map/henhouse_indoor_usage.md) §8. 미납품 ID 는 `egg_tray_stack` 하나. 카탈로그 행 없음.
+  - **소 탈 몬스터 `storage_owner_disguise`**(저장고 주인, 10-13~) — 현재 테스트 레벨 후보 `ArtSource/monster/storage_owner_disguise/runtime_walk_v20`(UE `Content/Monsters/StorageOwnerDisguise/RuntimeWalkV20`), 10-16 Mixamo 시험 둘(`mixamo_motion_probe_v01`·`mixamo_getup_probe_v02`)은 사용자 검토 대기 — [monster/disguise-trio-next-production.md](monster/disguise-trio-next-production.md). 카탈로그·monster README 행 없음.
+  - **닭 탈 괴물 `chicken_disguise`** — 현재 정본은 `animation_locomotion_contact_back_v2`(10-16, [인계서 §22](monster/chicken_disguise-animation-handoff.md)). 게임 연결은 여전히 별도.
+
 - **[2026-09-21 정리] 다음 재개 지점 — 에셋 범위에서 남은 일은 아래뿐이다. 나머지 카드는 전부 UE 임포트·게임 연결까지 끝났다.**
   - 처형 Run 2 두 리그 클립 `AN_Pig_Execute`·`AN_Farmer_Executed` — 각 blend 따로 굽고 UE 액터 공간 앵커 표를 공유, 길이 = `ExecuteDuration`,
     농부는 DOWN 자세로 끝나 부활까지 유지. 종은 Run 2 착수 때 다시 정한다(09-20 저녁 종 재배치: 스토커 = 너구리, 돼지 = 잡히면 처형).

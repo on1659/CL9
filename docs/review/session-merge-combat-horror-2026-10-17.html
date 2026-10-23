@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전투·공포 두 세션 통합 정리</title>
+<meta name="description" content="2026-10-17 '인스타에서 조사' 세션과 '전투조작감' 세션의 내용을 중립 시점에서 분야별 탭으로 합치고, 겹치는 곳과 부딪치는 곳을 표시한 정리본">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1d1b17; --muted:#5f5a50; --line:#d9d4c8;
+  --accent:#8a4b1f; --accent-soft:#f3e4d6;
+  --insta:#1f5f8b; --insta-soft:#e1edf6;
+  --combat:#7a2e2e; --combat-soft:#f6e3e3;
+  --ok:#2f6b3a; --ok-soft:#e2f0e4;
+  --warn:#8a6d1e; --warn-soft:#f7efd3;
+  --bad:#9a2f2f; --bad-soft:#f8e1e1;
+  --code:#efece4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --panel:#1f1d17; --ink:#ece7dc; --muted:#a79f90; --line:#3a362d;
+    --accent:#d9a06a; --accent-soft:#3a2a1c;
+    --insta:#7fb6e0; --insta-soft:#1b2c3a;
+    --combat:#e08a8a; --combat-soft:#3a1f1f;
+    --ok:#8bd09a; --ok-soft:#1d2f21;
+    --warn:#e2c46a; --warn-soft:#3a3118;
+    --bad:#ef8f8f; --bad-soft:#3d1c1c;
+    --code:#2a2820;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15140f; --panel:#1f1d17; --ink:#ece7dc; --muted:#a79f90; --line:#3a362d;
+  --accent:#d9a06a; --accent-soft:#3a2a1c;
+  --insta:#7fb6e0; --insta-soft:#1b2c3a;
+  --combat:#e08a8a; --combat-soft:#3a1f1f;
+  --ok:#8bd09a; --ok-soft:#1d2f21;
+  --warn:#e2c46a; --warn-soft:#3a3118;
+  --bad:#ef8f8f; --bad-soft:#3d1c1c;
+  --code:#2a2820;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.6;font-size:15px}
+header{padding:28px 16px 12px;max-width:1180px;margin:0 auto}
+header h1{font-size:24px;margin:0 0 6px}
+header p{margin:0;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.tag.insta{background:var(--insta-soft);color:var(--insta);border-color:var(--insta)}
+.tag.combat{background:var(--combat-soft);color:var(--combat);border-color:var(--combat)}
+.tag.both{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.gray{background:var(--code);color:var(--muted)}
+nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 16px 0}
+nav.tabs .inner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:4px}
+nav.tabs button{appearance:none;border:1px solid var(--line);border-bottom:none;background:var(--panel);color:var(--muted);padding:8px 13px;border-radius:8px 8px 0 0;cursor:pointer;font-size:14px;font-weight:600}
+nav.tabs button.active{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+main{max-width:1180px;margin:0 auto;padding:16px}
+section.tab{display:none}
+section.tab.active{display:block}
+h2{font-size:21px;margin:8px 0 12px;border-left:5px solid var(--accent);padding-left:10px}
+h3{font-size:17px;margin:26px 0 8px}
+h4{font-size:15px;margin:18px 0 6px;color:var(--muted)}
+p{margin:6px 0 10px}
+ul,ol{margin:6px 0 12px;padding-left:22px}
+li{margin:3px 0}
+table{border-collapse:collapse;width:100%;margin:8px 0 16px;background:var(--panel);font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:left}
+th{background:var(--code);font-weight:700}
+td.k{white-space:nowrap;font-weight:600}
+.wrap{overflow-x:auto}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:13px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.box.insta{border-left:5px solid var(--insta)}
+.box.combat{border-left:5px solid var(--combat)}
+.box.both{border-left:5px solid var(--accent)}
+.box.note{border-left:5px solid var(--warn);background:var(--warn-soft)}
+.box.bad{border-left:5px solid var(--bad);background:var(--bad-soft)}
+.box.ok{border-left:5px solid var(--ok);background:var(--ok-soft)}
+.box h4{margin:0 0 6px;color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.conflict{border:1px solid var(--line);border-radius:10px;margin:14px 0;background:var(--panel);overflow:hidden}
+.conflict .head{padding:10px 14px;background:var(--code);font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.conflict .body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:820px){.conflict .body{grid-template-columns:1fr}}
+.conflict .side{padding:10px 14px;border-top:1px solid var(--line)}
+.conflict .side.insta{border-left:5px solid var(--insta)}
+.conflict .side.combat{border-left:5px solid var(--combat)}
+.conflict .side b{display:block;margin-bottom:4px}
+.conflict .foot{padding:10px 14px;border-top:1px solid var(--line);background:var(--accent-soft)}
+.small{font-size:13px;color:var(--muted)}
+.toc{columns:2;column-gap:24px;font-size:14px}
+@media (max-width:820px){.toc{columns:1}}
+footer{max-width:1180px;margin:30px auto;padding:0 16px 40px;color:var(--muted);font-size:13px}
+a{color:var(--accent)}
+.kbd{font-size:12px;color:var(--muted)}
+@media print{
+  nav.tabs{display:none}
+  section.tab{display:block !important;page-break-before:always}
+  body{font-size:12px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>전투·공포 두 세션 통합 정리 <span class="small">(2026-10-17, 중립 세션 시점 · 저녁 14:50까지 반영)</span></h1>
+  <p>"인스타에서 조사" 세션과 "전투조작감" 세션의 대화 기록, 두 세션이 만든 문서(<code>docs/reference/monster-rules-comparison.md</code>, <code>docs/decisions.md</code> 2026-10-17 절, <code>docs/goal/knockdown-drop.md</code>, <code>docs/goal/burnt-bait.md</code>, <code>docs/review/combat-handoff-2026-10-17.md</code>, <code>docs/review/control-friction.md</code>), 그리고 인스타 세션이 서브에이전트로 돌린 CL9 공포 요소 현황 조사를 한데 모았다. 결정은 적지 않는다. 결정은 사용자 몫이고, 어느 쪽 세션의 말이 맞다고 고르지도 않았다.</p>
+  <div class="legend">
+    <span class="tag insta">인스타 세션</span>
+    <span class="tag combat">전투조작감 세션</span>
+    <span class="tag both">양쪽 공통</span>
+    <span class="tag ok">구현·빌드됨(미커밋)</span>
+    <span class="tag warn">보류·미결</span>
+    <span class="tag bad">상충</span>
+    <span class="tag gray">제안(대화에만 있음)</span>
+  </div>
+</header>
+
+<nav class="tabs"><div class="inner" id="tabbar"></div></nav>
+
+<main>
+
+<!-- ============================================================ -->
+<section class="tab" id="t0" data-title="0. 개요">
+<h2>0. 개요 — 두 세션이 무엇을 했고 어디까지 왔나</h2>
+
+<div class="wrap"><table>
+<tr><th style="width:14%">항목</th><th style="width:43%"><span class="tag insta">인스타에서 조사</span> <span class="small">local_cc42bb21</span></th><th><span class="tag combat">전투조작감</span> <span class="small">local_f654221e (내부 48393d0d)</span></th></tr>
+<tr><td class="k">출발점</td>
+<td>앞 세션 인계(f680dfeb) "SNS 손맛 조사 + 킬 히트스톱 분리·타격 스쿼시"의 마지막 일: 구현해 둔 ①킬 히트스톱 ②스쿼시가 실제로 어떻게 보이는지 <code>/cl9film</code>으로 찍어 보내기.</td>
+<td>앞 세션 인계 <code>docs/review/combat-handoff-2026-10-17.md</code>. "분석은 끝났고 이번 세션은 결정과 구현"이라는 문장을 인계 문서가 담고 있었다. 사용자가 Content Warning·Valheim 설치 경로를 같이 넘겼다.</td></tr>
+<tr><td class="k">세션의 실제 성격</td>
+<td>사용자 교정 두 번: "조사만 하는 세션인데 왜 수정도 함?" → "지금은 다른 게임에서는 어떤 식으로 플레이하는지 보는 것" → "실제 게임은 (다른 세션이) 분석하고 있고, 너는 유튜브·인스타에서 찾아봐". 뒤에 "우리는 요리가 아니고 공포 게임에서 공포감을 어떻게 살리느냐가 중요" → "정리해서 우리 시스템에 어떻게 넣으면 좋을지 방향을 결정해 줘. 아이템·맵 배치·몬스터 알고리즘·캐릭터/몬스터 애니·리소스·이펙트·사운드가 달라질 것".</td>
+<td>결정 축 A~H를 한 번에 질문해 답을 받은 뒤 G·H·C·D·B·F를 구현·빌드·촬영까지 갔다. 사용자 교정: "내가 구현하라고 한 적 없는데? 제발 여기서는 구현하지 마" → "인계 문서에 구현이 적혀 있는 게 개에반데, 아무튼 여기 세션에서는 구현 금지" → "다른 세션 말고 여기 세션만". 이후는 분석·문서만: 규칙형 몬스터 문제의식 → 비교 문서.</td></tr>
+<tr><td class="k">본 자료</td>
+<td>인스타 손맛 릴(graphic.magazine), 유튜브: 리썰 삽으로 거미, R.E.P.O. 프라이팬으로 오리("bye bye ducky"), 사쿠라이 「히트스톱 기법 8가지」·「피격 애니메이션」, Chivalry 2 분석 영상. 마인크래프트 2편은 제외(멀다·개조판). 전부 프레임을 직접 보고 확인, 소리는 못 들음.</td>
+<td>설치본 디컴파일: Content Warning(Unity 6000.0.67, Mono, Photon PUN, Assembly-CSharp 1012파일), Valheim(Unity 6000.0.75, assembly_valheim 692파일). 기존 리썰·R.E.P.O. 분석 문서와 <code>scare-mechanics.md</code>, <code>combat-gap.md</code>.</td></tr>
+<tr><td class="k">저장소에 남긴 것</td>
+<td><b>저장소 문서 변경 없음.</b> 영상 <code>Saved/Video/hit_squash_20261017.mp4</code>(17.5초), 샷 목록 <code>Saved/Film/shots/hit_squash.json</code> 3회 수정(사용자가 되돌릴지 미정), 메모리 work-progress 3줄. 공포 방향 제안은 대화와 <b>비공개 페이지 "CL9 공포 방향"</b>(<a href="https://claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL">claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL</a>, 기획자용·변수명 없음, 12:38 1판 → 12:59 2판)에 있다. 원본은 그 세션의 스크래치 <code>C:\Users\Radar\AppData\Local\Temp\claude\C--Work-CL9\794406e8-33fc-43c3-9306-61dd24183c38\scratchpad\cl9-horror-direction.html</code>.</td>
+<td>분석 문서 5개: <code>docs/reference/contentwarning/{monsters,items,run}.md</code>, <code>docs/reference/valheim/{monsters,combat}.md</code>. (저녁) <code>docs/reference/mimesis/{monsters,items,run}.md</code> 3개와 비교 문서 4.5절·<code>docs/reference/README.md</code> 색인. 비교 문서 <code>docs/reference/monster-rules-comparison.md</code>. goal 문서 2개(<code>knockdown-drop.md</code>, <code>burnt-bait.md</code>). <code>decisions.md</code> "2026-10-17 (전투·조작감 결정)" 절. 구현: C++ 13파일 + 새 파일 2(<code>CL9FearComponent.h/.cpp</code>), 규칙 표 열 30여 개, 룩·소리·파동·몬스터 표 행, 문서 20여 개, 영상 3편. <b>전부 미커밋</b>, 되돌릴지 미정.</td></tr>
+<tr><td class="k">끝난 지점</td>
+<td>"CL9 공포 방향 제안"(7원칙) → 기획자용 페이지 1판(12:38) → 2판(12:59, 패턴 13·판 연출) → 13:23 인스타 밖 설계 자료(L4D·Alien: Isolation·Dead Space·그립) → 13:29~13:40 유튜브 조사(37회 검색·490편, Valefisk 대본, 한국 경쟁작 4) → 사용자 "원래 재미있게 놀 사람들에게 즐길 콘텐츠를 던져 준다" → <b>3판=4판(13:59)</b>: 비전·순간 9·원칙 9·패턴 +4·13~15절 → 14:02~14:14 임포스터 질문 → 16절 몰래 역할·칭호·Steam 업적 → 14:39 사용자 결정 ①~⑭ → <b>5판(14:41)</b> 반영. 내용은 0b·1·3b·3c·3d 탭.</td>
+<td>비교 문서 + 미결 5 → "텔이 뭐야" → 사용자(13:07) "페이지 보고 있어. 기획서 보강할 느낌이라 더 자세하게, 필요한 애니메이션 목록까지, 몬스터 행동 패턴, 몬스터 기획도" → <b>상세판(13:35)</b>: 5종 규칙 카드·상태 흐름·값 표·애니·소리·미결, 새 패턴 상세, 플레이어 겁먹는 몸, 참고 비교, "텔"→"예고" → MIMESIS 디컴파일·분석(13:34~14:12, 문서 3개) → 사용자 "전투 분석에 추가할 이야기 있을까?" → 6가지 → "ㅇㅇ 일단 문서로"(14:48) → 비교 문서 4.5절 + 페이지 8판(14:50).</td></tr>
+</table></div>
+
+<div class="box both"><h4>10-17 저녁까지 더 쌓인 것 (한눈에)</h4>
+<ul>
+<li><b>사용자 결정 14개</b>(14:39)가 페이지 "CL9 공포 방향" 11절에 기록됐다. 보류였던 축 A·E가 사실상 답을 얻었고(파훼법 필수 / 굴로 드나드는 동물), 배터리 없음, 톤 문장, 큰 목소리 반응, 빙의 안 함, 처형 장면 줄이기, 과장된 날림, 몰래 역할 미션 확장, Steam 업적이 정해졌다. 저장소 문서에는 아직 안 옮겼다. → <b>0b 탭</b></li>
+<li><b>방향이 "놀거리"로 올라갔다:</b> 대상은 이미 같이 노는 친구 무리와 방송인, 공포는 판을 까는 도구, 던져 줄 순간 9가지, 원칙 9개. → 1 탭</li>
+<li><b>5종 기획 카드 상세판</b>(전투 세션): 규칙·상태 흐름·지금 값/미커밋/제안·애니·소리·미결. 새 패턴 17개에 순서. 애니 신규 약 45 + 농부 20 + 새 모델 3(먼저 넣을 범위). → 3·3b·7 탭</li>
+<li><b>MIMESIS 설치본 분석</b>(전투 세션): 목소리·소지품 변장, 몬스터가 플레이어를 가려내는 신뢰 점수, 오염도, 전부 처치 가능. 전투 분석에 보탤 6가지. → 3 탭</li>
+<li><b>유튜브·경쟁작·설계 자료</b>(인스타 세션): 490편 표본의 제목 패턴, 반복 채널, Valefisk 결론, 한국 경쟁작 4(QUIET가 가장 가까움), L4D·Alien: Isolation·Dead Space·그립. → 3c 탭</li>
+<li><b>몰래 역할·칭호·Steam 업적</b>(인스타 세션): 지금 임포스터 규칙 확인, 행동력 채우는 장치, 역할 이름 후보(늑대·족제비), 영구 칭호 초안 18개, 판 끝 칭호, 규칙. → 3d 탭</li>
+<li>상충 8개가 새로 생겼고(원칙 8의 재뒤집힘, 말소리 번복, 죽음으로 행동 열기, 처형 카메라, 짐 전부 vs 공통, 재배치 vs ④, Steam 범위, 동시 편집) 1~16 중 절반은 닫혔다. → 8 탭</li>
+</ul></div>
+
+<h3>두 세션이 같은 방향으로 말한 것 <span class="tag both">공통</span></h3>
+<ul>
+<li><b>지금 CL9 전투가 밍밍한 이유는 손맛이 아니라 구조다.</b> 인스타 세션도 손맛 조사 끝에 "CL9는 이미 리썰보다 표현이 많다"고 했고, 전투 세션은 "몬스터 5종이 상태기계 하나를 쓰고 차이는 수치뿐, 답은 늘 팬으로 친다 하나"라고 했다.</li>
+<li><b>소리가 먼저다.</b> 인스타 원칙 ④ "소리가 먼저, 눈은 나중" = 전투 세션의 "텔" 칸(종별 소리·예고). 둘 다 "정전 때 <code>SightDark</code>가 코드 어디서도 안 쓰인다"를 짚었다.</li>
+<li><b>겁먹는 표현(H)은 코드는 들어갔고 음원·셰이크 애셋이 비어 있다.</b> 인스타 세션은 이것을 우선순위 1 "채우기"로, 전투 세션은 "시선 끌림만 보인다"로 적었다.</li>
+<li><b>닭은 치는 연습 종.</b> 인스타 제안(짐승 층, 상주·광폭화)과 전투 세션 카드(치되 소리가 무리를 부른다)가 같은 자리를 가리킨다.</li>
+<li><b>처치가 규칙을 우회하면 안 된다.</b> 인스타 원칙 ⑦ "타격감은 건조하게, 멀리 날리기는 채택 안 함"과 전투 세션 "팬 2~4대가 규칙을 지운다"가 같은 걱정이다.</li>
+<li><b>리썰식 "무엇이"는 알리고 "어디서·누구를"은 숨기기.</b> 인스타 원칙 ②와 전투 세션 축 A의 권장안이 같다. 다만 축 A는 사용자가 <b>보류</b>했다(아래 상충 탭).</li>
+</ul>
+
+<h3>겹치되 부딪치는 곳 (자세한 것은 "8. 상충·겹침" 탭)</h3>
+<ul>
+<li>톤: 아트 문서 "과장되되 귀엽게, 사실적 공포 아님" ↔ 인스타 "귀여운 탈이 벗겨지는 공포" ↔ 사용자 "웬만해서는 손도 못 쓰고 죽는 게 정서".</li>
+<li>인스타 제안 ②③은 사용자가 "분석 더"로 보류한 축 A·E를 결정 제안으로 냈다. 전투 세션은 "A·E는 종별 규칙 카드가 나온 뒤 종별로 정하는 게 맞다"고 했다.</li>
+<li>거위: 인스타 "놀람 담당(Upscream, 피해 0·짐 놓침·시선 강제)" ↔ 전투 세션 "깨우지 마라·치면 더 나빠진다(맞으면 운다 / 죽는 소리가 경보 / 처치 불가)".</li>
+<li>손전등: 전투 세션이 G(토글 유지·주머니 빛)를 구현 ↔ 같은 세션 뒤에 사용자 "손전등도 조작을 방해하는 요소" ↔ 인스타 "배터리는 결정 G와 부딪칠 수 있어 따로 정해야" ↔ 비교 문서 "빛을 몬스터 규칙에 넣어야 도구가 된다".</li>
+<li>몬스터 등장: 현재 7e "예고 없이 시야 밖" ↔ 인스타 "둥지 구멍 예고(리썰 벤트식)" ↔ 축 A·E 보류.</li>
+</ul>
+
+<div class="box note"><h4>작업 트리 상태 (양쪽 모두 미커밋)</h4>
+<ul>
+<li><span class="tag combat">전투</span> G·H·C·D·B·F 구현 전체. 사용자 "여기서는 구현 금지" 뒤 되돌릴지·둘지 묻고 답을 못 받았다. 비교 문서는 이 변경을 "2026-10-17 미커밋 변경"이라고만 부르고 확정으로 다루지 않는다.</li>
+<li><span class="tag insta">인스타(앞 세션 f680dfeb)</span> 손맛 ①② 구현(코드 6 + 문서 5 + 샷 목록). 사용자가 "응, 넣어주고"로 유지 확정, 커밋은 사용자가 시킬 때 한 번에.</li>
+<li>촬영 중 에디터 크래시 1회: 전멸 뒤 로비 재조립에서 맵 램프 컴포넌트 이름이 겹치는 기존 버그(새 코드와 무관). 수정 세션 카드가 제안돼 있다.</li>
+<li>"패키지 복원" 모달: 복원 대상이 룩 표가 다시 밀어 넣는 구조면 재질 16개뿐이라 전투 세션이 복원 목록을 치웠다.</li>
+</ul></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t0b" data-title="0b. 결정 현황">
+<h2>0b. 결정 현황 — 10-17 저녁까지 무엇이 정해졌고, 어디에 적혀 있나</h2>
+<p>두 세션이 같은 비공개 페이지 "CL9 공포 방향"(<a href="https://claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL">claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL</a>)을 번갈아 고쳐 8판까지 올렸다. 사용자는 14:39에 그 페이지 11절의 결정 ①~⑭에 한 줄씩 답했다. <b>이 답은 페이지에만 반영돼 있고 저장소의 <code>docs/decisions.md</code>·<code>docs/plan/</code>에는 아직 옮기지 않았다</b>(인스타 세션: "말씀하시면 옮기겠다"). 아래 표는 전투 세션의 축 A~H(05:58~06:16, decisions.md에 기록)와 페이지 결정 ①~⑭(14:39, 페이지에만)를 한데 놓은 것이다.</p>
+
+<h3>정해진 것</h3>
+<div class="wrap"><table>
+<tr><th style="width:16%">항목</th><th>사용자 답(원문 또는 요지)</th><th style="width:28%">무엇이 바뀌나 / 번복되는 결정</th><th style="width:14%">기록 위치</th></tr>
+<tr><td class="k">축 B 짐</td><td>"넘어지면 랜덤으로 아이템 떨구기 0~2개, 2개는 낮음" → 페이지 ② "그냥 그대로, 넘어지는 걸로. 넘어지면 보통 죽을 테니까"</td><td>09-15 "짐은 죽을 때만" 번복. 종별로 나누지 않고 공통 0~2개로 확정. 비교 문서 미결 2 닫힘</td><td>decisions.md(구현·미커밋) + 페이지</td></tr>
+<tr><td class="k">축 C 타격 소음</td><td>"넣는다 (권장)"</td><td>휘두르기 300·타격 600 소음</td><td>decisions.md(구현·미커밋)</td></tr>
+<tr><td class="k">축 D 닭 감지</td><td>"올린다 — 시야 + 걷기 소음 (권장)"</td><td>닭 시야 600/400, 걷기 소음 200. "걷기는 어그로 0" 번복. 종별 순서 뒤집힘은 미정리</td><td>decisions.md(구현·미커밋)</td></tr>
+<tr><td class="k">축 F 두 번째 도구</td><td>"미끼 (권장)"</td><td>탄 요리 미끼 5초</td><td>decisions.md(구현·미커밋)</td></tr>
+<tr><td class="k">축 G 손전등</td><td>"켜면 켜진 거고 끄면 끈 거, 무전기랑 유사" + "머리에서 앞으로" → 페이지 ⑤ "손전등은 배터리 없는 걸로 하자"</td><td>09월 빛 경제 번복(토글 유지·주머니 빛). <b>배터리 없음 확정</b>. 빛을 아끼는 이유는 "빛을 켜면 위험해지는 종"이 만들어야(⑤-2 미결)</td><td>decisions.md + 페이지</td></tr>
+<tr><td class="k">축 H 겁먹는 표현</td><td>"둘 다 (권장)"</td><td>공포 게이지 + 소리 네 겹 + 스팅어 + 추격 신호 + 시선 끌림. 애셋 비움</td><td>decisions.md(구현·미커밋)</td></tr>
+<tr><td class="k">축 A 읽히는 위협</td><td>전투 세션에서는 "아직 분석을 좀 더" → 페이지 ① "ㄱ"(초안대로) + ③ "전혀 예측 못하는 건 안 돼. 파훼법이 무조건 있어야 돼"</td><td>사실상 답: "무엇이"는 알리고 "어디서·누구를"은 숨기되 <b>모든 위협에 파훼법</b>, 숨긴 위치도 단서(구멍·둥지·소리 방향)로 좁힐 수 있어야. 걸어서 피하는 약속은 그냥 닭·돼지에만. 09-20·10-12 일부 번복</td><td>페이지만. decisions.md는 "보류"인 채</td></tr>
+<tr><td class="k">축 E 몬스터 이동</td><td>전투 세션 "아직 분석 더" → 페이지 ④ "두더지나 쥐 같은 거 만들어서 사라지는 걸 자연스럽게 해도 되지 않을까"</td><td>사실상 답: 사라졌다 나타나는 것은 <b>굴·구멍으로 드나드는 동물</b>이 맡는다(구멍이 보여 파훼법도 됨). 거위·너구리 재배치는 "이 원칙에 맞춰 다시 봄". 10-04 "디스폰 없음"은 부분 번복</td><td>페이지만</td></tr>
+<tr><td class="k">① 죽일 수 없는 종</td><td>"1번 ㄱ"</td><td>초안대로: 닭만 "치는 것이 정답일 수 있는 종", 거위·너구리·소는 처치가 해법이 아닌 쪽. 비교 문서 미결 1 닫힘</td><td>페이지만</td></tr>
+<tr><td class="k">⑦ 톤 선언</td><td>"ㅇㅇ 그렇게 하자"</td><td>아트 문서 "과장되되 귀엽게, 사실적 공포 아님"을 <b>"겉은 귀엽고 우스꽝스럽게, 정체가 드러나는 순간만 무섭게"</b>로. 상충 1 해소</td><td>페이지만. 아트 문서 미수정</td></tr>
+<tr><td class="k">⑧ 큰 목소리 반응</td><td>"큰 목소리 반응해야지"</td><td><b>"몬스터는 말소리를 듣지 않는다"(voice.md, 구현 후 되돌림) 번복.</b> 잠든 거위 한 종만 큰 목소리(비명)에 깨고 설정에서 끌 수 있게</td><td>페이지만</td></tr>
+<tr><td class="k">⑨ 죽은 사람의 빙의</td><td>"이건 굳이. 죽었을 때 해야 될 거를 차라리 생각해 보자. 이게 쉬는 느낌이 돼서 좋긴 해"</td><td>빙의 안 함. 원칙 9 "죽으면 쉬고, 구경거리는 있다". 죽은 사람이 할 일은 ⑨-2 미결</td><td>페이지만</td></tr>
+<tr><td class="k">⑩ 처형 장면</td><td>"아 그래? 줄이자 그러자"</td><td>처형 카메라를 짧고 덜 보이게(그립: 몬스터를 가까이 오래 보면 안 무섭다). <b>비교 문서 6.1 "처형 카메라가 범인을 보여 줘 죽음이 규칙을 가르친다"와 부딪침</b>(상충 20)</td><td>페이지만</td></tr>
+<tr><td class="k">⑪ 과장된 날림</td><td>"ㅇㅇ 그렇게 하자"</td><td>원칙 8 "다가오는 건 진지하게, 결과는 웃기게" 확정. 2판 "때리는 맛은 건조하게"와 인스타 공포 원칙 ⑦이 뒤집힘. <b>인스타 손맛 방안 B(처치 발사 크게)가 되살아남.</b> 닭 죽음도 과장해서 날아감, 탈 터지는 순간만 웃기지 않게</td><td>페이지만</td></tr>
+<tr><td class="k">⑬ 몰래 역할 미션</td><td>"다른 미션도 있는 게 나을 듯"</td><td>죽음까지 가지 않는 방해(문 닫기·거위 깨우기·짐 손해)도 미션·칭호로 보상. loop-7g 결정 3·4("동료 사망"만 보상)를 넓힘</td><td>페이지만</td></tr>
+<tr><td class="k">⑭ Steam 업적</td><td>"스팀 업적에 넣어야지" + "단어는 임포스터로 하면 안 되겠지만"</td><td>칭호 = Steam 업적 한 표. <b>출시 계획 문서는 Steam 업적을 범위 밖으로, 온라인은 LAN·EOS</b> → Steam 연결 작업이 전제</td><td>페이지만. steam-release 계획 미수정</td></tr>
+<tr><td class="k">손맛 ①②</td><td>"응, 넣어주고"(앞 세션)</td><td>KillHitStopTime 0.12, HitSquashScale 0.8, HitSquashTime 0.1</td><td>decisions.md(구현·미커밋)</td></tr>
+</table></div>
+
+<h3>아직 안 정해진 것</h3>
+<div class="wrap"><table>
+<tr><th style="width:4%">#</th><th>미결</th><th>후보·단서</th><th style="width:20%">출처</th></tr>
+<tr><td>1</td><td><b>⑤-2 빛 규칙을 어느 종에 둘지</b> (배터리가 없으니 "빛을 켜면 위험해지는 종"이 적어도 하나 있어야 빛의 선택이 산다)</td><td>너구리 "빛 안에서 봐야 본 것이다"(정전 중 너구리를 막을 수 없게 됨), 쥐 빛에 굳음, 박쥐 빛에 흩어짐, 부엉이 빛에 화냄, 소 어둠에서는 못 봄, 닭 끌림/멈춤, 거위 빛에 깸(9m 시선 보류 원칙과 반대)</td><td>페이지 11절, 비교 문서 미결 5</td></tr>
+<tr><td>2</td><td><b>⑥ 양을 되살릴지</b> ("양은 뭐야?"로 돌아옴)</td><td>10-13 제외. 협동 규칙("혼자 있지 마라", "한 명이 붙잡고 한 명이 지나간다") 자리의 후보. 안 되살리면 소·여우가 맡음. 클립 9개 남음</td><td>페이지 11절, 비교 문서 미결 4</td></tr>
+<tr><td>3</td><td><b>⑨-2 죽은 사람이 할 일</b> (쉬는 느낌을 지키면서)</td><td>관전하며 "누가 살아 돌아올까·누가 몰래 역할인가" 찍기(맞히면 판 끝 칭호), 관전 카메라 고르기(몬스터·위 시점), 새벽 하이라이트의 주인공</td><td>페이지 11절</td></tr>
+<tr><td>4</td><td><b>⑫ 몰래 역할의 화면 이름</b> ("이건 모르겠어 다시 고민")</td><td>늑대(권장, "양의 탈을 쓴 늑대"), 족제비(계란 도둑). 두더지는 ④의 굴 몬스터와 겹쳐 제외, 여우는 몬스터 후보와 겹쳐 제외. 코드·내부 문서 이름은 Imposter 유지</td><td>페이지 11·16절</td></tr>
+<tr><td>5</td><td><b>공포 게이지에 작은 판정을 걸지</b> (손 떨림으로 조준 흔들림, 일정 이상이면 스태미나 빨리 닳음)</td><td>MIMESIS 오염도에서 온 질문. H의 "표현 전용, 판정에 안 닿음" 전제를 바꾸는 일</td><td>전투 세션 14:15</td></tr>
+<tr><td>6</td><td>너구리 처치를 어디까지 막을지</td><td>A 후퇴 450(걷기보다 빠르게) / B 맞으면 즉시 격분 추격 / C 불사. 페이지 카드는 A+B 권장. 빛 A 채택 시 정전 판 난이도 급등 의도인지. 솔로 판 미발견 시간</td><td>페이지 5절 너구리 미결</td></tr>
+<tr><td>7</td><td>돼지 주 규칙 A(짐을 노린다)로 둘지 B(좁은 길) 더할지. 광폭화 조건을 "재료 들고 우리 지나간 횟수"로 바꿀지. 날재료도 먹을지</td><td>페이지 카드는 A 권장, 빛 규칙은 돼지에 두지 않기를 권장</td><td>페이지 5절 돼지 미결</td></tr>
+<tr><td>8</td><td>거위: 맞으면 즉시 운다(A) / 죽는 소리가 더 넓다(B) / 둘 다. 놀람 낙하를 거위에만 둘지 광폭화 닭에도. 빛에 깨는 규칙과 시선 보류 원칙 충돌</td><td>페이지 카드</td><td>페이지 5절 거위 미결</td></tr>
+<tr><td>9</td><td>닭: 빛 끌림/멈춤 중 하나. 죽음 드롭(깃털·날고기)을 둘지("치는 이유" vs "보이는 대로 죽인다"). 빈 것의 속도·시야·치명</td><td>페이지 카드</td><td>페이지 5절 닭 미결</td></tr>
+<tr><td>10</td><td>거위·너구리를 재배치(사라졌다 나타남)할지</td><td>④로 "굴로 드나드는 동물"이 그 역할을 맡게 됐으므로 원칙 4에 맞춰 다시 봄. 전투 세션 카드의 "60~120초 뒤 재등장" 제안은 ④ 이전 것</td><td>페이지 원칙 4</td></tr>
+<tr><td>11</td><td>새 종을 몇 종까지 늘릴지, 세 층 구조(10-13)를 "동물·몬스터 둘"로 다시 쓸지</td><td>페이지 5절은 층을 "둘"로 적었다. 패턴 순서: 먼저(쥐·어미 닭·횃대 닭·헛놀람·갈라놓는 문) → 다음(소·박쥐·부엉이·눈먼 개·뻐꾸기·굴) → 정체(여우·농부 탈·병아리) → 나중(병아리 울음·함정·거미줄)</td><td>페이지 6절</td></tr>
+<tr><td>12</td><td>광폭화를 공포의 중심으로 둘지(인스타 원칙 1) 닭·돼지의 장치로 둘지</td><td>페이지는 닭·돼지 둘 다에 Burst·Hollow 상태를 둔다(4단계 "정체")</td><td>상충 10</td></tr>
+<tr><td>13</td><td>전투 세션 미커밋 변경(G·H·C·D·B·F) 처리</td><td>페이지의 "지금 값" 표는 전부 "이번 주 미커밋"을 한 열로 둔다. 되돌리면 커밋본 값으로 읽어야</td><td>전투 세션 10:32 질문, 답 없음</td></tr>
+<tr><td>14</td><td>페이지 결정 ①~⑭를 <code>decisions.md</code>·<code>plan/data/monster/*.md</code>·아트 문서·출시 계획에 옮길지, 인계 문서 §4·§6의 "구현" 문구를 고칠지</td><td>인스타 세션 "말씀하시면 옮기겠다". 번복되는 기존 결정: 09-20 예고·회피 보장, 10-04 디스폰 없음, voice.md 말소리 무시, 2판 건조한 타격, Steam 업적 범위 밖, 아트 톤 문장</td><td>인스타 세션 14:42</td></tr>
+<tr><td>15</td><td>"억울한 희생" 칭호(몰래 역할 아닌 동료 처치)를 넣을지 — 팀킬을 부추길 수 있음</td><td>페이지 16절</td><td>인스타 세션 14:14</td></tr>
+<tr><td>16</td><td>"텔"이라는 말</td><td>전투 세션이 페이지에서는 "예고(텔)"로 바꿔 적었다. 비교 문서는 아직 "텔"</td><td>전투 세션 11:41·13:35</td></tr>
+</table></div>
+
+<div class="box note"><h4>판 번호가 어긋난다</h4>
+<p>같은 페이지를 두 세션이 동시에 고쳐서 판 번호가 세션마다 다르다. 인스타 기준: 1판(12:38 기획자용) → 2판(12:59 패턴 13) → [전투 세션 상세판] → 3판=4판(13:59 놀거리 방향, 문서 안 표시는 "3판") → 5판(14:41 결정 ①~⑭ 반영). 전투 기준: 3판(13:35 상세판: 5종 카드·애니 목록) → 5판(14:12 MIMESIS 얹음) → 6판·8판(14:50 MIMESIS 6가지 표). 지금 페이지 머리는 "5판(4판 + 사용자 결정 반영)"이고 전투 세션은 "8판"이라 부른다. 내용은 한 파일에 다 합쳐져 있다(각 세션이 상대 변경을 살렸다고 보고). 원본 파일은 세션마다 스크래치에 따로 있다: 인스타 <code>C:\Users\Radar\AppData\Local\Temp\claude\C--Work-CL9\ac004af9-d64e-4e23-908f-2b1da1cfb4c0\scratchpad\cl9-horror-direction.html</code>(23:41 KST 169KB), 전투 <code>C:\Users\Radar\AppData\Local\Temp\claude\C--Work-CL9\48393d0d-282b-4a6d-b90d-f4ce8384ba9a\scratchpad\cl9-horror-direction.html</code>(22:22, 그 뒤 분할 파일 part2~6).</p></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t1" data-title="1. 방향·톤">
+<h2>1. 방향·톤 — 무엇을 느끼게 하고, 무엇을 하게 하나</h2>
+
+<div class="box both"><h4>10-17 저녁 갱신 — 방향이 한 단계 더 올라갔다 <span class="tag insta">인스타 3판</span> <span class="tag ok">사용자 결정 ⑦·⑪ 반영</span></h4>
+<p>사용자(13:52): "내가 원하는 게임은 <b>원래 재미있게 놀 사람들</b>인데 그 사람들한테 좀 <b>즐길 만한 콘텐츠를 던져 준다</b>는 거야." 이 한 줄이 아래 두 틀(인스타 7원칙, 전투 네 칸) 위에 얹혔다.</p>
+<ul>
+<li><b>이 게임이 하는 일:</b> 대상은 디스코드로 모여 노는 친구 무리와 방송인. 공포는 목적이 아니라 판을 까는 도구. 판단 기준은 하나 — "이게 무리에게 어떤 순간을 만들어 주나?" 아무 순간도 못 만드는 장치는 아무리 무서워도 뺀다. 근거: 조회수 100만 이상 협동 공포 영상 261편 중 "친구들과"가 54편, Valefisk 분석 "협동 공포는 무섭기보다 웃겨야 한다".</li>
+<li><b>던져 줄 순간 9가지:</b> 비명 / 말이 끊김("야… 어디 갔어?") / 혼자 남음 / 구출(영웅담 또는 배신담) / 의심 / 손해(탄식, 책임 떠넘기기) / 웃긴 실패(클립으로 남을 장면) / 구경꾼 수다(먼저 죽은 친구들이 관전하며 떠듦) / 극적 탈출.</li>
+<li><b>원칙 7 → 9개.</b> ① 정체는 탈 쓴 동물 ② 기본은 죽는다, 규칙을 알면 산다(프라이팬은 일부 종에게만 답) ③ "무엇이"는 알리고 "어디서·누구를"은 숨긴다 — 단 파훼법은 반드시(결정 ③) ④ 몬스터는 돌아다니고 동물은 자리를 지킨다 — 사라짐은 굴·구멍 동물이 맡고 플레이어 바로 옆에 갑자기 나타나지 않는다(결정 ④, Alien: Isolation) ⑤ 소리가 먼저, 눈은 나중 — 배터리 없음(결정 ⑤) ⑥ 통제권을 잃는 것이 피해 ⑦ 혼자면 더 무섭다 — 무리를 갈라놓는다(Labyrinthine의 닫히는 문) ⑧ <b>다가오는 건 진지하게, 결과는 웃기게</b>(결정 ⑪, 2판의 "건조하게"를 뒤집음, 탈 터지는 순간만 예외) ⑨ <b>죽으면 쉬고, 구경거리는 있다</b>(결정 ⑨, 4판의 빙의를 뺌).</li>
+<li><b>리듬 4단계의 이름이 바뀌었다:</b> 불안 → 긴장 → <b>폭발</b>(비명과 웃음이 같이 터진다) → <b>수다</b>(새벽, 방금 일을 떠드는 시간).</li>
+<li><b>톤 문장(결정 ⑦):</b> "겉은 귀엽고 우스꽝스럽게, 정체가 드러나는 순간만 무섭게." 아트 문서는 아직 안 고쳤다.</li>
+</ul>
+<p class="small">아래 7원칙 표와 "두 틀을 포개면"은 12:59 2판 기준의 기록이다. 상충 1(톤)·2(A·E)는 0b 탭의 결정으로 해소됐고, 광폭화의 무게(상충 10)는 그대로 열려 있다.</p></div>
+
+<h3>세 가지 진술이 지금 나란히 있다</h3>
+<div class="wrap"><table>
+<tr><th style="width:18%">출처</th><th>문장</th><th style="width:22%">성격</th></tr>
+<tr><td class="k">아트 문서 (기존)</td><td>"과장되되 귀엽게, 사실적 공포가 아니다" (<code>docs/asset/design-concept.md</code>), "B급 협동 공포" (<code>art-production-plan.md</code>, 단 이 계획서의 몬스터 선정은 철회 상태)</td><td>톤 선언. 어둠·정전·즉사 처형·"읽히는 위협" 같은 기존 장치와 이미 부딪친다고 인스타 세션 조사가 적었다.</td></tr>
+<tr><td class="k"><span class="tag insta">인스타 제안</span></td><td>"<b>귀여운 탈이 벗겨지는 공포</b>. 겁은 몬스터가 주고, 웃음은 플레이어끼리 만든다."</td><td>이야기(story.md)의 "광폭화하면 탈이 터져 빈 것이 된다"를 공포의 중심에 두자는 제안. FNAF식 "귀여운 것이 깨지는 무서움".</td></tr>
+<tr><td class="k"><span class="tag combat">사용자 원문 (전투 세션)</span></td><td>"공포 게임이면 내가 공략하는 방법이 있긴 있어야겠지만 <b>웬만해서는 난 손도 못 쓰고 죽는 게 정서</b>여야 돼. 브레켄은 뒤를 봐야 되고, 안 지키면 그냥 죽어. 전투하는 도중에 뭐 할 게 없어. 호두까기는 잘 피하면서 때리면 되지만 타이밍 맞추는 게 쉽지 않지. 우리 게임도 몬스터마다 해결해야 될 규칙(패턴)이 있어서 그걸 클리어하는 느낌. 리포는 대부분 숨어야 되지만 물건이든 뭐든 이용해서 나중에 잡을 수 있지. 처음엔 무서움의 대상이지만 숙련도가 붙을수록 그냥 몬스터가 되는 맛. 금방 재미없어지겠지만 그게 없으면 재밌어지는 과정도 없어."</td><td>플레이 구조 선언. 규칙형 몬스터 + 숙련 곡선.</td></tr>
+</table></div>
+
+<h3><span class="tag insta">인스타 세션</span> 공포 방향 7원칙 + 한 판의 리듬</h3>
+<div class="wrap"><table>
+<tr><th style="width:4%">#</th><th style="width:22%">원칙</th><th>내용</th><th style="width:20%">전투 세션 틀과의 관계</th></tr>
+<tr><td>①</td><td>정체: 탈 쓴 동물</td><td>판이 진행될수록 동물이 조금씩 이상해지고(실밥·눈·움직임), 광폭화 문턱을 넘으면 정체가 드러난다.</td><td>카드의 "불확실성" 늦추개(광폭화 문턱을 개체마다 굴림)와 같은 자리. 다만 전투 세션은 광폭화를 닭의 두 번째 텔 정도로만 적었다.</td></tr>
+<tr><td>②</td><td>"무엇이"는 알려 주고 "어디서·누구를"은 숨긴다</td><td>리썰 방식. 종마다 고유한 소리·예고로 무엇이 오는지는 알되 위치·표적은 숨긴다. 덮치기 예고와 걸어서 피하기는 그대로.</td><td>= 축 A 권장안. <span class="tag warn">A는 보류</span></td></tr>
+<tr><td>③</td><td>몬스터 층은 돌아다니고, 짐승 층은 자리를 지킨다</td><td>거위·너구리는 사라졌다가 다른 곳에 다시 나타나고, 닭·돼지는 상주하되 광폭화. "재우기·디스폰 없음"(10-04)은 몬스터 층에만 번복.</td><td>= 축 E의 "스폰·디스폰 순환"을 종별로 나눈 것. <span class="tag warn">E는 보류</span></td></tr>
+<tr><td>④</td><td>소리가 먼저, 눈은 나중</td><td>위협 정보는 먼저 소리로. 어둠은 진짜로 위험해야 한다(정전 때 <code>SightDark</code> 적용).</td><td>= 텔 칸. 비교 문서도 "텔과 규칙에 빛이 없다"를 공통 결함 4번으로.</td></tr>
+<tr><td>⑤</td><td>통제권을 잃는 것이 피해</td><td>HP를 깎지 않아도 놀라서 짐을 놓치게 하는 것을 공포로 쓴다(R.E.P.O. Upscream).</td><td>= 결과 칸("HP 조금은 결과가 아니다"). 축 B(넘어짐 낙하)가 이미 한 칸을 열었다.</td></tr>
+<tr><td>⑥</td><td>혼자면 더 무섭다</td><td>동료와 멀어지면 공포가 오르고, 너구리는 혼자 있는 사람을 노린다(리썰 광기 17m, Ghost Girl).</td><td>비교 문서는 이것을 <b>양</b> 카드의 협동 규칙 갈래 A("혼자 있지 마라")에 두고, 너구리에는 "동료가 지켜보기"를 둔다. 종 배치가 다르다.</td></tr>
+<tr><td>⑦</td><td>타격감은 건조하게</td><td>손맛 방안 B(멀리 날리기)는 채택하지 않는다. 과장된 날림은 공포를 웃음으로 바꾼다. 처치는 쓰러져 움직이지 않거나 탈이 빈 껍데기처럼 꺼지는 쪽. A(스쿼시)·E(히트스톱 중 흔들림)는 유지.</td><td>비교 문서 "처치가 규칙을 우회한다"와 같은 걱정. 다만 전투 세션은 한 발 더 나가 "어느 종을 죽일 수 없게 할지"를 미결 1번으로 올렸다.</td></tr>
+</table></div>
+<p><b>한 판의 리듬:</b> 불안(어둠, 소리, 동물이 이상해짐) → 긴장(목격, 스토킹, 추격) → 충격(탈이 터짐, 거위의 놀람, 추격 시작) → 이완(트럭 짐칸, 새벽).</p>
+
+<h3><span class="tag combat">전투 세션</span> 규칙형 몬스터의 네 칸 + 숙련 곡선</h3>
+<div class="wrap"><table>
+<tr><th style="width:14%">칸</th><th>뜻</th></tr>
+<tr><td class="k">텔</td><td>다가오는 것을 알리는 신호. 소리·그림자·빛 반응·예고 시간. (사용자가 "텔이 뭐야"라고 물었고, 낯설면 "예고"·"단서"로 바꾸기로 했다.)</td></tr>
+<tr><td class="k">규칙</td><td>플레이어가 지켜야 할 한 문장. "보지 마라", "뛰지 마라", "불을 꺼라", "둘이서 해라".</td></tr>
+<tr><td class="k">결과</td><td>어기면 잃는 것. 기본은 죽음 또는 짐·통제권 상실. HP를 조금 깎는 것은 결과로 치지 않는다(넘어졌다 일어나는 지금의 "HP 1"은 결과가 아니다).</td></tr>
+<tr><td class="k">대응</td><td>비용이 드는 해법. 시간(기다리기)·주의(돌아보기)·자원(미끼·불·배터리)·인원(한 명이 묶고 한 명이 지나감). 처치가 가능한가, 가능하면 무엇으로 몇 대.</td></tr>
+<tr><td class="k">+ 숙련 단계</td><td>모를 때 → 알 때 → 익숙할 때. 처음엔 규칙을 몰라 죽고, 알면 대응 비용이 크고, 익숙해지면 비용이 싸져 "그냥 몬스터"가 된다.</td></tr>
+<tr><td class="k">+ 죽일 수 있나</td><td>실값 기준. 리썰은 <code>EnemyType.canDie</code>.</td></tr>
+</table></div>
+<p><b>"그냥 몬스터"가 되는 것을 늦추는 장치</b>(비교 문서 §6.2): 둘 이상 겹치는 규칙(돌아봐야 하는데 뛰면 안 되는 놈이 같이 있음), 대응의 자원 비용(미끼는 요리 하나를 태워야 생김), 짐 위험(규칙을 알아도 짐을 들고는 느려 틀림), 일자 곡선, 재등장 주기, 보상 전환(처치가 사냥감이 됨), 불확실성(광폭화 문턱 개체별), 공포 표현의 감쇠. <b>CL9는 커밋본 기준 이 늦추개가 대부분 비어 있다.</b></p>
+
+<h3>두 틀을 포개면</h3>
+<div class="two">
+<div class="box insta"><h4>인스타 7원칙은 "무엇을 느끼게"</h4><p>불안 → 긴장 → 충격 → 이완의 감정 리듬. 몬스터는 정체(광폭화·탈)가 중심이고, 플레이어가 겪는 피해는 통제권 상실, 공포는 혼자일 때 크다. 구현 순서도 "채우기(음원·SightDark) → 규칙(A·E·재등장·둥지·거위·혼자) → 정체(광폭화·조짐·애니)".</p></div>
+<div class="box combat"><h4>전투 네 칸은 "무엇을 하게"</h4><p>종마다 한 문장 규칙과 비용 있는 대응. 핵심 결함은 "대응이 다섯 종 모두 걷기·보기·치기로 같고, 처치가 규칙을 우회한다". 다음 할 일은 종별 카드 → 그 뒤에 A·E를 종별로 정하기 → 손전등을 어느 종 규칙에 넣을지.</p></div>
+</div>
+<div class="box both"><h4>서로 보완하는 지점</h4>
+<ul>
+<li>② = 텔 "무엇이"까지만. ④ = 텔의 소리 우선. ⑤ = 결과 칸. ⑥ = 협동 규칙(양 또는 너구리). ⑦ = "처치가 규칙을 우회하지 않게".</li>
+<li>인스타의 "정체(광폭화)"는 네 칸 밖의 다섯 번째 축이다. 비교 문서는 광폭화를 "불확실성" 늦추개로만 다룬다. <b>광폭화를 공포의 중심으로 둘지, 늦추개 하나로 둘지</b>는 아직 어느 쪽도 사용자에게 묻지 않았다.</li>
+<li>인스타의 "웃음은 플레이어끼리"와 사용자의 "숙련되면 그냥 몬스터가 되는 맛"은 둘 다 "몬스터는 웃음의 원천이 아니다"로 읽힌다. R.E.P.O.식 과장 타격(방안 B)은 둘 다에서 밀린다.</li>
+</ul></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t2" data-title="2. 타격감">
+<h2>2. 타격감(손맛) — 인스타 세션이 본 것과 CL9의 현재</h2>
+
+<div class="box both"><h4>10-17 저녁 갱신 — 방안 B가 되살아났다 <span class="tag ok">결정 ⑪</span></h4>
+<ul>
+<li>원칙 8이 "때리는 맛은 건조하게"(2판)에서 "<b>다가오는 건 진지하게, 결과는 웃기게</b>"(3판)로 뒤집혔고 사용자가 "ㅇㅇ 그렇게 하자"로 확정했다. 근거는 R.E.P.O. 오리 쇼츠 2,884만 회와 "결과가 과장된 짧은 순간이 쇼츠로 퍼진다"는 유튜브 조사. 그래서 아래 표의 <b>방안 B(처치 발사 크게)·B+(착지 튕김)는 "채택 안 함"이 아니라 채택</b>이 됐다. 닭 카드도 "죽음은 과장해서 날아간다, 궤적은 기존 죽음 발사 값으로 조절"로 적혔다. 탈이 터지는 순간만 웃기지 않게 둔다.</li>
+<li>새 3인칭 클립 Tumble(나뒹굴기, 함정·밀침·폭발)과 "인간 볼링공" 칭호(날아간 동물에 맞아 넘어짐)가 같은 원칙에서 나왔다. 소리 표 "그다음"에 과장된 타격음·날아가는 소리가 들어갔다.</li>
+<li>전투 세션의 "처치가 규칙을 우회한다" 걱정은 결정 ①(닭만 치는 종)로 받는다. 즉 과장된 날림은 사실상 닭(과 어미 닭·횃대 닭·쥐)에만 보이는 표현이 된다.</li>
+<li>결정 ⑩으로 처형 카메라는 짧고 덜 보이게 줄인다(그립: 1m 앞에서 오래 본 몬스터는 안 무섭다). 1인칭 처형 클립 2개(돼지: 뒤로 넘어지며 하늘, 너구리: 앞으로 엎어지며 바닥)는 "유지 여부 결정 필요"로 남았다.</li>
+</ul></div>
+
+<h3>본 자료 (전부 프레임으로 직접 확인, 소리는 못 들음)</h3>
+<div class="wrap"><table>
+<tr><th style="width:22%">자료</th><th>관찰</th><th style="width:22%">링크</th></tr>
+<tr><td class="k">graphic.magazine 손맛 릴 (인스타, 32초, 3인칭)</td><td>같은 칼질에 효과를 하나씩 켠다: OFF → 히트스톱 0.1초 → 찌그러짐 → 화면 흔들림과 <b>하얀</b> 번쩍 → 파편·숫자(-10)·소리 → ON. 찌그러짐이 아주 세다: 맞은 캐릭터가 2프레임쯤 키가 절반 가까이로 납작해졌다가(17.06~17.12초) 약 0.2초 뒤 복원. 캡션: "판정과 데미지는 그대로 두고 맞는 순간을 보여주는 방식만 바꾸면 더 느낌을 살릴 수 있다."</td><td><a href="https://www.instagram.com/reel/DekF45WpB_w/">DekF45WpB_w</a></td></tr>
+<tr><td class="k">리썰 컴퍼니 — 삽으로 거미 (1인칭 480p)</td><td>아주 건조하다. 번쩍임·파편·찌그러짐이 없고 거미는 맞아도 계속 다가오다 마지막 타에 다리를 오므리고 쓰러진다. 손맛은 소리와 죽는 자세에 맡긴다.</td><td><a href="https://www.youtube.com/watch?v=HT7jwT9qpE8">HT7jwT9qpE8</a></td></tr>
+<tr><td class="k">R.E.P.O. — 프라이팬으로 오리 (쇼츠, 조회 2,884만)</td><td>맞은 오리가 위로 날아가 화면 밖으로 사라졌다가 1초쯤 뒤 방 건너편에 떨어져 튕긴다(11.2~12.4초). 퍼진 이유는 이 과장된 날아감. 정지·찌그러짐은 눈에 띄지 않았다.</td><td><a href="https://www.youtube.com/watch?v=r32m5frT8KY">r32m5frT8KY</a></td></tr>
+<tr><td class="k">사쿠라이 「히트스톱 기법 8가지」</td><td>슬라이드와 화면 자막만 읽음(자막 파일은 받지 못함). 8기법은 아래 표.</td><td><a href="https://www.youtube.com/watch?v=tycbMSjDDLg">tycbMSjDDLg</a></td></tr>
+<tr><td class="k">사쿠라이 「피격 애니메이션」</td><td>맞는 순간 확실한 자세 → 피격 자세는 크게 → 히트박스 거리 문제. 땅에서의 반응을 약·중·강 세 단계로, 넉백에도 변형. 캡틴 팔콘은 9가지 피격 자세.</td><td><a href="https://www.youtube.com/watch?v=0xHE3ypX96U">0xHE3ypX96U</a></td></tr>
+<tr><td class="k">Chivalry 2 (1인칭 중세 근접, 분석 영상 367~371초)</td><td>칠 때마다 접점에서 피가 크게 터지고, <b>화면(렌즈) 자체에 핏방울이 묻어 한동안 남는다</b>. 상대가 화면을 채우는 1인칭에서는 몸 위 효과보다 내 화면에 남는 흔적이 더 잘 읽힌다.</td><td><a href="https://www.youtube.com/watch?v=Zo5skIF7eRw">Zo5skIF7eRw</a></td></tr>
+<tr><td class="k">제외</td><td>마인크래프트 닭 2편: 하나는 너무 멀고, 하나는 <code>#hack</code> 개조판. 인스타 해시태그·키워드 검색은 로그인 뒤에도 음악·장난감 광고가 섞여 릴 1편 외엔 쓸 게 없었다.</td><td>—</td></tr>
+</table></div>
+
+<h4>사쿠라이 8기법 대 CL9</h4>
+<div class="wrap"><table>
+<tr><th style="width:4%">#</th><th>기법</th><th>CL9 지금</th></tr>
+<tr><td>1</td><td>맞는 쪽은 많이 흔들고, 때린 쪽은 덜 흔든다</td><td>없음. 몬스터는 히트스톱 동안 애니만 멈추고(<code>bPauseAnims</code>) 흔들리지 않는다</td></tr>
+<tr><td>2</td><td>흔드는 건 모델뿐, 히트박스는 그대로</td><td>해당 없음(CL9 스쿼시도 메시만)</td></tr>
+<tr><td>3</td><td>땅에서는 좌우로, 공중에서는 모든 방향으로</td><td>없음</td></tr>
+<tr><td>4</td><td>흔들림을 점점 줄이며 끝낸다</td><td>없음</td></tr>
+<tr><td>5</td><td>공격 세기에 따라 히트스톱 길이를 바꾼다</td><td><b>있음</b> — 처치 0.12초 / 일반 0.08초 분리(2026-10-17 손맛 ①)</td></tr>
+<tr><td>6</td><td>멈춰 있는 동안 피격 자세로 조금씩 옮겨 간다</td><td>없음. 그 순간의 자세로 정지</td></tr>
+<tr><td>7</td><td>때린 쪽은 아주 조금씩 계속 움직인다("정점")</td><td>없음. 1인칭 팔을 완전히 멈춘다</td></tr>
+<tr><td>8</td><td>카메라 거리에 따라 흔들림 양을 바꾼다</td><td>없음</td></tr>
+</table></div>
+
+<h3>CL9 현재 (2026-10-17 영상 기준)</h3>
+<div class="wrap"><table>
+<tr><th style="width:12%">상태</th><th>내용</th><th style="width:28%">근거·값</th></tr>
+<tr><td><span class="tag ok">있음</span></td><td>히트스톱(일반 0.08초, 처치 0.12초), 빨간 피격 번쩍임, 깃털 파티클(<code>NS_CL9_HitPuff</code>, 죽으면 3배), 넉백(팬 120cm), 카메라 킥(<code>ShakeTable</code> Hit −3°@4Hz 0.12초), 처치 발사, 타격음·표면음, 예고·되돌림(뗌 공격, <code>SwingRecovery</code>), 발 IK, 이동 손맛(Gate A 73/73)</td><td><code>CL9Rules</code> HitFeel 열, <code>game-feel.md</code>, <code>combat-feel-pass-1.md</code>, <code>control-feel.md</code>. 모두 "PIE 자동 측정까지, 사람 손 검증 없음"</td></tr>
+<tr><td><span class="tag warn">약함</span></td><td>스쿼시(0.8배·0.1초)는 1인칭 근접 거리에서 구분되지 않는다. 닭이 화면을 가득 채우고 빨간 번쩍임이 겹친다. 처치 발사(<code>DeathLaunchSpeed</code> 300, <code>DeathLaunchUp</code> 260)도 영상에서는 그 자리에서 뒤집혀 쓰러지는 것처럼 보였다.</td><td>영상 <code>hit_squash_20261017.mp4</code>. 히트스톱 차이는 slomo 0.3에서 보였다.</td></tr>
+<tr><td><span class="tag bad">없음</span></td><td>히트스톱 동안 흔들림, 정지 중 피격 자세로 옮겨 가기, 화면에 남는 흔적, 세기별 피격 반응(지금은 <code>HitReact</code> 0.3초 1개 + <code>PushReact</code> 0.8초 1개, 블렌드 없이 즉시 전환), 충격파 링·임팩트 프레임, 몬스터 HP 핍(<code>WBP_MonsterHp</code> 미제작, 열 <code>HpPipsTime</code>만), 줍기 팔 클립·퀵슬롯 펄스, 착지 먼지, 래그돌(의도적 반려)</td><td><code>animation.md</code>, <code>game-feel.md</code> §4·§5</td></tr>
+</table></div>
+<p class="small">촬영 메모: 처음 두 번은 첫 타 뒤 닭이 다시 덮쳐 둘째 타가 안 들어갔다. 휘두르기는 버튼을 떼는 순간 나가므로 <code>hold</code>를 0.6→0.05초로 줄이고, 첫 타 뒤 1초 만에 다가가 치게 했다. 자막은 화면에 보이는 대로 "밀려난다", "깃털이 터지고 뒤집혀 쓰러진다"로 고쳤다.</p>
+
+<h3><span class="tag insta">인스타 세션</span> 업그레이드 방안 A~I (비용 순)</h3>
+<div class="wrap"><table>
+<tr><th style="width:14%">비용</th><th style="width:4%">#</th><th>방안</th><th style="width:26%">손댈 곳</th><th style="width:14%">공포 방향 뒤</th></tr>
+<tr><td rowspan="2">표 값만 (빌드 불필요)</td><td>A</td><td>스쿼시를 0.5~0.6배, 0.15~0.2초로 세게 (릴은 절반 가까이 눌린다)</td><td><code>CL9Rules</code> <code>HitSquashScale</code>·<code>HitSquashTime</code></td><td><span class="tag ok">유지</span></td></tr>
+<tr><td>B</td><td>처치 발사를 크게 해서 멀리 날아가게 (R.E.P.O.의 웃음 포인트)</td><td><code>CL9Rules</code> <code>DeathLaunchSpeed</code>·<code>DeathLaunchUp</code></td><td><span class="tag bad">채택 안 함</span> (원칙 ⑦)</td></tr>
+<tr><td rowspan="3">C++ 한 곳 + 표 열</td><td>E</td><td>히트스톱 동안 몬스터 메시를 흔들고 점점 줄이기 (사쿠라이 1·3·4)</td><td><code>ACL9Monster::TickHitFeel</code> + 새 열</td><td><span class="tag ok">유지</span></td></tr>
+<tr><td>G</td><td>1인칭 팔을 완전히 멈추지 않고 아주 느리게 (사쿠라이 7)</td><td><code>GetArmHitStopTime</code> 주변</td><td>언급 없음</td></tr>
+<tr><td>B+</td><td>처치 발사 뒤 착지할 때 한 번 튕기기 (지금은 바닥에 닿으면 속도 0)</td><td><code>HostTickDeathLaunch</code></td><td>B와 같이 밀림</td></tr>
+<tr><td>머티리얼</td><td>C</td><td>번쩍임 첫 1~2프레임을 하양으로 하거나 빨강을 옅게 해서 모양이 보이게 (릴은 하양)</td><td><code>M_CL9_HitFlash</code></td><td>언급 없음</td></tr>
+<tr><td>화면 효과 + 아트</td><td>H</td><td>맞힐 때 화면에 깃털이 붙었다 떨어지게 (Chivalry 핏방울의 CL9판)</td><td>화면 위젯이나 포스트 프로세스</td><td>언급 없음</td></tr>
+<tr><td rowspan="2">애니 제작</td><td>F</td><td>정지 중 피격 자세로 옮겨 가기 (사쿠라이 6)</td><td>ABP와 클립</td><td>언급 없음</td></tr>
+<tr><td>I</td><td>피격 반응을 일반 타격과 처치 타격으로 나누기 (사쿠라이 「피격 애니메이션」)</td><td>클립과 ABP 분기</td><td>언급 없음</td></tr>
+<tr><td>결정</td><td>D</td><td>방향: 건조한 긴장(리썰) 쪽인지 과장된 슬랩스틱(R.E.P.O.) 쪽인지</td><td><code>docs/decisions.md</code></td><td>공포 방향이 사실상 "건조" 쪽으로 답했다. 사용자 확인은 없음</td></tr>
+</table></div>
+<p>인스타 세션이 공포로 축을 옮기며 스스로 적은 단서: "공포가 중요하다면 R.E.P.O.식 과장(B)은 긴장을 깨서 웃음으로 바꿀 위험이 있다. 리썰이 타격을 건조하게 둔 것도 긴장을 지키기 위해서였을 수 있다. 이건 추측이라 확인해 봐야 한다."</p>
+
+<h3><span class="tag combat">전투 세션</span>이 타격에 손댄 것</h3>
+<ul>
+<li><b>C 타격 소음</b> <span class="tag ok">구현·미커밋</span>: <code>SwingNoiseRadius</code> 300, <code>HitNoiseRadius</code> 600, <code>NoiseLingerTime</code> 0.5(순간 소음이 귀에 남는 창). 소음원 <code>Swing</code>·<code>Hit</code> + 파동 <code>swing</code>·<code>hit</code> 행. 벽을 치든 닭을 치든 다른 몬스터가 듣고 바닥에 링이 핀다. 커밋본에서는 치는 비용이 0이었다(리썰 삽은 17m·0.8).</li>
+<li>리썰식 최소 준비 0.35초 게이트는 2026-09-22에 범위 밖. 탭 공격이 공짜라는 점은 "비용 0"의 한 조각(<code>combat-gap.md</code> 1.7, <code>control-friction.md</code> 후보).</li>
+<li>Valheim 분석 결론(전투 결정 구조): 스태미나 통 하나(50; 공격 6~20, 구르기 15, 달리기 8/초)와 스태거 게이지 하나로 결정을 만들고, 패리 0.25초 창과 적 내성 배율(Skeleton 둔기 ×1.5, Troll 둔기 ×0.5)이 무기를 바꿀 이유가 된다. 경계 전 백스탭 ×3, 스태거 중 ×2. 밸하임은 종 규칙이 아니라 전투 체계가 규칙이다.</li>
+<li>사용자 원문: "지금 전투 쪽 방향 보니 뭔가 애니메이션으로 직접 타격이 되어서 서로 전투하는 느낌인데… 전투하는 도중에 뭐 할 게 없어(야)". 즉 <b>타격 표현에 투자하는 것 자체의 우선순위가 낮다</b>는 뜻으로 읽힌다.</li>
+</ul>
+
+<div class="box bad"><h4>이 탭의 상충</h4>
+<ul>
+<li>인스타 방안 B·B+(멀리 날리기·튕기기) ↔ 인스타 공포 원칙 ⑦ "채택 안 함" ↔ 사용자 "손도 못 쓰고 죽는 정서". 같은 세션 안에서 뒤집혔고, 전투 세션의 사용자 말이 그 뒤집힘을 지지한다.</li>
+<li>인스타 방안 A·E·G·C·H·F·I(타격 표현 강화) ↔ 전투 세션 "대응이 치기뿐인 게 문제, 처치가 규칙을 우회". 표현을 좋게 하면 "치기"가 더 정답이 된다. 비교 문서 미결 1 "어느 종을 죽일 수 없게 할지"가 먼저다.</li>
+<li>2026-10-17 손맛 ①②는 "밍밍함의 주범은 구조이므로 이 둘은 해결이 아니라 싸게 넣는 표현 보강"이라고 decisions.md가 스스로 적었다.</li>
+</ul></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t3" data-title="3. 몬스터 규칙·AI">
+<h2>3. 몬스터 규칙·AI — 5종 현황, 참고 게임 패턴, 두 세션의 종별 제안</h2>
+
+<div class="box combat"><h4>10-17 저녁 갱신 — 전투 세션이 5종 기획 카드를 상세판으로 올렸다 (페이지 5절) <span class="tag gray">제안, 값은 초안</span></h4>
+<p>사용자(13:07): "추후 기획서 보강할 느낌이라 좀 더 자세하게 써 줘. 필요한 애니메이션 목록까지, 몬스터들 행동 패턴들도, 몬스터 기획도 같이. 진짜 자세하게." 그 답으로 종마다 규칙 카드(예고·규칙·결과·대응·죽일 수 있나·숙련·빛·참고) + 상태 흐름 + "지금 값 / 이번 주 미커밋 / 제안 / 근거" 표 + 애니메이션·소리 목록 + 미결이 들어갔다. 층은 "동물(게이지 있음)·몬스터(게이지 없음) 둘"로 적었다. 아래는 제안 값만 뽑은 것이다.</p>
+<div class="wrap"><table>
+<tr><th style="width:8%">종</th><th style="width:22%">규칙 한 문장</th><th>제안 값(초안)</th><th style="width:22%">상태 흐름에서 바뀌는 것</th></tr>
+<tr><td class="k">닭</td><td>"쳐도 된다, 그러나 치는 소리가 무리를 부른다 — 하나씩 떼어서 쳐라." 보조 "둥지 곁에서 알을 깨지 마라"</td><td>시야 6m/4m(정전 1.1m 읽게), 걷기 소음 2m, 그냥 닭 추격 396 유지, <b>빈 것 700·HP 6~8·잡히면 짐 전부</b>, 치는 비용 유지 + 죽음 드롭(깃털·날고기) 후보. 광폭화: 문턱 개체별, 조짐 3단계(고개 꺾기 → 오래 쳐다보기 → 실밥 벌어짐) → 탈 터짐 → 빈 것</td><td>타격 소음이 무리 경보와 같은 길로 들어가 "맞는 소리"에 옆 닭이 조사 상태로 옴. 광폭화 뒤를 "빈 것" 상태로 분리</td></tr>
+<tr><td class="k">거위</td><td>"깨우지 마라 — 깼으면 치지 마라"</td><td>깨우는 반경 4.5m/12.6m 유지, 경보 반경 <b>9m</b>(닭 무리 6m보다 넓게), 잠든 숨소리 4~5m, <b>1.5m 안에서 울며 달려들면 손의 것 1개 낙하(피해 0)</b>, 맞으면 A 즉시 울음 / B 죽는 소리 21m, 잠든 뒤 60~120초 지나면 다른 둥지로</td><td>Lunge(놀람) 추가, 맞음 → Hit Honk. 인스타의 "Upscream 거위"와 전투의 "경보꾼"이 한 카드에 합쳐졌다(상충 3 해소)</td></tr>
+<tr><td class="k">너구리</td><td>"3초에 한 번 돌아봐라 — 그러나 6초 넘게 노려보지 마라"</td><td>시야 6m/4m(닭과 순서 맞춤), <b>후퇴 450</b>(A, 걷기로 못 따라잡게), <b>맞으면 즉시 격분 462</b>(B), 처형 3.0/6초/2.0초 유지, 타깃 <b>고립자 우선(동료와 10m 이상)</b>, 예고로 등 뒤 4~5m 발톱·숨소리, 포기 뒤 60~120초 재등장(④ 이전 제안)</td><td>A+B 권장, C 불사는 보류. 빛 A "빛 안에서 봐야 본 것이다" 채택 시 정전 중 못 막음 — 의도인지 미결</td></tr>
+<tr><td class="k">돼지</td><td>A "들고 있는 것을 노린다 — 내려놓아라, 던져라"(권장) / B 좁은 길 / C 불 꺼라 / D 우리 밖</td><td>시야 4.8m 유지 + <b>짐 든 사람은 8m</b>, 추격 396 유지·빈 것 500, HP 6~8 유지·빈 것 12+(사실상 처치 불가), 던진 재료·미끼 앞에서 <b>먹기 3~5초</b>, 무거운 발소리 8m + 바닥 울림, 청각 2.7m 열은 공통 소음 경로로 대체</td><td>Eat·Sniff 추가. 광폭화 조짐 "입을 오래 벌림", 빈 것은 입이 몸보다 큼·미끼 무시. 빛 규칙은 돼지에 두지 않기를 권장</td></tr>
+<tr><td class="k">양 (번복 시)</td><td>A "혼자 있지 마라"(동료와 10m) / B "한 명이 붙잡고 한 명이 지나간다"</td><td>결과는 끌려감·묶임·짐 낙하("판에서 잠시 빠지는 것"). 솔로 판에서는 스폰 목록에서 뺌. 신규 클립 Drag·Pin·Shoved·Held + 농부 짝</td><td>⑥ 미결("양은 뭐야?")</td></tr>
+</table></div>
+<p class="small">종별 발소리(닭 가벼움·돼지 무거움·너구리 발톱·쥐 찍찍)가 "소리가 먼저" 원칙의 바탕으로 소리 표 "다음"에 들어갔다. 종별 애니메이션·소리 목록은 7. 탭.</p></div>
+
+<div class="box combat"><h4>MIMESIS 설치본 분석(전투 세션 13:34~14:50) — 다섯째 참고 게임 <span class="tag ok">문서 3개 + 비교 문서 4.5절, 미커밋</span></h4>
+<p>크래프톤 산하 렐루게임즈 MIMESIS(Steam buildid 25381161, 0.3.2, Unity 6000.3.9 Mono, FishNet, 2264파일)를 디컴파일해 <code>C:\Work\CL9\docs\reference\mimesis\mimesis-monsters.md</code>·<code>mimesis-items.md</code>·<code>mimesis-run.md</code>를 썼고, 비교 문서 4.5절과 색인에 넣었다. 15종 + 함정, 규칙형 12/15, <b>전부 죽는다</b>(방망이 40, 샷건 120, 미메시스 HP 100 = 방망이 3대).</p>
+<ul>
+<li><b>변장은 겉모습이 아니라 목소리와 소지품.</b> 가장 먼 플레이어의 가방을 30초마다 가짜로 복제해 들고 손전등을 켜고, 플레이어 발화를 0.7~7초 조각(1인 512개)으로 녹음해 뒀다가 비슷한 상황에 그 사람 목소리로 튼다. 목소리 주인은 못 듣고 옆 사람만 듣는다. 누구 목소리인지에도 규칙(가장 먼 생존자, 죽는 것을 아무도 못 본 사망자). 가려내는 수단은 대화("너 방금 말했어?"), 7m 탐지기(시끄러운 닭), 위치·소지품 대조.</li>
+<li><b>몬스터 쪽도 플레이어를 가려낸다.</b> 쳐다보면 1초마다 신뢰 −3, 안 보면 +3, 뛰어 도망치면 −11. 10 이하면 정체를 드러내고, 90 이상이면 동료인 척하다 15/45초 뒤 덮친다. 의심 행동 자체가 비용.</li>
+<li><b>결과는 HP가 아니라 오염도</b>(0~10,000). 서 있어도 오르고(위험도별 초당 8~30, 비 ×3·폭우 ×10), 70·80·90%에서 화면 효과 세 겹, 가득 차면 죽고 시체가 미메시스가 된다. 목 조르기 3.8초 = 오염도 약 절반. 되살리기 없음, 관전자는 동료 10m 안 미메시스에 12초 빙의(쿨 40초).</li>
+<li><b>감지는 반지름(15~25m) + 같은 층 + 실내외 일치, 벽 가림 없음.</b> 소리를 듣는 종은 거위(달려옴)·토끼(도망) 둘, 마이크 목소리와 손에 든 물건만. 발소리·빛에 반응하는 몬스터는 없다. 손전등은 감지가 아니라 미메시스의 위장 도구. "조용히 걷기"·"불 끄기"가 규칙이 아니라는 점에서 CL9와 정반대.</li>
+<li>종: Sentryper(보고 있으면 안 움직임, 치면 시선 무시하고 쫓음, 1.5m 즉사), MadameCroak(노래 뒤 주시 1.5초 동안 움직이면 결박 → 사망), MamaGorilla(쳐다보면 두 번 물러남, 그랩 최대 60초), QuokkaGlider(얼굴에 붙어 마이크 차단, 동료 1대), PowMoth(붙으면 15초 뒤 폭발, 동료에게서 떨어져라), Maegoostro(20m 안 말하지 마라), BruteBunny(소리 지르면 도망), Bombesis(가방 복제, 5m 즉사), TadaTeddy(스크랩 먹이기), StandingOwl(3.5m 안 즉사) 등. 아이템 낙하가 결과인 종 7.</li>
+<li><b>CL9 전투 분석에 보탤 6가지</b>(사용자 "ㅇㅇ 일단 문서로", 비교 문서 4.5절 "읽을 점" 표): ① 몬스터도 플레이어를 가려낸다(농부 탈·너구리 "노려보지 마라"를 이 틀로) ② 소음이 비용만이 아니라 도구(벽을 쳐서 특정 종을 쫓아냄 — 프라이팬의 둘째 동사, 거위와 반대 규칙) ③ 동물들이 탈 쓴 것을 피한다(세력 표 → 광폭화 조짐을 무리의 움직임으로) ④ 치면 규칙이 깨지는 종(Sentryper = 너구리 B) ⑤ "움직이지 마라" 규칙이 CL9에 없다(소와 반대라 겹치는 규칙) ⑥ 플레이어 게이지가 판정에 닿는다(공포 게이지에 작은 판정을 걸지 — 미결 5). 안 가져올 것: 반지름 감지·벽 무시, 발소리·빛 없음, 녹음 목소리 변장(그대로 베끼면 같아 보임).</li>
+</ul></div>
+
+<h3>CL9 5종을 네 칸에 넣으면 (비교 문서 §7.0, 커밋본 기준)</h3>
+<div class="wrap"><table>
+<tr><th>종</th><th>텔</th><th>규칙</th><th>결과</th><th>대응</th><th>죽일 수 있나</th></tr>
+<tr><td class="k">닭</td><td>기상 예고 0.8초, 잡기 예고 0.6초 + 파동 <code>monster_pounce</code></td><td>사실상 없다. 보이면(시야 330, 미커밋 600) 쫓는다</td><td>잡히면 HP −1 + 넘어짐(무적, 짐 유지)</td><td>걸어서 물러나면 헛친다(여유 44cm). 추격 396 = 걷기 396</td><td>팬 2대 (HP 3~4)</td></tr>
+<tr><td class="k">거위</td><td>잠든 모습, 경보 예비동작 0.55초</td><td>깨우지 마라(450 안이면 걸어도 깸, 1260 안에서 달리면 깸)</td><td>울음 경보로 무리가 깬다. 거위 자신은 잡지 않는다(<code>CatchRadius</code> 0)</td><td>450 밖으로 돌아간다, 4초 뒤 다시 잔다</td><td>팬 2대 — 경보꾼을 지우는 가장 싼 방법</td></tr>
+<tr><td class="k">너구리</td><td>거의 없다. 스토킹은 조용하다(팩 경보 안 울림), 스토킹 450 > 걷기 396</td><td>3초에 한 번 돌아봐라, 6초 넘게 노려보지 마라</td><td>등 뒤 처형 즉사(2.0초, 구출 없음)</td><td>돌아보기, 동료가 지켜보기, 달리기 654로 떼기</td><td>팬 2~3대 — 보이면 서 있고 다가가면 220으로 물러나지만 걷기 396이 더 빠르다</td></tr>
+<tr><td class="k">돼지</td><td>시야 480, 잡기 예고 0.8초(가장 길다)</td><td>잡히지 마라</td><td>잡히면 처형 즉사</td><td>추격 396 = 걷기. 멈춘 사람·막힌 사람·수레(297)만 잡힌다 → "걷기 산수"</td><td>팬 3~4대 (HP 6~8). 처형 중 죽여도 피해자는 죽는다</td></tr>
+<tr><td class="k">양</td><td colspan="4">닭과 같다 (값 전부 닭 복사)</td><td>팬 2대. <b>2026-10-13 뺀다</b></td></tr>
+</table></div>
+<p><b>공통으로 빠진 것 넷</b>: ① 대응이 같다(걸어서 물러나기 + 치기). ② 처치가 규칙을 우회한다(팬 2~4대, 커밋본 치는 비용 0). ③ 결과에 짐이 없다(미커밋 B 제외). ④ 빛이 규칙에 없다(<code>SightDark</code> 소비처 없음, 너구리 응시 판정에 "어둠은 판정에 없다").</p>
+
+<h3>공통 AI 현황 (인스타 세션 조사, 코드·문서 기준)</h3>
+<ul>
+<li><b>세 층</b>(2026-10-13): Beast(게이지 있음) 닭·돼지 — 광폭화 문턱 개체별, 판 중간 스폰이 이 층을 뽑음. Monster(게이지 없음) 거위·너구리 — 한 판에 0~1마리, 종별 규칙 1개. 제외 양. 소는 <code>MonsterTable</code>이 아니라 별도 에셋 <code>Content/Data/Monsters/Cow.uasset</code>(예고 0.85초, 돌진 0.55초/220cm, 잡기 반경 100, "검수용 초안"). 닭 새 본체 <code>ChickenRevealedAttack</code>(예고 0.6초, 돌진 0.28초/75cm).</li>
+<li><b>광폭화 게이지</b>: 컬럼 초안(<code>RageThresholdMin/Max</code>, <code>RageGainPerEvent</code>, <code>RageDecayPerSec</code>)만, 코드 없음. 게이지를 보여 줄지(실밥이 벌어진다 등) 미결.</li>
+<li><b>감지</b>: 시야(<code>SightIn/Out</code> 히스테리시스 + <code>DetectGrace</code>), 청각(소음 반경은 행동이 정함), 근접(<code>DetectNearRadius</code>)이 발각 게이지 하나로. <code>SenseTick</code>이 실제로 듣는 것은 달리기·걷기·휘두르기·타격 4가지. 줍기·밀치기·미끼는 링만. <code>SightDark</code>·<code>HearRadius</code> 미사용.</li>
+<li><b>상태</b>: Asleep, WakeTelegraph, Wander, Patrol, Investigate, Chase, Catch, Break, Return, Stun, Dead, Pounce, Stalk, Execute (전부 복제). Pounce: 반경 안·쿨 소진이면 <code>PounceWindup</code> 동안 멈춰 돌고 "지금" 위치로 <code>PounceLunge</code>, 도착 뒤 재판정. Catch: HP −1·넘어짐·<code>KillCooldown</code> 9초. Stalk(너구리): 조준 요 차 ≤ 55°·900 안·시야선이면 "본 것"(2D 요만). Execute: 2.0초 뒤 <code>HostKill</code>, 처형 중 경직 없음.</li>
+<li><b>경보</b>: 무리 <code>PackAlarmRadius</code> 600, 사살 <code>KillAlarmRadius</code> 2100, 복수 <code>RageTime</code> 9초·<code>RevengeRadius</code> 276. 기상 예고 0.8초, <code>WakeSightRadius</code> 900 안에 시선이 있으면 기상 보류.</li>
+<li><b>일자 스케일</b> <code>DangerCurve</code> 1일 0.8 → 10일 1.3 (추격 예산·발각 속도·시야에 곱함). 몬스터 수 0.6→1.5. <b>스폰</b>: 양계장 닭 8~12·거위 0~1, 대농장 outer/middle/deep, 돼지 농장 outer/middle/deep(두 표에 제외된 양이 남아 있음). <b>판 중간 스폰(7e)</b>: 60초마다 1마리, 총량 시작 수의 0.5배, 모든 산 사람에게서 1500cm 이상·시야 밖, 예고 없음. 트럭 근처 <code>ThreatActMinRadius</code> 420 안은 안전.</li>
+<li><b>미끼(F, 미커밋)</b>: 바닥에 멎은 탄 요리가 <code>decoy</code> 파동(330)을 내고, 사냥 중이 아닌 몬스터(Wander/Patrol/Return/Investigate, 쿨 0)가 <code>BaitItem</code>으로 삼아 Investigate → <code>DecoyEatRadius</code> 90 안에서 <code>DecoyEatTime</code> 5초 먹고(사람 무시, 맞으면 경직은 됨) 사라짐 → Return.</li>
+</ul>
+
+<h3>참고 게임의 규칙형 몬스터 (비교 문서 §5)</h3>
+<div class="wrap"><table>
+<tr><th>유형</th><th>리썰 (30)</th><th>리포 (28)</th><th>CW (31)</th><th>밸하임 (11)</th><th>플레이어에게 요구하는 비용</th></tr>
+<tr><td class="k">시선형</td><td>2 Bracken·Coil-Head</td><td>3 ThinMan·Elsa·CeilingEye</td><td>5 Weeping·Flicker·EyeGuy·Mouthe·CamCreep</td><td>0</td><td>주의(돌아보기·응시 유지)와 인원(한 명이 보는 동안 다른 사람이 움직임)</td></tr>
+<tr><td class="k">소음형</td><td>3 Eyeless Dog·Blob·Earth Leviathan</td><td>0 (공통 층)</td><td>1 Ear(역방향)</td><td>0</td><td>시간과 주의(말·달리기 참기)</td></tr>
+<tr><td class="k">타이머형</td><td>2 Jester·Barber</td><td>4 Bang·Floater·Tricycle·BombThrower</td><td>4 BlackHoleBot·Dog·Toolkit_Wisk·Bombs</td><td>0</td><td>시간과 공간(시계가 끝나기 전에 벗어나기)</td></tr>
+<tr><td class="k">통제권 상실형</td><td>1 Tulip Snake</td><td>9 Upscream·Hidden·SlowMouth·Tick·Oogly·HeartHugger·HeadGrabber·Tumbler·ValuableThrower</td><td>7 Snatcho·Jello·Harpooner·Larva·Arms·BarnacleBall·Spider</td><td>0</td><td>인원(떼어 줄 동료)과 짐</td></tr>
+<tr><td class="k">매복·변장형</td><td>6 Snare Flea·Bunker Spider·Masked·Kidnapper Fox·Puma·Stingray</td><td>0</td><td>3 Infiltrator2·Slurper·Mime</td><td>0</td><td>주의(살피기)와 시간</td></tr>
+<tr><td class="k">협동형</td><td>2 Ghost Girl·Butler</td><td>0</td><td>1 Worm</td><td>0</td><td>인원(흩어지지 않기)</td></tr>
+<tr><td class="k">영역형</td><td>3 Hoarding Bug·Circuit Bees·Giant Kiwi</td><td>3 BirthdayBoy·Spinny·Animal</td><td>0</td><td>0</td><td>경로와 자원(그 자리의 물건 포기)</td></tr>
+<tr><td class="k">단순 추격형</td><td>7</td><td>8</td><td>8</td><td>11</td><td>자원(무기·스태미나)과 공간</td></tr>
+<tr><td class="k">규칙형 합계</td><td><b>19/30</b></td><td><b>19/28</b></td><td><b>21/31</b></td><td>0/11 (전투 체계가 규칙)</td><td></td></tr>
+</table></div>
+<div class="wrap"><table>
+<tr><th>게임</th><th>처치 가능</th><th>수단</th><th>죽인 뒤</th></tr>
+<tr><td class="k">리썰</td><td>23/33 (<code>canDie</code>; 불사 10: Jester·Ghost Girl·Barber·Coil-Head·Old Bird·Earth Leviathan·Circuit Bees 등)</td><td>삽 force 1, HP 코드 기본 3</td><td>파워 예산 반환, 실내 스폰 재개 (순환)</td></tr>
+<tr><td class="k">리포</td><td>종별 미확인 (공통 HP 100)</td><td>던진 물건 피해 = 10 × 파괴등급 × 질량 × 0.5, 귀중품 값 10~20% 손실. 들었다 떨어뜨리면 3초 스턴</td><td>재등장 대기 ×3, 귀중품 소·중·대. 달 4부터 폭발</td></tr>
+<tr><td class="k">Content Warning</td><td><b>0/31</b> (체력 없음)</td><td>넘어뜨리기·떼어 내기·쫓아내기뿐</td><td>— (지침 → 도망, 100초마다 재배치)</td></tr>
+<tr><td class="k">밸하임</td><td>11/11</td><td>HP × 별, 피해 유형 × 내성, 스태거 ×2, 백스탭 ×3</td><td>확정 재료 + 트로피 5~15%</td></tr>
+<tr><td class="k">CL9</td><td>5/5</td><td>팬 <code>HitDamage</code> 2, 회복 0.347초</td><td>영구(그 판에서 줄어듦). 사살 경보 2100, <code>DropItems</code> 미정 — 칠 이유가 없다</td></tr>
+</table></div>
+<p class="small">빛이 규칙인 종은 CW에만 있다(Snatcho는 빛으로 쫓기고, EyeGuy는 빛에 분노). 단순 추격형도 "숨으면 된다"를 뒤집는 데 쓰인다(리포 SlowWalker, CW Knifo·BigSlap).</p>
+
+<h3>종별 — 두 세션의 제안 나란히</h3>
+<div class="wrap"><table>
+<tr><th style="width:8%">종</th><th style="width:30%"><span class="tag insta">인스타 세션 제안</span></th><th style="width:40%"><span class="tag combat">전투 세션 규칙 카드 초안</span></th><th>겹침 / 차이</th></tr>
+<tr><td class="k">공통</td><td>정전 때 <code>SightDark</code> 적용. 종별 발소리 행 분리. 몬스터 층 재등장 주기(R.E.P.O. 실값 20~40초 있다가 240~300초 뒤).</td><td>"텔과 규칙에 빛이 없다", "대응이 같다", "처치가 규칙을 우회", "결과에 짐이 없다". 손전등을 어느 종 규칙에 넣을지(미결 5).</td><td><span class="tag both">SightDark</span> 공통. 재등장은 축 E(보류)에 걸린다.</td></tr>
+<tr><td class="k">닭·(돼지)</td><td><b>광폭화 게이지 구현</b>: 판 시간·소음·동료 죽음으로 차오르고 단계마다 조짐을 보여 준 뒤 정체가 드러나면 속도·시야가 바뀐다. 처치는 날아가지 않고 쓰러지거나 꺼진다.</td><td><b>닭 = 치는 연습 종, 단 치는 데 비용</b>. 규칙 "쳐도 된다, 그러나 치는 소리가 무리를 부른다 — 하나씩 떼어서 쳐라". 결과: 무리에 둘러싸여 넘어지고 짐을 흘린다. 대응: 무리 경보 600 밖으로 한 마리 끌어내기, 미끼로 묶기. 광폭화는 두 번째 텔. 빛 갈래 A 끌림 / B 멈춤 / C 없음. "보이는 대로 죽인다"가 정답이 안 되려면 소음이 실제로 짐을 잃는 데까지 이어져야.</td><td><span class="tag both">닭 = 유일한 처치 종</span>. 광폭화의 무게가 다르다(인스타: 공포의 중심 / 전투: 보조 텔·불확실성).</td></tr>
+<tr><td class="k">거위</td><td><b>놀람 담당(Upscream)</b>: 피해 0, 경보 울음을 내며 시선을 강제로 끌고 짐을 놓치게 한다. 기존 경보꾼 역할과 그대로 이어진다. 거위 놀람 애니(경보 울음 + 돌진)·놀람음.</td><td>규칙 "<b>깨우지 마라 — 깼으면 치지 마라</b>". 결과는 울음 경보 → 닭 카드의 결과. 대응: 450 원을 돌아가기, 1260 안에서 안 뛰기, 숨어서 4초. 처치 갈래 A 맞으면 곧바로 운다 / B 죽는 소리가 경보 / C 처치 불가. 익숙해지면 경보를 도구로(일부러 깨워 무리를 한쪽으로). 빛 갈래: 잠든 거위에 빛을 비추면 깬다(<code>WakeSightRadius</code> 900 원칙과 반대).</td><td><span class="tag bad">역할이 갈린다</span>: 인스타는 거위에 "짐 놓침·시선 강제"라는 새 결과를 주고, 전투 세션은 거위를 "결과 없는 경보꾼"으로 두고 처치 쪽을 막는다. 둘을 합칠 수도 있지만 어느 쪽도 그렇게 적지 않았다.</td></tr>
+<tr><td class="k">너구리</td><td>스토킹 규칙(등 뒤·미발견·응시 격분)은 그대로. 표적 선택에 "<b>혼자 있는 사람 우선</b>". 몬스터 층이라 <b>재등장 대상</b>.</td><td>규칙 "3초에 한 번 돌아봐라, 6초 넘게 노려보지 마라". 텔이 없는 것이 문제(근접 음악·공포 누적이 후보, H 게이지가 그릇). <b>팬이 규칙을 지우는 지점</b>: 갈래 A 처치 불가·팬 안 들음(Coil-Head) / B 보이면 숨는다(브레켄 11·24초) / C 맞으면 격분이 처형 쪽으로. 빛 갈래 A "빛 안에서 봐야 본 것이다"(어둠 속 응시 무효, 배터리·정전이 비용) / B 빛을 비추면 물러남 / C 빛에 격분.</td><td><span class="tag both">브레켄식 유지</span>. 인스타는 "혼자 우선"을 너구리에, 전투는 협동 규칙을 양(또는 너구리 "동료가 지켜보기")에. 전투 세션만 "팬으로 칠 수 있는 것이 규칙을 희석"을 짚었다. 재등장은 E 보류.</td></tr>
+<tr><td class="k">돼지</td><td>닭과 같이 짐승 층, 광폭화. 처형은 유지.</td><td>지금 규칙은 산수(추격 396 = 걷기). 갈래 A "<b>들고 있는 것을 노린다 — 내려놓아라</b>"(<code>DeaggroRadius</code> 510 + 미끼 5초와 잇기) / B 좁은 곳으로(큰 몸, 맵 모듈) / C 불 꺼라(빛에 끌림) / D 우리 밖으로(<code>HomeRange</code> 840). <code>HearRadius</code> 270("눈보다 귀·코")이 정의만 되고 안 쓰임. 처치를 막을지 미결.</td><td>인스타는 돼지를 따로 다루지 않았다. 전투 세션의 갈래 C(빛)는 너구리 빛 갈래와 겹치지 않게 골라야 한다고 적었다.</td></tr>
+<tr><td class="k">양</td><td>언급 없음(3층 결정대로 제외 전제).</td><td>10-13 제외의 <b>번복을 전제한 후보</b>: 갈래 A "혼자 있지 마라"(리썰 광기 17m·CW Infiltrator 60m) / B "한 명이 붙잡고 한 명이 지나간다" / C "붙으면 동료가 떼어 줘라". 결과는 통제권 상실(끌려감·묶임·짐 낙하), 죽음이 아니라 "판에서 잠시 빠지는 것". 솔로 판 처리 필요(CW는 Weeping을 솔로 스폰에서 뺌).</td><td>인스타 ⑥ "혼자면 더 무섭다"를 어느 종에 둘지가 갈린다.</td></tr>
+<tr><td class="k">등장</td><td>판 중간 스폰을 "예고 없이 시야 밖"에서 <b>둥지 구멍 예고</b>로. 리썰 벤트처럼 소리는 나는데 어느 구멍인지는 모르게. 둥지 구멍 소품·예고음·기어 나오기 애니.</td><td>늦추개 "재등장 주기" 행: CL9는 판 시작 일괄 + 7e 한 마리씩(예고 없음), 죽으면 끝. 리썰 벤트 15초 예고는 §6.1 "텔이 무엇이만 알린다"의 예.</td><td>둥지 구멍은 축 A(위치 숨김·예고)와 E(재등장)의 교차점인데 둘 다 보류.</td></tr>
+</table></div>
+
+<h3>참고 실값 모음 (텔·대응 설계에 쓸 숫자)</h3>
+<div class="wrap"><table>
+<tr><th style="width:14%">게임</th><th>값</th></tr>
+<tr><td class="k">리썰</td><td>공포 게이지 식는 속도 0.055/s(죽으면 0.5). 소리 세 겹 0.1~0.67 / &gt;0.4 / &gt;0.7, 심장은 항상. 화면 필터 &gt;0.4. 점프: 즉사급 1.0, Coil-Head 4m 0.9 / 9m 0.4, Bracken 5m 발각 0.6, 시체 0.9/0.55. 광기: 17m 안에 아무도 없으면 차오름. Coil-Head 보이면 정지(전환 0.15초), 안 보이면 14.5 가속. Bracken 회피 11초 또는 24초, 분노 +1.5/s(1.25초 넘게 쏘아보면). 벤트 예고 15초(Crawler 35, Ghost Girl 1). 삽 소음 17m·0.8. 손전등 켤 때 소음 7m/0.4, 헬멧등 겸용. 사망 원인 19가지.</td></tr>
+<tr><td class="k">R.E.P.O.</td><td>첫 목격 스팅어 12m·쿨 120초. 근접 음악 5m/1m(에셋 실값; 코드 기본 15/4), 벽 차폐. 추격 시작 0.5초 정지 + 글리치 + 놀람음 + BGM 20초 중단. 배회 중 화면에 10초 잡히면 2초 멈췄다 그쪽으로(쿨 60초). 등장 20~40초 체류 / 240~300초 뒤 재등장, 10분마다 −20%(30종 전부 같은 값). Upscream: 피해 0, 입력 0.1초 차단, 시선 강제, FOV 50 줌, 비네트, 들고 있던 것 강제 낙하. 시선 강제는 추격 중 8m 내내. 서 있으면 1초에 발각, 근접 3.5m 즉시. 첫 달 스턴 문턱 1.5 낮음.</td></tr>
+<tr><td class="k">Content Warning</td><td>몬스터는 전부 "AI가 조종하는 플레이어". 감지 70m/110°, 약 1초 계속 보이면 표적. 5m 안 공격 모드: 서서 1.25초 / 웅크림 2.5초 / 달리기 0.83초 / 말하기 0.63초. 소음: 걷기 9.9m, 달리기 15m, 웅크림 5m, 마이크 0.9 이상 30m. 점프스케어 등급 0~3, 15m·시야 70° 안, 쿨 10초, 흔들림 15, 10초 미시야 조건. 지침: 20~40초 쫓으면 5~20초 2배 속도로 도망. <code>Puppetmonster</code>가 120초 뒤부터 100초마다 가장 먼 몬스터를 플레이어 근처로. 촬영 점수: 화면 30% 크기 배율 1.0, 꽉 채우면 0.31. 손전등 4칸 인벤 아이템, 배터리 100~200초, 충격봉 5초. 산소 500초, 필름 90초. 사망 3초 뒤 인벤 전부 낙하, 병원비 10%. 31종 중 절반은 HP 대신 통제권.</td></tr>
+<tr><td class="k">밸하임</td><td>시야 인간형 30m / 짐승 20m, 경계 전 정면 반구만. 소음 걷기 15m, 달리기 30m, 웅크림 0, 공격 시작 10m, 명중 30~40m. 소리로는 경계 안 켜짐(Draugr만 소음 깨우기 15m). 30초 놓치면 포기. Greydwarf 6초마다 3초 원 돌기가 공격 틈. Boar·Neck 불 3m에 6초 공포. Troll 200m 끈.</td></tr>
+</table></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t3b" data-title="3b. 공포 패턴·판 연출">
+<h2>3b. 공포 패턴 후보 13가지와 판 전체의 연출 — 인스타 세션 2판(12:59)</h2>
+<p><span class="tag insta">인스타 세션</span>이 기획자용 페이지 "CL9 공포 방향"(<a href="https://claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL">claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL</a>)을 2판으로 올리며 더한 내용이다. 리썰 몬스터 33종과 Content Warning 31종의 기존 분석 문서에서 CL9 동물·장소에 옮길 만한 것을 골랐다. <b>참고 몬스터의 동작은 분석 문서의 실제 동작이고, 그것을 소·박쥐·뻐꾸기 시계 등으로 옮긴 부분은 인스타 세션의 제안이다.</b> 페이지는 변수명·파일 경로를 뺀 기획자용 문장이라 아래 표도 그 말투를 따른다. <span class="tag gray">전부 제안, 결정 없음</span></p>
+
+<div class="box both"><h4>10-17 저녁 갱신 — 패턴 13 → 17, 순서가 붙었고, 먼저 넣을 것은 행동 패턴·애니까지 적혔다 (페이지 6절)</h4>
+<div class="wrap"><table>
+<tr><th style="width:14%">순서</th><th>패턴</th><th style="width:30%">비고</th></tr>
+<tr><td class="k">먼저</td><td>쥐(짐 훔치기), 어미 닭(알 기억), 횃대 닭(천장), 헛놀람, <b>무리를 갈라놓는 문</b>(3판 추가, Labyrinthine)</td><td>양계장에서 바로 시험, 훔치는 구조와 직결. 새 모델 3(쥐·큰 닭·터진 닭)</td></tr>
+<tr><td class="k">채택</td><td><b>큰 목소리에 반응한다</b>(3판 추가, Don't Scream 류) — 잠든 거위가 비명에 깬다, 설정에서 끌 수 있게</td><td>결정 ⑧. "몬스터는 말소리를 듣지 않는다" 번복</td></tr>
+<tr><td class="k">다음</td><td>소(보면 멈춘다), 박쥐·부엉이(빛), 눈먼 개(소리로만), 뻐꾸기 시계(타이머), <b>굴로 드나든다</b>(5판 추가, 두더지·쥐 — 결정 ④)</td><td>카드만. 모델 5개</td></tr>
+<tr><td class="k">정체 단계</td><td>여우(끌고 감), 농부 탈(변장), 병아리(두고 가면 자란다)</td><td>"탈 쓴 동물"과 직결. 4단계에서</td></tr>
+<tr><td class="k">나중</td><td>병아리 울음(한 사람에게만), 장소의 함정, <b>두 사람을 묶는다</b>(CW Worm, 2판에서 뺐다가 "웃음도 목적"이라 되살림)</td><td>양이 돌아오면 협동 규칙은 양이 맡음</td></tr>
+<tr><td class="k">뺀 것</td><td><b>죽은 사람의 빙의</b>(4판 추가 → 5판 삭제, 결정 ⑨), 목소리로 쫓아내는 몬스터(CW Ear)</td><td>"몬스터가 되어 친구 놀리기"의 재미는 몰래 역할(3d 탭)이 맡는다</td></tr>
+</table></div>
+<p><b>먼저 넣을 셋의 상세(전투 세션 작성):</b></p>
+<ul>
+<li><b>쥐</b> — 규칙 "바닥에 재료를 두지 마라, 손의 것은 뒤를 조심하라". 벽 구멍 소품(2~4개)에서 판 시작 60초 뒤부터 90초마다 1마리(최대 4). 바닥 재료는 그냥 물어 가고, 손의 재료는 등 뒤 2m에서 0.5초 도약해 쳐서 떨어뜨린 뒤 가져간다. 운반 속도 500, <b>빛에 2초 굳음</b>. HP 1(팬 1대, 밟아도 죽음) 그러나 벽 구멍에서 다음이 온다. 둥지(깊은 구역)에 재료 3개 이상 ∧ 플레이어 4m 안이면 둥지 무리 2~4마리가 분노(물면 넘어뜨리기만). 클립 9 + 농부 1인칭 Hand Hit(거위 놀람과 공유). 소리: 벽 긁는 소리(위치 숨김), 발소리 2~3m, 찍찍.</li>
+<li><b>어미 닭</b> — 규칙 "알을 가져갔으면 어미 닭의 시야에서 벗어나라". 둥지 위 큰 닭(1.3배, 알 3~5개). 알을 집는 순간 벌떡 일어나 긴 울음(그 사람에게만 10m), 범인만 판 끝까지 기억·추격(시야 8m), 다른 사람은 그냥 닭. 잡히면 넘어지고 <b>퀵슬롯의 알 전부 낙하</b>, 어미가 하나씩 물어 둥지로(운반 중 무방비). HP 5~6(팬 3대), 죽이면 둥지 알 3~5개 — "치는 이유"가 가장 분명한 종. 알을 뺏기면 광폭화 게이지가 크게 뜀. 닭 클립 공유 + Nest Sit·Rise Scream·Carry Egg·Place Egg.</li>
+<li><b>횃대 닭</b> — 규칙 "횃대 아래를 지날 때 위를 봐라 — 보면 안 떨어진다"(코일헤드의 천장 판). 손전등을 위로 비춰야 보이는 거꾸로 매달린 실루엣, 깃털 하나 낙하, 0.5초 전 날개 소리. 사람이 아래 1.5m ∧ 아무도 위를 안 보면 낙하 → 얼굴 부착: 시야 90% 가림(깃털 오버레이), 속도 절반, 10초마다 HP −1, 20초 뒤 또는 동료 E 1.5초로 떨어짐. 떨어진 뒤 바닥에서 팬 1대(HP 2). 클립: Roost Hang·Wing Spread·Drop·Face Cling(1인칭 카메라 자식)·Detach + 농부 Pull Off·Head Cling·Rescue Pull.</li>
+<li><b>헛놀람·긴장 조절자·정전 예고</b> — 새 몬스터 없이 소품(외투·빈 자루·흔들리는 문)과 소리·조명. 긴장 조절자 값은 표(무사건 시간 문턱, 사건 가중치, 큰 일 뒤 휴지). 원형은 Left 4 Dead 감독 AI(고조 → 정점 유지 → 휴식, 무리는 고조에서만). 지금 60초마다 일정하게 나오는 판 중간 몬스터도 이 리듬에 묶는다. Alien: Isolation처럼 공포 단계가 꼭대기면 몬스터를 물러나게 하는 데도 쓰되, <b>플레이어의 죽음을 계기로 몬스터 행동을 새로 열지는 않는다</b>(불공평).</li>
+</ul>
+<p><b>다음 단계 카드(요지):</b> 소 — "눈을 떼지 마라", 모두 눈 떼면 600으로 접근, 들이받혀 즉사 또는 짐 전부(결정 필요), 처치 불가, 어둠에서는 "본다"가 안 통해 손전등 필수. 박쥐 — "빛을 비춰라", 흩어짐, 무리가 얼굴을 치면 시야 가림 3초 + 낙하. 부엉이 — "빛을 비추지 마라", 0.3초 닿으면 분노, 1이면 덮쳐 HP −1·넘어짐·손전등 낙하. 눈먼 개 — "마당에서 소리 내지 마라", 걷기 2m는 못 듣고 달리기·타격·낙하만, 물려 즉사, 팬 4대(HP 8)·첫 타 ×3(백스탭). 뻐꾸기 시계 — "정각 전에 방을 나가라", 5m 안이면 똑딱임 빨라짐, 새 추격 500 즉사, 방 비우면 5초 뒤 멈춤, 처치 불가. <b>정체 단계:</b> 여우(덤불, 동료를 물고 8초 끌고 감, 쫓아가 1대면 놓음, HP 4 미만이면 덤불로), 농부 탈(걸음이 조금 이상하고 말이 없음, 무전으로 확인, 껴안고 목 졸라 즉사, 팬 3대·맞으면 탈 벗겨져 달림), 병아리(위치 숨긴 울음, 안으면 퀵슬롯 한 칸 + 소음, 두고 가면 판 시간 60%부터 큰 것).</p>
+<p class="small">설계 자료(15절)에서 온 단서: Alien: Isolation의 감독 AI는 플레이어 위치를 항상 알지만 몬스터에겐 "대략 저쪽" 힌트만 준다(원칙 3을 몬스터 쪽에서 구현하는 방법). 위협감이 꼭대기면 환풍구로 물러나게 하고, 플레이어가 갈 만한 방향 근처 환풍구로 보내 다음 매복을 준비한다. 순간이동은 12~18시간 캠페인에서 컷신 두 번뿐. 인스타 세션 스스로 짚은 충돌: "동료의 죽음이 동물의 화를 키운다"는 광폭화 조건은 이 원칙(죽음으로 행동을 열지 않기)과 부딪친다.</p></div>
+
+<h3>2판이 적은 "지금 우리 게임의 공포"</h3>
+<div class="two">
+<div class="box ok"><h4>이미 있는 것</h4><ul>
+<li>칠흑 같은 실내, 전원을 켜는 연출, 판 중간의 정전</li>
+<li>몬스터를 보면 오르는 공포 단계, 첫 목격·추격 시작 신호, 쫓길 때 끌리는 시선(미커밋 H)</li>
+<li>등 뒤 처형 너구리, 잡히면 처형 돼지</li>
+<li>근접 소리 파동, 거리에 따라 작아지는 목소리, 죽은 뒤 동료 시점 관전</li></ul></div>
+<div class="box bad"><h4>비어 있거나 약한 것</h4><ul>
+<li>공포 단계의 소리가 비어 있다(지금 느끼는 것은 시선 끌림뿐)</li>
+<li>어둠이 위험하지 않다(정전이 와도 몬스터는 똑같이 본다)</li>
+<li>장소에 소리가 없다(환경음은 조리대 하나, 몬스터 발소리 = 사람)</li>
+<li>놀랄 일이 없다(9월의 "미리 알려 주고 걸어서 피할 수 있게"를 합치면 예측 가능한 몬스터)</li>
+<li>내 캐릭터가 겁먹지 않는다(손 떨림·움찔·숨소리·비명 없음)</li></ul></div>
+</div>
+<p class="small">장면 예시 두 개도 넣었다. "탈 쓴 닭": 처음엔 모이를 쪼던 닭이 몇 분 뒤 고개를 꺾고 오래 쳐다보고 목덜미 실밥이 벌어져 있다가, 동료의 비명 직후 탈이 터지고 속에서 다른 것이 기어 나온다. "거위의 깜짝 놀람": 계란 세 개를 안고 걷는데 어둠 속에서 거위가 울며 달려들어 시선이 끌리고 화면이 흔들리고 계란 하나가 떨어진다, 다친 곳은 없지만 근처 닭들이 깬다.</p>
+
+<h3>4절 공포 패턴 후보 13가지</h3>
+<p>지금 CL9 몬스터의 패턴은 셋뿐이다: 쫓아와서 잡는다, 등 뒤에서 처형한다, 울어서 깨운다.</p>
+<div class="wrap"><table>
+<tr><th style="width:4%">#</th><th style="width:13%">패턴</th><th style="width:20%">참고한 몬스터</th><th>CL9에서는</th><th style="width:20%">플레이어가 겪는 것</th><th style="width:7%">규모</th><th style="width:14%">전투 세션 틀로 보면</th></tr>
+<tr><td>1</td><td class="k">보면 멈춘다</td><td>리썰 Coil-Head, CW Weeping</td><td>외양간의 <b>소</b>. 누군가 보고 있으면 굳고, 모두가 눈을 떼면 다가온다</td><td>동료끼리 "계속 보고 있어"라고 말하게 된다</td><td>중간</td><td>시선형. 너구리("노려보지 마라")와 반대 규칙이라 "겹치는 규칙" 늦추개가 된다</td></tr>
+<tr><td>2</td><td class="k">빛에 반응한다</td><td>CW Snatcho(빛을 쬐면 물러남), EyeGuy(손전등에 비추면 화냄)</td><td><b>박쥐</b>는 빛을 비추면 물러나고, <b>부엉이</b>는 손전등에 비추면 화를 낸다</td><td>빛을 켤지 끌지가 매번 선택이 된다</td><td>중간</td><td>비교 문서 미결 5(빛을 어느 종 규칙에). 전투 세션은 기존 종(너구리·닭·돼지·거위)에 빛 갈래를 뒀고, 인스타는 새 종 둘에 둔다</td></tr>
+<tr><td>3</td><td class="k">소리로만 찾는다</td><td>리썰 Eyeless Dog</td><td>눈먼 늙은 <b>개</b>. 눈앞에 있어도 조용히 움직이면 지나간다</td><td>숨죽이고 바로 옆을 지나가는 긴장</td><td>중간</td><td>소음형. 원칙 ④와 미커밋 D(걷기 소음 200)가 바탕</td></tr>
+<tr><td>4</td><td class="k">천장에서 떨어진다</td><td>리썰 Snare Flea, CW Slurper</td><td>양계장 횃대 위의 <b>닭</b>이 머리 위로 떨어져 얼굴에 달라붙는다. 화면이 깃털로 가려진다</td><td>위를 올려다보게 된다. 동료가 떼어 줘야 한다</td><td>중간</td><td>통제권 상실형 + 협동형(동료가 뗌). 전투 세션 양 카드 갈래 C "붙으면 동료가 떼어 줘라"와 같은 결과</td></tr>
+<tr><td>5</td><td class="k">알을 지키고, 가져간 사람을 기억한다</td><td>리썰 Giant Kiwi(둥지·알 보호), Puma(플레이어마다 기억)</td><td>계란을 가져간 사람을 <b>어미 닭</b>이 기억하고 그 사람만 끝까지 쫓는다</td><td>훔치는 행동 자체가 표적이 되는 이유가 된다</td><td>중간</td><td>영역형 + "누구를"이 정해지는 규칙. 돼지 갈래 A "든 것을 노린다"와 비슷한 축(짐이 표적)</td></tr>
+<tr><td>6</td><td class="k">짐을 훔쳐 간다</td><td>리썰 Hoarding Bug(물건을 둥지에 쌓음), CW Snatcho(들고 있던 것을 떨어뜨리게 함)</td><td><b>까치나 쥐</b>가 바닥이나 손의 재료를 채 가서 둥지에 쌓는다. 둥지를 찾으면 되찾는다</td><td>도둑이 도둑맞는다. 되찾으려면 더 깊이 들어가야 한다</td><td>작음~중간</td><td>통제권 상실형. 결과 칸이 "짐"이라 원칙 ⑤와 미결 2에 직결</td></tr>
+<tr><td>7</td><td class="k">동료를 끌고 간다</td><td>리썰 Kidnapper Fox, CW Jello·BigSlap</td><td><b>여우</b>가 동료를 물고 어둠 속으로 끌고 간다. 쫓아가서 때리면 놓는다</td><td>동료를 구하러 어둠 속으로 뛰어드는 협동 공포</td><td>큼</td><td>협동형. 전투 세션 양 카드 "끌려감, 판에서 잠시 빠지는 것"과 같은 결과를 새 종에 둔다</td></tr>
+<tr><td>8</td><td class="k">동료로 변장한다</td><td>리썰 Masked, CW Infiltrator(외딴 사람을 흉내 내 다른 외딴 사람을 노림)</td><td><b>농부 탈을 쓴 동물</b>. 멀리서 보면 동료와 똑같다</td><td>동료도 믿을 수 없다. 임포스터 규칙과 맞물려 의심이 커진다</td><td>큼</td><td>매복·변장형. 임포스터(7g)와 겹치는 설계 — 두 의심 장치가 서로를 가릴 수 있다</td></tr>
+<tr><td>9</td><td class="k">한 사람에게만 보인다</td><td>리썰 Ghost Girl(한 명만 표적)</td><td>한 사람에게만 보이고 들리는 <b>병아리 울음</b></td><td>"나만 들려?"라는 대화가 생긴다. 무전기와도 이어진다</td><td>중간</td><td>협동형(고립). 원칙 ⑥. "누구를"을 숨기는 축 A의 극단</td></tr>
+<tr><td>10</td><td class="k">시간이 차오른다</td><td>리썰 Jester(태엽을 감다가 튀어나와 추격)</td><td>농가 찬장의 <b>뻐꾸기 시계</b>. 사람이 근처에 있으면 똑딱거림이 빨라지고 정각에 새가 튀어나와 쫓는다</td><td>소리가 빨라지는 동안 서둘러 끝내고 나가야 한다</td><td>중간</td><td>타이머형. 농가 찬장은 아직 후보 장소(이야기에만 있음)</td></tr>
+<tr><td>11</td><td class="k">두고 가면 자란다</td><td>리썰 Maneater(새끼가 자라 성체가 됨)</td><td>우는 <b>병아리</b>를 안아서 달래거나, 두고 가면 판 후반에 커다란 것이 되어 있다</td><td>귀여운 것을 챙길지 버릴지 고민한다. 탈 쓴 동물의 정체와 이어진다</td><td>큼</td><td>타이머형 + 자원(한 손을 쓴다). 원칙 ①과 이어져 3단계 "정체"에서 다룸</td></tr>
+<tr><td>12</td><td class="k">장소의 함정</td><td>리썰 천장 가시, 거미줄, 터져서 시야를 가리는 증기 밸브</td><td>쥐덫, 끈끈이, 거미줄 친 구석, 터지는 증기관, 무너지는 건초 더미</td><td>몬스터가 없는 곳도 안심할 수 없다</td><td>작음~중간</td><td>몬스터가 아니라 맵 소품. 맵 모듈 소품 세트에 붙는다</td></tr>
+<tr><td>13</td><td class="k">헛놀람</td><td>리썰 Bracken이 세 번에 한 번은 유난히 오래 숨는 것처럼 패턴을 일부러 깬다</td><td>문 너머 그림자가 그냥 걸린 외투였다. 울음을 따라가 보니 아무것도 없었다</td><td>긴장했다가 풀렸다가 다시 긴장한다. 진짜 놀람의 힘을 지켜 준다</td><td>작음</td><td>늦추개 "불확실성". 새 몬스터 없이 가능</td></tr>
+</table></div>
+<p><b>뺀 것:</b> 목소리로 쫓아내는 몬스터(CW Ear)는 "몬스터는 말소리를 듣지 않는다"는 기존 결정(음성 청각은 구현 후 되돌림)과 부딪쳐서 뺐다. 두 사람을 묶어 버리는 몬스터(CW Worm)는 공포보다 웃음 쪽이라 뺐다. (전투 세션의 양 카드 갈래 B·C는 CW Worm을 참고 종으로 적었다 — 아래 상충.)</p>
+
+<h4>장소별로 묶으면</h4>
+<div class="wrap"><table>
+<tr><th style="width:22%">장소</th><th>어울리는 패턴</th></tr>
+<tr><td class="k">양계장</td><td>천장에서 떨어지는 닭, 알을 기억하는 어미 닭, 짐을 훔쳐 가는 쥐, 우는 병아리</td></tr>
+<tr><td class="k">대농장</td><td>눈먼 개, 동료를 끌고 가는 여우, 농부 탈을 쓴 동물</td></tr>
+<tr><td class="k">돼지 농장</td><td>지금의 처형 돼지에 더해 장소 함정(무너지는 사료 더미, 진흙 구덩이)</td></tr>
+<tr><td class="k">외양간 (후보 장소)</td><td>보면 멈추는 소</td></tr>
+<tr><td class="k">농가 찬장 (후보 장소)</td><td>뻐꾸기 시계, 짐을 훔쳐 가는 쥐, 빛에 화내는 부엉이</td></tr>
+</table></div>
+
+<h3>5절 판 전체의 연출</h3>
+<div class="wrap"><table>
+<tr><th style="width:18%">장치</th><th>내용</th><th style="width:26%">관련 현황</th></tr>
+<tr><td class="k">긴장 조절자</td><td>한동안 아무 일도 없으면 먼 울음, 문이 쾅 닫히는 소리, 조명 깜빡임 같은 불안 사건을 넣는다. 방금 큰 일이 있었으면 잠시 조용히 둔다. 3절 네 단계 리듬을 판 안에서 자동으로 돌리는 장치.</td><td>CL9에 디렉터 장치는 없다. R.E.P.O.는 디렉터 음악, CW는 <code>Puppetmonster</code>(120초 뒤부터 100초마다 재배치)가 비슷한 자리.</td></tr>
+<tr><td class="k">정전의 변주</td><td>정전 몇 초 전에 기계음이 꺼져 가는 소리로 예고한다. 가끔은 처음부터 전원이 나가 있는 판을 두고 차단기를 찾아 켜야 하게 한다.</td><td>정전 예고 연출·정전음 미정. 리썰은 8% 확률로 처음부터 정전, 복구는 차단기 레버. CL9 정전 시각은 <code>DarkBase</code> 185초(반납마다 앞당김).</td></tr>
+<tr><td class="k">동료의 흔적</td><td>동료가 쓰러진 자리, 끌려간 자국, 켜진 채 바닥에 구르는 손전등.</td><td>미커밋 G로 켜진 손전등이 바닥에서 비춘다. 리썰 시체 근접 공포 0.9/0.55는 H에 넣지 않은 항목.</td></tr>
+<tr><td class="k">정보 차단</td><td>지도가 없고, 무전기에는 잡음이 섞이며 멀어지면 끊긴다. 동료가 어디 있는지 확실히 알 수 없게 한다.</td><td>무전기는 핫라인 명세만(받는 사람 스피커 자리에서만 소리). "잡음·거리 끊김"은 새 요구.</td></tr>
+<tr><td class="k">장소가 점점 이상해진다</td><td>날이 지날수록 기록 소품이 늘고 동물이 더 빨리 이상해진다. 날이 갈수록 위험해지는 곡선에 눈에 보이는 변화를 얹는다.</td><td><code>DangerCurve</code> 1일 0.8 → 10일 1.3은 수치만. 기록 소품은 요구만 있고 구현 미확인.</td></tr>
+</table></div>
+
+<h3>먼저 넣을 조합 (인스타 세션 추천)</h3>
+<ol>
+<li><b>짐을 훔쳐 가는 쥐</b> — 우리 게임만의 "도둑이 도둑맞는" 공포.</li>
+<li><b>알을 기억하는 어미 닭</b> — 계란을 훔치는 순간부터 긴장이 시작된다.</li>
+<li><b>천장에서 떨어지는 닭</b> — 양계장의 횃대 구조를 그대로 쓴다.</li>
+<li><b>헛놀람과 긴장 조절자</b> — 새 몬스터 없이도 리듬을 만든다.</li>
+<li><b>정전 예고</b> — 소리 하나로 정전 직전의 공포를 만든다.</li>
+</ol>
+<p>농부 탈을 쓴 동물과 자라는 병아리는 "탈 쓴 동물"의 정체와 직접 이어지는 큰 패턴이라 3단계(정체)에서 같이 다룬다. 2판의 진행 순서는 1판과 같되 2단계 "규칙"에 추천 조합과 긴장 조절자가 더해졌다: 1단계 채우기(소리·어두우면 못 봄·정전 예고·헛놀람) → 2단계 규칙(재등장·둥지 구멍·거위 놀람·혼자일 때·추천 조합·긴장 조절자, 결정 ①②를 먼저 받아야) → 3단계 정체(화 단계·조짐·탈 터짐·농부 탈·자라는 병아리).</p>
+
+<h3>2판 8절 "결정이 필요한 것" (1판의 "확인받을 것"을 기획자 말로 다시 쓴 것)</h3>
+<ol>
+<li><b>몬스터를 어디까지 예측 가능하게 둘 것인가</b> — "미리 알려 주고 피할 수 있게"에서 "무엇이 오는지는 알려 주되 어디서·누구를은 숨긴다"로. (= 축 A)</li>
+<li><b>몬스터가 돌아다니게 할 것인가</b> — 거위와 너구리만 사라졌다 다시 나타나게. (= 축 E)</li>
+<li><b>게임의 톤 선언</b> — "과장되되 귀엽게, 사실적 공포 아님"을 "겉은 귀엽게, 속은 무섭게"로.</li>
+<li><b>손전등 배터리</b> — 빛을 아껴 쓰는 자원으로 되돌릴지. "빛은 계속 켜 둘 수 있게"(G)와 부딪친다.</li>
+</ol>
+
+<div class="box bad"><h4>이 탭의 상충 (자세한 것은 8. 탭 상충 13~16)</h4>
+<ul>
+<li><b>새 종 8가지</b>(소·박쥐·부엉이·개·쥐/까치·여우·병아리·뻐꾸기 시계)는 2026-10-13 세 층 구조(짐승 닭·돼지 / 몬스터 거위·너구리 / 제외 양)와 "몬스터 층은 한 판에 0~1마리, 종별 규칙 1개" 밖에 있다. 전투 세션 비교 문서는 <b>기존 5종에 규칙을 넣는</b> 쪽이다.</li>
+<li><b>협동 공포의 자리</b>: 인스타는 여우(끌고 감)·천장 닭(동료가 뗌)·병아리 울음(한 명만)·변장 동물에 두고, 전투 세션은 양 카드(또는 너구리)에 둔다. CW Worm은 인스타가 "웃음 쪽"이라 뺐고 전투 세션은 양 갈래 B·C의 참고 종으로 적었다.</li>
+<li><b>빛 규칙의 자리</b>: 인스타는 새 종(박쥐·부엉이)에, 전투 세션은 기존 종(너구리 "빛 안에서 봐야 본 것" 등)에. 미결 5.</li>
+<li><b>변장 동물과 임포스터</b>: 인스타는 "임포스터 규칙과 맞물려 의심이 커진다"고 적었지만, 두 의심 장치가 서로를 가릴 가능성은 어느 쪽도 다루지 않았다.</li>
+<li><b>처음부터 정전된 판</b>은 정전 시각 규칙(<code>DarkBase</code>·일자별 <code>bNoBlackout</code>)과 전원 인트로 연출(첫 방 스위치)을 바꾸는 제안인데, 1판 "채우기(판정은 그대로)" 단계에 들어 있다.</li>
+</ul></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t3c" data-title="3c. 유튜브·경쟁작·설계 자료">
+<h2>3c. 유튜브 반응, 한국 경쟁작, 설계 자료 — 인스타 세션 13:23~13:40</h2>
+<p>사용자 "인스타 말고 다른 링크나 이런 거 찾을 수 있어?" → "이런 파티형 공포게임 전문 유튜버 있어?" → "다 조사해서 조회수 높은 거, 반복 영상 있는 거 추려서 정리해 봐". 유튜브 37회 검색, 약 490편 표본. 채널 전체를 본 것이 아니라 검색 결과 안에서 센 값이고, 영상 내용은 설명란과 챕터만 확인했다(Valefisk 한 편만 대본 전부).</p>
+
+<h3>조회수 100만 이상 261편의 제목 패턴</h3>
+<div class="wrap"><table>
+<tr><th>패턴</th><th style="width:8%">편수</th><th>예</th><th>CL9와의 관계</th></tr>
+<tr><td>친구들과, 합방, 몇 명이서</td><td>54</td><td>"with THE BOYS", "5명의 쫄보", "개네마리"</td><td>대상 그 자체. 3판 "이 게임이 하는 일"의 근거</td></tr>
+<tr><td>백룸</td><td>26</td><td>백룸 탈출 게임들</td><td>이름난 소재의 힘. CL9에는 "탈 쓴 동물"이 그 자리</td></tr>
+<tr><td><b>소리 지르면 안 됨</b>(마이크 반응)</td><td>20</td><td>Don't Scream, "한 명이라도 소리 지르면 전원 사망"</td><td>결정 ⑧ 큰 목소리 반응</td></tr>
+<tr><td>유튜버, 조회수, 촬영</td><td>11</td><td>Content Warning 류</td><td>—</td></tr>
+<tr><td><b>몬스터가 되어 친구 놀리기</b></td><td>9</td><td>TheBrianMaps 1,560만(러시아어), 혜안 166만, SSundee</td><td>빙의는 안 하기로(결정 ⑨). 이 재미는 몰래 역할이 맡는다</td></tr>
+<tr><td>모드</td><td>8</td><td>"This Mod is Just Unfair"</td><td>—</td></tr>
+<tr><td>목소리를 흉내 내는 몬스터</td><td>3</td><td>MIMESIS 이후 늘어나는 중</td><td>"농부 탈" 패턴. 차별화 필요</td></tr>
+</table></div>
+<p><b>조회수를 만드는 것(인스타 세션 해석):</b> 친구들의 반응(게임은 배경, 사람의 반응이 내용) · 한 줄로 설명되는 규칙("소리 지르면 죽는다") — 5절 카드가 한 문장 규칙을 고집하는 이유와 같음 · 친구를 놀리는 역할 · 과장된 결과(오리가 날아가는 쇼츠).</p>
+
+<h3>대표 영상과 반복 채널</h3>
+<div class="two">
+<div class="box"><h4>해외 상위</h4><ul>
+<li>VanossGaming 3,250만 <a href="https://www.youtube.com/watch?v=6L4tcY0TC24">Gmod Scary Map</a>(12년 전, 장르의 원조 격)</li>
+<li>Markiplier 2,353만 <a href="https://www.youtube.com/watch?v=TlQ84jvjz2c">GHOST HUNTING with THE BOYS</a>(Phasmophobia), 1,355만 <a href="https://www.youtube.com/watch?v=y29j6Gw5Wt0">LOST IN A MAZE</a>(Labyrinthine), 701만 <a href="https://www.youtube.com/watch?v=HWx2f0vGKWQ">DON'T SCREAM</a></li>
+<li>SMii7Yplus 1,784만 <a href="https://www.youtube.com/watch?v=BVOTJEyocFk">DO NOT Play Lethal Company Like This</a>, 1,247만 <a href="https://www.youtube.com/watch?v=roiy7OoZjoY">This Lethal Company Mod is Just Unfair</a>, 1,077만 <a href="https://www.youtube.com/watch?v=aaGobo1eM4E">Don't Trust Anyone on This Game</a></li>
+<li>TheBrianMaps 1,560만 <a href="https://www.youtube.com/watch?v=S8GXfStTjdI">리썰에서 몬스터가 되어 친구 놀리기</a>, Caylus 907만 <a href="https://www.youtube.com/watch?v=_xTmgiaf0ZQ">The FUNNIEST R.E.P.O. Collab EVER</a></li>
+</ul></div>
+<div class="box"><h4>한국 상위</h4><ul>
+<li>이도원 663만 <a href="https://www.youtube.com/watch?v=zkzAXuLwO2M">공포의 백룸</a>, 528만 <a href="https://www.youtube.com/watch?v=GD0rzH1O7JI">오합지졸 개네마리3</a>, 421만 <a href="https://www.youtube.com/watch?v=Ttlkv2kyDkg">돌아온 리썰컴퍼니</a></li>
+<li>보물섬 358만 <a href="https://www.youtube.com/watch?v=3ALsAgTsaeo">센 척하는 김동현 놀래키기</a>, 공룡 283만 <a href="https://www.youtube.com/watch?v=oY5xtlJtitg">올해 가장 잘 만든 개웃긴 공포게임</a></li>
+<li>우주하마 262만 <a href="https://www.youtube.com/watch?v=umYEKSgIaIg">숨막히게 무서운데 너무 웃겼던 백룸</a>, 223만 <a href="https://www.youtube.com/watch?v=GHS2FjLnTLs">5명의 쫄보</a></li>
+<li>혜안 226만 <a href="https://www.youtube.com/watch?v=arrjjGob-vI">혜안져스 R.E.P.O.</a>, 166만 <a href="https://www.youtube.com/watch?v=9CKuj3V2QKE">괴물로 변신해서 멤버들 놀래키기</a>, 괴물쥐 196만 <a href="https://www.youtube.com/watch?v=e6Q1OyuO1F8">내 눈엔 너만 보여</a></li>
+</ul></div>
+</div>
+<div class="wrap"><table>
+<tr><th>채널</th><th style="width:10%">표본 편수</th><th style="width:14%">표본 합계 조회수</th><th>특징</th></tr>
+<tr><td><a href="https://www.youtube.com/@SMii7Yplus">SMii7Yplus</a></td><td>21</td><td>1억 5,600만</td><td>리썰, 백룸, 모드. 이 장르 1위</td></tr>
+<tr><td><a href="https://www.youtube.com/@markiplier">Markiplier</a></td><td>16</td><td>1억 2,900만</td><td>Phasmophobia, Lethal, Content Warning</td></tr>
+<tr><td><a href="https://www.youtube.com/@VanossGaming">VanossGaming</a></td><td>11</td><td>8,800만</td><td>Devour, Labyrinthine, 한국 게임 Spectral Scream</td></tr>
+<tr><td><a href="https://www.youtube.com/@SMii7Y">SMii7Y</a></td><td>14</td><td>6,800만</td><td>R.E.P.O., Content Warning</td></tr>
+<tr><td><a href="https://www.youtube.com/@dowon4376">이도원</a></td><td>13</td><td>4,100만</td><td>한국 1위. "개네마리" 4인 시리즈</td></tr>
+<tr><td><a href="https://www.youtube.com/@hxxax">혜안</a></td><td>13</td><td>2,300만</td><td>"혜안져스" 합방. 한국 신작(MIMESIS, QUIET)을 빨리 다룸</td></tr>
+<tr><td><a href="https://www.youtube.com/@sutak_istp">수탉</a></td><td>10</td><td>850만</td><td>인디 공포 위주, 일부 멀티</td></tr>
+<tr><td><a href="https://www.youtube.com/@uzuhama">우주하마</a></td><td>6</td><td>790만</td><td>5인 쫄보 시리즈</td></tr>
+<tr><td><a href="https://www.youtube.com/@RedArcade">Red Arcade</a></td><td>2</td><td>520만</td><td>R.E.P.O. 웃긴 장면 600개 모음(305만). 웃긴 순간을 빠르게 훑기 좋음</td></tr>
+</table></div>
+<p class="small">그 밖에 AstralSpiff("The Goofiest co-op Horror Game" 214만), Mithzan(몬스터가 되어 친구 겁주기 83만), 하우카우(리썰 몬스터로 변신해 뉴비 괴롭히기 33만), YouTube지누(친구들 몰래 공포 모드 설치 74만), 빅헤드("한 명이라도 소리 지르면 전원 사망" 18만), 겜믹스·START with GRAVITY(협동 공포 추천 목록). 구독자 수는 페이지 값이 섞여 믿기 어려워 뺐다.</p>
+
+<h3>분석 영상 — Valefisk "Why Co-op Horror Games Should be Funny (And Not Scary)"</h3>
+<p><a href="https://www.youtube.com/watch?v=_4tNIqD10lE">36분, 조회수 55만</a>. 대본을 끝까지 읽음. 리썰 컴퍼니, Devour, Labyrinthine을 다룬다.</p>
+<ul>
+<li>협동 공포에는 무서움과 웃김 두 축이 있고 <b>웃김이 더 중요</b>하다. 여럿이 같이 있으면 안전하다고 느끼므로 협동 공포는 무섭기 어렵다.</li>
+<li><b>무서운 순간은 혼자가 됐을 때.</b> Labyrinthine의 "지나가면 숨은 문이 닫혀 무리가 갈라지는 장치"가 이 장르 최고의 장치이고, 그 게임에서 무서웠던 유일한 순간이 그때였다. → 원칙 7 "무리를 갈라놓는다", 패턴 "갈라놓는 문".</li>
+<li><b>몬스터 쪽으로 가야 할 이유를 줘라.</b> Phasmophobia는 유령을 직접 찾아야 이긴다. CL9에서는 재료(계란, 알 둥지, 쥐 둥지)가 그 이유.</li>
+<li>근접 음성: 짧은 거리의 목소리와 먼 거리의 무전이 함께, 말하던 동료가 문장 중간에 끊기는 순간이 무섭고도 웃기다. → 순간 "말이 끊김".</li>
+<li>리썰이 두 축을 가장 잘 잡았다: 쉽게 죽어 결국 혼자 남고, 한 사람에게만 보이는 몬스터가 혼란을 만든다.</li>
+<li>죽은 사람의 역할: 미라로 돌아와 편을 고르는 게임(Forewarned), 다른 플레이어가 몬스터를 맡는 게임.</li>
+<li>조언: 무섭게 만드는 데 너무 오래 쓰지 마라. 가장 무서운 건 플레이어의 상상. 쫓기 전에 먼저 지켜보게 하라. 무엇보다 웃기게.</li>
+</ul>
+<p class="small">같은 주제: randomfireisbad <a href="https://www.youtube.com/watch?v=rSNyabFT8cM">How Lethal Company Mastered Multiplayer Horror</a>(65분, 27만, 실내·실외 분리), DunnionRings <a href="https://www.youtube.com/watch?v=BBWTsRtMP5o">I Played Every Lethal Company Clone</a>(10분, 7만, 경쟁작 훑기: Content Warning, R.E.P.O., Dark Hours, Murky Divers, Nuclear Nightmare, Panicore 등). 둘은 설명란·챕터만 확인.</p>
+
+<h3>인스타 세션이 뽑은 CL9 시사점 5</h3>
+<ol>
+<li>"웃음은 플레이어에게서" 방향이 맞다. 순수한 공포에 너무 투자하지 말고 무서움은 "혼자가 됐을 때"에 모은다.</li>
+<li>무리를 갈라놓는 장치(닫히는 문)를 맵에.</li>
+<li>"몬스터가 되어 친구 겁주기"는 검증된 인기 요소(유튜브 + MIMESIS 빙의 업데이트). → 사용자는 빙의를 빼고(⑨) 몰래 역할로 받았다.</li>
+<li>흉내 내는 몬스터가 흥행 요소(MIMESIS 100만 장). "농부 탈"과 같은 축이라 차별화 필요.</li>
+<li>"소리 지르면 안 됨"은 결정이 필요(261편 중 20편). → ⑧ 채택.</li>
+</ol>
+
+<h3>한국 경쟁작</h3>
+<div class="wrap"><table>
+<tr><th style="width:14%">게임</th><th style="width:16%">개발사</th><th>내용</th><th style="width:24%">반응</th></tr>
+<tr><td class="k">MIMESIS</td><td>렐루게임즈(크래프톤 산하)</td><td>4인 협동 심리 공포. AI 몬스터가 동료 목소리·행동을 흉내 내 무리에 섞인다. 업데이트로 죽은 사람이 자기를 죽인 몬스터에 빙의해 산 사람과 대화. 설치본 분석(3. 탭): 변장은 외형이 아니라 녹음한 목소리·복제한 소지품, 빙의는 동료 10m 안 미메시스에 12초(쿨 40초)</td><td>앞서 해보기 50일 만에 100만 장. 해외 스트리머 130만~310만, 혜안 153만</td></tr>
+<tr><td class="k">QUIET</td><td>라인게임즈</td><td>4인 협동 코미디 공포. 외계인 오리들이 집주인 눈을 피해 저택에서 탈출. <b>귀여운 동물·남의 집에서 몰래·협동 코미디 공포가 모두 겹치는 가장 가까운 경쟁작.</b> CL9 차별점은 "훔쳐서 가져가야 하는 짐", "탈 쓴 동물", 종마다 다른 규칙. 집주인의 감지 방식은 미확인(플레이 영상으로 따로)</td><td>플레이테스트 중, 글로벌 참가자 15만. 혜안 <a href="https://www.youtube.com/watch?v=KmB8APzTXqg">오리알 옮기는 협동게임</a> 50만</td></tr>
+<tr><td class="k">Spectral Scream</td><td>스토익엔터테인먼트</td><td>VR 1~4인 협동 공포 탐험</td><td>VanossGaming 74만</td></tr>
+<tr><td class="k">Yandere Virus</td><td>모카스페어</td><td>4인 협동. 감염된 친구가 쫓아오는 동안 재료를 모아 치료제</td><td>유튜브 반응 못 찾음</td></tr>
+</table></div>
+<p class="small">출처: <a href="https://www.gamedeveloper.com/press-release/mimesis-major-update-makes-its-ai-driven-monster-more-unpredictable">MIMESIS 업데이트(Game Developer)</a>, <a href="https://gamingtrend.com/news/relu-games-co-op-horror-mimesis-launches-in-early-access-october-27/">MIMESIS 앞서 해보기(GamingTrend)</a>, <a href="https://www.invenglobal.com/articles/24402/line-games-launches-steam-playtest-for-new-self-developed-co-op-comedy-horror-title-quiet">QUIET 플레이테스트(Inven Global)</a>, <a href="https://www.invenglobal.com/articles/26308/mokasphere-releases-yandere-virus-on-steam">Yandere Virus(Inven Global)</a>, <a href="https://gamespress.com/Horror-Co-op-Spectral-Scream-Tops-Popular-Upcoming-VR-Chart-on-Steam">Spectral Scream(Gamespress)</a>.</p>
+
+<h3>설계 자료 (인스타 밖, 개발사 발표·정리본 우선)</h3>
+<div class="wrap"><table>
+<tr><th style="width:26%">자료</th><th>배울 것</th><th style="width:14%">확인</th></tr>
+<tr><td><a href="https://cdn.fastly.steamstatic.com/apps/valve/2009/ai_systems_of_l4d_mike_booth.pdf">The AI Systems of Left 4 Dead</a> (Valve 2009)</td><td>긴장 조절자(디렉터)의 원조. 플레이어 긴장도를 추적해 판의 리듬을 조절</td><td>PDF 본문은 못 뽑음</td></tr>
+<tr><td><a href="https://developer.valvesoftware.com/wiki/L4D2_Director_Scripts">L4D2 디렉터 설정 문서</a></td><td>고조 → 정점 유지 → 휴식 반복, <b>적 무리는 고조 단계에서만</b>. 예시 정점 유지 5~10초. CL9 판 중간 스폰(60초 일정)을 리듬에 묶을 근거</td><td>검색 결과</td></tr>
+<tr><td><a href="https://www.gamedeveloper.com/design/the-perfect-organism-the-ai-of-alien-isolation">The Perfect Organism: Alien: Isolation의 AI</a></td><td>두 개의 뇌(감독은 위치를 알되 몬스터엔 힌트만), 위협감 게이지(근접·시야로 쌓이고 꼭대기면 환풍구로 물러남, 다음 매복 준비), 행동 트리 100+ 노드가 시간에 따라 열림 — <b>단 플레이어 죽음으로는 안 열림</b>, 몬스터는 속이지 않음(순간이동 컷신 2번뿐, "절대 보지 않는 구역" 지정)</td><td>직접 열어 확인</td></tr>
+<tr><td><a href="https://cdm.link/the-terror-of-watermelons-and-your-niece-screaming-interactive-sonic-fear-in-dead-space-3/">Dead Space 3의 공포 음향</a> (CDM)</td><td>공포 수치 하나가 숨소리·음악·믹스 볼륨을 함께 움직인다(계산식은 글에 없음). CL9 공포 게이지도 같은 방식으로</td><td>직접 열어 확인</td></tr>
+<tr><td><a href="https://avclub.com/amnesias-creative-director-on-what-makes-a-scary-video-1845392257">토마스 그립 인터뷰</a> (AV Club)</td><td>상상력에 맡기기, 예측할 수 없는 위협, 빛을 탐험 도구이자 불안 장치로, 연약한 주인공</td><td>직접 열어 확인</td></tr>
+<tr><td><a href="https://www.dsogaming.com/news/frictional-games-dev-on-alien-isolation-horror-game-suffers-from-two-major-horror-design-issues">그립의 Alien: Isolation 비평</a></td><td><b>죽음은 오히려 긴장을 풀어 준다. 몬스터를 1m 앞에서 오래 보면 무섭지 않다.</b> 몬스터 공개는 컷신이 아니라 플레이 안에서 → 결정 ⑩(처형 장면 줄이기)의 근거</td><td>검색 요약만</td></tr>
+<tr><td><a href="https://www.gameinformer.com/b/features/archive/2009/12/11/feature-noises-in-the-dark-exploring-the-sounds-of-dead-space.aspx">Dead Space 사운드 인터뷰</a>, <a href="https://unwinnable.com/2024/02/16/lethal-company-and-the-ethos-of-the-bad-job/">Lethal Company and the ethos of the bad job</a>, <a href="https://www.startmenu.co.uk/home/lethal-company-horror-comedy-harry-mitchell">리썰의 공포·웃음(Start Menu)</a></td><td>반복되지 않는 환경음·동물 소리를 가공한 괴물 소리 / 리썰의 공포와 웃음, 할당량 압박</td><td>열어 보지 않음</td></tr>
+</table></div>
+<p class="small">한국 자료(NDC 강연 등)에서 공포 기획 강연은 찾지 못했다. 인스타 세션이 스스로 짚은 두 충돌: "동료의 죽음이 동물의 화를 키운다"(광폭화 조건)는 Alien: Isolation의 "죽음으로 행동을 열지 않기"와 부딪치고, 처형 카메라 2초 근접은 그립의 기준으로 공포를 깎는다.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t3d" data-title="3d. 몰래 역할·칭호·업적">
+<h2>3d. 몰래 역할(임포스터), 칭호, Steam 업적 — 인스타 세션 14:02~14:14, 페이지 16절</h2>
+<p>사용자 "우리 살짝 임포스터 같은 것도 넣을 건데 어때?" → 인스타 세션이 처음엔 "팀킬로 직접 해칠 수 있다"고 틀리게 답했다가, 사용자 "우리 문서 뒤져 보면 중간에 방해해서 스킨용 골드 얻는다는 그런 게 있는데"로 <code>C:\Work\CL9\docs\goal\loop-7g-imposter.md</code>·<code>loop-7h-kill-contribution.md</code>·<code>docs/plan/economy.md</code>를 확인해 바로잡았다. <b>이미 설계·구현된 기능이다</b>(7g·7h, 커밋 a5af9f2, 10-14 굴림 시점 변경분은 미커밋).</p>
+
+<h3>지금 규칙 (기획 문서 기준)</h3>
+<ul>
+<li><b>누가:</b> 3인 판 10%, 4인 판 25%로 한 명이 몰래 정해지고 본인에게만 알린다. 1~2인 판에는 없다.</li>
+<li><b>왜:</b> 개인 재화 이더. 회사 옷장에서 <b>스킨만</b> 사는 데 쓰고 밸런스에 영향 없음. 협동만 하면 배신할 이유가 없어서 둔 동기.</li>
+<li><b>어떻게:</b> 몬스터를 깨워 동료를 죽게 만든다. 몬스터를 깨운 사람을 기억해 30초(표 셀) 안에 동료를 죽이면 깨운 사람의 "기여". <b>동료를 직접 치면 그 판은 자동 실패.</b></li>
+<li><b>보상(초안):</b> 유도 사망 1명당 이더 +10, 나머지 전원 사망 + 혼자 트럭 귀환이면 성공 30, 임포스터를 처치한 사람(유도 기여 포함) +20. 일반 생존 보상은 판당 약 3~10.</li>
+<li><b>공개:</b> 새벽 화면에 누가 임포스터였고 어떻게 끝났는지, 누가 누구를 죽게 했는지.</li>
+<li>범위 밖으로 둔 것: 문 닫기, 짐 빼돌리기, 이미 깬 몬스터 끌고 오기.</li>
+</ul>
+
+<h3>사용자 질문과 세션 답</h3>
+<div class="wrap"><table>
+<tr><th style="width:26%">사용자</th><th>세션 답(요지)</th></tr>
+<tr><td>"단순 게임 외부 재화로 스파이의 행동력을 좀 낮춘 건데 괜찮을까?"</td><td>괜찮다. 보상이 승패·성장에 걸리면 놀이가 다툼이 된다. 다만 "행동력을 낮춘 것"과 "행동할 이유가 없는 것"은 다르다. 걱정 4: 스킨이 작업복 색 셋(20·30·60 이더)뿐이라 갖고 싶은 게 적다 / 성공 조건(전원 사망)이 너무 멀다 — 4인 판에서 거의 안 일어남 / 무엇을 하라는지 막연해 그냥 협동한다 / 아무것도 안 한 임포스터는 새벽 공개도 재미없다. 그래서 돈 말고 <b>"할 거리"와 "무대"</b>: 작은 비밀 임무(판마다 1~2개), 전용 보상(스킨·칭호), 새벽 하이라이트("거위를 2번 깨웠습니다"), 이더는 그대로 작게. 검증은 플레이테스트에서 임포스터 판의 행동 횟수(깨운 횟수·유도 사망)를 세면 된다(로그·새벽 화면에 일부 남음).</td></tr>
+<tr><td>"이걸 위해서 뭔가 칭호를 달성할 수 있게 해서 칭호 미션 같은 거 할까?"</td><td>좋다. 단 임포스터 전용이 아니라 <b>전원이 따는 칭호 체계 안에 임포스터 묶음</b>을. 이유: 임포스터는 평균 16판에 한 번이라 전용이면 대부분 못 만진다 / 칭호는 "던져 줄 순간"에 이름을 붙이는 일 / 목록에 섞여 있으면 "칭호 미션 하느라 이상하게 군 거야"라는 핑계가 생겨 의심이 더 재밌다.</td></tr>
+<tr><td>"스팀 업적도 같이 하자 임포스터 미션. 물론 단어는 임포스터로 하면 안 되겠지만"</td><td>칭호 = Steam 업적 한 표. 역할 이름 후보와 규칙은 아래.</td></tr>
+</table></div>
+
+<h3>페이지 16절 "몰래 역할 — 이름, 칭호, Steam 업적"</h3>
+<div class="two">
+<div class="box insta"><h4>화면 이름 후보 ("임포스터"는 쓰지 않는다) — ⑫ 미결</h4>
+<ul>
+<li><b>늑대(권장):</b> "양의 탈을 쓴 늑대"가 "탈" 정체와 바로 이어진다. 게임에 양은 빠져 있지만 관용구라 문제없음.</li>
+<li><b>족제비:</b> 닭장의 계란 도둑. 양계장·계란 중심 게임에 맞고 얄밉고 귀엽다. 배신자의 뜻으로 바로 읽히진 않음.</li>
+<li>두더지: 첩자. 결정 ④의 굴 몬스터 후보와 겹쳐 빼는 편. 여우: 몬스터 후보와 겹쳐 뺌.</li>
+<li>코드·내부 문서 이름(Imposter)은 그대로, 화면 문구만("코인"·"이더" 때와 같은 방식).</li>
+<li>MIMESIS와 겹치지 않게: MIMESIS의 의심은 "목소리를 흉내 내는 몬스터", CL9의 의심은 "몰래 방해하는 친구". 사람이 범인이라는 점이 차별점. 역할 정리: 임포스터 = 산 사람의 장난, (빙의 = 죽은 사람의 장난 → ⑨로 제외), 농부 탈 = 몬스터의 속임.</li>
+</ul></div>
+<div class="box insta"><h4>지킬 규칙</h4>
+<ul>
+<li>몰래 역할 칭호는 <b>몰래 역할 판에서만</b> 진행(일반 판 트롤링 방지).</li>
+<li>몰래 역할 칭호는 <b>한 판 안에 끝나는 조건만</b>(평균 16판에 한 번이라 누적 조건은 못 땀).</li>
+<li><b>Steam 업적 알림은 새벽 공개 뒤에</b> 연다(판 중간에 뜨면 방송 화면·옆 친구에게 정체가 드러남). 몰래 역할 업적은 반드시, 나머지도 되도록 새벽에 한꺼번에 — 그 자체가 볼거리.</li>
+<li>몰래 역할 업적은 Steam <b>숨김 업적</b>(목록으로 행동 추리·스포일러 방지).</li>
+<li>진행 상황은 본인만, 획득은 새벽에 모두에게.</li>
+<li>처음엔 20개 안팎. 일부는 스킨 해금과 연결(이더 말고도 스킨을 얻는 길).</li>
+<li>표로 관리: 이름·조건·횟수·보상·Steam 여부·숨김 여부. 칭호 쪽은 빌드 없이, Steam 쪽은 Steamworks 등록 별도.</li>
+</ul></div>
+</div>
+
+<h4>영구 칭호·업적 초안 (약 20개) — 전투 세션 상세판에는 없고 인스타 4판에서 들어감</h4>
+<div class="wrap"><table>
+<tr><th style="width:12%">묶음</th><th style="width:16%">이름(가칭)</th><th>조건</th><th style="width:8%">Steam</th><th style="width:22%">셀 수 있나</th></tr>
+<tr><td rowspan="4">협동</td><td>무사 귀환</td><td>4인이 모두 살아서 트럭으로</td><td>공개</td><td>가능</td></tr>
+<tr><td>마지막 생존자</td><td>혼자 살아남아 짐을 안고 트럭으로</td><td>공개</td><td>가능</td></tr>
+<tr><td>구조대</td><td>끌려가는 동료나 얼굴에 닭이 붙은 동료를 구해 냄</td><td>공개</td><td>여우·횃대 닭 뒤</td></tr>
+<tr><td>등을 맡긴 사이</td><td>동료가 노려보는 동안 너구리에게 한 번도 안 잡히고 판 끝</td><td>공개</td><td>너구리 응시 기록 추가 필요</td></tr>
+<tr><td rowspan="3">진행</td><td>첫 출근</td><td>첫 판을 끝낸다</td><td>공개</td><td>가능</td></tr>
+<tr><td>탈이 벗겨졌다</td><td>탈이 터지는 순간을 처음 본다</td><td>공개</td><td>정체 단계 뒤</td></tr>
+<tr><td>모든 농장의 단골</td><td>모든 목적지를 별 1개 이상으로</td><td>공개</td><td>가능</td></tr>
+<tr><td rowspan="4">웃긴 실패</td><td>계란 파괴자</td><td>한 판에 계란 5개</td><td>공개</td><td>깨짐 기록에 사람 붙이기 필요</td></tr>
+<tr><td>거위 알람</td><td>거위를 깨운 횟수 누적 10</td><td>공개</td><td>가능(깨운 사람 기록 있음)</td></tr>
+<tr><td>인간 볼링공</td><td>날아간 동물에 맞아 넘어진다</td><td>공개</td><td>원칙 8 뒤</td></tr>
+<tr><td>두고 온 사람</td><td>트럭이 떠날 때 밖에 남는다</td><td>공개</td><td>가능</td></tr>
+<tr><td rowspan="5">몰래 역할</td><td>조용한 손</td><td>몰래 역할 판에서 들키지 않고 동물을 2번 깨운다</td><td>숨김</td><td>가능</td></tr>
+<tr><td>한 놈만</td><td>동물을 유도해 동료 한 명을 죽게 한다</td><td>숨김</td><td>가능(유도 기여 기록)</td></tr>
+<tr><td>완전 범죄</td><td>몰래 역할로 성공한다</td><td>숨김</td><td>가능</td></tr>
+<tr><td>문지기</td><td>문을 닫아 동료를 가둔다</td><td>숨김</td><td>닫히는 문 뒤</td></tr>
+<tr><td>연기 대상</td><td>가장 많이 납품하고도 들키지 않는다</td><td>숨김</td><td>사람별 납품 기록 필요</td></tr>
+<tr><td rowspan="2">몰래 역할 잡기</td><td>명탐정</td><td>몰래 역할을 처치한다</td><td>공개</td><td>가능</td></tr>
+<tr><td>억울한 희생</td><td>몰래 역할이 아닌 동료를 처치한다</td><td>숨김</td><td>가능. <b>팀킬을 부추길 수 있어 넣을지 결정</b></td></tr>
+</table></div>
+<p><b>판 끝 칭호(새벽, 그 판에만):</b> 가장 많이 넘어진 사람, 가장 많이 계란을 깨뜨린 사람, 가장 많이 동물을 깨운 사람, 가장 오래 혼자 있었던 사람, 마지막까지 짐을 안고 있던 사람. MIMESIS의 정산 화면 "미메시스를 가장 많이 만난 사람"과 같은 방식. 몰래 역할의 방해 기록("거위 3번, 문 2번")도 여기에.</p>
+<p><b>만들 때 확인할 것:</b> Steam 연결(지금은 LAN·EOS 로비, 출시 계획은 업적 범위 밖 → 결정 ⑭로 범위에 넣기로) · 누가 업적을 여나(판정은 호스트, 업적은 각자 Steam 계정 — 호스트가 알리고 받은 쪽이 새벽에 연다) · 진행 저장(이더 지갑처럼 각자 개인 저장소) · 새로 세어야 하는 기록(계란 깨뜨린 사람, 사람별 납품량, 너구리 응시; 깨운 사람·유도 사망은 이미 있음) · 리소스(업적 아이콘 2장씩, 칭호 문구 ko 먼저, 새벽 공개 연출) · ⑬ 죽음까지 가지 않는 방해(문·짐 손해·큰 목소리 거위)에 대한 보상은 loop-7g 결정을 넓히는 일.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t4" data-title="4. 결정 축 A~H">
+<h2>4. 결정 축 A~H — 질문, 답, 결과, 그 뒤에 남은 미결</h2>
+<div class="box note"><h4>10-17 저녁 갱신</h4><p>보류였던 <b>축 A·E는 페이지 결정 ③·④로 사실상 답이 나왔고</b>(0b 탭), 축 G에는 "배터리 없음"(⑤)이 더해졌다. 비교 문서 미결 5 중 1(죽일 수 없는 종)·2(짐 결과)·3(축 A)은 닫혔고, 4(양)·5(빛 규칙 종)는 남았다. 단 이 답들은 페이지에만 있고 <code>decisions.md</code>의 "A·E 보류"는 그대로다. 아래 표는 06:16 시점의 기록이다.</p></div>
+<p>전투 세션이 질문 창으로 두 번에 나눠 물었고(05:58 A~D, 06:13 E~H, 06:16 F·G 재질문), 답을 한 자리에서 받았다. F는 질문에 오타("발저")가 있어 다시 물었고, G는 글자가 깨져("뱛") 다시 물었다.</p>
+<div class="wrap"><table>
+<tr><th style="width:4%">축</th><th style="width:18%">질문</th><th style="width:24%">선택지</th><th style="width:18%">사용자 답(원문)</th><th>결과·구현 내용</th><th style="width:12%">상태</th></tr>
+<tr><td class="k">A</td><td>읽히는 위협 원칙(보고 있으면 안 깸·예고 뒤 덮침·걷기로 회피·시야 밖 스폰)을 어디까지 유지하나. 번복 대상 09-20 예고·회피 보장, 10-12 7e.</td><td>리썰 방식(권장: "무엇이"는 읽히되 "어디서·누구를"은 숨김) / 전부 유지 / 종별로 다르게</td><td>"아직 분석을 좀 더 해보자"</td><td>CW·Valheim 분석 뒤 다시 묻기로. 비교 문서는 "종별 카드가 나온 뒤 종별로 정하는 게 맞다"(전체 원칙 하나로 정하면 또 수치 차이만 남는다).</td><td><span class="tag warn">보류</span></td></tr>
+<tr><td class="k">B</td><td>짐을 전투에 거나. 번복 대상 09-15 "짐은 죽을 때만 흘린다".</td><td>넘어질 때 손의 것(권장) / 그대로 / 손의 것 + 주머니 일부</td><td>"넘어지면 랜덤으로 아이템 떨구기 0~2개, 2개는 낮음"</td><td><code>KnockdownDropWeight0/1/2</code> 40/45/15, <code>HostDropOnKnockdown</code>(찬 칸 무작위, 활성 칸 포함·머리 칸 제외, 죽을 때와 같은 <code>Spill</code>). goal <code>knockdown-drop.md</code>. 영상 <code>knockdown_b</code>(촬영용 2개 확정).</td><td><span class="tag ok">구현·미커밋</span></td></tr>
+<tr><td class="k">C</td><td>휘두르기·타격을 소음으로 만드나.</td><td>넣는다(권장) / 타격만 / 안 넣는다</td><td>"넣는다 (권장)"</td><td><code>SwingNoiseRadius</code> 300, <code>HitNoiseRadius</code> 600, <code>NoiseLingerTime</code> 0.5, 소음원·파동 행 <code>swing</code>·<code>hit</code>.</td><td><span class="tag ok">구현·미커밋</span></td></tr>
+<tr><td class="k">D</td><td>닭 감지 값을 올리나(SightIn 330).</td><td>시야 + 걷기 소음(권장, SightIn 600~800, 걷기 소음 행) / 시야만 / 그대로</td><td>"올린다 — 시야 + 걷기 소음 (권장)"</td><td>닭 <code>SightIn</code> 330→600, <code>SightOut</code> 219→400, <code>SightDark</code> 111. <code>WalkNoiseRadius</code> 200(0이면 옛대로), 파동 <code>walk</code> 행 켬. "걷기는 어그로 0" 번복. 돼지 480·너구리 390은 그대로라 <b>종별 순서가 뒤집혔다</b>(밸런스 때 다시).</td><td><span class="tag ok">구현·미커밋</span></td></tr>
+<tr><td class="k">E</td><td>몬스터가 돌아다니나. 번복 대상 10-04 "AI는 매 틱 돈다, 재우기·디스폰 없음".</td><td>재배치만(권장: 추격 실패 뒤 시야 밖 다른 지점으로 순간 이동) / 스폰·디스폰 순환(리포식) / 상주</td><td>"아직 분석 더 해봐야 돼"</td><td>보류. 인스타 세션은 "몬스터 층만 순환"을 제안(③).</td><td><span class="tag warn">보류</span></td></tr>
+<tr><td class="k">F</td><td>프라이팬 다음 도구.</td><td>미끼(권장) / 기절 / 투척 피해 / 보류</td><td>"무슨 말임? 발저가 뭐야" → 재질문 → "미끼 (권장)"</td><td>탄 요리 = 미끼. <code>DecoyEatTime</code> 5.0, <code>DecoyEatRadius</code> 90, <code>DecoyRadius</code> 330 유지, <code>BaitItem</code>. 새 품목 없음. goal <code>burnt-bait.md</code>. 범위 밖: 거위 잠재우기, 사냥 중인 몬스터 떼어내기, 종별 차이, 먹는 애니·소리. 영상 <code>bait_f</code>(먹는 시간 20초로 늘려 촬영). 수레 안 탄 요리도 미끼가 되는 부작용 명시.</td><td><span class="tag ok">구현·미커밋</span></td></tr>
+<tr><td class="k">G</td><td>손전등(줍으면 꺼짐·손이 바뀜). 번복 대상 light.md "꺼진 채 시작", inventory.md 줍기 전환.</td><td>주머니에서도 빛 유지(권장, 리썰식) / 칸이 켜짐을 기억 / 줍고도 활성 칸 유지 / 둘 다</td><td>"손전등은 그냥 키면 키는 거고 끄면 끄는 거임. 내가 들고 있다고 켜지는 게 아님, 무전기랑 유사" + 빛 위치 "머리에서 앞으로 (권장)"</td><td><code>FCL9CarriedItem.bLightOn</code>이 스위치 기억. 비활성 칸의 켜진 손전등은 캐릭터 <code>PocketLight</code>(카메라 자식, 룩 표 램프 행 <code>PocketLight</code> = <code>Flashlight</code> 복사). 켜짐은 복제된 <code>PlayerState.Slots</code>에서 파생(새 RPC 없음). 정전이면 주머니 빛도 꺼짐. 켠 채 놓거나 던지거나 죽어 흘려도 바닥에서 비춤. 줍기 전환 규칙은 그대로. <code>bLightLostInPocket</code> 제거. 09-01~13 "빛과 짐을 동시에 못 든다" 빛 경제 번복. 영상 <code>combat_pass_gcb</code>.</td><td><span class="tag ok">구현·미커밋</span></td></tr>
+<tr><td class="k">H</td><td>겁먹는 표현의 틀.</td><td>둘 다(권장) / 공포 게이지 + 소리 겹만(리썰) / 스팅어·근접 음악·추격 신호만(리포)</td><td>"둘 다 (권장)"</td><td><code>UCL9FearComponent</code>(소유 폰 로컬) + <code>UCL9HurtLookModifier</code>. 규칙 표 열 22개(5. 플레이어 탭). <code>SoundTable</code> 6행·<code>ShakeTable</code> 2행 <b>애셋 비움</b>(셰이크 행은 구조체가 파이썬에 안 열려 에디터에서 손으로). 지금 보이는 것은 시선 끌림뿐.</td><td><span class="tag ok">구현·미커밋</span> <span class="tag warn">애셋 없음</span></td></tr>
+</table></div>
+
+<h3>그 뒤에 쌓인 미결 (사용자가 정할 것)</h3>
+<div class="two">
+<div class="box combat"><h4>비교 문서 §8 미결 5</h4>
+<ol>
+<li><b>어느 종을 죽일 수 없게(또는 죽이는 것이 더 나쁘게) 할 것인가?</b> CW 0/31 ~ 밸하임 11/11. 카드는 닭만 처치 종, 거위·너구리·양은 처치가 해법이 아닌 후보.</li>
+<li><b>잡힘·죽음의 결과를 짐으로 할 것인가, 종마다 다르게?</b> 미커밋 B를 그대로 둘지, 닭 = 짐 낙하 / 너구리·돼지 = 즉사 / 양 = 끌려감으로 나눌지.</li>
+<li><b>텔은 "무엇이"까지만 알릴 것인가?</b> = 축 A.</li>
+<li><b>양을 협동 규칙 자리로 되살릴 것인가?</b> 10-13 번복. 아니면 협동 규칙을 너구리에 둘지, 없이 갈지.</li>
+<li><b>손전등을 몬스터 규칙에 넣을 것인가, 어느 종에 어떤 반응(멈춤·돌아섬·끌림)?</b> 넣으면 <code>SightDark</code>가 처음 소비처를 얻는다.</li>
+</ol></div>
+<div class="box insta"><h4>인스타 세션 "확인받을 것"</h4>
+<ul>
+<li>원칙 ②·③은 보류 중인 A·E 축의 결정이다. 승인하면 <code>decisions.md</code>에 기록.</li>
+<li>톤 충돌: 아트 문서 "과장되되 귀엽게, 사실적 공포 아님"을 바꾸는 것이라 같이 확인 필요.</li>
+<li>문서 어긋남 6군데(7. 탭 끝) 따로 정리할지.</li>
+<li>손전등 배터리: 빛을 다시 자원으로 만드는 안. 결정 G(빛 경제 번복)와 부딪칠 수 있어 따로 정해야.</li>
+<li>이 제안을 <code>docs/plan/</code> 아래 문서로 남길지.</li>
+</ul></div>
+</div>
+
+<div class="box note"><h4>절차 메모</h4>
+<ul>
+<li>전투 세션 규칙(메모리 <code>no-implement-without-user-words</code>): 그 세션(48393d0d)만 구현 금지. 다른 세션에는 적용하지 않는다. 인계 문서의 "구현" 문구는 앞 세션의 문장이지 사용자 지시가 아니라는 점은 어디서든 유효.</li>
+<li>인스타 세션 규칙(메모리 <code>no-implement-button-after-analysis</code>): 분석 턴 끝에 구현 버튼을 붙이지 않는다.</li>
+<li>인계 문서 §4·§6의 "답을 받으면 순서대로 구현"은 사용자가 고치라고 하기 전에는 건드리지 않기로 했다.</li>
+</ul></div>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t5" data-title="5. 플레이어·조작감">
+<h2>5. 플레이어·조작감 — 손전등, 겁먹는 표현, 짐, 소음, 몸</h2>
+<div class="box both"><h4>10-17 저녁 갱신</h4>
+<ul>
+<li><b>손전등 배터리 없음(결정 ⑤).</b> 빛은 계속 쓸 수 있고, 빛을 아끼는 이유는 "빛을 켜면 위험해지는 종"(부엉이 등)이 만들어야 한다(⑤-2 미결). 상충 5의 배터리 쪽은 닫혔다.</li>
+<li><b>처형 장면은 줄인다(⑩).</b> 1인칭 처형 클립 2개는 유지 여부 미정.</li>
+<li><b>공포 게이지에 작은 판정을 걸지</b>(손 떨림으로 조준 흔들림, 일정 이상이면 스태미나 빨리 닳음)가 새 미결. H는 "표현 전용"으로 설계됐다.</li>
+<li><b>겁먹는 몸(페이지 7절):</b> 1인칭 신규 9~10개 — Fear Tremble(손·손전등 빛 떨림, 게이지 &gt; 0.4, 애디티브), Flinch(0.3초, 스팅어·추격 신호·거위 놀람), Startle Drop(0.5초, 거위·쥐·박쥐의 피해 0 낙하), Pickup(0.4초, 지금은 순간이동), Pull Off(횃대 닭), Catch Breath(추격 끝), Hold Chick, Executed FP ×2. 3인칭 신규 11개 — Scared Run(게이지 &gt; 0.7 ∧ 달리기), Look Back(소유자가 카메라를 120° 이상 빨리 돌렸을 때 — 너구리 규칙의 동료 시점), Flinch, Scream, Drop Items, Tumble(함정·밀침, 원칙 8), Dragged, Head Cling, Rescue Pull, Pickup, Hold Chick. 전부 표현 층, 새 RPC 없음.</li>
+<li><b>Startle Drop = "피해 0의 손해".</b> 거위 1.5m 울며 달려들기, 쥐 등 뒤 도약, 박쥐 무리가 모두 같은 농부 Hand Hit 클립을 쓴다. 원칙 6의 구현 자리.</li>
+<li><b>넘어짐 낙하는 종별로 나누지 않고 공통 0~2개로 확정(②).</b> 어미 닭(알 전부)·광폭화 닭(짐 전부)은 카드에 제안으로 남아 있어 ②와 어긋난다(상충 21).</li>
+<li>소음: 종별 발소리(닭 가벼움·돼지 무거움 8m + 바닥 울림·너구리 발톱 4~5m 등 뒤에서만·쥐 찍찍 2~3m). 큰 목소리(비명)는 거위만 듣는다(⑧).</li>
+</ul></div>
+
+<h3>손전등 — 결정 G와 그 뒤의 말</h3>
+<div class="wrap"><table>
+<tr><th style="width:18%">시점</th><th>내용</th></tr>
+<tr><td class="k">커밋본 설계</td><td>활성 퀵슬롯 칸에 들어야 빛난다(빛 경제: 빛과 짐을 동시에 못 든다). 비활성 칸은 액터가 없어 꺼지고(<code>bLightLostInPocket</code>), 다시 들면 <code>OnAcquired</code>가 항상 꺼진 채로 시작. 줍기는 "활성 칸이 비었으면 활성 칸에, 아니면 첫 빈 칸에 넣고 그 칸을 활성으로"(리썰 규칙). 둘이 겹쳐 <b>줍는 순간마다 어두워진다</b>. 리썰에서 이 규칙이 견딜 만한 것은 헬멧 불로 유지되기 때문.</td></tr>
+<tr><td class="k">조작감 거슬림 1·2</td><td>1 손전등 켠 채 다른 아이템 집으면 꺼지고 다시 켜야 한다. 2 손전등 들고 있다가 주우면 손에 든 것이 그 아이템으로 바뀐다. 둘 다 "설계가 그렇다".</td></tr>
+<tr><td class="k">결정 G <span class="tag ok">구현·미커밋</span></td><td>"켜면 켜진 거고 끄면 끈 거, 무전기랑 유사." 스위치는 칸 데이터가 기억, 주머니의 켜진 손전등은 머리에서 앞으로 비춤(<code>PocketLight</code>). 거슬림 1·2 닫힘. 전환 규칙 자체를 다시 거슬려 하면 (a)를 따로.</td></tr>
+<tr><td class="k">그 뒤 사용자 (전투 세션 10:39)</td><td>"지금 손전등도 그 조작을 방해하는 요소이고". 전투 세션 해석: 손전등이 "빛이냐 무기냐"의 교환일 뿐 몬스터 규칙과 연결돼 있지 않아서다. 리썰에서 빛은 몬스터 규칙의 일부(보이는지 여부가 곧 규칙).</td></tr>
+<tr><td class="k">인스타 세션</td><td>"결정 필요: 손전등 배터리. 빛을 다시 자원으로 만드는 안인데 결정 G(빛 경제 번복)와 부딪칠 수 있다." 1인칭 애니 제안: 공포 게이지에 따라 손전등 빛도 떨린다.</td></tr>
+<tr><td class="k">비교 문서</td><td>미결 5. 후보: 너구리 "빛 안에서 봐야 본 것이다"(어둠 속 응시 무효, 배터리·정전이 비용) / 닭 끌림·멈춤 / 돼지 "불 꺼라" / 거위 빛에 깬다. CW Snatcho(빛으로 쫓김)·EyeGuy(빛에 분노)가 참고. 밸하임은 불과 밝기(은신 계수)로.</td></tr>
+<tr><td class="k">조명 현황</td><td>손전등 16000cd·1800cm·반각 26°, 정전에 꺼짐. 헤드램프 같은 광원, <code>CarrySlot::Head</code>, F 토글, 정전에도 켜짐, 벗기 없음. 정전 <code>DarkBase</code> 185초(반납 1회당 4초 앞당김, 하한 125초), 대농장 480/360/240, 돼지 농장 400/300/200. 정전 예고 연출·정전음 미정.</td></tr>
+</table></div>
+
+<h3>겁먹는 표현(H) — 들어간 값 22개 <span class="tag ok">구현·미커밋</span> <span class="tag warn">애셋 비움</span></h3>
+<div class="wrap"><table>
+<tr><th>컬럼</th><th style="width:10%">기본값</th><th>뜻</th><th style="width:16%">참고 실값</th></tr>
+<tr><td><code>bFearFeedback</code></td><td>true</td><td>전체 스위치</td><td>—</td></tr>
+<tr><td><code>FearDecayPerSecond</code></td><td>0.055</td><td>사건 없는 틱에 식는 속도</td><td>리썰 0.055</td></tr>
+<tr><td><code>FearSeenNearRadius</code> / <code>FearSeenFarRadius</code></td><td>400 / 900</td><td>깨어 있는 몬스터가 내 화면(카메라 원뿔 ∧ 지형에 안 가림)에 보이면 점프. 900 밖은 트레이스도 안 긋는다</td><td>리썰 4m / 9m</td></tr>
+<tr><td><code>FearSeenNear</code> / <code>FearSeenFar</code></td><td>0.9 / 0.4</td><td>점프 목표(올라갈 때만, 차이 0.05 미만 무시)</td><td>리썰 0.9 / 0.4</td></tr>
+<tr><td><code>FearNearRate</code></td><td>0.8</td><td>추격 중(Chase·Pounce·Stalk·Catch·Execute) 몬스터가 400 안에 있는 동안 초당 누적(보이든 안 보이든)</td><td>Bracken 0.8/s</td></tr>
+<tr><td><code>FearChaseBegin</code> / <code>FearPounce</code> / <code>FearHurt</code></td><td>0.6 / 1.0 / 1.0</td><td>Chase 전이(1500 안 또는 화면) / Pounce 전이(900 안) / 내가 넘어지는 순간</td><td>리썰 0.6 / 1.0 / 1.0</td></tr>
+<tr><td><code>FearLowMin/Max</code>, <code>FearHigh1Min</code>, <code>FearHigh2Min</code></td><td>0.1~0.67, 0.4, 0.7</td><td>소리 네 겹 문턱. <code>Heartbeat</code>는 문턱 없이 볼륨 = 게이지</td><td>리썰 lowAction / highAction1·2</td></tr>
+<tr><td><code>FearLayerFadeSpeed</code></td><td>1.0</td><td>겹 볼륨이 목표로 가는 속도</td><td>리썰 0.75 / 2</td></tr>
+<tr><td><code>SightingRadius</code> / <code>SightingCooldown</code></td><td>1200 / 120</td><td>첫 목격 스팅어(<code>MonsterSighting</code> + 셰이크 <code>Sighting</code>)</td><td>리포 12m / 120초</td></tr>
+<tr><td><code>ChaseBeginRadius</code></td><td>1500</td><td>추격 시작 신호(<code>MonsterChaseBegin</code> + 셰이크 <code>ChaseBegin</code>). 화면에 보이면 거리 무관. "누구를 쫓는지"는 복제 안 해 거리·화면이 대신</td><td>리포 타깃/같은 방/화면</td></tr>
+<tr><td><code>ChaseLookRadius</code> / <code>ChaseLookYawMax</code> / <code>ChaseLookStrength</code> / <code>ChaseLookTime</code></td><td>800 / 15 / 0.5 / 0.4</td><td>추격 중 가장 가까운 몬스터 쪽으로 POV 요가 끌림(컨트롤 회전·조준은 그대로). 거슬리면 0</td><td>리포 8m, 0.1초 override</td></tr>
+</table></div>
+<p class="small">넣지 않은 것(자리는 같은 컴포넌트): 리썰 화면 필터(&gt;0.4 비네트), 동료 시체 목격(0.9/0.55), 리포 추격 시작 때 BGM 20초 중단. 애셋 스캔: <code>SoundTable.uasset</code>에 이름은 있으나 <code>Content/Sounds/</code>에 <code>S_Fear*</code>·<code>S_Heartbeat</code>·<code>S_Sighting</code>·<code>S_ChaseBegin</code> 없음. <code>ShakeTable.uasset</code>에 <code>Sighting</code>·<code>ChaseBegin</code> 키 안 보임.</p>
+
+<h3>짐·넘어짐·죽음</h3>
+<ul>
+<li>HP 3, 넘어짐 1.5초(무적), 비틀 0.35초. 피격 표현: 빨간 비네트 1.8초, 몸 플래시 0.45초, 피격 시선(피치 −25°, 요 최대 60°), 방향 호.</li>
+<li><b>B 넘어짐 낙하</b> <span class="tag ok">미커밋</span>: 0/1/2개를 40/45/15 가중치로. 머리 칸은 안 떨어진다. 죽으면 전부(<code>HostDropEverything</code>). 켜진 손전등이 떨어지면 바닥에서 계속 비춘다.</li>
+<li>죽음: 3인칭 데스캠 → <code>SpectateDelay</code> 3초 뒤 동료 1인칭 관전. 판 중 부활 없음, 다음 로비에서. 회복은 트럭 패드 5초.</li>
+<li>판 끝 트럭 짐칸 밖이면 짐 잃고 죽음. 전멸은 게임 오버가 아니라 이더 30% 손실. 임포스터 3인 10%·4인 25%.</li>
+<li>인스타 원칙 ⑤ "통제권 상실이 피해"는 B를 한 단계 더 밀어 "놀라서 짐을 놓침"(피해 0)을 종(거위)에 둔다. 비교 문서 미결 2는 결과를 종별로 나눌지 묻는다.</li>
+</ul>
+
+<h3>소음 모델 (C·D 뒤)</h3>
+<div class="wrap"><table>
+<tr><th>소음원</th><th>반경(cm)</th><th>몬스터가 듣나</th><th>비고</th></tr>
+<tr><td>달리기</td><td>390</td><td>예</td><td></td></tr>
+<tr><td>걷기</td><td>200</td><td>예 (D, 미커밋)</td><td>커밋본 0. 거위 <code>WakeRadius</code> 450은 예외로 원래 있었다</td></tr>
+<tr><td>휘두르기 / 타격</td><td>300 / 600</td><td>예 (C, 미커밋)</td><td>리썰 삽 17m·0.8</td></tr>
+<tr><td>조용한 줍기 / 시끄러운 줍기</td><td>150 / 390</td><td>링만</td><td></td></tr>
+<tr><td>밀치기</td><td>255</td><td>링만</td><td></td></tr>
+<tr><td>미끼(탄 요리 착지)</td><td>330</td><td>예 (F, 미커밋 — 소음이 아니라 <code>BaitItem</code> 검색)</td><td></td></tr>
+<tr><td>달걀 깨짐 Crack/Break</td><td>450 / 1260</td><td></td><td>던져 깨지면 <code>throw_break</code> 480</td></tr>
+<tr><td>말소리</td><td>—</td><td>아니오</td><td>구현 후 되돌림. CW는 마이크 0.9 이상 30m, 말하기 0.63초면 공격 모드</td></tr>
+</table></div>
+
+<h3>몸·이동·음성 (현황)</h3>
+<ul>
+<li>걷기 396 / 달리기 654, 질주 램프 0.85초, 수레 ×0.75. 스태미나 소진 6초·회복 8초. 탈출 보증: 지친 빈손 503.7 &gt; 닭 396. 표시는 <code>CS_StaminaShake</code> + HUD 바, <code>Exhausted</code> 소리.</li>
+<li>인트로 잠금 9.4초·무적 10.4초. 마당 긴장 장치(7j): 낮은 안개 2배, 끊기는 작업등, 문 너머 닭 실루엣, 8~16초 간격 <code>YardCry</code>(행이 없어 무음).</li>
+<li>근접 음성 150cm 온전 / 1500cm 밖 무음. 핫라인(무전기)은 받는 사람 스피커 자리에서만. 죽은 사람끼리 2D. EOS Voice(Redpoint) 교체 중.</li>
+<li>인스타 세션 캐릭터 애니 제안: 1인칭 손 떨림(게이지 연동)·손전등 빛 떨림·스팅어에 움찔; 3인칭 겁먹고 뛰기·놀라 움찔(동료가 겁먹은 모습이 협동 공포). 지금은 겁먹음·탈진·놀람 클립이 없다("Scared" 팩은 구매 후보, 호환 미확인).</li>
+<li>이미 아는 조작감 후보(사용자 확인 전): 0.35초 준비 게이트 없음, 줍기 순간이동(팔 클립·펄스 미제작), 몬스터 HP 핍 없음.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t6" data-title="6. 맵·아이템">
+<h2>6. 맵 배치·아이템 — 현황과 두 세션의 제안</h2>
+<div class="box both"><h4>10-17 저녁 갱신 (페이지 9절)</h4>
+<ul>
+<li><b>무리를 갈라놓는 문:</b> 헛간 문·사료 창고 셔터가 잠깐 닫혀 무리를 둘로 나눈다. 닫힌 뒤 돌아서 다시 만나는 길이 있어야 하고, 너무 짧으면 효과가 없다. 몰래 역할의 방해 수단이자 "문지기" 칭호 조건.</li>
+<li><b>종의 규칙이 붙는 구조물을 모듈 표에:</b> 횃대(횃대 닭), 둥지(어미 닭·쥐 둥지는 깊은 구역), 먹이통(돼지 광폭화 조건), 벽 구멍 2~4개(쥐 등장, 몬스터 재등장 자리 — 결정 ④의 "구멍이 보이니 단서"), 덤불(여우), 서까래(부엉이), 찬장(뻐꾸기 시계·박쥐).</li>
+<li>헛놀람 소품: 외투, 빈 자루, 흔들리는 문.</li>
+<li>숨을 곳은 여전히 만들지 않는다(리포 SlowWalker·CW BigSlap처럼 숨기를 벌하는 종이 그 이유). 상충 9는 열려 있다.</li>
+<li>아이템: <b>배터리 없음</b> 확정. 무전기는 "잡음·멀어지면 끊김"이 새 요구(정보 차단). 미끼·프라이팬 유지. 돼지 규칙 A가 들어오면 던진 날재료도 먹을지 미결.</li>
+<li>동료의 흔적(켜진 채 구르는 손전등)은 미커밋 G로 저절로 생긴다.</li>
+</ul></div>
+
+<h3>맵 현황</h3>
+<ul>
+<li>양계장은 <code>Flow</code>(리썰/DunGen 계열): 본줄기 9~11모듈, 곁가지 깊이 2~4, 미로 구간 0.15~0.45, 2층·계단 1~2. 대농장·돼지 농장은 모듈 조립 생성기. 격자 500cm, 시드만 보내고 각 머신이 같은 레이아웃. 1일차 28모듈, 10일차 31~42, 트럭에서 63~108m.</li>
+<li>모듈 19종: 입구/마당 <code>yard_gate</code>·<code>yard_open</code>, 복도 <code>corridor</code> 3종·<code>corner</code>·<code>stair_pass</code>·<code>stair_up</code>, 큰 방 <code>coop_hall</code>·<code>pen</code>·<code>feed_store</code>·<code>cross</code>, 막다른 방 <code>incubator</code>·<code>tool_room</code>·<code>storage</code>·<code>office</code>·<code>coop_small</code>, 특수 <code>delivery</code>·<code>kitchen</code>. 긴 복도 15~20m.</li>
+<li>실내 조명: 작업등 10cd·900cm·60°, 36자리, 켜지는 비율 <code>LampDensity</code> 양계장 0.5 / 대농장 0.35 / 돼지 농장 0.2(사이트마다 하나). 마당 모닥불 12cd. 어둠 = 하늘빛 누수 × 검은 안개(<code>SkyLeak</code> 0.5, 정전 0), 노출 보정이 밝기 축. 전원 단계 Dark → LightsOn → Flicker(초당 3회 상한) → Dead(램프 0.3만 생존).</li>
+<li>소품: 모듈마다 세트를 시드로. 복도용 소화기·배전반·경고판·포스터·양동이·계란 트레이·바구니·깃털·얼룩. 이야기의 "기록 소품"(바를 정 자, 목줄, 병, 일지)은 요구만.</li>
+<li><b>숨는 곳: 기획에도 코드에도 없다.</b> 낮은 물건은 "숨을 곳이 너무 많아진다"는 이유로 일부러 시야를 안 가리게. 우리 울타리는 철망(시야 투과). 막다른 곳 비율 양계장 0.32. 마당에는 몬스터·아이템이 안 나온다(7b).</li>
+</ul>
+
+<h3><span class="tag insta">인스타 세션</span> 맵 배치 제안</h3>
+<ul>
+<li><b>깊이에 따라 어두워지기</b>: 트럭 쪽은 밝고 깊을수록 어둡게. <code>LampDensity</code>를 사이트 하나 값에서 구간별로 나눈다.</li>
+<li><b>둥지 구멍(벤트) 소품</b>: 모듈마다 등장 지점을 두고 예고음을 낸다. 판 중간 스폰의 자리.</li>
+<li><b>시야가 끊기는 곳</b>: 모퉁이와 문 너머 시야 차단을 늘린다. 숨는 곳은 지금처럼 두지 않는다(기존 판단 유지).</li>
+<li><b>기록 소품</b>을 깊은 구간에 배치해 불안을 만든다.</li>
+</ul>
+<h3><span class="tag combat">전투 세션</span>이 맵에 건 것</h3>
+<ul>
+<li>돼지 갈래 B "좁은 곳으로 들어가라" — 큰 몸(<code>Radius</code> 45, <code>TurnDrag</code> 0.6)이 못 들어가는 길. 맵 모듈에 달려 있다(리썰 NavSizeLimit 참고).</li>
+<li>돼지 갈래 D "우리 밖으로 나가라" — <code>HomeRange</code> 840을 규칙으로 드러내기. 영역형(리썰 Hoarding Bug 둥지) 참고.</li>
+<li>늦추개 "겹치는 규칙"은 같은 시설에 반대 규칙 종을 같이 두는 배치 문제이기도 하다.</li>
+</ul>
+<div class="box bad"><h4>맵의 상충</h4>
+<p>사용자(전투 세션): "리포 같은 경우에는 대부분은 숨어야 되지만…". 비교 문서: 리포의 숨기(앉기·기기·짐 시야 10m)는 특정 종이 아니라 <b>게임 전체에 깔린 층</b>이다. CL9는 은신 메커니즘이 없고 숨을 곳을 일부러 없앴다. 인스타 제안도 "숨는 곳은 두지 않는다"를 유지했다. 사용자가 말한 "숨어야 하는" 공포를 어디서 만들지(시야 차단·어둠·거리 유지인지, 진짜 은신인지)는 어느 쪽도 묻지 않았다.</p></div>
+
+<h3>아이템 현황</h3>
+<div class="wrap"><table>
+<tr><th>별칭</th><th>빛</th><th>소음·방어</th><th>비고</th></tr>
+<tr><td><code>egg</code></td><td>발광 폐기(09-11)</td><td>Crack 450 / Break 1260, <code>throw_break</code> 480</td><td>정전 시 소지자 노출 <code>CarrierSeenRadius</code> 276은 쓰는 행 없음. 값 10~15</td></tr>
+<tr><td><code>meat</code></td><td>—</td><td>안 깨짐, 무거움</td><td>값 18~22, 물리 값 대부분 미정</td></tr>
+<tr><td><code>frying_pan</code></td><td>—</td><td>유일한 무기. 피해 2, 넉백 120, 휘두르기 300·타격 600 소음(미커밋)</td><td>코인 25. 팀킬 들어감(7d)</td></tr>
+<tr><td><code>cart</code></td><td>—</td><td>끌면 ×0.75, 25kg</td><td>가격 미정</td></tr>
+<tr><td><code>flashlight</code> / <code>headlamp</code></td><td>1800cm</td><td>손전등은 정전에 꺼짐(주머니 빛으로 유지) / 헤드램프는 정전에도 켜짐</td><td>헤드램프 가격·해금 미정</td></tr>
+<tr><td><code>standing_lamp</code></td><td>값 미정</td><td>내려놓아도 안 꺼짐</td><td></td></tr>
+<tr><td><code>pot</code></td><td>—</td><td>두 손, 전환·줍기 잠금</td><td></td></tr>
+<tr><td>탄 요리</td><td>—</td><td>미끼 330(미커밋 F)</td><td>새 품목 없음</td></tr>
+<tr><td>무전기</td><td>—</td><td>핫라인</td><td>명세만, 아이템은 후속</td></tr>
+</table></div>
+<p><b>방어 수단은 없다.</b> 기절·투척 피해·막기 없음. 미끼가 첫 두 번째 도구(F). 리썰은 스턴 수류탄·전기총(겨누는 동안 무한), 리포는 질량 문턱 투척·들어 올리기, CW는 충격봉 5초·갈고리 구출.</p>
+<h3><span class="tag insta">인스타 세션</span> 아이템 제안</h3>
+<ul>
+<li>새로 넣을 것: <b>무전기</b>(혼자일 때의 공포에 대응하는 수단, 명세만 있음).</li>
+<li>결정 필요: <b>손전등 배터리</b>(결정 G와 충돌 가능).</li>
+<li>유지: 미끼와 프라이팬. 몬스터를 다 지울 수 있는 도구는 늘리지 않는다.</li>
+</ul>
+<h3><span class="tag combat">전투 세션</span> 아이템 관점</h3>
+<ul>
+<li>F 선택지 중 기절(새 에셋)·투척 피해(질량 컬럼)는 미끼 뒤로. "대응"의 자원 비용으로 미끼는 요리 하나를 태워야 생기고, 비교 문서는 "미끼 하나가 돼지 하나"를 돼지 숙련 단계에 적었다.</li>
+<li>대응에 "자원"이 붙으려면 배터리·불 같은 소모가 있어야 한다는 전제(CW 손전등 배터리 100~200초, 리포 무기 배터리 적 타격당 5~11). 이 점에서 인스타의 배터리 질문과 만난다.</li>
+<li>처치 보상 <code>DropItems</code>가 미정이라 "칠 이유"가 없다. 리포는 처치 귀중품, 밸하임은 재료·트로피.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t7" data-title="7. 애니·사운드·이펙트">
+<h2>7. 애니메이션·사운드·이펙트 — 있는 것, 비어 있는 것, 두 세션이 요구한 것</h2>
+<div class="box combat"><h4>10-17 저녁 갱신 — 몬스터 애니메이션 총목록 (페이지 7절 끝, 전투 세션 작성)</h4>
+<div class="wrap"><table>
+<tr><th>종</th><th style="width:7%">있음</th><th>신규(규칙·패턴)</th><th>신규(광폭화·빈 것)</th><th style="width:8%">합계 신규</th><th style="width:14%">새 모델</th></tr>
+<tr><td class="k">닭</td><td>10</td><td>Peck, Stare, Twitch, Light React, Eat Bait (5)</td><td>Burst, Hollow Idle·Run·Catch·Death (5)</td><td>10</td><td>터진 닭 메시</td></tr>
+<tr><td class="k">거위</td><td>11</td><td>Sleep Breathe, Lunge, Hit Honk, Settle (4)</td><td>—</td><td>4</td><td>없음</td></tr>
+<tr><td class="k">너구리</td><td>10</td><td>Stalk Walk, Freeze, Retreat, Enrage, Peek, Vanish (6)</td><td>—</td><td>6</td><td>없음</td></tr>
+<tr><td class="k">돼지</td><td>10</td><td>Eat, Sniff, Heavy Walk, Mouth Open Idle (4)</td><td>Burst, Hollow Idle·Run·Execute·Death (5)</td><td>9</td><td>터진 돼지 메시</td></tr>
+<tr><td class="k">양(번복 시)</td><td>9</td><td>Drag, Pin, Shoved, Held (4)</td><td>—</td><td>4</td><td>없음</td></tr>
+<tr><td class="k">쥐</td><td>0</td><td>Idle, Run, Sniff, Grab, Carry Run, Leap, Freeze, Stash, Death (9)</td><td>—</td><td>9</td><td>쥐 모델·스켈레톤</td></tr>
+<tr><td class="k">어미 닭</td><td>닭 공유</td><td>Nest Sit, Rise Scream, Carry Egg, Place Egg (4)</td><td>닭 공유</td><td>4</td><td>큰 닭 메시</td></tr>
+<tr><td class="k">횃대 닭</td><td>닭 공유</td><td>Roost Hang, Wing Spread, Drop, Face Cling, Detach (5)</td><td>—</td><td>5</td><td>없음</td></tr>
+<tr><td class="k">소·박쥐·부엉이·눈먼 개·뻐꾸기</td><td>0</td><td>종당 4~6</td><td>—</td><td>약 25</td><td>모델 5개</td></tr>
+<tr><td class="k">여우·농부 탈·병아리</td><td>농부 탈은 농부 공유</td><td>종당 4~6</td><td>—</td><td>약 15</td><td>여우·병아리 모델</td></tr>
+<tr><td class="k">농부(1인칭·3인칭)</td><td>12 · 15</td><td>1인칭 9~10, 3인칭 11</td><td>—</td><td>약 20</td><td>없음</td></tr>
+</table></div>
+<p><b>먼저 넣을 조합(쥐·어미 닭·횃대 닭·헛놀람·정전 예고) + 다섯 종 규칙 보강만 세면 몬스터 신규 클립 약 45개, 농부 신규 약 20개, 새 모델 3개(쥐·큰 닭·터진 닭). 정체 단계까지 가면 두 배.</b> 진행 순서(페이지 10절): 1단계 채우기(소리 "먼저"·SightDark·정전 예고·헛놀람) → 2단계 규칙(거위 "치면 운다", 너구리 "후퇴 450·맞으면 격분", 돼지 "짐·먹기", 닭 "소음이 무리를 부름" — 새 모델 없이 클립 약 20) → 3단계 새 패턴(먼저 조합 + 갈라놓는 문 + 과장된 날림, 새 모델 3·클립 약 20, 그다음 소·박쥐·부엉이·눈먼 개·뻐꾸기) → 4단계 정체(광폭화·Burst·빈 것·농부 탈·여우·병아리).</p>
+<p>소리 표(페이지 9절): 먼저 — H 음원 6·셰이크 2·마당 울음(애셋만 넣으면 바로 들림) / 다음 — 종별 발소리, 장소별 환경음, 정전 예고음, 숨소리·비명 / 그다음 — 공포 화면 필터, 지직거림, 조짐 소리, 탈 터짐, 둥지 구멍 예고음, 무전 잡음, 닫히는 문 소리, 과장된 타격음·날아가는 소리. Dead Space처럼 공포 수치 하나로 숨·음악·믹스를 같이 움직인다. 지금 효과음은 전부 임시본(ElevenLabs 무료)이라 새 소리부터 최종 품질로.</p>
+<p class="small">처치 연출 상충(아래 "리소스의 상충" 첫 줄)은 결정 ⑪로 "과장된 날림" 쪽으로 닫혔다. 탈이 터지는 순간만 웃기지 않게.</p></div>
+
+<h3>애니메이션 현황</h3>
+<div class="wrap"><table>
+<tr><th style="width:16%">대상</th><th>클립</th><th>없는 것</th></tr>
+<tr><td class="k">플레이어 1인칭 (<code>ABP_FP_View</code>)</td><td>FPArmsDown, FPEat, FPGetUp, FPHoldFlashlight, FPHoldLarge, FPHoldSmall, FPKnockdown, FPRun, FPSwing, FPSwingWindup, FPThrow, FPThrowWindup</td><td rowspan="2">겁먹음·탈진·놀람 클립, 줍기 팔 클립 <code>AN_Farmer_FPPickup</code>, 얼굴 표정(피격 눈 셰이프 키 승인 전)</td></tr>
+<tr><td class="k">플레이어 3인칭</td><td>Down, Eat, Executed_Pig, Executed_Raccoon, GetUp, HoldFlashlight, HoldIdle, HoldLarge, HoldSmall, Knockdown, Swing, SwingWindup, Throw, ThrowWindup (걷기·달리기는 템플릿 <code>ABP_Unarmed</code>)</td></tr>
+<tr><td class="k">닭 (10)</td><td>Idle, Walk, Run, LookAround, PounceWindup, Catch, HitReact, PushReact, WakeTelegraph, Death</td><td rowspan="5">PounceWindup은 닭만(다른 종은 Catch 첫 프레임 유지). 세기별 피격 반응 없음(HitReact 0.3초 1개). 광폭화 모습(모델 2벌) 요구만. 닭 상태별 눈 3단 승인 대기. 래그돌 없음(피직스 에셋 없음). 탈 벗기/재착용 "거절 상태 보존". 먹기 클립 없음(미끼는 Idle 자세로 선다)</td></tr>
+<tr><td class="k">돼지 (10)</td><td>Idle, Walk, Run, LookAround, WakeTelegraph, Catch, Execute, HitReact, PushReact, Death</td></tr>
+<tr><td class="k">너구리 (10)</td><td>같은 10개(Execute 포함)</td></tr>
+<tr><td class="k">거위 (11)</td><td>Idle, Walk, Run, LookAround, Sleep, WakeTelegraph, AlertWindup, Honk, HitReact, PushReact, Death (Catch 없음, 의도)</td></tr>
+<tr><td class="k">양 (9)</td><td>Idle, Walk, Run, LookAround, WakeTelegraph, Catch, HitReact, PushReact, Death</td></tr>
+<tr><td class="k">검수 초안</td><td><code>Content/Monsters/MotionReview20261017/{AI_V01,AttackV01,V07}</code>, <code>StorageOwnerDisguise</code>: <code>ABP_Cow_Locomotion</code>, <code>ABP_cow_Attack</code>, <code>ABP_chicken_Attack</code></td><td>처형 짝 클립 2.0초(<code>AN_Pig_Execute</code>/<code>AN_Farmer_Executed_Pig</code> 등)는 있다</td></tr>
+</table></div>
+
+<h3>사운드 현황</h3>
+<div class="wrap"><table>
+<tr><th style="width:18%">분류</th><th>내용</th></tr>
+<tr><td class="k">에셋 있는 행</td><td>운반: Pickup, Place, SlotSwitch, LightToggle, CartGrab, Swing, HitSurface. 캐릭터: Hurt, Footstep(3종), Jump, LandSoft, LandHard, Eat, Exhausted. 몬스터: Hit(S_HitPan), MonsterDeath, MonsterPounce, MonsterCatch, MonsterNear. 요리: KitchenAmbience, CookSizzle, CookCrackle, CookDone, CookBurnt. 음악: MenuBGM, LobbyBGM, NightBGM.</td></tr>
+<tr><td class="k">행만 있고 에셋 없음</td><td><b>FearLow, FearHigh1, FearHigh2, Heartbeat, MonsterSighting, MonsterChaseBegin</b> (H). 상수만 있고 행 없음: <b>YardCry</b>.</td></tr>
+<tr><td class="k">계획 이름만</td><td><code>SFX_WakeTelegraph</code>, <code>SFX_Alert</code>(거위 울음), <code>SFX_Crack/Break</code>, <code>SFX_JarDeposit</code>, <code>SFX_Sell/Buy</code>, <code>SFX_OrderComplete</code>, <code>SFX_Blackout</code>, <code>UI_*</code>, <code>VoiceSet</code>(잡힘·넘어짐·탈진 음성). 즉 거위 울음, 기상 예고음, 정전음, 플레이어 비명은 없다.</td></tr>
+<tr><td class="k">임시 상태</td><td>SFX 26개 전부 ElevenLabs 무료 생성음(출시 전 재생성). 음악 3곡 비상업 시험용. 몬스터 발소리는 사람과 같은 <code>Footstep</code> 행·보폭.</td></tr>
+<tr><td class="k">앰비언스·음악</td><td>위치형 환경음은 조리대 <code>KitchenAmbience</code> 하나. <code>Ambience</code> 폴더 없음. 음악은 상황에 반응하지 않는다(추격·근접 전환 없음). <code>NightBGM</code> "낮은 드론·기계 웅웅", <code>MenuBGM</code> "낡은 오르간·퍼즈 기타". 믹스 Effects 0.8 / Ambience 0.5 / Music 0.7.</td></tr>
+<tr><td class="k">위협 소리 채널(구현)</td><td>MonsterPounce, MonsterCatch, MonsterNear(근접 소나 <code>monster_prox</code> 1.2초 반복, <code>TriggerRadius</code> 780 안 330cm 링, "링이 플레이어에게 닿지 않는다"), Hurt, Footstep.</td></tr>
+</table></div>
+
+<h3>이펙트 현황</h3>
+<ul>
+<li>Niagara: <code>NS_CL9_HitPuff</code>, <code>NS_CL9_Wave</code>, <code>NS_CL9_WaveDots</code>. 카메라 셰이크: <code>CS_HitShake</code>, <code>CS_HurtShake</code>, <code>CS_StaminaShake</code>. 머티리얼: <code>M_CL9_HitFlash</code>, <code>M_CL9_PP_Posterize</code>, <code>M_CL9_WaveDot</code>, <code>M_CL9_WaveReveal</code>. 레트로 화면 520p·최근접 업스케일·FXAA·16단계·그레인 0.15.</li>
+<li>HUD: 피격 비네트·방향 호. 파동 링은 체력 낮거나 몬스터 분노일수록 빨갛게. 램프 깜박임·전원 인트로·마당 문등 끊김은 자체 코드.</li>
+<li>없는 것: 리썰식 공포 화면 필터, 동료 시체 목격, 리포식 카메라 글리치·줌·입력 차단·강제 낙하, 충격파 링, 착지 먼지, 화면에 남는 흔적.</li>
+</ul>
+
+<h3>두 세션이 요구한 리소스 (합본)</h3>
+<div class="wrap"><table>
+<tr><th style="width:10%">우선</th><th style="width:12%">출처</th><th>항목</th><th style="width:18%">비고</th></tr>
+<tr><td rowspan="2"><b>1</b> 코드가 있고 비어 있음</td><td><span class="tag insta">인스타</span></td><td>음원 <code>FearLow</code>·<code>FearHigh1</code>·<code>FearHigh2</code>·<code>Heartbeat</code>·<code>MonsterSighting</code>·<code>MonsterChaseBegin</code>, 셰이크 <code>Sighting</code>·<code>ChaseBegin</code>, <code>YardCry</code> 표 행, 정전 때 <code>SightDark</code> 적용</td><td>전투 세션도 "들리지 않는다"로 같은 자리를 짚음</td></tr>
+<tr><td><span class="tag combat">전투</span></td><td>셰이크 2행은 에디터에서 손으로 넣어야 한다(구조체가 파이썬에 안 열림)</td><td></td></tr>
+<tr><td rowspan="2"><b>2</b> 소리</td><td><span class="tag insta">인스타</span></td><td>사이트별 환경음(양계장 웅웅, 바람, 멀리서 우는 소리), 종별 발소리, 정전 예고음·정전음, 플레이어 숨·비명 음성 세트</td><td></td></tr>
+<tr><td><span class="tag combat">전투</span></td><td>너구리 텔(근접 음악·공포 누적), 돼지 무거운 발소리, 거위 울음(<code>SFX_Alert</code>), 미끼 먹는 소리(<code>MonsterEat</code> 행, 뒤로), 기상 예고음</td><td>카드의 텔 칸</td></tr>
+<tr><td rowspan="2"><b>3</b> 연출·애니</td><td><span class="tag insta">인스타</span></td><td>공포 게이지 화면 필터(0.4 이상), 스팅어 글리치, 광폭화 조짐 소리, 둥지 구멍 예고음, 거위 놀람음. 몬스터 애니: 광폭화 조짐(경련·고개 꺾기·오래 쳐다보기), 정체 드러남(탈 터짐), 둥지에서 기어 나오기, 거위 놀람(울음+돌진), 처치는 쓰러지거나 꺼짐. 캐릭터: 1인칭 손 떨림·움찔, 3인칭 겁먹고 뛰기·움찔. 소품: 둥지 구멍, 기록 소품.</td><td>소·닭 공격형 검수 초안이 <code>MotionReview20261017</code>에 있다</td></tr>
+<tr><td><span class="tag combat">전투</span></td><td>종별 규칙에 따른 반응 애니(거위 "맞으면 운다", 너구리 "빛에 물러남/격분", 돼지 "짐에 끌림"), 먹기 클립, 광폭화 후 값(속도·시야·치명)</td><td>어느 갈래를 고르느냐에 따라 달라진다</td></tr>
+<tr><td rowspan="1">손맛 (인스타 A~I)</td><td><span class="tag insta">인스타</span></td><td>스쿼시 값(표), 히트스톱 중 흔들림(C++), 팔 느린 움직임, 번쩍임 하양/옅게(머티리얼), 화면 깃털(위젯·PP·아트), 피격 자세로 옮겨 가기·세기별 피격(애니), 충격파 링·HP 핍·줍기 팔 클립·퀵슬롯 펄스·착지 먼지(9월 명세분)</td><td>공포 방향이 정해지면 우선순위가 내려간다</td></tr>
+</table></div>
+<div class="box bad"><h4>리소스의 상충</h4>
+<ul>
+<li>처치 연출: 인스타 손맛 B(멀리 날아가 튕김)에 맞는 에셋 ↔ 인스타 공포 ⑦·전투 세션(쓰러지거나 탈이 빈 껍데기처럼 꺼짐). 둘 중 하나만 만들면 된다.</li>
+<li>피격 애니 우선순위: 인스타 손맛 F·I(정지 중 피격 자세, 세기별 피격) ↔ 인스타 공포(광폭화 조짐·정체 드러남이 먼저) ↔ 전투 세션(규칙 갈래가 정해져야 종별 반응 애니를 만들 수 있음).</li>
+<li>거위 애니: 인스타 "놀람(울음+돌진)" ↔ 전투 세션 "맞으면 운다 / 죽는 소리가 경보" — 거위 역할 결정에 달려 있다.</li>
+</ul></div>
+
+<h3>문서끼리·코드와 어긋나는 곳 6 (인스타 세션 조사, 다음 작업 때 주의)</h3>
+<ol>
+<li><code>plan/wave.md</code>는 "걷기 파동 기본 꺼짐"이라 적지만 <code>plan/data/wave.md</code>·<code>rules.md</code>는 결정 D로 켰다고 적는다.</li>
+<li><code>systems/map.md</code>의 "손전등 도달 320u"는 옛 값(현재 1800cm).</li>
+<li><code>combat-gap.md</code>의 "decoy 코드 경로 없음", "걷기 소음 0"은 결정 전 스냅샷(미커밋 변경 뒤에는 구현됨).</li>
+<li><code>systems/monster.md</code>의 "정전 시 <code>SightDark</code>"는 코드 소비처가 없다.</li>
+<li><code>systems/animation.md</code> "Horror 조명 깜빡임은 <code>Variant_Horror</code>"는 틀림. 실제 깜박임은 자체 구현, <code>Variant_Horror</code>에는 <code>NS_DustMote</code>만.</li>
+<li>대농장·돼지 농장 스폰표에 제외된 <code>sheep</code>이 남아 있다.</li>
+</ol>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t8" data-title="8. 상충·겹침">
+<h2>8. 상충·겹침 — 두 세션(그리고 같은 세션 안)에서 서로 다른 말을 한 곳</h2>
+<p>각 카드의 아래 칸은 "무엇을 정하면 풀리는가"다. 추천은 적지 않았다.</p>
+
+<div class="box ok"><h4>10-17 저녁 갱신 — 상충 1~16의 해소 현황</h4>
+<div class="wrap"><table>
+<tr><th style="width:8%">#</th><th style="width:30%">상충</th><th>현황</th></tr>
+<tr><td>1</td><td>톤</td><td><span class="tag ok">해소</span> 결정 ⑦ "겉은 귀엽고 우스꽝스럽게, 정체가 드러나는 순간만 무섭게". 아트 문서는 미수정</td></tr>
+<tr><td>2</td><td>보류 축 A·E를 인스타가 결정 제안으로</td><td><span class="tag ok">해소</span> 결정 ③(파훼법 필수) ④(굴로 드나드는 동물). 단 페이지에만 기록, decisions.md는 "보류"</td></tr>
+<tr><td>3</td><td>거위 역할</td><td><span class="tag ok">합쳐짐</span> 페이지 5절 거위 카드가 경보꾼 + 1.5m 놀람 낙하(피해 0) + "맞으면 운다/죽는 소리 경보"를 한 카드에. 세부(A/B, 광폭화 닭에도 낙하를 둘지)는 미결</td></tr>
+<tr><td>4·14</td><td>협동 공포의 자리</td><td><span class="tag warn">열림</span> ⑥ 양 "양은 뭐야?"로 돌아옴. 안 되살리면 소·여우가 맡음</td></tr>
+<tr><td>5</td><td>손전등</td><td><span class="tag warn">반쯤</span> 배터리 없음(⑤)으로 배터리 쪽은 닫힘. 어느 종에 빛 규칙을 둘지(⑤-2)는 열림</td></tr>
+<tr><td>6</td><td>몬스터 등장</td><td><span class="tag ok">방향</span> ④ 구멍이 보이는 굴 동물. 거위·너구리 재배치는 다시 봄(미결 10)</td></tr>
+<tr><td>7</td><td>짐 결과 공통 vs 종별</td><td><span class="tag ok">해소</span> ② 공통 0~2개 유지. 단 어미 닭·빈 것 카드의 "짐 전부"는 ②와 어긋남(상충 21)</td></tr>
+<tr><td>8</td><td>타격 표현 vs 치기가 답이 되면 안 됨</td><td><span class="tag ok">방향</span> ①(닭만 치는 종) + ⑪(결과는 웃기게). 표현은 닭 계열에만 보이는 셈</td></tr>
+<tr><td>9</td><td>숨기</td><td><span class="tag warn">열림</span> 페이지도 "숨을 곳은 만들지 않는다" 유지</td></tr>
+<tr><td>10</td><td>광폭화의 무게</td><td><span class="tag warn">열림</span> 페이지는 닭·돼지 둘 다에 Burst·빈 것, 4단계 "정체"에. 사용자에게 묻지 않음</td></tr>
+<tr><td>11</td><td>닭 감지 600 순서 뒤집힘</td><td><span class="tag warn">열림</span> 너구리 카드가 시야 6m/4m 제안으로 맞추자고 함</td></tr>
+<tr><td>12</td><td>미커밋 처리</td><td><span class="tag warn">열림</span> 답 없음. 페이지 표는 "이번 주 미커밋" 열을 따로 둠</td></tr>
+<tr><td>13</td><td>새 종 vs 기존 5종</td><td><span class="tag ok">방향</span> 페이지 6절이 순서(먼저/다음/정체/나중)를 붙여 새 종을 늘리는 쪽으로. 층은 "둘"로 재기술(미결 11)</td></tr>
+<tr><td>15</td><td>변장 vs 임포스터</td><td><span class="tag ok">정리</span> 임포스터 = 산 사람의 장난, 농부 탈 = 몬스터의 속임, 빙의는 ⑨로 제외. MIMESIS와의 차별점은 "사람이 범인"</td></tr>
+<tr><td>16</td><td>"채우기" 범위</td><td><span class="tag warn">열림</span> 페이지 10절 1단계는 여전히 SightDark·정전 예고·헛놀람 포함</td></tr>
+</table></div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 17</span> 원칙 8이 같은 날 두 번 뒤집혔다 — 건조 → 과장</div>
+<div class="body">
+<div class="side insta"><b>인스타 2판(12:59)</b>"때리는 맛은 건조하게. 과장된 날림은 공포를 웃음으로 바꾼다." 손맛 방안 B 채택 안 함.</div>
+<div class="side insta"><b>인스타 3판(13:59) → 결정 ⑪</b>"다가오는 건 진지하게, 결과는 웃기게." 닭 죽음도 과장해서 날아감. 근거는 같은 R.E.P.O. 쇼츠 — "2판은 그래서 날림을 뺐고 3판은 같은 이유로 넣는다, 웃음이 목적이기 때문".</div>
+</div>
+<div class="foot">사용자가 ⑪ "ㅇㅇ 그렇게 하자"로 닫았다. 남는 것: 전투 세션의 "손도 못 쓰고 죽는 정서"와 어떻게 공존하나 — 페이지 답은 "다가오는 동안은 진지, 부딪친 뒤만 과장, 탈 터짐은 예외". 정체 순간(Burst)과 날아가는 닭이 같은 화면에 있을 때 톤이 섞이는 문제는 다루지 않았다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 18</span> 큰 목소리 반응(⑧) vs "몬스터는 말소리를 듣지 않는다"</div>
+<div class="body">
+<div class="side insta"><b>인스타 3판 → 결정 ⑧</b>잠든 거위 한 종만 큰 목소리(비명)에 깨고 설정에서 끌 수 있게. 근거: 261편 중 20편이 "소리 지르면 안 됨". 몰래 역할의 방해 수단("큰 목소리로 거위 깨우기")으로도.</div>
+<div class="side combat"><b>현황</b><code>docs/plan/voice.md</code> "몬스터는 말소리를 듣지 않는다" — 음성 청각은 구현했다가 되돌린 결정. CW Ear(목소리로 쫓아냄)는 같은 이유로 2판에서 뺐었다. MIMESIS는 마이크 0.9 이상을 듣고 Maegoostro "20m 안에서 말하지 마라"가 있다.</div>
+</div>
+<div class="foot">기록할 것: voice.md 결정의 부분 번복(거위만, 옵션). 마이크 음량 문턱·반경·EOS Voice 전송층과의 관계는 아직 아무도 적지 않았다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 19</span> "죽음으로 행동을 열지 않는다"(Alien: Isolation) vs 광폭화 조건 "동료의 죽음"</div>
+<div class="body">
+<div class="side insta"><b>인스타 공포 제안·페이지 닭 카드</b>광폭화 게이지는 판 시간, 큰 소리, <b>동료가 죽는 것</b>으로 차오른다.</div>
+<div class="side insta"><b>인스타 설계 자료(13:25)</b>Alien: Isolation은 몬스터 행동이 시간에 따라 열리되 플레이어의 죽음을 계기로는 열지 않았다(불공평하게 느껴지므로). "제 문서와 부딪친다. 빼거나 약하게 해야 한다." 페이지 9절 긴장 조절자에도 같은 원칙을 적었다.</div>
+</div>
+<div class="foot">정할 것: 광폭화 조건에서 "동료의 죽음"을 뺄지. 닭 카드의 조건은 "둥지 가까이서 알이 깨지는 소리"만 적혀 있어 이미 빠진 것처럼 보이지만, 1판 제안 문장은 남아 있다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 20</span> 처형 장면을 줄인다(⑩) vs 처형 카메라가 규칙을 가르친다</div>
+<div class="body">
+<div class="side insta"><b>인스타 → 결정 ⑩</b>그립: 몬스터를 1m 앞에서 오래 보면 무섭지 않다. 처형 카메라 2초 근접은 공포를 깎는다 → 사용자 "아 그래? 줄이자".</div>
+<div class="side combat"><b>비교 문서 6.1·페이지 너구리 카드</b>"규칙은 죽으면서 발견된다 — 죽음이 원인을 보여 줘야 한다. CL9 처형 카메라(액터 뒤 130·위 165, 피치 −30)는 피해자에게 '누가 어떻게'를 보여 주는 장치라 이 단계에 이미 맞는다." 결정 ③ "처음 당하면 무엇을 잘못했는지 알 수 있어야 한다"도 같은 쪽.</div>
+</div>
+<div class="foot">정할 것: 줄이되 "누가 어떻게"는 남기는 방법(짧게·실루엣·소리로·새벽 하이라이트로 대신)인지, 아예 덜 보이게인지. 1인칭 처형 클립 2개의 유지 여부와 함께.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 21</span> 짐 결과 "공통 0~2개"(②) vs 카드의 "짐 전부"</div>
+<div class="body">
+<div class="side insta"><b>결정 ②</b>"그냥 그대로, 넘어지는 걸로. 넘어지면 보통 죽을 테니까." 종별로 나누지 않는다.</div>
+<div class="side combat"><b>페이지 5·6절 카드(전투 세션)</b>빈 것(광폭화 닭)에 잡히면 짐 전부, 어미 닭에 잡히면 퀵슬롯의 알 전부, 거위 놀람은 손의 것 1개(피해 0), 소는 "즉사 또는 짐 전부(결정 필요)".</div>
+</div>
+<div class="foot">②가 "종별 결과 안은 접음"이라고 적혔는데 카드 값은 그대로 남았다. 종별 차이를 "넘어짐 낙하(공통)"와 별개의 "종 고유 결과"로 볼지, ②로 모두 0~2개로 맞출지.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 22</span> 너구리·거위 재배치 vs 결정 ④ "굴로 드나드는 동물만"</div>
+<div class="body">
+<div class="side combat"><b>페이지 5절 카드(전투 세션, ④ 이전)</b>너구리: 포기 뒤 60~120초 뒤 다른 자리에 재등장, Vanish 클립. 거위: 잠든 뒤 60~120초 지나면 다른 둥지로.</div>
+<div class="side insta"><b>결정 ④ → 원칙 4</b>사라졌다 나타나는 것은 두더지·쥐처럼 굴·구멍으로 드나드는 동물이 맡아 자연스럽게. "거위·너구리를 재배치할지는 이 원칙에 맞춰 다시 본다."</div>
+</div>
+<div class="foot">정할 것: 거위·너구리에게도 구멍·굴(둥지)을 주어 ④ 안에서 재배치할지, 상주로 둘지. 너구리 "늦추개: 사라졌다 다른 곳에서"는 그에 따라 바뀐다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 23</span> Steam 업적(⑭) vs 출시 계획 "범위 밖"</div>
+<div class="body">
+<div class="side insta"><b>결정 ⑭</b>"스팀 업적에 넣어야지." 칭호 = 업적 한 표, 숨김 업적, 새벽 뒤 알림.</div>
+<div class="side combat"><b>현황</b>출시 계획 문서(<code>docs/goal/steam-release.md</code>)는 Steam 업적을 범위 밖으로 두고, 온라인 연결은 LAN·EOS 로비(음성 EOS Voice 교체 중). 업적은 각자 Steam 계정에서 열리므로 호스트 → 각자 전달 경로가 필요.</div>
+</div>
+<div class="foot">정할 것: 출시 계획에 업적과 Steam 연결 작업을 넣기(⑭가 곧 그 결정). 순서(EOS 로비 유지 + Steamworks 업적만? Steam 세션으로 전환?)는 미정.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 24</span> 같은 페이지를 두 세션이 동시에 고친다</div>
+<div class="body">
+<div class="side insta"><b>인스타</b>1판 → 2판 → (전투 상세판을 읽고 그 위에) 3판=4판 → 5판(결정 반영). 매번 "최신본을 먼저 받아 그 위에" 하려 했으나 "최신본은 제가 마지막에 올린 판 그대로"라고 판단한 때가 있다.</div>
+<div class="side combat"><b>전투</b>상세판(3판) → 5판(MIMESIS) → 6판·8판(6가지 표). "다른 세션이 그 사이 5판을 올렸다. 그 위에 여섯 가지 표만 얹어 다시 올린다."</div>
+</div>
+<div class="foot">지금 파일은 합쳐져 있다고 양쪽이 보고하지만, 판 번호가 둘이고 원본은 세션별 스크래치에 따로 있다. 한 세션이 페이지 소유를 맡고 다른 세션은 그 세션에 변경을 보내는 식으로 정리하지 않으면 다음 편집에서 덮어쓸 수 있다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 1</span> 톤 — 귀여움을 지키나, 손도 못 쓰고 죽나</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>"귀여운 탈이 벗겨지는 공포. 겁은 몬스터가 주고 웃음은 플레이어끼리." 아트 문서 "과장되되 귀엽게, 사실적 공포 아님"을 바꾸는 것이라 확인 필요하다고 스스로 적음.</div>
+<div class="side combat"><b>전투 세션 (사용자)</b>"웬만해서는 난 손도 못 쓰고 죽는 게 정서여야 돼." 비교 문서 결론 3 "죽일 수 있는가가 게임의 성격을 가른다".</div>
+</div>
+<div class="foot">정할 것: 아트 톤 문장을 고칠지. "귀여움"이 몬스터의 평소 모습(탈)에만 남고 위협 순간은 공포인지, 처치 순간까지 귀여운지.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 2</span> 보류한 축 A·E를 인스타 세션이 결정 제안으로 냈다</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>원칙 ② "무엇이는 알려 주고 어디서·누구를은 숨긴다"(= A 리썰 방식), ③ "몬스터 층은 돌아다니고 짐승 층은 자리를 지킨다"(= E 순환을 종별로). 둘 다 "승인하면 decisions.md에 기록".</div>
+<div class="side combat"><b>전투 세션</b>사용자 답 A "아직 분석을 좀 더 해보자", E "아직 분석 더 해봐야 돼". 이후 전투 세션: "A·E는 종별 카드가 나온 뒤 종별로 정하는 게 맞다. 전체 원칙 하나로 정하면 또 수치 차이만 남는다."</div>
+</div>
+<div class="foot">정할 것: A·E를 전체 원칙(인스타)으로 정할지, 종별 카드 뒤에 종별(전투)로 정할지. 인스타의 "층별" 제안은 그 중간이다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 3</span> 거위의 역할</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>"놀람 담당(Upscream)": 피해 0, 경보 울음, 시선 강제, 짐 놓침. 거위 놀람 애니(울음+돌진)·놀람음.</div>
+<div class="side combat"><b>전투 세션</b>"깨우지 마라 — 깼으면 치지 마라". 거위는 잡지 않고 결과는 무리 경보. 처치 갈래 A 맞으면 곧바로 운다 / B 죽는 소리가 경보 / C 처치 불가. 익숙해지면 경보를 도구로 쓴다.</div>
+</div>
+<div class="foot">정할 것: 거위가 플레이어에게 직접 결과(짐 놓침·시선)를 주는 종인지, 결과 없는 경보꾼으로 두고 처치만 막을지. 합치면 "깨우면 운다 + 울 때 가까우면 짐을 놓친다"가 되지만 어느 쪽도 그렇게 적지 않았다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 4</span> "혼자면 더 무섭다"를 어느 종에 두나</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>원칙 ⑥: 너구리가 혼자 있는 사람을 노린다(표적 선택에 "혼자 우선"). 무전기가 대응 수단.</div>
+<div class="side combat"><b>전투 세션</b>양 카드 갈래 A "혼자 있지 마라"(10-13 제외의 번복 전제). 너구리에는 "동료가 지켜보기"(<code>IsWatchedByAnyone</code>)를 둠. 미결 4 "양을 되살릴지, 아니면 협동 규칙을 너구리에".</div>
+</div>
+<div class="foot">정할 것: 미결 4. 양을 되살리지 않으면 인스타 안(너구리 혼자 우선)이 전투 세션의 대안과 같아진다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 5</span> 손전등 — 편하게 한 직후 "방해 요소"가 됐다</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>배터리(빛을 자원으로)는 결정 G와 부딪칠 수 있으니 따로 정해야. 손 떨림에 손전등 빛 떨림.</div>
+<div class="side combat"><b>전투 세션</b>G 구현(토글 유지·주머니 빛) → 사용자 "손전등도 그 조작을 방해하는 요소" → 세션 해석 "빛이 몬스터 규칙과 연결돼 있지 않아서" → 미결 5 "어느 종의 규칙에 빛을 넣을지".</div>
+</div>
+<div class="foot">정할 것: 미결 5 + 배터리. G(조작 마찰)와 빛 규칙(설계)은 다른 층의 문제라 둘 다 살 수 있지만, 배터리를 넣으면 G가 연 "켜 두고 잊기"가 다시 비용이 된다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 6</span> 몬스터 등장 — 예고 없는 시야 밖 vs 둥지 구멍 예고</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>판 중간 스폰을 "둥지 구멍 예고"로(리썰 벤트: 소리는 나는데 어느 구멍인지는 모름). 소품·예고음·기어 나오기 애니.</div>
+<div class="side combat"><b>전투 세션</b>현재 7e: 60초마다 1마리, 1500cm 밖·시야 밖, 예고 없음. 재등장 주기는 늦추개 표의 빈 칸. 둘 다 축 A(위치 숨김)·E(재등장)에 걸려 보류.</div>
+</div>
+<div class="foot">정할 것: A·E. 둥지 구멍은 A와 E 어느 쪽으로 가든 쓸 수 있는 장치라 먼저 소품만 정할 수도 있다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 7</span> 짐·통제권 결과를 전 종 공통으로 두나, 종별로 나누나</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>원칙 ⑤ "통제권을 잃는 것이 피해"(HP 안 깎고 짐 놓침). B(넘어짐 낙하)는 언급 없이 전제.</div>
+<div class="side combat"><b>전투 세션</b>B 구현(전 종 공통 0~2개). 그러나 비교 문서 미결 2: 종별로(닭 = 짐, 너구리·돼지 = 즉사, 양 = 끌려감) 나눌지. 양 카드는 "죽음이 아니라 판에서 잠시 빠지는 것".</div>
+</div>
+<div class="foot">정할 것: 미결 2. 미커밋 B를 두고 종별 결과를 그 위에 얹을지, B 자체를 종별로 바꿀지.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 8</span> 타격 표현 투자 vs "치기가 답이 되면 안 된다"</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>손맛 방안 A~I 표(스쿼시·흔들림·번쩍임·화면 깃털·피격 애니). 공포 축으로 옮긴 뒤 B·B+만 뺐고 A·E는 유지, 나머지는 언급 없음.</div>
+<div class="side combat"><b>전투 세션</b>"대응이 다섯 종 모두 치기로 같고 처치가 규칙을 우회한다". 미결 1 "어느 종을 죽일 수 없게". 사용자 "전투하는 도중에 뭐 할 게 없어(야)".</div>
+</div>
+<div class="foot">정할 것: 미결 1이 먼저. 치는 종이 닭뿐이면 손맛 방안은 닭에만 보이는 표현이 된다. 그래도 넣을지, 넣는다면 어디까지.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 9</span> 숨기 — 사용자가 말한 "숨어야 하는" 공포와 숨을 곳 없는 맵</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>"숨는 곳은 지금처럼 두지 않는다(숨을 곳이 너무 많아진다는 기존 판단 유지)". 대신 시야 차단·깊이별 어둠.</div>
+<div class="side combat"><b>전투 세션</b>사용자 "리포는 대부분은 숨어야 되지만…". 비교 문서: 리포·밸하임의 숨기는 종 규칙이 아니라 게임 전체 층. CL9에는 은신 메커니즘이 없다.</div>
+</div>
+<div class="foot">정할 것: CL9에 은신(자세·시야 차단물 뒤)을 넣을지. 넣지 않으면 "숨어야 하는" 공포를 어둠·거리·시선 규칙으로 대신한다는 뜻이 된다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 10</span> 광폭화(정체)의 무게</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>원칙 ① 공포의 <b>중심</b>. 진행 순서 3단계 "정체"(게이지·조짐·정체 드러남·애니). 닭·돼지 모두.</div>
+<div class="side combat"><b>전투 세션</b>닭 카드의 두 번째 텔, 늦추개 "불확실성"(개체별 문턱) 한 칸. 돼지 카드에는 광폭화가 없고 "짐을 노린다" 등 행동 규칙이 중심.</div>
+</div>
+<div class="foot">정할 것: 광폭화가 모든 짐승 층의 공통 장치인지, 닭의 장치인지. 어느 쪽도 사용자에게 묻지 않았다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 11</span> 닭 감지 600이 종별 순서를 뒤집었다</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>(조사 보고에 "결정 D"로 그대로 인용. 평가 없음.)</div>
+<div class="side combat"><b>전투 세션</b>D 구현 뒤 스스로 적음: 닭 600 > 돼지 480 > 너구리 390. "밸런스 때 다시 본다". 비교 문서도 너구리·돼지 카드 텔 칸에 "닭보다 짧아졌다"를 적음.</div>
+</div>
+<div class="foot">정할 것: 미커밋 D를 둘지. 둔다면 돼지·너구리 시야도 같이 볼지. 축 A의 답과 함께 가는 값이다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 12</span> 미커밋 변경의 처리</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션</b>손맛 ①②는 사용자가 유지 확정. 공포 방향 제안의 "우선 1 채우기"는 미커밋 H(FearComponent)가 있다는 전제 위에 서 있다.</div>
+<div class="side combat"><b>전투 세션</b>G·H·C·D·B·F 전부 미커밋. "되돌린다 / 그대로 둔다" 물었고 답 없음. 비교 문서는 두 경우를 모두 적었다(되돌리면 7절의 "미커밋" 칸은 커밋본 값으로).</div>
+</div>
+<div class="foot">정할 것: 전투 세션의 미커밋 변경을 통째로 둘지, 축별로 고를지(예: G·H는 두고 D는 되돌림), 전부 되돌릴지. 인스타 제안의 1단계는 H가 남아 있어야 성립한다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 13</span> 새 종을 늘리나, 기존 5종에 규칙을 넣나</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션 2판</b>패턴 13가지 중 8가지가 새 동물(소·박쥐·부엉이·눈먼 개·쥐/까치·여우·병아리·뻐꾸기 시계)이다. 장소별로 묶었고 외양간·농가 찬장은 아직 후보 장소.</div>
+<div class="side combat"><b>전투 세션</b>비교 문서는 CL9 5종(닭·거위·너구리·돼지·양) 카드에 규칙을 넣는 쪽. 2026-10-13 세 층 구조("몬스터 층은 한 판에 0~1마리, 종별 규칙 1개")를 전제. 리썰 30종 중 19종이 규칙형이라는 수치는 "종이 많아야 한다"로도 "규칙이 있어야 한다"로도 읽힌다.</div>
+</div>
+<div class="foot">정할 것: 종 수를 늘릴지(아트·애니 비용이 종마다 든다), 기존 종에 패턴을 얹을지(예: 천장에서 떨어지는 닭·알을 기억하는 어미 닭은 닭 변형이고, 쥐·여우·소는 새 종). 세 층 구조와 "몬스터 층 0~1마리"를 유지할지.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 14</span> 협동 공포를 어디에 두나 (상충 4의 확장)</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션 2판</b>여우(끌고 감, 쫓아가 때리면 놓음), 천장 닭(동료가 떼어 줌), 병아리 울음(한 명만 들림), 변장 동물. CW Worm(두 사람을 묶음)은 웃음 쪽이라 뺐다.</div>
+<div class="side combat"><b>전투 세션</b>양 카드: "혼자 있지 마라" / "한 명이 붙잡고 한 명이 지나간다" / "붙으면 동료가 떼어 줘라"(CW Worm·Snatcho·Slurper 참고). 솔로 판 처리 필요. 양은 10-13에 뺀 종이라 번복 전제.</div>
+</div>
+<div class="foot">정할 것: 미결 4와 함께. 인스타의 여우·천장 닭은 전투 세션 양 카드의 결과("끌려감·동료가 뗌")를 다른 종에 옮긴 것이라, 양을 되살리지 않는다면 두 안이 합쳐진다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 15</span> 변장 동물 vs 임포스터</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션 2판</b>"농부 탈을 쓴 동물. 멀리서 보면 동료와 똑같다. 임포스터 규칙과 맞물려 의심이 커진다." 3단계 "정체"에서 다룸.</div>
+<div class="side combat"><b>전투 세션 / 현황</b>임포스터(7g)는 3인 10%·4인 25%, 본인 머신에만 복제되어 새벽까지 모른다. 변장 몬스터(리썰 Masked)는 매복·변장형 6종 중 하나. 비교 문서는 CL9에 매복·변장형이 없다고만 적었다.</div>
+</div>
+<div class="foot">정할 것: 두 의심 장치(사람 임포스터, 동물 변장)를 같이 둘지. 같이 두면 "동료가 이상하다"가 두 가지 뜻이 되어 서로의 긴장을 가릴 수 있다. 어느 쪽도 이 점을 다루지 않았다.</div></div>
+
+<div class="conflict"><div class="head"><span class="tag bad">상충 16</span> "채우기" 단계의 범위 — 판정을 건드리는 것이 섞여 있다</div>
+<div class="body">
+<div class="side insta"><b>인스타 세션 2판</b>1단계 "채우기(규칙은 그대로)"에 소리·어두우면 못 봄(<code>SightDark</code>)·정전 예고·헛놀람. 5절에는 처음부터 정전된 판·차단기, 긴장 조절자(사건을 넣는 디렉터), 무전기 잡음·거리 끊김.</div>
+<div class="side combat"><b>전투 세션 / 현황</b>H는 "판정에 닿지 않는 로컬 표현 층, 새 RPC 없음"이 전제. <code>SightDark</code> 적용은 몬스터 판정 변경(호스트). 처음부터 정전은 정전 시각·전원 인트로 규칙 변경. 긴장 조절자는 호스트 디렉터 로직. 무전기는 핫라인 명세만 있음.</div>
+</div>
+<div class="foot">정할 것: "채우기"를 표현 층(애셋·소리)만으로 좁힐지, <code>SightDark</code>·정전 변주·디렉터까지 포함할지. 포함하면 1단계도 결정 11(미커밋 처리)과 판정 변경 승인이 필요하다.</div></div>
+
+<h3>겹침 — 같은 결론 (한쪽을 지우고 하나로 적어도 되는 것)</h3>
+<ul>
+<li>정전 때 <code>SightDark</code> 적용 (인스타 공통 변경 / 전투 공통 결함 ④).</li>
+<li>H 음원·셰이크 애셋 채우기가 가장 싸고 빠르다 (인스타 우선 1 / 전투 "들리지 않는다").</li>
+<li>닭 = 치는 연습 종, 수가 많고, 치는 비용(소음·무리)이 있어야 "보이는 대로 죽인다"가 정답이 안 된다 (인스타 짐승 층 / 전투 닭 카드 + 미커밋 C).</li>
+<li>너구리 = 브레켄식 스토킹 유지 (인스타 "그대로 두고" / 전투 "가장 가깝다, 수치 관계도 같다").</li>
+<li>처치 연출은 날아가지 않고 쓰러지거나 꺼진다 (인스타 ⑦ / 전투 "처치가 규칙을 우회하지 않게").</li>
+<li>종별 발소리 분리 (인스타 사운드 2 / 전투 돼지 텔 "무거운 발소리").</li>
+<li>리썰·리포·CW 실값을 텔·대응 설계에 쓴다 (양쪽 모두 <code>scare-mechanics.md</code>를 근거로).</li>
+<li>세 층 구조(짐승·몬스터·제외)와 양 제외는 양쪽 다 전제. 다만 전투 세션만 양 번복 후보를 적었다.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="tab" id="t9" data-title="9. 다음 할 일·미결">
+<h2>9. 다음 할 일 — 사용자가 정할 것과 각 세션에 남은 일</h2>
+
+<div class="box note"><h4>10-17 저녁 갱신</h4><p>아래 결정 목록 1~18은 12:59 기준이다. 그중 1(톤)·2(A)·3(E)·4(죽일 수 없는 종)·5(짐)·7의 배터리·12(손맛 D·B)·16(추천 조합 — 페이지 10절 3단계로)·17(변장 vs 임포스터 — 역할 분리)은 페이지 결정 ①~⑭로 답이 나왔다. <b>남은 것과 새로 생긴 것은 "0b. 결정 현황" 탭의 "아직 안 정해진 것" 16개가 정본이다.</b> 무엇보다 먼저 정할 것은 두 가지: 페이지 결정을 저장소 문서(decisions.md·plan/data/monster·아트 문서·출시 계획)에 옮길지, 그리고 전투 세션 미커밋 변경을 둘지 되돌릴지.</p></div>
+
+<h3>사용자 결정 목록 (12:59 기준, 기록용)</h3>
+<div class="wrap"><table>
+<tr><th style="width:4%">#</th><th>결정</th><th style="width:22%">어디서 나왔나</th><th style="width:22%">무엇이 풀리나</th></tr>
+<tr><td>1</td><td>톤 문장: "과장되되 귀엽게" 유지 / "귀여운 탈이 벗겨지는 공포" / "손도 못 쓰고 죽는 정서"</td><td>인스타 확인받을 것, 전투 사용자 원문</td><td>상충 1</td></tr>
+<tr><td>2</td><td>축 A(읽히는 위협): 전체 원칙으로 / 종별로 / 층별로</td><td>전투 보류, 인스타 ②</td><td>상충 2·6·11, 미결 3</td></tr>
+<tr><td>3</td><td>축 E(몬스터 이동·재등장): 상주 / 재배치 / 순환 / 층별</td><td>전투 보류, 인스타 ③</td><td>상충 2·6</td></tr>
+<tr><td>4</td><td>어느 종을 죽일 수 없게(또는 죽이면 더 나쁘게) 할지</td><td>비교 문서 미결 1</td><td>상충 3·8, 손맛 방안의 범위</td></tr>
+<tr><td>5</td><td>잡힘·죽음의 결과를 공통(B)으로 둘지 종별로 나눌지</td><td>비교 문서 미결 2, 인스타 ⑤</td><td>상충 7</td></tr>
+<tr><td>6</td><td>양을 협동 규칙으로 되살릴지, 아니면 협동 규칙을 너구리에</td><td>비교 문서 미결 4, 인스타 ⑥</td><td>상충 4</td></tr>
+<tr><td>7</td><td>손전등을 어느 종 규칙에 어떤 반응으로 넣을지 + 배터리 여부</td><td>비교 문서 미결 5, 인스타 아이템</td><td>상충 5</td></tr>
+<tr><td>8</td><td>거위의 역할: 놀람(짐 놓침·시선) / 경보꾼(처치 막기) / 둘 다</td><td>인스타 몬스터, 전투 거위 카드</td><td>상충 3, 거위 애니·소리</td></tr>
+<tr><td>9</td><td>광폭화를 공포의 중심으로 둘지, 닭의 늦추개 하나로 둘지</td><td>인스타 ①, 전투 닭 카드</td><td>상충 10, 애니 우선순위</td></tr>
+<tr><td>10</td><td>은신을 넣을지(숨어야 하는 공포를 무엇으로 만들지)</td><td>전투 사용자 원문, 인스타 맵</td><td>상충 9</td></tr>
+<tr><td>11</td><td>전투 세션 미커밋 변경(G·H·C·D·B·F): 전부 두기 / 축별 선택 / 되돌리기</td><td>전투 세션 질문(답 없음)</td><td>상충 12, 인스타 1단계의 전제</td></tr>
+<tr><td>12</td><td>손맛 방향 D(건조 / 슬랩스틱)와 방안 A·E 유지 여부</td><td>인스타 손맛 D</td><td>상충 8</td></tr>
+<tr><td>13</td><td>인스타 공포 제안을 <code>docs/plan/</code> 문서로 남길지, 문서 어긋남 6곳을 정리할지</td><td>인스타 확인받을 것</td><td>문서</td></tr>
+<tr><td>14</td><td>"텔"이라는 말을 쓸지, "예고"·"단서"로 바꿀지</td><td>전투 세션 마지막</td><td>비교 문서 용어</td></tr>
+<tr><td>15</td><td>공포 패턴 13가지 중 무엇을 쓸지, 새 종을 늘릴지 기존 5종에 얹을지</td><td>인스타 2판 4절, 세 층 구조(10-13)</td><td>상충 13·14, 애니·모델 범위</td></tr>
+<tr><td>16</td><td>인스타 추천 조합(쥐 → 어미 닭 → 천장 닭 → 헛놀람·긴장 조절자 → 정전 예고)을 2단계로 받을지</td><td>인스타 2판 5절</td><td>진행 순서</td></tr>
+<tr><td>17</td><td>변장 동물을 임포스터와 같이 둘지</td><td>인스타 2판 패턴 8</td><td>상충 15</td></tr>
+<tr><td>18</td><td>"채우기" 1단계에 <code>SightDark</code>·처음부터 정전·긴장 조절자(판정 변경)를 넣을지, 애셋만 할지</td><td>인스타 2판 5·7절, H의 "표현 층" 전제</td><td>상충 16</td></tr>
+</table></div>
+
+<h3>세션별로 남은 일</h3>
+<div class="two">
+<div class="box insta"><h4><span class="tag insta">인스타에서 조사</span></h4>
+<ul>
+<li>공포 기법별 게임을 아직 영상으로 보지 않았다. 추천 순서: 리썰 몬스터 공포 연출(보일 때/안 보일 때·소리·협동 공포) → Hello Neighbor/Granny(남의 집에서 훔치다 들킴) → Amnesia/Alien: Isolation(겁먹은 내 캐릭터 표현) → FNAF/Poppy Playtime(귀여운 것이 무서워질 때).</li>
+<li>타격감 쪽 추가 후보: Deep Rock Galactic(1인칭 협동 근접, 가장 가까운 구조), Party Animals(귀여운 대상을 때릴 때의 과장 상한), Dark Messiah(1인칭 날리기), ULTRAKILL(1인칭 히트스톱 상한), Super Mario Odyssey(3D 스쿼시), Hades/Hollow Knight.</li>
+<li>샷 목록 <code>hit_squash.json</code>과 메모리 3줄을 되돌릴지 답 대기.</li>
+<li>공포 방향 제안을 문서로 남길지 답 대기. 제안의 근거는 리썰·리포·CW 분석 문서이고 Amnesia 등은 확인하지 않았다고 스스로 적음.</li>
+<li>기획자용 페이지 "CL9 공포 방향"은 비공개. 기획자가 보려면 페이지의 공유 메뉴에서 공유해야 한다.</li>
+<li>(저녁) 사용자 결정 ①~⑭를 페이지에 반영했고, 저장소 결정 기록·기획 문서에는 "말씀하시면 옮기겠다". 남은 결정 ⑤-2·⑥·⑨-2·⑫ 답 대기. 양 설명을 답으로 돌려줬다.</li>
+<li>(저녁) 유튜브 조사는 표본(37회 검색·490편)이고 채널 전체를 본 것이 아니다. QUIET의 집주인 감지 방식은 플레이 영상으로 따로 확인해야 한다. Left 4 Dead PDF 본문은 못 읽었다.</li>
+</ul></div>
+<div class="box combat"><h4><span class="tag combat">전투조작감</span> (이 세션은 구현 금지)</h4>
+<ul>
+<li>미커밋 변경 처리 답 대기(되돌리기 / 두기).</li>
+<li>비교 문서 미결 5 답 대기. 답이 오면 종별 카드를 초안에서 결정으로 올리고 <code>decisions.md</code>·<code>plan/data/monster/*.md</code>에 기록.</li>
+<li>A·E 재질문은 카드 뒤에 종별로.</li>
+<li>"텔" 용어 답 대기.</li>
+<li>제안된 별도 세션: 로비 재조립 크래시(맵 램프 컴포넌트 이름 겹침) 수정.</li>
+<li>조작감 거슬림 목록은 사용자가 한 줄씩 말하면 번호 붙여 쌓는다(3번부터).</li>
+<li>(저녁) 페이지 상세판(5종 카드·행동 흐름·애니 목록·새 패턴·참고 비교)을 쓰고, MIMESIS 설치본을 분석해 <code>docs/reference/mimesis/</code> 3개 + 비교 문서 4.5절 + 색인에 넣었다(미커밋). "전투 분석에 보탤 6가지"를 사용자 "ㅇㅇ 일단 문서로"로 문서에 넣었다. 그중 결정이 필요한 것 하나: 공포 게이지에 작은 판정을 걸지.</li>
+<li>(저녁) 분석 서브에이전트가 "다른 작성자가 같은 파일을 덮어썼다"고 보고했으나 디스크의 세 문서는 완전해 그대로 둠.</li>
+</ul></div>
+</div>
+
+<h3>두 세션을 하나로 합칠 때 먼저 할 순서 (사실 관계만, 추천 아님)</h3>
+<ol>
+<li>결정 11(미커밋 처리)이 모든 표의 "지금 값"을 정한다. 이게 정해져야 비교 문서·인스타 제안의 전제가 고정된다.</li>
+<li>결정 1(톤)과 4(죽일 수 있는 종)가 손맛·거위·처치 연출·애니의 범위를 가른다.</li>
+<li>결정 2·3(A·E)은 전투 세션 말대로 종별 카드(결정 4~8) 뒤에 정하는 길과, 인스타 말대로 층별 원칙으로 먼저 정하는 길이 있다.</li>
+<li>어느 길이든 "우선 1 채우기"(H 음원·셰이크·YardCry·SightDark)는 결정과 무관하게 할 수 있다. 단 H가 미커밋이라 결정 11에 걸린다.</li>
+</ol>
+
+<h3>출처</h3>
+<ul class="small">
+<li>세션 기록: "인스타에서 조사"(local_cc42bb21-5e50-48e8-8a88-0b442c06fb64), "전투조작감"(local_f654221e-6ff9-43b6-b3ce-ec3d30e7f944). 내보내기 zip은 <code>C:\Users\Radar\Downloads\session-export-1792237399333.zip</code>, <code>session-export-1792237400604.zip</code>.</li>
+<li><code>C:\Work\CL9\docs\reference\monster-rules-comparison.md</code>, <code>C:\Work\CL9\docs\decisions.md</code> 2069~2108행, <code>C:\Work\CL9\docs\review\combat-handoff-2026-10-17.md</code>, <code>C:\Work\CL9\docs\review\control-friction.md</code>, <code>C:\Work\CL9\docs\goal\knockdown-drop.md</code>, <code>C:\Work\CL9\docs\goal\burnt-bait.md</code>, <code>C:\Work\CL9\docs\plan\data\rules.md</code> 겁먹는 표현 절, <code>C:\Work\CL9\docs\reference\combat-gap.md</code> §1, <code>C:\Work\CL9\docs\reference\game-feel-social.md</code>, <code>C:\Work\CL9\docs\reference\scare-mechanics.md</code> §3.</li>
+<li>인스타 세션이 서브에이전트로 돌린 "CL9 공포·긴장 요소 현황 조사"(읽기 전용, 문서·코드·에셋 문자열 스캔). 이 조사는 PIE로 체감을 확인하지 않았고 <code>.uasset</code>은 문자열 스캔만 했다.</li>
+<li>인스타 세션의 기획자용 페이지 "CL9 공포 방향" 2판(12:59): <a href="https://claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL">https://claude.ai/artifact/LBvhWBm4YBB3ydcqwW4NrL</a>, 원본 <code>C:\Users\Radar\AppData\Local\Temp\claude\C--Work-CL9\794406e8-33fc-43c3-9306-61dd24183c38\scratchpad\cl9-horror-direction.html</code>.</li>
+<li>영상: <a href="https://www.instagram.com/reel/DekF45WpB_w/">graphic.magazine 릴</a>, <a href="https://www.youtube.com/watch?v=HT7jwT9qpE8">리썰 거미</a>, <a href="https://www.youtube.com/watch?v=r32m5frT8KY">R.E.P.O. 오리</a>, <a href="https://www.youtube.com/watch?v=tycbMSjDDLg">사쿠라이 히트스톱 8</a>, <a href="https://www.youtube.com/watch?v=0xHE3ypX96U">사쿠라이 피격 애니</a>, <a href="https://www.youtube.com/watch?v=Zo5skIF7eRw">Chivalry 2 분석</a>.</li>
+</ul>
+</section>
+
+</main>
+<footer>이 문서는 두 세션의 말을 옮긴 것이고 결정을 담지 않는다. 숫자는 각 세션이 인용한 문서·코드·에셋 값이며 플레이로 재확인하지 않았다. <span class="kbd">탭 전환: 위 버튼 또는 URL 해시(#t0~#t9). 인쇄하면 모든 탭이 이어서 나온다.</span></footer>
+
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('section.tab'));
+  var bar=document.getElementById('tabbar');
+  tabs.forEach(function(s){
+    var b=document.createElement('button');
+    b.textContent=s.getAttribute('data-title');
+    b.setAttribute('data-target',s.id);
+    b.addEventListener('click',function(){show(s.id,true);});
+    bar.appendChild(b);
+  });
+  function show(id,push){
+    tabs.forEach(function(s){s.classList.toggle('active',s.id===id);});
+    [].forEach.call(bar.children,function(b){b.classList.toggle('active',b.getAttribute('data-target')===id);});
+    if(push){try{history.replaceState(null,'','#'+id);}catch(e){}}
+    window.scrollTo(0,0);
+  }
+  var h=(location.hash||'').replace('#','');
+  show(document.getElementById(h)?h:'t0',false);
+  window.addEventListener('hashchange',function(){var h=(location.hash||'').replace('#','');if(document.getElementById(h))show(h,false);});
+})();
+</script>
+</body>
+</html>

@@ -46,6 +46,7 @@ C++ 를 고칠 일이 없다. 스테이지마다 다른 것은 전부 행의 열
 |---|---|---|
 | 판 크기 | `BaseModuleCount` | 1층 모듈 수. 일자 곡선(1일 0.85 ~ 10일 1.25)이 곱해진다. 양계장 40 |
 | 층 | `MaxFloors` · `UpperFloorShare` · `StairCountMin/Max` | 위층은 아래층이 받쳐 주는 자리에만 선다 |
+| 하늘을 가리는 외부 지붕 | `bBuildRoofs` · `RoofClearanceCm` | 실내·마당 지상 발자국을 덮고 외곽 층간/벽 위 빈 띠만 막는다. 기존 천장·길·배치 해시 유지 |
 | 미로답게 / 트이게 | `LoopChance` (낮을수록 우회로가 적다) · `DeadEndShare` · `PassageShare` | 우회로가 적으면 처형형 몬스터가 무서워진다 |
 | 깊이 | `MainPathShare` | 본줄기 비율 — 높을수록 입구에서 바닥까지 멀다 |
 | 어둠 | `LampDensity` · 조명 3페이즈 | 켜지는 등의 비율. 조명 페이즈는 `inherit_from` 행에서 물려받는다 |
@@ -57,6 +58,13 @@ C++ 를 고칠 일이 없다. 스테이지마다 다른 것은 전부 행의 열
 
 **밤 길이 어림** — 양계장(본줄기 16모듈 · 245초)과 대농장(60모듈 · 480초)을 잇는 직선: `밤 ≈ 160 + 5.3 × 본줄기 모듈 수`,
 본줄기 모듈 수 = `BaseModuleCount × MainPathShare`. 돼지 농장은 100 × 0.45 = 45 → 400초. 출발값일 뿐이고 플레이로 맞춘다.
+
+정식 farm/pigfarm 명세는 `build_roofs: true`, `roof_clearance_cm: 2.0`을 명시한다.
+`setup_stage.py`는 두 열을 `inherit_from`에서 물려받되 명세 columns 값이 우선한다.
+henhouse 실제 행에도 같은 값을 설정하고, flat에는 적용하지 않는다. 먼저 `SegKindTable`의
+`roof`/`roofFascia`와 henhouse 테마 Piece 두 행·정식 모델을 준비해야 한다. 켰는데 종류/조각이
+없거나 로드되지 않으면 맵 빌드 로그에 누락을 보고한다. 기존 NavBounds·층고·천장 두께를
+변경할 필요는 없다.
 
 ### 3. 구역 짜기
 
@@ -100,6 +108,7 @@ C++ 를 고칠 일이 없다. 스테이지마다 다른 것은 전부 행의 열
 - `columns` 의 이름은 파이썬 이름이다 — C++ 열을 snake_case 로, bool 은 앞의 `b` 를 뗀다(`bBuildCeilings` → `build_ceilings`).
 - 명세에 안 적은 열은 `inherit_from` 행에서 물려받는다(생성기·테마·조명·층·비율·밤 시계 — 목록은 스크립트의 `INHERIT`).
 - `source_level` 은 레벨이 없을 때만 복제한다. 트럭 패드·푸드트럭·주방·카운터·조명·시작 손전등이 따라온다.
+  **(2026-10-09 정정 — "주방·카운터"는 따라오지 않는다. 조리대(`BP_CL9Kitchen`)·창구(`BP_CL9Counter`)·트럭 패널·수레는 `Lvl_Flat` 에만 있고 `Lvl_Henhouse`·`Lvl_Farm`·`Lvl_PigFarm` 에는 없다(umap 문자열 조회로 확인). 나머지 항목은 이 정정이 따로 확인하지 않았다. 스테이지에 조리대를 놓는 일은 다음이다 — 배치는 나중(사용자 2026-10-09), [../goal/kitchen-identity.md](../goal/kitchen-identity.md).)**
 - **바깥 모습(어두운 저녁 하늘·흙바닥, 로비 조명)은 명세에 안 적어도 자동으로 입는다** — 모든 스테이지 공통이다([light.md](light.md) "바깥 모습").
 
 ### 6. 돌리기 (에디터를 닫은 상태 — 헤드리스)
@@ -116,6 +125,13 @@ UnrealEditor-Cmd.exe CL9.uproject -run=pythonscript ^
 - 인자 없이(또는 `inspect`) 돌리면 바꾸지 않고 상태만 찍는다. 로그는 `[stage <alias>]` 로 찾는다(커맨드릿은 경고 이상만 찍혀서 경고로 남긴다).
 - `apply` 가 하는 일: 레벨 복제(없을 때) → 행 쓰기·`MapTable` 저장 → 레벨의 바닥 판·`NavBounds` 를 10일차 판까지 덮게 늘림 →
   **레벨에 저장된 RecastNavMesh 삭제** → 바깥 모습(하늘 구·바닥 재질) → 레벨 저장. 다시 돌려도 같은 결과다(명세가 정본).
+- 정식 스테이지의 큰 외부지면은 `/Game/Maps/Outdoor/SM_CL9_ExteriorGround_100_A`와 `M_CL9_GroundDark`를 쓴다.
+  엔진 `SM_Template_Map_Floor`를 남기지 않는다. `outdoor_look.replace_template_ground(actor, anchor.z, apply=True)`가 기존 월드 XY 바운드·두께와
+  같은 컴포넌트의 충돌 설정을 유지하며 정식 메시로 교체한다. 원점 차이는 새 메시 바운드 중심으로 보정한다. 현재 레벨의 회전 0을 검증하고,
+  다른 회전이면 추측해서 적용하지 않고 실패한다. 정식 메시/재질이 없으면 중단하며 엔진 메시로 대체하지 않는다.
+- 정식 지면 상단은 트럭 패드 앵커 Z보다 최소 2cm 아래로 둔다. 이미 낮은 바닥(양계장 지하 피트용 -500cm)은 올리지 않고 반복 호출해도 더 내려가지 않는다.
+  라벨은 `Floor*`에서 `ExteriorGround*`로 정리하며 공통 스테이지/바깥 모습 파이프라인이 같은 정식 메시를 찾아 처리한다.
+  `apply=False`는 교체/위치/스케일 예정값만 돌려주고 액터·메시·재질을 변경하지 않는다. 테스트 `Lvl_Flat`, 생성 타일·천장·NavBounds·임의 바닥 소품은 지면 교체 대상이 아니다.
 - 에디터가 켜져 있으면 콘솔에서 `py "…/setup_stage.py" "…/stages/<alias>.json" apply` 도 된다(같은 스크립트).
 
 **내비메시를 지우는 이유** — 복제해 온 레벨의 저장된 내비 데이터는 원본 경계 기준 타일 용량을 들고 있어서, 런타임에 새 경계의
@@ -154,3 +170,4 @@ UnrealEditor-Cmd.exe CL9.uproject -run=pythonscript ^
 | 판이 목표보다 작게 선다 | 격자가 비좁아 자리를 못 찾는다 | 생성기의 채움 단계가 남은 예산을 메운다(2026-10-03). 그래도 작으면 `CL9.Map.LargeSite` 테스트를 그 손잡이로 돌려 본다 |
 | 1일차에 꼭 나와야 할 종이 0 마리 | 일자 배율 0.6 에 반올림 | 최소를 2 이상으로 |
 | `wallStub … stretched -50%` 경고 | 조각 팩 문제(모든 스테이지 공통, 기존) | 무시 — [asset-swap.md](asset-swap.md) |
+| 돼지 농장 바닥이 움직일 때 깜박인다 | 레벨 템플릿 Floor와 생성 floor/yard 타일의 상단이 Z=0에 겹친다 | 큰 템플릿 바닥을 정식 외부지면으로 교체하고 상단을 타일보다 2cm 아래로 둔다. 공통 파이프라인이 같은 교체/보정을 멱등 적용한다 |

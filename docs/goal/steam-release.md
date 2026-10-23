@@ -451,6 +451,20 @@ W3 → W4 → W5 are sequential. W4 needs W0's AppID.
 - Steam achievements, leaderboards, cloud saves, Workshop, Steam Input remap UI,
   voice chat, rich presence (needs a Steamworks localization upload on the own
   AppID — TODOS).
+  - **Correction 2026-10-11 (voice chat only):** voice chat stays out of *this* goal, but it
+    is no longer unowned — [voice-chat.md](voice-chat.md) implements it over a Null-OSS LAN
+    session (engine VOIP path; Steam voice is the same code, voice-chat E1). When the Steam
+    session layer (W1/W2) lands, only the bodies of the `UCL9GameInstance` session functions
+    and `DefaultPlatformService` change — [../systems/voice.md](../systems/voice.md)
+    "Steam 전환 터치포인트" lists them. Nothing else in this spec changed.
+  - **Correction 2026-10-12 (session layer and voice transport):** [voice-eos-redpoint.md](voice-eos-redpoint.md)
+    moves the session to an EOS lobby through Redpoint EOS Online Framework (Free Edition), and voice to EOS Voice
+    (EOS RTC) on that lobby's managed channel — the engine VOIP path and the Null-OSS LAN session named above are
+    gone. The session is therefore no longer something W1/W2 builds: the **session items of W1/W2 narrow to
+    "Steam authentication → EOS Connect, and registering the AppID"** (Redpoint's Steam identity provider needs the
+    game's own AppID; 480 is not accepted by EOS). The sentence above that only the bodies of the session functions
+    change is superseded by this; the function names and signatures stay.
+    [../systems/voice.md](../systems/voice.md) "Steam 전환" lists what remains. The body of this spec below is not edited.
 - The Coming Soon store page and its assets (separate item after ⑤ art; not a
   prerequisite for W1–W4).
 - The save slot in the roster (the save system is being built in the

@@ -47,7 +47,7 @@ R.E.P.O.의 한 판(런)은 "트럭 로비 → 레벨 → 추출 완료 → 상�
 
 읽은 그대로의 분기 순서는 이렇다.
 
-1. 현재가 메인 메뉴 또는 로비 메뉴면 → `levelLobby`(트럭)로 간다.
+1. 현재가 메인 메뉴 또는 로비 메뉴면 → `levelLobby`(트럭)로 간다. (2026-10-05 정정 — 이것은 `ChangeLevelType.Normal`일 때의 분기이고, 새 판의 첫 레벨 앞에는 걸어 다니는 트럭 로비가 없다. 로비 메뉴의 Start 버튼과 싱글 New Game/Load는 세이브에 저장된 `saveLevel`(새 세이브는 0)에 따라 0이면 곧바로 첫 원정 레벨, 1이면 상점, 2이면 이 트럭 로비로 간다. 아래 흐름도의 "메인 메뉴/로비 메뉴 → 트럭"은 상점 다음에 저장한 세이브를 불러왔을 때의 분기다 — [repo-frontend.md](repo-frontend.md) 0.1절.)
 2. 현재가 원정 레벨이고 `_completedLevel`이 참이면 → `previousRunLevel`을 기억하고
    `levelsCompleted++` 한 뒤 `levelShop`에서 무작위로 하나 골라 간다.
 3. 현재가 트럭 로비면 → `SetRunLevel()`로 다음 원정 레벨을 고른다.
@@ -327,7 +327,7 @@ if (IsMasterClientOrSingleplayer() && (!_leaveGame || levelPrevious == levelLobb
 
 즉 씬이 바뀔 때마다, 호스트만, 게임 오버가 아닐 때만 저장한다. 이어서 `DataDirector.SaveDeleteCheck()`가
 호출되어 아레나로 갔거나(=런이 끝났거나) 전멸했거나 레벨 0에서 나갔으면
-`SemiFunc.SaveFileDelete(saveFileCurrent)`로 세이브를 **지운다**. 런이 끝나면 세이브가 남지 않는
+`SemiFunc.SaveFileDelete(saveFileCurrent)`로 세이브를 **지운다**. (2026-10-05 정정 — 지워지는 시점은 아레나가 끝날 때가 아니라 전멸해서 아레나로 넘어가는 순간이다. `ChangeLevel`이 `levelCurrent`를 아레나로 바꾼 직후 `OnSceneSwitch`가 불리고, 그 안의 `SaveDeleteCheck`가 `RunIsArena()`를 현재 레벨 기준으로 평가해 참이 되기 때문이다. 같은 호출 안에서 `SaveFileSave`가 먼저 실행되지만 곧바로 폴더가 삭제된다 — [repo-frontend.md](repo-frontend.md) 0.1절.) 런이 끝나면 세이브가 남지 않는
 로그라이크식 처리다. 애플리케이션 종료 시에도 `RunManager.OnApplicationQuit()`이 같은 검사를 한다.
 
 `DataDirector.Setting`에는 게임플레이 설정 외에 `RunsPlayed`(누적 판 수)와

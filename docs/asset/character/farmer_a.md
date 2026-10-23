@@ -1,5 +1,19 @@
 # 농부 A — 작업복 풀바디와 1인칭 팔
 
+> 2026-10-22 사용자 정정: 채택된 외형은 [계란형 요리사](farmer_a-model-brief.md)다. 아래 옛 농부 crouch_v01 제작은 대상 선택 오류이며 현재 플레이어용 완성본이 아니다. 새 계란 모션의 상태는 연결된 외형 정본에서 관리한다.
+
+
+## 2026-10-22 플레이어 앉기 모션 — 7종 제작·UE 임포트 완료
+
+- 범위: 기존 플레이어 농부/Manny 공용 리그. 앉기 시작·앉은 대기·전진·후진·좌우 이동·일어서기 7클립. 동물과 둥근 요리사 시험 행은 제외한다.
+- 납품: `ArtSource/character/farmer_a/crouch_v01/`의 `index.html`, `delivery.json`; `farmer/`의 `farmer_crouch_v01.blend`, `manifest.json`, `export/AN_Farmer_Crouch*.fbx`, `preview/`의 정면·측면 14개 1배속 MP4와 이어보기. 기본 입력 원본 SHA256 동일, 원본 모델/리그/데이터를 보존했다.
+- 수치 검수: 244프레임의 전체 88개 저작 관절 FBX 재열기, 루프, 고정 관절 길이, 발 접지, 방향별 기준 속도. 옆걸음 보폭을 줄여 교차를 보정했고 전후 보행의 약2mm 밑창 관통을 수정했다. 수정한 4클립만 렌더를 교체했다. `fbx_qa.json`, `motion_review_qa.json` 참조.
+- 엔진: 기존 `/Game/Characters/Mannequins/Meshes/SK_Mannequin`에 Interchange로 7개 임포트. `/Game/Characters/FarmerA/CrouchV01/Build_<source hash>/`에 버전 분리·저장했고 244프레임의 압축 포즈를 비교했다. `engine_import.json` 참조. 기존 AnimBP/CharacterTable는 변경하지 않았다.
+- 영상: 정면·측면 정상 속도 전체 프레임 렌더, 원본 보존, 실제 제작 방식/버전/1배속 표기. 14개 전체 디코딩과 전체 프레임 순서 시트를 확인했다. 시트 검수를 연속 재생 시청으로 표기하지 않는다. `video_qa.json` 참조. 리소스 갤러리에 검토 페이지와 클립들을 연결했다.
+- **게임 조작은 미연결:** 현재 게임에는 앉기 입력·캡슐 높이·카메라·이동 속도·AnimBP 분기가 없다. 이번 납품은 모션 제작과 엔진 임포트 범위이며 실제 앉기 조작/2인 게임플레이를 완료했다고 하지 않는다. 실행 중인 PIE를 중단하지 않았고 본인 에디터 임대는 해제했다.
+- 재개: `Tools/Blender/animate_player_crouch_v01.py`의 `--only <clip>`로 해당 동작만 저작, `render_player_crouch_v01.py -- <clip>`로 검증된 동작만 재렌더한다. 임포트/검수/영상/패키징 도구는 같은 `player_crouch_v01` 이름으로 Tools/Blender, Tools/Unreal, Tools/Assets에 있다. 최종 렌더 로그 `Saved/PlayerCrouch/corrected_render.log`. 실행 중 작업 없음.
+
+
 상태: 게임 연결 검수됨 — 2026-09-11 `CharacterTable.farmer_a` `SkeletalMesh`/`ArmsMesh` → `SK_Farmer_A_Body`/`_Arms`; 클립 전신 12·1인칭 12 + `ABP_FP_View`(09-14) 임포트, 032 PIE(넘어짐·던지기 수치); 09-21 처형당함 전신 2클립 제작(034 절 — UE 임포트·ABP 는 리드 대기). 4슬롯 `TintColor`·2인·LOD 미검수 · 작성일: 2026-09-11 · 변경일: 2026-09-21
 
 현재 행 farmer_a의 Manny/SK_Mannequin·ABP_Unarmed 계약을 유지한다. 1인칭 팔 ABP 는 `Content/Characters/FarmerA/Anims/ABP_FP_View`
@@ -257,3 +271,24 @@ UE 임포트는 `Tools/Unreal/import_farmer_hold.py`(레거시 FBX, SK_Mannequin
 - **v2 blend**: `SK_Farmer_A_Body` 가 v2 메시이고, 실물 메시는 `REF_Original_SK_Farmer_A_Body` 로 숨겨 보관했다. `SK_Farmer_A_Arms` 는 형태는 그대로 두고 색만 바꿨다.
   리그는 레스트 포즈다.
 - 다음(2단계, 승인 후): 선택한 옵션 확정, FBX 수출(모프 타깃 포함), UE 재임포트, 틴트 기본값·4슬롯 `TintColor` 적용 확인, 피격 눈 연결.
+
+## 무기 대기 클립 `AN_Farmer_FPHoldWeapon` (2026-10-20, 플레이테스트 3번)
+
+사용자 "손에 든 고기를 봐서는 이것으로 때릴 수 있다는 느낌이 전혀 오지 않는다"([../../review/playtest-2026-10-20.md](../../review/playtest-2026-10-20.md) 3번,
+[../../decisions.md](../../decisions.md) "무기 대기 자세"). 휘두를 수 있는 물건(고기 세 상태·프라이팬, HoldPose `Weapon`)의 1인칭 대기 루프다.
+
+- **자세**(`Tools/Blender/farmer_hold_spec.json` `Weapon.fp` — 1인칭 전용, 전신 짝은 없다): 손목 [−0.24, −0.40, 1.49]m(눈 앞 40cm·아래 7cm·오른쪽 24cm),
+  팔꿈치 극 [−0.8, 0.2, −1.0](바깥·아래), 손가락 [0.3, −0.9, 0.3], 손바닥 [0.8, 0.45, −0.4](안쪽·조금 뒤), 꽉 쥔 주먹(curl 1.4·엄지 0.8).
+  실측: 팔꿈치 103°, 손목 꺾임 23°, 손목 uv (0.93, 0.72)·너클 (0.80, 0.63) — 주먹이 화면 오른쪽 가운데 아래에 올라와 있고 아래팔이 우하단 구석에서
+  들어온다. 너클 축(엄지 쪽)이 위·안쪽을 향해 쥔 물건이 몽둥이처럼 선다. 공격 대기(`FPSwingWindup`, 손목 [−0.17, −0.33, 1.55])보다 낮고 덜 젖힌
+  편한 자세라 뗀 순간 휘두르기로 이어지는 거리가 짧고, 화면 가운데는 비어 있다.
+- 2.0초 30fps 61프레임 루프, 숨쉬기 손목 z ±0.5cm(`farmer_pose.breathe`) — `FPHoldSmall` 과 같은 규약. 제작 `animate_farmer_hold.py -- --export --fp-only --only Weapon`
+  (스펙에 tp 가 없는 범주는 전신을 건너뛰게 고쳤다). `verify_farmer_clip_fbx.py`: fps 30·2.0초·sha 일치·75뼈·루프 이음새 0cm.
+  `export/AN_Farmer_FPHoldWeapon.fbx` sha256 `715a0fea…`, manifest `animations` 항목 + `hold_spec.Weapon`.
+- 미리보기 `preview/hold_Weapon_fp_fp.png`(팔만, 게임 카메라)·`hold_Weapon_fp_front.png`·`hold_Weapon_fp_hand.png`, 물건을 꽂은 모습
+  `preview/hold_Weapon_meat_fp.png`(고기, HeldScale 0.4 가정 — 표 값은 0.3)·`hold_Weapon_pan_fp.png`(팬, 0.5 가정 — 표 값은 0.35) — 스크래치 탐색 스크립트로 그립 해와 같은 규칙
+  (너클 축에서 손가락 쪽 10°, 손목→너클 0.7 지점, 면은 정면)으로 메시를 손에 붙여 그렸다.
+- **그립**: `measure_item_grip.py` 에 `club` 해를 더했다(`--club-tilt` 10°·`--club-grip-t` 0.7, 아이템 Z 는 정면). 고기 (0.7, 10.5, 25.8)cm·(−73.6, −78.9, 176.3)°,
+  프라이팬 (1.0, 8.2, 26.4)cm·(73.6, 101.1, −176.3)°. 소켓 보정 검산(028 손전등) 3.4°.
+- 이 작업에서 `farmer_pose.py`·`verify_farmer_clip_fbx.py`·`measure_item_grip.py` 의 고정 경로 `D:/Work/unreal/CL9` 를 저장소 기준 경로로 바꿨다
+  (저장소가 `C:\Work\CL9` 로 옮겨 와 그대로는 돌지 않았다).

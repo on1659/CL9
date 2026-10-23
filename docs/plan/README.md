@@ -5,12 +5,15 @@
 | 층 | 문서 | 언제 읽나 |
 |---|---|---|
 | 전체 구조 | [overview.md](overview.md) | 이 게임이 뭔지 처음 볼 때 |
+| 전체 구조 | [scenario.md](scenario.md) | 처음 켠 셋이 양계장에서 세 판을 돌고 회사에 가는 **첫 세션 시나리오** — 장면마다 지금 되는 것·없는 것(M 번호) |
+| 전체 구조 | [roadmap.md](roadmap.md) | **큰 그림** — 단계 1~4, 몬스터 설계 틀·열 가지 동사, 전투·아이템·요리, 만들 것 M1~M33, 가정과 미결 |
 | 전체 구조 | [story.md](story.md) | 세계관·스토리 — 동물이 왜 괴물인지, 새 몬스터를 어떤 틀로 만드나 |
 | 전체 기획 | [loop.md](loop.md) | 게임 루프가 어떻게 도는지 알아야 할 때 |
 | 전체 기획 | [economy.md](economy.md) | 돈·가격·난이도 곡선·지켜야 할 부등식 |
 | 작업 순서 | [build-order.md](build-order.md) | **뭘 만들지 착수하기 전에 반드시** |
 | 전체 기획 | [settings.md](settings.md) | 플레이어 옵션 — 무엇을 열고 무엇을 열지 않는가, 기능마다 옵션을 넣을지 판단할 때 |
 | 전체 기획 | [wave.md](wave.md) | 파동 — 소리를 낸 자리에 링이 퍼져 몬스터가 듣는 반경을 보여 준다 |
+| 전체 기획 | [voice.md](voice.md) | 음성 채팅(마이크) — 근접 음성, 무전기 핫라인(연결 중엔 받는 사람 자리에서만 난다), 죽은 사람 규칙, 옵션 넷, 남은 일. 전송은 EOS Voice(Redpoint, 2026-10-12) |
 | 세부 기획 | [data/](data/) | 표에 행을 추가하거나 컬럼을 만질 때 |
 
 ---
@@ -22,6 +25,7 @@
 | 이 게임이 무슨 게임인가 | [overview.md](overview.md) |
 | 하루가 어떻게 흘러가나 (주문 → 원정 → 요리 → 납품) | [loop.md](loop.md) |
 | 지금 뭘 만들고 있나, 다음이 뭔가 | [build-order.md](build-order.md) |
+| **첫 세션이 어떻게 흘러가야 하나 / 그래서 뭘 만들어야 하나** | [scenario.md](scenario.md) → [roadmap.md](roadmap.md) |
 | **가격이 어떻게 계산되나 / 무엇으로 사나** | [economy.md](economy.md) |
 | 새 아이템을 넣고 싶다 | [data/item/common.md](data/item/common.md) (개별 문서는 item/ 폴더) |
 | 새 몬스터를 넣고 싶다 | [data/monster/common.md](data/monster/common.md) (개별 문서는 monster/ 폴더) |
@@ -32,6 +36,7 @@
 | 걷기 속도·스태미나·밤 길이를 바꾸고 싶다 | [data/rules.md](data/rules.md) |
 | **파동(소음 반경 시각화)을 만지고 싶다** | [wave.md](wave.md) (값은 [data/wave.md](data/wave.md)) |
 | **이 기능을 옵션으로 열어도 되나** | [settings.md](settings.md) 체크리스트 |
+| **음성 채팅(누가 듣나·핫라인·마이크 옵션)을 만지고 싶다** | [voice.md](voice.md) (구현 — EOS Voice/Redpoint 전송과 블루프린트 브리지 — 은 [../systems/voice.md](../systems/voice.md), 값은 [data/rules.md](data/rules.md) "말소리") |
 | 플레이어 외형을 추가하고 싶다 | [data/character.md](data/character.md) |
 | 벽·상자 같은 맵 조각을 만지고 싶다 | [data/segkind.md](data/segkind.md) |
 | **방(모듈)을 추가하거나 소품 세트를 만지고 싶다** | [data/module.md](data/module.md) |

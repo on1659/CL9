@@ -1,5 +1,15 @@
 # 맵 생성 시스템
 
+> ## 2026-10-15: 양계장은 **Flow 생성기(리썰 방식)** 로 짓는다
+> 사용자 — "맵이 만들어지는데 그냥 크게만 만들어지는 거지 뭔가 제대로 만들어졌다라고 생각되지 않아", "계단도 지멋대로고".
+> `ECL9Generator::Flow`: 본줄기 길이가 판 크기를 정하고(`MainPathMin/Max` × `SiteSizeCurve`), 본줄기 모듈의 남는 문 자리마다
+> 곁가지가 붙어 **방으로만 끝난다**(통째로 짓고 못 맺으면 되돌린다). 큰 방은 한 판 한 번, 미로 구간에 사거리가 몰리고,
+> 계단은 본줄기 깊이 0.1~0.8 칸의 옆방으로 1~2개, 납품 방·부엌은 깊이 창으로 끼운다. 고리는 다 지은 뒤 마주 보는 문 자리끼리만,
+> 마지막에 `Hops` 를 입구에서 걷는 문 거리로 다시 잰다. 모든 판은 실내다. 대농장·돼지 농장은 아래 `Henhouse` 생성기 그대로다.
+> **정본: [../goal/lethal-layout.md](../goal/lethal-layout.md)** · 열: [../plan/data/module.md](../plan/data/module.md) "Flow 생성기" ·
+> [../plan/data/site.md](../plan/data/site.md). 코드: `CL9SiteLayout.cpp` 의 `GenerateFlow`/`TryFlow`, 테스트 `CL9.Map.Flow.*`.
+> 아래 본문은 `Henhouse` 생성기의 설명이다.
+
 > ## 2026-09-08: 격자 미로를 버리고 **모듈 조립**으로 갈아엎었다
 > 사용자 확인 — "미로 형식이라는 게 진짜 미로를 만들라는 게 아니라, **미로처럼 매번 맵이
 > 달라지는 걸** 만들어 달란 거야. 가구도 배치하고." CCL8에서 넘어온 통로·케이지 열·플러그
@@ -131,7 +141,7 @@ OnRep에서 각 머신이 `ACL9SiteMap::Rebuild(…, Seed, CurrentDay)`. 시드�
 **스폰은 `LevelPoint`를 고른다** (module.md 결정 4). 배치된 칸마다 지점 하나가 나오고, 그 용도는
 모듈 표의 `PointPurposes` 컬럼이 정한다 — 그래서 "항아리는 납품 방에만" 같은 규칙이 C++에 별칭으로
 박히지 않는다. `PointsOfPurpose()`가 **시작 모듈에서 먼 것부터** 정렬해 돌려주므로, 몬스터는 그
-목록의 앞쪽 60%에서, 재료는 전체에서 고른다. 항아리는 Jar 용도가 켜진 모듈마다 하나다.
+목록의 앞쪽 60%에서, 재료는 전체에서 고른다. 항아리(`ACL9Jar`, `Source/CL9/Items/CL9Jar.h`)는 Jar 용도가 켜진 모듈마다 하나다.
 사이트에 **깊이 구역**(`Zones`)이 있으면 구역마다 `PointsInDepthBand()`로 자기 띠의 지점만 골라 놓는다
 (2026-10-03 — [../plan/data/site.md](../plan/data/site.md) 구역).
 **마당 무스폰 (2026-10-12, 7b — [../goal/loop-7b-yard-no-spawn.md](../goal/loop-7b-yard-no-spawn.md))**: 실외 모듈은 `yard_gate`(0x0)·`yard_open`(**0x8 = Patrol 만**,
@@ -145,6 +155,10 @@ OnRep에서 각 머신이 `ACL9SiteMap::Rebuild(…, Seed, CurrentDay)`. 시드�
 월드 변환으로 돌려주고, 호스트(`ACL9GameMode::SpawnNightPopulation`)가 맵마다 **재료·몬스터보다 먼저** 세운다(그 둘은 겹치면 비켜 서는 스폰이라 조리대 속에 박히지 않는다).
 세운 것은 `NightSpawned` 에 들어가 밤 개체와 같이 치워진다. 로그 `Night N: K fixture(s) placed — <클래스> in module <i> (<별칭>) at <위치> yaw <요>`.
 지금 쓰는 곳은 `kitchen` 모듈의 두 세트뿐이다(작업대를 빼고 `BP_CL9Kitchen` — 세트 0 (250, 94) 요 90·남쪽 벽, 세트 1 (750, 1406) 요 −90·북쪽 벽).
+**2026-10-22 수납 가구·숨는 통**([../goal/map-hidden-loot.md](C:\Work\CL9\docs\goal\map-hidden-loot.md)): 방마다 벽에 붙인 고정물로 선다. 고정물의 `Side`·`SideRule`
+(`SideClosed`)이 소품의 변 규칙과 같은 함수(`SideRuleAllows`)를 써서, 그 벽 칸이 문이 된 판에서는 `GetFixtureSpawns` 가 그 고정물을 빼고 돌려준다
+(인트로 카메라도 같은 목록을 본다). 재료를 바닥과 가구로 나누는 것은 호스트 스폰(`SpawnNightPopulation`)이 고정물로 선 수납 가구를 모아 한다.
+**큰 홀** `feed_hall`(4×4)은 Flow 본줄기 주입 행이다 — `bInjectOnMain` 이 보통 방에도 켜진다([../plan/data/module.md](C:\Work\CL9\docs\plan\data\module.md) 20번 행).
 **인트로 카메라**는 목적지 모듈에 항아리가 없고 고정물이 있으면 그 고정물(원점 위 130 cm)을 본다 — 같은 계산이라 조리대 액터가 아직 복제되지 않은 클라도 같은 곳을 본다
 (로그 `look-at … (fixture)`, `ACL9PlayerController` 인트로 경로).
 
@@ -154,12 +168,13 @@ OnRep에서 각 머신이 `ACL9SiteMap::Rebuild(…, Seed, CurrentDay)`. 시드�
 ### 지운 것
 
 `FCL9HenhouseParams` · `FCL9SiteFrame`(고정 프레임 전부) · `FCL9FloorLayout`(OpenH/OpenV) ·
-Kruskal `CarveFloor` · 케이지 열 · 플러그 · 층 낙차와 경사로 · `CellToWorld` · `CeilingBase` ·
+Kruskal `CarveFloor` · 케이지 열 · 플러그 · 층 낙차와 경사로 · `CeilingBase` ·
 `UCL9SiteDef`의 격자 컬럼 열세 개 · `UCL9SegKindDef::BaseZMode`(층이 없어져 고아가 됐다).
+(2026-10-16 정정: 옛 목록에 있던 `CellToWorld` 는 지우지 않았다 — `ACL9SiteMap::CellToWorld(FIntPoint, float)` 가 전원 스위치 스폰과 인트로 카메라에 쓰인다.)
 
 ### 실제로 서는 것을 확인했다 (2026-09-08)
 
-`ModuleTable`에 양계장 16종 행을 넣고 `CL9DefList`에 등록했다. `Lvl_Henhouse`에서
+`ModuleTable`(표 에셋은 `UCL9DefTable`, [../data/schema.md](../data/schema.md))에 양계장 16종 행을 넣고 `CL9DefList`에 등록했다. `Lvl_Henhouse`에서
 `cl9.seed`로 실측한 값이다.
 
 | 명령 | 결과 |
@@ -208,18 +223,65 @@ PIE 실측(`Tools/Unreal/qa_farm_stage_pie.py`, 결과 `Saved/QA/stage_pie_Lvl_F
 · 아이템 ~75 · 에디터 PIE 평균 프레임 10 ms.
 
 **`Lvl_Henhouse`의 내비 경계는 판보다 훨씬 작다**(x −1700~11000 · y −2100~2500). 같은 QA로 대조하면 몬스터 5마리 중 1마리만 내비 위에 있고
-아무도 움직이지 않았다 — 고칠지는 미결.
+아무도 움직이지 않았다. **2026-10-15 해결**: `ACL9SiteMap::Build` 끝에서 `FitNavBoundsToMap` 이 레벨의 `NavMeshBoundsVolume` 을 지은 맵(+3 m)이
+들어가게 늘리고 `OnNavigationBoundsUpdated` 로 알린다 — 줄이지는 않는다(마당·트럭 자리는 레벨이 정한 범위). 내비가 런타임 Dynamic 이라 엔진이 타일 용량을
+다시 잡아 새로 짓는다(로그 `Site map: nav bounds grown to the built map`). 게임 월드에서만 하고 에디터 월드는 건드리지 않는다. 확인: 양계장 PIE 에서 봇이 스위치 → 부엌 → 계란까지 걸어간다(`Saved/Video/map_wave_20261015g.mp4`).
+
+### 전원 인트로 — 스위치 칸·트럭·칸 길 (2026-10-06)
+
+판이 열리면 건물이 캄캄하고 첫 실내 방의 전원 스위치를 켜면 각자의 카메라가 랜드마크로 날아간다 — 명세
+[../goal/round-start-truck-intro.md](../goal/round-start-truck-intro.md) K3·K8~K10. 조명 쪽은 [light.md](light.md) "전원 단계".
+맵이 맡는 것은 **어디에**(스위치 칸·후보·길)와 **트럭의 안**이다. 단계·잠금·카메라 구동은 게임플레이 몫이다.
+
+**레이아웃 헬퍼** (`CL9SiteLayout`, 순수·엔진 무관 — 모든 머신이 같은 레이아웃에서 같은 답):
+
+| 함수 | 규칙 |
+|---|---|
+| `IsStairModule` | 디딤판이 실제로 선 계단(`bStairUp`). 위층을 못 틔워 되돌려진 계단실은 보통 방이다 |
+| `FindSwitchCell` | 모듈 = 1층·실내(`!bOutdoor`)·계단 아닌 모듈 중 `Hops` 최소(같으면 낮은 인덱스). 칸 = 그 모듈의 칸 중 더 얕은 모듈의 칸과 벽 아닌 변(문)으로 닿은 첫 칸(행 우선), 없으면 첫 칸. "Hops == 1" 은 마당(`yard_open`)이 1홉에 앉으면 비어서 안 쓴다 |
+| `FindCellPath` | 1층 칸 BFS. Open·Door 변은 지나고 Wall·Flap 은 막힌다. 계단 모듈 칸은 끝점일 때만. 목표 모듈의 칸에 처음 닿는 순간 멈춘다. 이웃은 N·E·S·W 순 |
+| `IntroCandidates` | 1층 `Special` 모듈 전부(별칭이 아니라 타입) + 비상구 모듈이 1층이고 닿으면 그것, 아니면 닿는 1층·계단 아닌 모듈 중 `Hops` 최대. **스위치 칸에서 `FindCellPath`로 닿는 모듈만** 든다(리드 결정 2026-10-06 — 계단실 너머의 막다른 방엔 카메라가 못 간다). 중복 없이, 스위치 모듈 빼고, 인덱스 순 — 섞기는 호스트 |
+| `FindExitModule` | 모든 층의 변을 훑어 `Flap` 변의 안쪽 모듈 |
+
+- **스위치 칸의 지점은 생성기가 뺀다** — `BuildPoints`가 그 칸만 지점을 안 내므로 재료·몬스터·항아리가 스위치 위에 서지 않는다
+  (같은 모듈의 나머지 칸은 그대로). 레이아웃은 자기가 주 사이트 맵의 것인지 모르므로 구역 1 이후의 판에서도 그 칸 하나가 빠진다.
+  지점은 `LayoutHash`에 안 들어가므로 해시는 그대로다.
+- **스위치는 주 사이트 맵만 세운다** — `DistrictIndex <= 0`(단일 사이트 `INDEX_NONE` 또는 구역 0). `ACL9SiteMap::SpawnPowerSwitch`가
+  빌드 끝에 `ACL9PowerSwitch`(게임플레이 클래스, 복제 안 함)를 칸 중심·1층 바닥(Z 0)·사이트맵 회전으로 세우고, 소유자는 사이트맵,
+  `SpawnedActors`에 넣어 재빌드 때 걷힌다. `HasPowerSwitch()`가 게임 스테이트의 "이 월드에 스위치가 있나"다 — 판이 없는
+  `Lvl_Flat`(시드 0)은 false 라 전원 단계가 None 이다. 스위치 불빛은 사이트맵 틱의 램프 무리 패스가 켜고 끈다(light.md).
+- **좌표** — `ACL9SiteMap::CellToWorld(Cell, Z)` = 칸 중심을 액터 변환(구역 회전)으로, Z 는 사이트 로컬 높이(인트로 카메라 170).
+  `WorldToCell(World, OutFloor, OutCell)` = 그 역(`(p − Origin) / CellSize`의 내림, 층 = 로컬 Z ÷ 층 높이의 내림). 판이 없거나 격자·층
+  밖이면 false. (2026-09-08에 지운 옛 `CellToWorld`와는 다른 함수다.)
+
+**트럭 `ACL9Truck`** (`Source/CL9/World/CL9Truck.{h,cpp}`) — 걸어 들어가는 푸드트럭. 판이 끝날 때 짐칸 밖에 있으면 남겨져 죽는다(K5,
+게임 모드). 게임 모드가 서버에서 첫 `ACL9TruckPad` 기준 `TruckOffset`에 스폰하고 복제한다(정적, 항상 관련 — 동적 액터는 관련 거리
+밖에서 클라이언트에서 지워진다). 트럭 공간: 원점 = 뒷문 개구부 가운데 아래 지면, +X = 짐칸 안. 몸체·계단 메시는 같은 원점이라 두
+컴포넌트 모두 상대 오프셋 0, 걷는 콜리전은 메시의 UCX 다. 모든 머신의 BeginPlay 가 규칙 행 `TruckMesh`·`TruckStepsMesh`를 올리고
+짐칸 상자(`UBoxComponent`, 질의 전용·모든 채널 무시)를 `TruckInteriorCenter`·`TruckInteriorExtent`(트럭 공간)로 놓는다 — 그래서
+컴포넌트가 Movable 이다(Static 이면 등록 뒤 `SetStaticMesh`가 거부된다). `IsInside(Location)` = 상자 공간으로 옮겨 좌표 비교(트럭
+회전 포함, 오버랩에 기대지 않는다), `GetInteriorFrame()` = 상자 트랜스폼, `Find(World)` = 첫 트럭. 메시가 비면 안 보이지만
+`IsInside`는 동작한다. 틱하지 않는다. 옛 손배치 트럭(`SM_FoodTruck_A`)은 레벨에서 지운다(리드).
 
 ### 아직 안 한 것
 
 - **문 옆 벽 토막이 −75%로 눌린다.** 칸 500cm에 문 250cm를 뚫으면 양옆에 125cm 토막이 남는데,
   타일링이 500짜리 벽 조각 한 장을 거기에 우겨 넣는다(`worst run fit 0.25`). 온전한 벽은 1.00으로
   잘 맞고 문 옆 토막만 그렇다. 고치려면 문 폭을 칸에 맞추거나 토막 전용 조각이 필요하다.
+  **2026-10-16 정정: 해결됐다** — 토막 전용 seg kind `barnStub`/`wallStub` 이 들어왔다(`CL9SiteLayout.h` `BarnStub()`/`WallStub()`, [asset-swap.md](asset-swap.md) `barnStub → wallQuarter`).
 - **`door` seg kind 행** — 지금은 문 자리가 문틀 없는 개구부다. 조각 표의 `door` 역할을 그대로
   쓰면 **안 된다** — 그 메시를 개구부에 채우면 콜리전이 생겨 문이 통째로 막힌다.
-- **천장을 꺼 두었다** (2026-09-08 사용자: "천장없는건 일단 유지해"). `SegKindTable`의
-  `ceiling` 행을 `__ceiling_off__`로 바꿔 둔 상태라 로그에 그 종류를 못 찾는다는 에러가 뜬다 —
-  의도된 것이다. 맵을 위에서 내려다보며 확인한 뒤 되돌릴지 정한다.
+- **실내 하늘 차단 검증** (2026-10-04). 현재 `ceiling` 행은 복구돼 있고, `bBuildCeilings`가
+  켜진 부지는 `bOutdoor=false`인 모듈마다 최상층 바닥 높이 + 모듈 `Height`에 천장을 만든다.
+  야외 마당에는 천장을 만들지 않는다. 과거의 천장 비활성화는 현재 상태가 아니다.
+  사용자 요구는 건물 안에서 하늘이 보이지 않는 것이다. 별도 `bBuildRoofs`로 실내와 열린 마당의
+  지상 발자국을 공통 외부 지붕으로 덮는다. 최상층 모듈 천장 + 천장 판 두께 + `RoofClearanceCm`
+  최댓값을 지붕 밑면으로 쓴다. `roof`는 Grid, 외곽 `roofFascia`는 Tile로 배치한다.
+  마감은 지상 점유 union의 외곽에만 세우며 각 occupied floor의 벽 위→다음 occupied floor 바닥,
+  마지막 벽 위→지붕의 양수 빈 띠만 채운다. 계단의 층간 띠도 포함하고 기존 벽 높이 구간은
+  덮지 않는다. 내부 방 경계·외부 출입구와 비상구 하부·실내 천장·`bOutdoor`·레이아웃 해시는
+  유지한다. 실제 실내 위쪽/대각선 시야와 문·계단 통과를 확인해야 하며 천장 개수만으로
+  완료 판정하지 않는다. 생성기 없는 flat에는 지붕을 만들지 않는다.
 - **소품**(module.md 결정 7, REPO의 `ModulePropSwitch`) — `PropSets` 컬럼이 설계에만 있다.
 - **`pen`(우리 울타리) 종류를 생성기가 안 낸다** (2026-09-28). 조각·seg kind 행은 준비됐지만
   `WallKind()`는 `bOutdoor`만 보고 `barn`/`wall`을 고른다. 모듈 표에 둘레 종류 열을 하나 더할지가
@@ -229,5 +291,8 @@ PIE 실측(`Tools/Unreal/qa_farm_stage_pie.py`, 결과 `Saved/QA/stage_pie_Lvl_F
 `CL9.Map.DepthBand`(깊이 띠가 지점을 빠짐없이 나누고 깊은 띠일수록 홉이 크다) ·
 `CL9.Map.Determinism`(같은 시드 = 같은 해시·같은 칸·같은 변) ·
 `CL9.Map.Assembly`(시드 1~200에서 전 모듈 도달 · 칸 겹침 0 · 비상구 정확히 하나 · 크기 분포) ·
-`CL9.Map.Segments`(모듈당 바닥 한 장 · 실내 모듈당 천장 한 장 · 넓이 0인 박스 없음).
+`CL9.Map.Segments`(모듈당 바닥 한 장 · 실내 모듈당 천장 한 장 · 넓이 0인 박스 없음) ·
+`CL9.Map.PowerSwitch`(SpecialCopies 1/2/4 × 마당 있음/없음 × 단층/계단 2층 × 시드 30 — 스위치 모듈이 서고, 그 칸에만 지점이 없고,
+후보가 전부 1층이며, 칸 길이 모든 후보에 닿는다, 2026-10-06) ·
+`CL9.Map.CellPath`(손으로 짠 4×2 판 — 계단은 끝점만, Flap 은 막고 Door 는 통과, 스위치 칸·후보 규칙, 닿지 않는 후보는 빠진다).
 2인 PIE에서는 양쪽 로그의 `hash %08X`가 같아야 한다.

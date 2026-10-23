@@ -1,7 +1,11 @@
 # goal: outdoor-backdrop
 
 Status: spec draft (2026-10-04) — written at the end of the farm-stage session for a **new session** to pick up with `/autogoal`.
-Open Questions below must be answered by the user before implementation (autogoal Phase 5 gate).
+2026-10-11 update: the user delegated monster/background art choices. See
+[the art production plan](../asset/art-production-plan.md), E00 and the asset bundles, for the selected mood, asset list,
+shared/near layering, asset sourcing, and test-level treatment (questions 1, 2, 4, 5, 6 below).
+Those art choices no longer require re-confirmation. The existing large walkable-area intent remains;
+exact placement/bounds still depend on current giant-stage geometry. This note records direction, not implementation completion.
 
 ## One-line Goal
 Build the world **outside** the generated site grid like a normal hand-made game level — a horizon, terrain, trees, fences, a road

@@ -1,6 +1,6 @@
 # goal: giant-stage
 
-Status: spec settled by the planning panel (2026-10-04, HEAVY track). Open Questions gate implementation.
+Status: spec settled by the planning panel (2026-10-04, HEAVY track). Open Questions gate implementation. **2026-10-16 정정**: 이 문서에 Open Questions 절은 없고, 맨 아래 "Gate answers (user, 2026-10-04)" 로 답이 끝났다. 구현은 부분이다 — `UCL9SiteDef::Districts`·`FCL9SiteDistrict` 와 테스트 `CL9.Map.Districts`·`CL9.Map.DistrictSlots` 가 커밋 0b2b7cc(WIP, gameplay 중단·컴파일 미확인)에 있고, `CL9.Map.Districts` 는 이후 세션들이 "알려진 실패"로 기록하고 있다(look-table.md Results). `Lvl_Mongjang`·`Tools/Unreal/stages/mongjang.json` 은 없다.
 
 ## One-line Goal
 A stage of **five building districts around one truck yard, ~1,000 ground-floor modules in total (5× the farm)**, that builds,

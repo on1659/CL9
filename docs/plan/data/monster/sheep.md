@@ -1,5 +1,8 @@
 # 양 — `sheep`
 
+> **2026-10-13 사용자 결정 — 뺀다.** 위협 세 층([common.md](common.md) "층")의 어느 층에도 들지 않는다. 이 문서는 기록으로 남기고,
+> `MonsterTable` 행·`Lvl_Flat` 배치·에셋 정리는 별도 작업이다.
+
 **몬스터 시스템 검증용 3호 종 (2026-09-05, 초안).** [돼지](pig.md)와 같은 이유로 넣었다 —
 기획에는 없고, 값은 전부 [닭](chicken.md)을 복사했다.
 
@@ -19,30 +22,19 @@
 | `PounceLunge` | 110 (초안) — 닭과 동일 |
 | `PounceMissCooldown` | 0.6 (초안) — 닭과 동일 |
 
-## 에셋 (보유 — 2026-09-05 확인)
+## 에셋 (자체 제작 — 2026-10-09 확인)
 
-`Content/DreamscapeSeries/DreamscapeFarmlands/Meshes/Chars/Sheep/`:
+`Content/Monsters/SheepA/` — 제작 기록은 [../../../asset/monster/sheep_a.md](../../../asset/monster/sheep_a.md), 원본은 `ArtSource/monster/`.
 
 | 컬럼 | 에셋 |
 |---|---|
-| `SkeletalMesh` | `SK_Sheep` (`SK_Sheep_HairTop`은 별도 메시 — 미사용) |
-| `Skeleton` | `SKEL_Sheep` |
-| `AnimBP` | `ABP_Sheep` (Content/Monsters — ABP_Chicken 복제 후 스켈레톤·애님 교체) |
+| `SkeletalMesh` | `SK_Sheep_A` |
+| `Skeleton` | `SK_Sheep_A_Skeleton` |
+| `AnimBP` | `ABP_Sheep_A` (`Content/Monsters/`) |
 
-애님 커버리지 (상태 기계 요구 대조):
+클립(폴더 실물): `AN_Sheep_Idle` · `AN_Sheep_Walk` · `AN_Sheep_Run` · `AN_Sheep_LookAround` · `AN_Sheep_WakeTelegraph` · `AN_Sheep_Catch` · `AN_Sheep_HitReact` · `AN_Sheep_PushReact` · `AN_Sheep_Death`.
 
-| 상태 기계 요구 | 팩 애님 | 비고 |
-|---|---|---|
-| 배회·순찰 (Walk) | `A_Sheep_Walkcycle` | ✓ |
-| 추격 (Run) | `A_Sheep_Run` | ✓ |
-| 평시 (Idle) | `A_Sheep_Idle` | ✓ |
-| 잠듦 | `A_Sheep_SleepLoop` | ✓ (SleepTime 0이라 미사용) |
-| 기상 예고 | `A_Sheep_Sleep_Idle` | ✓ (동상) |
-| 잡기 (Catch) | `A_Sheep_Attack_Anim` | ✓ |
-| 경직 (HitStunMs) | `A_Sheep_Hurt` | ✓ |
-| 죽음 | `A_Sheep_Death` | ✓ |
-
-미사용 여분: `A_Sheep_Eat`, `Idle_Rest`/`RestLoop`/`Rest_Idle`, `Idle_Sleep`.
+Dreamscape Farmlands 팩의 `SK_Sheep`·`A_Sheep_*`는 쓰지 않는다 — 팩은 2026-10-04에 지웠다.
 
 ## 미결
 

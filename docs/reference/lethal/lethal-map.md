@@ -170,6 +170,14 @@ DunGen이 맵을 만드는 방식은 이렇다.
 **★ 메인 패스가 8~22타일인데 가지가 22~25개다.** 타일 하나당 가지 2개꼴이라, 플레이어가 지나는
 대부분이 본줄기가 아니라 **막다른 곁가지**다. 헤매는 느낌의 정체가 이것이다.
 
+> **정정 (2026-10-15, 에셋 재덤프 + `DunGen.dll` 디컴파일 `BranchCountHelper`)** — 위 표의 "가지 수 22~25"는 흐름의
+> `BranchMode` 가 **Global** 일 때만 쓰는 값이다. 다섯 흐름은 전부 `BranchMode.Local`(0)이라 이 값은 쓰이지 않는다.
+> 실제로는 **본줄기 타일마다** 그 타일 아키타입의 `BranchCount`(공장 11~15, 저택 4~7·5~7, 광산 7~14·11~15)를 굴려
+> **그 타일의 남은 출입구 수로 자른다**. 대부분 출입구 수가 더 작으므로 "본줄기의 남는 문마다 가지 하나"가 된다.
+> 가지 길이는 아키타입 `BranchingDepth`(공장 2~4), 마지막 칸은 `BranchCapTileSets`(공장은 방 세트, `InsteadOf`).
+> 아키타입·타일셋 가중치·깊이 곡선·반복 모드·태그 전수는 [../../goal/lethal-layout.md](../../goal/lethal-layout.md) 배경 표와
+> artifact "리썰·리포 맵 생성기"(https://claude.ai/artifact/SKty4qmerXbr2iFEBeLwHw)에 있다. "헤매는 느낌 = 곁가지가 대부분"이라는 결론은 그대로다.
+
 ### 손으로 만든 양
 
 - `Tile`로 끝나는 프리팹 60여 종에 `LargeRoom`·`PoolRoom`·`SmallLRoom`·`LargeFanRoom`·

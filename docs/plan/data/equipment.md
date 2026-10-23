@@ -1,5 +1,7 @@
 # 장비 — `UCL9EquipmentDef`
 
+표 에셋: `Content/Data/EquipmentTable`(2026-10-16 표기).
+
 번 것으로 사는 물건. 프라이팬 · 그 밖.
 
 ---
@@ -44,7 +46,7 @@
 
 | Alias | Price | Slot | 도구? | 비고 |
 |---|---|---|---|---|
-| `frying_pan` | 200 (초안) | `Carryable` | ✔ | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대다). 들고 다니는 물건이고 팔 수도 있다. 아이템 표 `frying_pan` 행만 있고 전용 클래스는 없다 — 4f 전엔 `cl9.additem frying_pan`으로 꺼낸다 |
+| `frying_pan` | 25 (초안 — 2026-10-17 눈금 1/8, 옛 200) | `Carryable` | ✔ | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대다). 들고 다니는 물건이고 팔 수도 있다. 아이템 표 `frying_pan` 행만 있고 전용 클래스는 없다 — 4f 전엔 `cl9.additem frying_pan`으로 꺼낸다 |
 | `cart` | 미정 | `Carryable` | ✕ | `CartOnly` 아이템 운반을 연다. 끌면 `CartMult` 0.75 — 물건 정의는 [item/cart.md](item/cart.md) |
 | `pot` | 미정 | `Carryable` | 미정 | **요리와 무관하다** (2026-09-06 결정 — 열원은 조리대, 동시 요리 수 = 조리대 수. 냄비는 프라이팬처럼 그냥 아이템). 아이템 표 `pot` 행은 2026-09-11에 프라이팬 행을 복제해 만들었다 — 두 손(`HoldPose` Large) 물건 |
 | `standing_lamp` | 미정 | `Carryable` | ✕ | 놓으면 주변을 밝힌다. 조명 세팅([../../systems/light.md](../../systems/light.md)) 검토 후 값을 정한다 |
@@ -54,7 +56,8 @@
 
 ## 미결
 
-- **추가 품목** — 목록은 열려 있다. 아이디어를 계속 받는다
+- **추가 품목** — 목록은 열려 있다. 아이디어를 계속 받는다. 2026-10-17 결정 F: 프라이팬 다음 "두 번째 도구"는 **미끼 = 탄 요리**(새 품목 없음 —
+  [../../goal/burnt-bait.md](../../goal/burnt-bait.md)); 기절·투척 피해는 그 뒤 후보
 - 수레·냄비·램프의 가격과 세부 값
 
 이더 눈금은 [../economy.md](../economy.md)에 있다.

@@ -1,6 +1,6 @@
 # goal: swing-hitbox
 
-**상태**: 구현 완료 2026-09-15(커밋 `d4fe2ec` — 애니메이션을 따르는 히트박스·손 자리 놓기; decisions 09-15 "휘두르기 판정은 애니메이션을 따르는 히트박스"·"놓기(G)는 손 자리 낙하"; PIE `docs/testing/pie-scenarios.md` C4). 체크박스는 실행 당시 갱신되지 않았다. 2026-09-20 전역 배율 `CL9Rules.SwingHitScale` 추가(실행 swing-hit-scale, decisions 09-20).
+**상태**: 구현 완료 2026-09-15(커밋 `d4fe2ec` — 애니메이션을 따르는 히트박스·손 자리 놓기; decisions 09-15 "휘두르기 판정은 애니메이션을 따르는 히트박스"·"놓기(G)는 손 자리 낙하"; PIE `docs/testing/pie-scenarios.md` C4). 체크박스는 실행 당시 갱신되지 않았다. 2026-09-20 전역 배율 `CL9Rules.SwingHitScale` 추가(실행 swing-hit-scale, decisions 09-20). **2026-10-16 정정**: `SwingHitScale` 은 2026-09-22 [combat-feel-pass-1.md](combat-feel-pass-1.md) 가 폐기했다(decisions 09-22 — 메시 경계 구가 사라져 `SwingHitReach 100`·`SwingHitRadius 60` 구 스윕으로 대체). 지금 코드에 `SwingHitScale`·`GetSwingHitSphere` 는 없다.
 
 ## One-line Goal
 Make the swung item hit monsters through a real hitbox that follows the swing

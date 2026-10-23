@@ -1,9 +1,11 @@
 # 개발 계획 — 한 스텝씩 쌓기
 
 Status: **진행 중** · CCL8 `docs/plan`에서 이식 (2026-08-30) · 진행 현황 갱신 2026-09-21
-세션(접속·재접속·Steam)은 아직 없음 · ④~⑤ 이후 더해진 시스템은 아래 "④~⑤ 이후 더해진 시스템" 절 ·
-(①②③ 완료 · ④는 세션 UI만 남음(4g 목적지 선택은 2026-10-12 7i 회사의 목적지 판 + 타이틀의 목적지 목록으로 끝남 — 아래 정정) · ⑤는 5a~5d 완료, 5e는 처형 클립 Run 2만 남음 ·
+(①②③ 완료 · ④는 세션 UI만 남음(4g 목적지 선택은 2026-10-12 7i 회사의 목적지 판 + 타이틀의 목적지 목록으로 끝남 — 아래 정정) · ⑤는 5a~5d·5c′ 완료, 5e는 처형 클립 Run 2 의 2인 PIE 검증만 남음(2026-10-16 정정 — 클립은 09-21·22 커밋됨) ·
+세션(접속·재접속·Steam)은 아직 없음(2026-10-05 정정 — 시작 레벨과 개발용 주소 접속 API 는 구현 중, 아래 "세션" 줄 참조) · ④~⑤ 이후 더해진 시스템은 아래 "④~⑤ 이후 더해진 시스템" 절 ·
 **다음 작업 순서는 ⑦ 루프 개편**(2026-10-12, 7a~7k 완료 — 7k 는 대역 스킨으로 구조만, 스킨 모델 대기 · 2026-10-13 7l 스테이지 별 완료))
+
+**큰 그림(단계 1~4)과 만들 것 묶음 M1~M33은 [roadmap.md](roadmap.md)에, 그 출발점인 첫 세션 시나리오는 [scenario.md](scenario.md)에 있다 (2026-10-20).**
 
 **이 문서가 현재 작업 순서의 정본이다.** UE 아키텍처의 정본은
 [../conventions.md](../conventions.md)(§ 2~5 · § 10)다 — 2026-08-31 결정으로 확정했다
@@ -182,8 +184,8 @@ TArray<TObjectPtr<UCL9Gimmick>> Gimmicks;   // 에디터에서 + 로 추가
 | 4d | 요리 — 열 상태변화 하나 | **조리대에 올리면 익고 더 두면 탄다** | 완료 (열원은 조리대 — 아래 번복) |
 | 4e | 납품 — 주문 마감 판정 | **주문대로 내면 돈이 된다 / 표에서 가격 바꾸면 달라진다** | 완료 |
 | 4f | 구매 — 장비(실물) | **이더를 내고 프라이팬을 산다** (물물교환 없음) | 완료 |
-| 4h | HUD · UI | **화면에 상태가 뜬다** | 완료 (설정 화면·키 리바인딩 2026-09-12 완료 — [settings.md](settings.md); 세션 UI는 남음) |
 | 4g | 목적지 선택 (모듈 세트 교체 구조 — 아래) | **다른 목적지를 고를 수 있다** | 완료 (2026-10-13 정정 — 타이틀 목적지 목록 + 7i 회사 목적지 판 + 7l 해금, [../goal/loop-7i-company.md](../goal/loop-7i-company.md)) |
+| 4h | HUD · UI | **화면에 상태가 뜬다** | 완료 (설정 화면·키 리바인딩 2026-09-12 완료 — [settings.md](settings.md); 세션 UI는 남음 — 2026-10-05 정정: 타이틀 화면·게임 오버 화면은 start-lobby 에서 구현 중, 아래 "④~⑤ 이후 더해진 시스템" 절) |
 | 4i | 먹기 — 요리 타입 아이템의 스탯 효과 | **먹으면 잠깐 달라진다 / 표에서 효과 바꾸면 반영된다** | 완료 |
 
 **정산도 들어갔다** (2026-09-07, ⑥에서 당겨 옴): 정산일에 기간 수입이 목표에 못 미치면 판이
@@ -225,7 +227,7 @@ WBP_Main            ← 뷰포트에 붙는 유일한 위젯
 스태미나는 화면 흔들림과 HUD 바를 함께 쓴다 (2026-09-05 번복 — [data/rules.md](data/rules.md)).
 
 **밤 수명주기(로비→밤→새벽)는 들어왔다** — ①~③ 사이에 지었고 PIE로 검증했다.
-**세션(접속·재접속·Steam)은 아직 없다** — 남은 기술 기반은 이쪽이다.
+**세션(접속·재접속·Steam)은 아직 없다** — 남은 기술 기반은 이쪽이다. (2026-10-05 정정 — 시작 레벨과 개발용 주소 접속 API 까지는 구현 중이다. 검증 결과는 [../goal/start-lobby.md](../goal/start-lobby.md) 상단 Status 에 적힌다. Steam 은 여전히 없다.)
 
 ---
 
@@ -236,8 +238,9 @@ WBP_Main            ← 뷰포트에 붙는 유일한 위젯
 | 5a | **맵 배치 툴** (아래) | **툴에 시드 넣으면 맵이 자동으로 깔린다** | 완료 (4c 다음에 당겨 옴) |
 | 5b | 진짜 벽·상자 메시 | **양계장답게 보인다** | 완료 — 2026-09-08 모듈 조립(격자 미로 폐기, `81d1971`) · 09-10 진짜 2층 · 09-11 자체 제작 조각·`Grid` 바닥·소품 세트·시설 BP(`7c1be1f`) · 09-15 리썰 실측에 맞춘 확대(양계장 40모듈, `942afad`). 남은 결정 둘: 천장 켜기(`bBuildCeilings`, 실물 보고 사용자가 정한다)·푸드트럭 위치(임시 배치) — [data/module.md](data/module.md) · [../systems/asset-swap.md](../systems/asset-swap.md) |
 | 5c | 조명 · 손전등 · 정전 | **불빛 밖이 진짜 안 보인다** | 완료 |
+| 5c′ | 룩 개편 — 검정+빛 웅덩이(잔여 누수 × 검은 안개)·작업등 스포트 그림자·Dead 뒤 램프 생존·레트로 화면(저해상도+단계화)·구조면 텍스처·복도 소품·퀵슬롯·봇 헤드램프 | **리썰처럼 보인다** | 완료 (2026-10-15 [../goal/look-rework.md](../goal/look-rework.md) PIE·perf probe·봇 촬영 검증 → 2026-10-16 룩 값 전부를 룩 표 `LookTable`(`UCL9LookDef`)로 옮기고 PIE 실시간 반영까지 — [../goal/look-table.md](../goal/look-table.md). 미커밋(섞인 파일)) |
 | 5d | 캐릭터·아이템·몬스터 메시 교체 | **게임처럼 보인다** | 완료 — 산 에셋이 아니라 **자체 제작**으로 갔다: 몬스터 5종 `SK_<종>_A`·아이템 7행(2026-09-11), 농부 A 전신·1인칭 팔(09-11~13, `7c1be1f`·`40396e1`) — [../asset/README.md](../asset/README.md) |
-| 5e | 애니메이션 | **걷고 뛰고 넘어지는 게 보인다** | 대부분 완료 — 농부 전신 9클립 + 1인칭 8종 + `ABP_FP_View`(09-13~15, `72b175b`·`aaec0a7`·`7a6e92d`), 몬스터 5종 로코모션·HitReact·PushReact·Catch·Death(09-11·15) + 닭 `PounceWindup`(09-20). **남은 것:** 처형 클립 `AN_Pig_Execute`·`AN_Farmer_Executed`(Run 2 — [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md)) |
+| 5e | 애니메이션 | **걷고 뛰고 넘어지는 게 보인다** | 대부분 완료 — 농부 전신 9클립 + 1인칭 8종 + `ABP_FP_View`(09-13~15, `72b175b`·`aaec0a7`·`7a6e92d`), 몬스터 5종 로코모션·HitReact·PushReact·Catch·Death(09-11·15) + 닭 `PounceWindup`(09-20). **남은 것:** 처형 클립 `AN_Pig_Execute`·`AN_Farmer_Executed`(Run 2 — [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md)). 2026-10-16 정정: Run 2 클립 4개(`AN_Pig_Execute`·`AN_Raccoon_Execute`·`AN_Farmer_Executed_Pig`·`AN_Farmer_Executed_Raccoon`)는 09-21·22 에 커밋됐다(7e00227·a2c4834) — 남은 것은 2인 PIE 검증뿐 |
 
 ### 5a 맵 배치 툴
 
@@ -260,7 +263,7 @@ WBP_Main            ← 뷰포트에 붙는 유일한 위젯
 
 ---
 
-## ④~⑤ 이후 더해진 시스템 (2026-09-12~20)
+## ④~⑤ 이후 더해진 시스템 (2026-09-12~10-16)
 
 빌드 오더에 칸이 없던 것들이다 — 사용자 지시로 그때그때 들어왔고, 각 줄의 문서가 정본이다.
 결정 경위는 전부 [../decisions.md](../decisions.md)에 있다.
@@ -275,6 +278,12 @@ WBP_Main            ← 뷰포트에 붙는 유일한 위젯
 | 09-16 | **파동** — 소음 반경 시각화 | [wave.md](wave.md) · [../systems/wave.md](../systems/wave.md) |
 | 09-18 | **타격감·사살감** — `SoundTable`·히트스톱·타격 퍼프·죽음 발사·발소리 | [../systems/sound.md](../systems/sound.md) · [../systems/character.md](../systems/character.md) "맞는 느낌" · [../systems/monster.md](../systems/monster.md) "타격의 표현" |
 | 09-20 | **잡기 예고(Pounce)·넘어짐 무적·피격 카메라**, **처형(스토커 너구리·잡히면 처형 돼지)·데스캠** | [../goal/monster-pounce-hurt-readability.md](../goal/monster-pounce-hurt-readability.md) · [../goal/execute-sequence-pig.md](../goal/execute-sequence-pig.md) · [../systems/monster.md](../systems/monster.md) · [../systems/character.md](../systems/character.md) |
+| 10-05 | **조작 손맛** — 걷기·질주 곡선(가속·제동·질주 램프), 카메라(보브·롤·질주 FOV·착지 스프링), 빠져 있던 소리. 최고 속도·스태미나·점프 높이는 그대로. 구현·측정 완료(Gate A 73/73), 미커밋 | [../goal/control-feel.md](../goal/control-feel.md) · [../systems/character.md](../systems/character.md) |
+| 10-05 | **시작 레벨·대기실·출발 레버·게임 오버** — `Lvl_Start` 타이틀 화면에서 방을 만들면 스테이지의 Lobby 단계(트럭 마당)가 대기실이 되고, 출발 레버로 밤을 시작하고, 전멸하면 게임 오버 화면에서 시작 레벨로 돌아간다. **구현 중 — 검증 결과는 goal 문서 Status** | [../goal/start-lobby.md](../goal/start-lobby.md) · [../systems/session.md](../systems/session.md) |
+| 10-15 | **빌드 브로커** — 세션은 `Tools/Build/build_request.py` 로 요청만, 큐·묶음·실행·오류 주인 분류·기록은 로컬 데몬이. 구현·검증 완료(0e4c2eb·1b340a8) | [../goal/build-broker.md](../goal/build-broker.md) · [../workflow/sessions.md](../workflow/sessions.md) |
+| 10-15~16 | **파동 물결·착지 핑·벽 자국·실루엣** — 소음 파동을 CCL8 점 방식으로 다시 만들고 긴박도에 따라 모양이 바뀜(10-15), 착지 파동은 벽까지 퍼지는 핑·벽 자국(`bWallStamp`)·몸 실루엣 드러내기(`bRevealBodies`)(10-16). 미커밋 | [../goal/wave-urgency-ripple.md](../goal/wave-urgency-ripple.md) · [../goal/wave-landing-ping.md](../goal/wave-landing-ping.md) · [../systems/wave.md](../systems/wave.md) |
+| 10-16 | **룩 표** — 화면 필터·조명 프로필·램프 종류·HUD 밝기·구조면 디테일을 `LookTable`(`UCL9LookDef`) 하나에, PIE 중 편집이 즉시 반영(5c′ 의 마무리). 미커밋 | [../goal/look-table.md](../goal/look-table.md) · [data/look.md](data/look.md) · [../systems/light.md](../systems/light.md) |
+| 10-16 | **실외 랜드스케이프·소품** — 트럭 → 건물 입구 사이를 랜드스케이프로 깔고(`UCL9LandscapeTools::CreateLandscape`, `Tools/Unreal/setup_outdoor.py` + `Tools/Unreal/outdoor/henhouse.json`), 실외만 안개를 옅게(`CL9Rules.OutdoorFogScale`), 실외 자연물은 구매 팩. 양계장만 적용, 미커밋 | [../decisions.md](../decisions.md) 2026-10-16 · [../systems/light.md](../systems/light.md) "실외 안개" · [../systems/stage.md](../systems/stage.md) |
 
 ---
 
@@ -292,7 +301,7 @@ WBP_Main            ← 뷰포트에 붙는 유일한 위젯
 | 7d | **팀킬** — 휘두르기 히트박스가 플레이어를 맞히고 사망 원인에 공격자 플레이어가 남는다 | **2인 PIE 에서 삽으로 동료를 넘어뜨리고 죽인다** | 없음 | **완료** (2026-10-12 — 명세 [../goal/loop-7d-team-kill.md](../goal/loop-7d-team-kill.md), 삽은 아이템이 없어 프라이팬으로 확인, `KilledByPlayer` 기록, 리슨 2인 PIE) |
 | 7e | **판 중간 스폰** — 조건에 따라 플레이어 시야 밖에 몬스터 추가 스폰 | **판이 흐르면 없던 몬스터가 나타난다** | 조건·위치·수·상한 (미결 7) — 2026-10-12 답: 시간 간격·안 보이고 멀리·시작 표 비율·총량 비율 | **완료** (2026-10-12 — 명세 [../goal/loop-7e-mid-round-spawn.md](../goal/loop-7e-mid-round-spawn.md), 셀 `CL9Rules.MidSpawn*` 초안 60 s·15 m·0.5, PIE 양계장 두 판) |
 | 7f | **외부 재화 기반** — 판과 별개인 개인 저장소, 외부 재화 카운터, 새벽 정산 화면 표시 | **판이 죽어도 외부 재화 숫자가 남는다** | 획득처 (미결 1) — 2026-10-12 답: 살아서 귀가 시 판 수입 비율, 임포스터 쪽은 더 크게, 이름은 바깥 재화 "이더"·판 안 "코인" | **완료** (2026-10-12 — 명세 [../goal/loop-7f-out-game-currency.md](../goal/loop-7f-out-game-currency.md), 각자 기계의 `CL9Wallet`, 새벽 화면·타이틀, PIE 1인·리슨 2인) |
-| 7g | **임포스터** — 판 시작 0~1명 비밀 배정(본인에게만 알림), 판 끝 승리 판정(자기 외 전원 사망 + 본인이 트럭 안에서 출발), 직접 처치 실패 판정(7d 공격자 기록), 임포스터 처치자 보상, 결과 화면 | **치트로 임포스터를 지정하고 2인 PIE 에서 이기고 진다 / 삽으로 죽이면 실패한다** | 보상액·배정 확률 (미결 5) — 2026-10-12 답: 3인 10%·4인 25%, 액수는 셀 초안(성공 30·처치 20), 남겨짐 죽음은 승리 아님, 새벽에 공개 | **완료** (2026-10-12 — 명세 [../goal/loop-7g-imposter.md](../goal/loop-7g-imposter.md), 리슨 2인 PIE 성공·직접 타격·처치·남겨짐) |
+| 7g | **임포스터** — 판 시작 0~1명 비밀 배정(본인에게만 알림), 판 끝 승리 판정(자기 외 전원 사망 + 본인이 트럭 안에서 출발), 직접 처치 실패 판정(7d 공격자 기록), 임포스터 처치자 보상, 결과 화면 | **치트로 임포스터를 지정하고 2인 PIE 에서 이기고 진다 / 삽으로 죽이면 실패한다** | 보상액·배정 확률 (미결 5) — 2026-10-12 답: 3인 10%·4인 25%, 액수는 셀 초안(성공 30·처치 20), 남겨짐 죽음은 승리 아님, 새벽에 공개 | **완료** (2026-10-12 — 명세 [../goal/loop-7g-imposter.md](../goal/loop-7g-imposter.md), 리슨 2인 PIE 성공·직접 타격·처치·남겨짐). 굴림은 도착 판이면 도착 끝·전원 접속 뒤(10-14, [../goal/loop-7g-imposter.md](../goal/loop-7g-imposter.md) Decision 2026-10-14) |
 | 7h | **처치 기여** — 몬스터가 "나를 깨운 플레이어·시각"을 기억, 그 몬스터가 다른 플레이어를 죽이면 기여 | **소리로 닭을 깨워 동료가 잡히면 내 기여로 찍힌다** | 인정 시간 창 (미결 6) — 2026-10-12 답: 깨운 사람으로 한정, 창은 셀(초안 30초), 임포스터 처치 인정·새벽 표시·임포스터 유도 보상 셋 다 | **완료** (2026-10-12 — 명세 [../goal/loop-7h-kill-contribution.md](../goal/loop-7h-kill-contribution.md), 리슨 2인 PIE) |
 | 7i | **회사** — 3판마다 정산·구매하는 장소. 트럭 이동 연출·트럭 안 정산·목적지 선택([../goal/round-start-truck-intro.md](../goal/round-start-truck-intro.md) "다음 명세")과 한 명세로 | **3판 뒤 회사에 가서 정산하고 산다** | 레벨인지 화면인지 (미결 2·10) — 2026-10-12 답: 걸어 다니는 레벨, 미달은 패널티 후 계속, 구매는 회사로 | **완료** (2026-10-12 — 명세 [../goal/loop-7i-company.md](../goal/loop-7i-company.md), `Lvl_Company` 그레이박스, 리슨 2인 PIE 양계장 → 회사 → 대농장) |
 | 7j | **판 시작 연출** — 트럭 도착(1단계), 오늘의 주문서 알림(2단계), 마당 이동 구간의 긴장 요소(4단계) | **트럭이 서고 주문이 뜨고 건물까지 가는 길이 무섭다** | 긴장 요소의 정체 (미결 8·11) — 2026-10-12 답: 도착 끝 가운데 카드, 긴장 요소 셋 다(소리·조명·안개, 보이기만 하는 기척, 시간 압박) | **완료** (2026-10-12 — 명세 [../goal/loop-7j-round-start.md](../goal/loop-7j-round-start.md), 리슨 2인 PIE. 창문이 없어 실루엣은 문간) |

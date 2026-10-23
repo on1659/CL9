@@ -105,6 +105,8 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
 `NightLength × NightLengthAt(Day)`. 로비 복귀(`EnterLobby`) 때 밤 스폰분 철거·DangerScale 1 복귀.
 로그 `Night N: chicken ×P queued (base 8~12 × 0.60 = C)`로 곡선 반영을 읽는다(재료는 `placed`). 몬스터는 큐에 들어가
 `CL9Rules.MonsterSpawnPerFrame`(마리/프레임) 씩 다음 프레임부터 스폰된다 — [raiding.md](raiding.md) "구역 사이트와 나눠 스폰".
+상한은 큐 소비/스폰 시도 수로 실패도 포함한다. 정수 ≥ 1을 `Validate`가 검사하며, 기본값 **4는 미측정 초안**이다.
+balance 보고서와 실행 2 성능 측정 후 확정한다 — 밤의 최종 개수는 일자 곡선과 사이트 행이 정한다.
 
 ## 일자 덮어쓰기
 
@@ -136,7 +138,7 @@ DangerAt(Day)`를 GameState에 실어 몬스터가 ChaseBudget·DetectRate·Sigh
 ## 구현 상태 (정산 — 2026-09-07)
 
 - **곡선·주기**: `UCL9ProgressionDef`에 `QuotaCurve`(정산일 목표 이더)와 `SettlementIntervalDays`(초안 2 → **2026-10-12 3**, 에셋·헤더 모두.
-  `QuotaCurve` 첫 키도 2일차 → 3일차, 값 800 그대로 — 7a).
+  `QuotaCurve` 첫 키도 2일차 → 3일차, 값 800 그대로 — 7a). **2026-10-17 코인 눈금 1/8**: 키 100·200·325·650 — [../plan/economy.md](../plan/economy.md).
   `QuotaAt(일차)`는 **빈 커브를 0으로 읽는다** — 다른 커브와 달리 배율이 아니라 목표액이라, 곡선을 안 그린
   상태에서 판이 갑자기 실패하지 않게 했다(다른 커브의 "빈 값 = 1.0"과 일부러 다르다).
   `IsSettlementDay(일차)`는 `일차 % 주기 == 0`이며, 주기가 0 이하면 정산이 없다.
