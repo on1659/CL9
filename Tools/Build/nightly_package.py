@@ -3,19 +3,22 @@
   py -3 Tools/Build/nightly_package.py              # 지금 한 번 패키징한다
   py -3 Tools/Build/nightly_package.py --register   # 작업 스케줄러에 매일 run_time 으로 등록(다시 부르면 덮어쓴다)
   py -3 Tools/Build/nightly_package.py --unregister # 등록을 지운다
+  py -3 Tools/Build/nightly_package.py --commit     # 성공하면 작업 사본의 변경 전부를 커밋·푸시하고 올린다(사무실 [빌드 + 커밋·푸시])
+  py -3 Tools/Build/nightly_package.py --fix        # 마지막 실패를 고칠 Claude CLI 를 새 콘솔 창에 띄운다(사무실 [CLI 로 고치기])
 
 - 조절 값은 Tools/Build/nightly_values.csv (시각·빌드 구성·잠금 대기 시간).
 - 잠금(cl9_lock)을 세션 ID `nightly`·용도 build 로 잡고 RunUAT BuildCookRun 을 돌린다 — 다른 세션의 빌드·PIE 와 겹치지 않는다.
   잠금은 마지막 acquire 뒤 한 시간이 지나면 무효가 되므로 도는 동안 15분마다 다시 잡는다.
 - 에디터 타깃은 빌드하지 않는다(-nocompileeditor) — 떠 있는 에디터의 DLL 을 건드리지 않는다. 쿠킹은 마지막으로 빌드된 에디터 DLL 로 한다.
 - 결과물은 Packaged/Windows/CL9.exe(매번 덮어쓴다). upload 가 1 이면 압축해서 GitHub 릴리스(release_tag, 매일 덮어씀)에 올린다.
-  로그는 Saved/Nightly/<날짜>.log, 마지막 결과는 Saved/Nightly/last.json.
+  로그는 Saved/Nightly/<날짜>.log, 마지막 결과는 Saved/Nightly/last.json(도는 동안은 result "running" 과 pid — 사무실 에디터실 탭이 읽는다).
 """
 import argparse
 import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -64,6 +67,8 @@ def log(f, msg):
 def write_last(result, started, log_path, detail="", errors=None):
     data = {"result": result, "started": started, "ended": datetime.datetime.now().isoformat(timespec="seconds"),
             "log": log_path, "detail": detail}
+    if result == "running":
+        data.update(ended=None, pid=os.getpid())
     if errors:
         data["errors"] = errors
     with open(os.path.join(LOG_DIR, "last.json"), "w", encoding="utf-8") as f:
@@ -193,19 +198,49 @@ def upload(f, tag):
     return url
 
 
-def run():
+def git(f, *args):
+    r = subprocess.run(["git"] + list(args), cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+                       errors="replace", creationflags=subprocess.CREATE_NO_WINDOW)
+    if r.returncode != 0:
+        log(f, "git %s 실패: %s" % (args[0], (r.stderr or r.stdout).strip()[:500]))
+    return r
+
+
+def commit_push(f):
+    """패키징에 성공한 작업 사본의 변경 전부(다른 세션 것 포함)를 커밋하고 푸시한다 — detail 에 붙일 한 마디"""
+    if git(f, "add", "-A").returncode != 0:
+        return "커밋 실패(git add)"
+    if git(f, "diff", "--cached", "--quiet").returncode == 0:
+        log(f, "커밋할 변경이 없다")
+        return "커밋할 변경 없음"
+    count = len(git(f, "diff", "--cached", "--name-only").stdout.splitlines())
+    msg = "패키징 성공 시점 스냅샷 %s (사무실 [패키징 빌드 + 커밋·푸시], 파일 %d개)" % (
+        datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), count)
+    if git(f, "commit", "-q", "-m", msg).returncode != 0:
+        return "커밋 실패(로그 참고)"
+    head = git(f, "rev-parse", "--short", "HEAD").stdout.strip()
+    log(f, "커밋 %s — 파일 %d개" % (head, count))
+    if git(f, "push").returncode != 0:
+        return "커밋 %s(파일 %d개), 푸시 실패(로그 참고)" % (head, count)
+    log(f, "푸시함")
+    return "커밋 %s(파일 %d개) 푸시함" % (head, count)
+
+
+def run(commit=False):
     os.makedirs(LOG_DIR, exist_ok=True)
     v = values()
     started = datetime.datetime.now().isoformat(timespec="seconds")
     log_path = os.path.join(LOG_DIR, datetime.date.today().isoformat() + ".log")
     with open(log_path, "a", encoding="utf-8") as f:
         offset = f.tell()
+        write_last("running", started, log_path, "잠금 기다리는 중")
         log(f, "새벽 패키징 시작 — 구성 %s" % v["config"])
         if not grab_lock(f, float(v["lock_wait_minutes"])):
             log(f, "잠금을 %s분 안에 못 잡아 오늘은 건너뛴다" % v["lock_wait_minutes"])
             L.queue_leave(ROOT, SESSION)
             write_last("skipped", started, log_path, "잠금 대기 시간 초과")
             return 2
+        write_last("running", started, log_path, "패키징 중")
         t0 = time.time()
         try:
             code = package(f, v["config"])
@@ -215,7 +250,12 @@ def run():
         if code == 0:
             log(f, "성공 — %.0f분, 결과물 %s" % (minutes, os.path.join(ARCHIVE, "Windows", "CL9.exe")))
             detail = "%.0f분" % minutes
+            if commit:
+                # 올리기 전에 커밋해야 릴리스 설명의 커밋 번호가 이 패키지와 맞는다
+                write_last("running", started, log_path, "커밋·푸시 중")
+                detail += ", " + commit_push(f)
             if v["upload"] == "1":
+                write_last("running", started, log_path, "GitHub 에 올리는 중")
                 url = upload(f, v["release_tag"])
                 detail += ", 올림 %s" % url if url else ", GitHub 올리기 실패(로그 참고)"
             write_last("ok", started, log_path, detail)
@@ -224,6 +264,33 @@ def run():
         f.flush()
         write_last("failed", started, log_path, "종료 코드 %d" % code, first_errors(log_path, offset))
         return 1
+
+
+def fix():
+    """마지막 실패를 고칠 Claude CLI 를 새 콘솔 창에 띄운다 — 원인 줄·로그 경로를 첫 프롬프트로 준다"""
+    try:
+        with open(os.path.join(LOG_DIR, "last.json"), "r", encoding="utf-8") as f:
+            last = json.load(f)
+    except (OSError, ValueError):
+        last = {}
+    if last.get("result") != "failed":
+        print("마지막 패키징이 실패가 아니다(%s) — 고칠 것이 없다" % last.get("result"))
+        return 1
+    # 명령줄 인자 하나로 넘기므로 줄바꿈 없이 한 줄로 쓴다
+    errors = " / ".join(last.get("errors") or []) or "(요약 없음 — 로그에서 Error 줄을 찾는다)"
+    prompt = ("새벽 패키징(Tools/Build/nightly_package.py)이 실패했다(%s, %s). 처음 나온 Error 줄: %s — "
+              "전체 로그: %s. 원인을 확정하고 고친 뒤 `py -3 Tools/Build/nightly_package.py` 로 다시 돌려 성공을 확인한다. "
+              "CL9 CLAUDE.md·docs/workflow/sessions.md 규약을 따르고, 다른 세션의 잠금·PIE 는 끊지 않는다. 커밋은 하지 않는다."
+              % (last.get("started"), last.get("detail"), errors, last.get("log")))
+    exe = shutil.which("claude")
+    if not exe:
+        print("claude 를 PATH 에서 찾지 못했다")
+        return 1
+    # 이 스크립트를 띄운 세션의 Claude Code 변수는 넘기지 않는다(새 CLI 가 그 세션 안의 하위 프로세스로 착각하지 않게)
+    env = {k: v for k, v in os.environ.items() if not (k.startswith("CLAUDECODE") or k.startswith("CLAUDE_CODE_"))}
+    subprocess.Popen([exe, prompt], cwd=ROOT, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    print("새 창에 Claude CLI 를 띄웠다 — 실패 %s" % last.get("started"))
+    return 0
 
 
 def ps(script):
@@ -260,7 +327,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--register", action="store_true")
     ap.add_argument("--unregister", action="store_true")
+    ap.add_argument("--fix", action="store_true")
+    ap.add_argument("--commit", action="store_true", help="성공하면 작업 사본의 변경 전부를 커밋·푸시한 뒤 올린다(사무실 [빌드 + 커밋·푸시])")
     a = ap.parse_args()
     if sys.stdout:  # 콘솔이 cp949 라도 한글·줄표를 찍는다
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.exit(register() if a.register else unregister() if a.unregister else run())
+    sys.exit(register() if a.register else unregister() if a.unregister else fix() if a.fix else run(commit=a.commit))
