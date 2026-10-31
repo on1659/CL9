@@ -23,6 +23,7 @@
 | `Tools/Unreal/apply_table_rows.py` | 보고서 '표 행' 을 데이터 표 에셋에 적용·검증(에디터 안 또는 커맨드릿) |
 | `.claude/runs/` | 실행 산출물(gitignore) — `editor.lock`, `<slug>/brief-*.md`, `report-*.md`, `grants.json`, `run.json`. 하위 폴더: `compile/` = `Tools/Build/compile_check.py` 의 빌드 로그(`compile-<시각>.log`) · `hook-seen/` = `cl9_lock.py` 가 남기는 훅 활성 확인용 nonce 표식과 "훅이 acquire/release 를 대신 처리함" 표식(`last-lock-cmd.json`) · `probe/` = 롤아웃 1 의 훅·환경 조사 기록(`agent-report.md`·`after-ask.txt`·`env-*.json`, session-orchestration.md "Rollout 1") |
 | `.claude/skills/cl9/SKILL.md` | `/cl9` 스킬 |
+| `.claude/skills/cl9-session/SKILL.md` · `Tools/Session/launch_session.py` | `/cl9-session` — 새 세션을 별도 터미널에 띄워 지시서를 준다(부모 CLAUDE_CODE_* 환경 변수를 지우고 bypass 로) |
 
 테스트: `py -3 -m unittest discover .claude/hooks`.
 
