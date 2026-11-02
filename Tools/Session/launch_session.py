@@ -21,6 +21,10 @@ def main():
     ap.add_argument("--profile", default=None, help="wt 프로필 이름 또는 GUID (없으면 기본 프로필)")
     a = ap.parse_args()
 
+    # 같은 이름이 둘이면 SendMessage 보고가 엉뚱한 세션으로 간다
+    me = os.environ.get("CLAUDE_CODE_SESSION_NAME")
+    assert a.name not in (a.boss, me), "새 세션 이름이 보고 받을 세션·띄우는 세션 이름과 같다: " + a.name
+
     brief = os.path.abspath(a.brief)
     assert os.path.isfile(brief), "지시서가 없다: " + brief
     prompt = (brief + " 를 읽고 그 지시를 그대로 수행한다. 질문이 생기면 그 파일에 적힌 규칙과 CL9 의 CLAUDE.md 를 따른다. "
@@ -35,7 +39,8 @@ def main():
     claude.append(prompt)
 
     env = {k: v for k, v in os.environ.items()
-           if not k.startswith(("CLAUDE_CODE_", "CLAUDECODE", "CLAUDE_PID", "CLAUDE_EFFORT", "CLAUDE_PLUGIN_", "NO_COLOR", "GIT_TERMINAL_PROMPT"))}
+           if not k.upper().startswith(("CLAUDE", "NO_COLOR", "GIT_TERMINAL_PROMPT")) or k.upper() == "CLAUDE_CONFIG_DIR"}
+    # 백그라운드로 옮긴 세션은 CLAUDE_BG_*·CLAUDE_JOB_DIR 도 갖는데, 이게 새 세션에 새면 -n 대신 부모 이름을 단다(2026-11-01 "부사장" 여럿)
 
     wt = shutil.which("wt")
     if wt:

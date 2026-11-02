@@ -38,7 +38,7 @@ py -3 C:\Work\CL9\Tools\Session\launch_session.py <지시서.md 절대 경로> "
 - **부모의 `CLAUDE_CODE_*`·`CLAUDECODE`·`CLAUDE_PID` 환경 변수를 지우고** 띄운다. 이걸 안 지우면 새 claude 가 "이미 Claude Code 안에서 돈다"고 보고 거부하거나 부모 세션에 얽힌다. 다른 PC 에서 못 띄운 원인은 대개 이것이다.
 - 작업 폴더는 저장소 루트(스크립트 위치에서 계산) — PC 마다 경로가 달라도 된다.
 - `wt`(Windows Terminal)가 있으면 새 탭, 없으면 `cmd /c start` 새 창. `--profile` 로 wt 프로필을 줄 수 있다(기본은 기본 프로필).
-- `-n` 이름이 있어야 상대가 `SendMessage` 로 찾는다. 이름은 짧은 한글("봇 보강")로.
+- `-n` 이름이 있어야 상대가 `SendMessage` 로 찾는다. 이름은 짧은 한글("봇 보강")로, 띄우는 세션·`--boss` 와 다른 이름이어야 한다(같으면 스크립트가 멈춘다). 부모의 `CLAUDE*` 환경 변수는 넘기지 않는다 — 백그라운드 세션의 `CLAUDE_BG_*` 가 새면 새 세션이 부모 이름을 단다.
 
 ## 함정
 
